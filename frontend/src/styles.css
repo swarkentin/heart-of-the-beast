@@ -51,3 +51,15 @@
 .scene-exits:before{content:"THE PATH OPENS · CHOOSE A WAY";position:absolute;top:17%;left:50%;transform:translateX(-50%);padding:8px 12px;background:#10131be8;border:1px solid #98744f;color:#f0d2a8;font-size:11px;letter-spacing:1px;white-space:nowrap;box-shadow:0 3px 14px #0008}
 @media(max-width:700px){.scene-exit{top:47%;width:clamp(100px,29%,145px);min-height:88px;padding:8px 5px;gap:4px}.scene-exit-left{left:24%}.scene-exit-right{left:76%}.scene-exit-center{left:50%;top:40%}.scene-exit strong{font-size:11px}.scene-exit small{font-size:8px}.exit-chevron{font-size:22px}.scene-exits:before{top:22%;font-size:9px;padding:6px 8px}}
 @media(prefers-reduced-motion:reduce){.scene-exit{transition:none}}
+
+
+/* Read-only route cues for the spectator presentation */
+.cast-exits{position:absolute;inset:0;z-index:2;pointer-events:none}
+.cast-exit{position:absolute;top:48%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:clamp(130px,18%,210px);min-height:82px;padding:10px 12px;background:linear-gradient(180deg,#111821e8,#171a20df);border:1px solid #d8ad7899;box-shadow:0 0 22px #e5a85a35,inset 0 0 20px #d89b4a18;clip-path:polygon(10% 0,90% 0,100% 16%,100% 100%,0 100%,0 16%);text-align:center;color:#f3dfc3}
+.cast-exit-left{left:24%;transform:translate(-50%,-50%)}
+.cast-exit-right{left:76%;transform:translate(-50%,-50%)}
+.cast-exit-center{left:50%;top:43%;transform:translate(-50%,-50%)}
+.cast-exit>span{font-size:22px;line-height:1;color:#f4c987;text-shadow:0 0 12px #f2b766}
+.cast-exit strong{font:13px "Marcellus",serif;text-shadow:0 2px 5px #000}
+.cast-exit small{font-size:9px;letter-spacing:1px;color:#f0c58b}
+@media(max-width:700px){.cast-exit{width:clamp(105px,32%,150px);min-height:68px;padding:7px 5px;gap:3px}.cast-exit strong{font-size:10px}.cast-exit small{font-size:8px}.cast-exit>span{font-size:18px}}
