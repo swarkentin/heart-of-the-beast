@@ -34,7 +34,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and immediate action resolution (PR #2).
 - [x] Validate forward-facing player composition alongside a separate spectator/cast composition over the same encounter state.
 - [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PRs #5 and #6).
-- [ ] Create a room and join by invite link/code; no account required.
+- [x] Create a room and join a pre-run lobby by six-character invite code, with up to four guest players and host-controlled run start (PR #12).
 - [ ] Provide a separate, host-controlled spectator viewing link/QR code that does not consume a player slot or require party membership.
 - [x] Add initial player-authenticated room creation, run start, validated command, reconnect snapshot, and separately authorized read-only spectator snapshot endpoints.
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
