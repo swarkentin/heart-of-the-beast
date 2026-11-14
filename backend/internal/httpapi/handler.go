@@ -155,32 +155,65 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 
 const maxRoomPlayers = 4
 
-type joinRoomRequest struct { Code string `json:"code"` }
+type joinRoomRequest struct {
+	Code string `json:"code"`
+}
 
 func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 	var request joinRoomRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
-		writeError(w, http.StatusBadRequest, "enter a valid room code"); return
+		writeError(w, http.StatusBadRequest, "enter a valid room code")
+		return
 	}
 	code := strings.ToUpper(strings.TrimSpace(request.Code))
-	if len(code) != 6 { writeError(w, http.StatusBadRequest, "room codes must be six characters"); return }
+	if len(code) != 6 {
+		writeError(w, http.StatusBadRequest, "room codes must be six characters")
+		return
+	}
 	room, err := h.rooms.GetByCode(r.Context(), code)
-	if errors.Is(err, store.ErrNotFound) { writeError(w, http.StatusNotFound, "room not found; check the code and try again"); return }
-	if err != nil { writeError(w, http.StatusInternalServerError, "could not find room"); return }
-	if room.Run != nil { writeError(w, http.StatusConflict, "this run has already started; new players can join at a future safe checkpoint"); return }
-	if len(room.PlayerIDs) >= maxRoomPlayers { writeError(w, http.StatusConflict, "this room is full"); return }
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "room not found; check the code and try again")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not find room")
+		return
+	}
+	if room.Run != nil {
+		writeError(w, http.StatusConflict, "this run has already started; new players can join at a future safe checkpoint")
+		return
+	}
+	if len(room.PlayerIDs) >= maxRoomPlayers {
+		writeError(w, http.StatusConflict, "this room is full")
+		return
+	}
 	playerID, err := randomToken(8)
-	if err != nil { writeError(w, http.StatusInternalServerError, "could not join room"); return }
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not join room")
+		return
+	}
 	playerToken, err := randomToken(32)
-	if err != nil { writeError(w, http.StatusInternalServerError, "could not join room"); return }
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not join room")
+		return
+	}
 	expected := room.Version
 	room.PlayerIDs = append(room.PlayerIDs, playerID)
-	if room.PlayerTokenHashes == nil { room.PlayerTokenHashes = make(map[string]string) }
+	if room.PlayerTokenHashes == nil {
+		room.PlayerTokenHashes = make(map[string]string)
+	}
 	room.PlayerTokenHashes[playerID] = tokenHash(playerToken)
 	room.Version++
 	room.UpdatedAt = time.Now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil { writeStoreError(w, err); return }
-	writeJSON(w, http.StatusCreated, map[string]any{"room": publicRoom(room), "playerId": playerID, "playerToken": playerToken})
+	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"room": publicRoom(room),
+		"playerId": playerID,
+		"playerToken": playerToken,
+	})
 }
 
 func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
