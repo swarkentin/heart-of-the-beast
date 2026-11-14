@@ -9,15 +9,17 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - Illustrated, high-definition pixel-art scenes with directional exploration.
 - Small parties, initially 1–4 players, with no mandatory class composition.
 - No account or third-party service required to play. Optional accounts may later support identity, achievements, and cosmetics.
-- Open-source, self-hostable, and provider-neutral.
+- Open-source and self-hostable, with Render and Neon as the initial prototype deployment.
 
 ## Phase 0 — Foundation and discovery
 
 - [x] Establish project overview and working agreements.
 - [ ] Agree on MVP game loop, solo/co-op rules, combat, and progression.
-- [ ] Record initial architecture decisions.
+- [ ] Record initial architecture, deployment, audio, and presentation decisions.
 - [ ] Bootstrap frontend, backend, local development, and CI.
+- [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
+- [ ] Establish responsive scene, character, enemy, and HUD presentation rules.
 
 ## Phase 1 — Playable multiplayer/solo vertical slice
 
@@ -25,10 +27,13 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Responsive player interface and separate spectator/cast presentation.
 - [ ] Presence, reconnect, and graceful leave behavior.
 - [ ] Illustrated room scenes and directional navigation.
+- [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [ ] Party direction voting; solo decisions resolve immediately.
 - [ ] One complete dungeon path with basic encounters and a boss.
 - [ ] Timed tactical combat that works for one player and small groups.
+- [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together.
+- [ ] Verify core screens on mobile, tablet, and desktop layouts.
 
 ## Phase 2 — Core roguelike loop
 
@@ -70,7 +75,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 7 — Self-hosting and community
 
 - [ ] One-command local development and container deployment.
-- [ ] Provider-neutral configuration and optional PostgreSQL persistence.
+- [ ] Provider-neutral configuration and PostgreSQL compatibility.
 - [ ] Deployment guides for multiple hosting providers.
 - [ ] Backup/restore, health checks, contribution guide, and release process.
 
@@ -96,4 +101,6 @@ Rescue a prisoner; chase a key-stealing rat; escort an NPC; recover a missing co
 - New players join at safe checkpoints; players may leave at any time.
 - Solo and co-op are both tested as core supported modes, not one as an afterthought.
 - Avoid rigid MMO roles. Archetypes are build directions, not required party slots.
+- Keep the scene readable at phone, tablet, and desktop sizes; animation should communicate state and personality without competing with navigation, combat information, or player controls.
+- Audio should support atmosphere and communicate gameplay events, with user control over music and effects volume.
 - Prefer small focused PRs; keep main releasable; never merge without explicit approval.
