@@ -210,8 +210,8 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room": publicRoom(room),
-		"playerId": playerID,
+		"room":        publicRoom(room),
+		"playerId":    playerID,
 		"playerToken": playerToken,
 	})
 }
