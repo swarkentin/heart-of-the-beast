@@ -31,7 +31,7 @@ function run(command, args, options = {}) {
     child.on("error", rejectRun);
     child.on("close", (code) => {
       if (code === 0) resolveRun(output.trim());
-      else rejectRun(new Error(\`\${command} \${args.join(" ")} failed (\${code}).\n\${errors || output}\`));
+      else rejectRun(new Error(`${command} ${args.join(" ")} failed (${code}).\n${errors || output}`));
     });
     child.stdin.end(options.input || "");
   });
@@ -55,9 +55,9 @@ async function migrate() {
     const sql = readFileSync(join(migrationDir, filename), "utf8");
     const version = filename.replaceAll("'", "''");
     await run("docker", [...psql], {
-      input: \`BEGIN;\n\${sql}\nINSERT INTO schema_migrations (version) VALUES ('\${version}');\nCOMMIT;\n\`,
+      input: `BEGIN;\n${sql}\nINSERT INTO schema_migrations (version) VALUES ('${version}');\nCOMMIT;\n`,
     });
-    console.log(\`Applied migration \${filename}\`);
+    console.log(`Applied migration ${filename}`);
   }
   if (migrations.every((filename) => applied.has(filename))) console.log("Database schema is up to date.");
 }
@@ -70,13 +70,13 @@ function readState() {
 
 function saveState(state) {
   mkdirSync(stateDir, { recursive: true });
-  writeFileSync(stateFile, \`\${JSON.stringify(state, null, 2)}\n\`);
+  writeFileSync(stateFile, `${JSON.stringify(state, null, 2)}\n`);
 }
 
 async function startDetached(name, command, args, options = {}) {
   mkdirSync(logsDir, { recursive: true });
-  const stdoutFD = openSync(join(logsDir, \`\${name}.out.log\`), "a");
-  const stderrFD = openSync(join(logsDir, \`\${name}.err.log\`), "a");
+  const stdoutFD = openSync(join(logsDir, `${name}.out.log`), "a");
+  const stderrFD = openSync(join(logsDir, `${name}.err.log`), "a");
   const child = spawn(command, args, {
     cwd: options.cwd || root,
     env: options.env || process.env,
@@ -103,7 +103,7 @@ async function waitFor(url, label) {
     } catch { /* service is still starting */ }
     await delay(500);
   }
-  throw new Error(\`\${label} did not become healthy within 30 seconds. Check .dev/logs.\`);
+  throw new Error(`${label} did not become healthy within 30 seconds. Check .dev/logs.`);
 }
 
 async function isRunning(pid) {
@@ -157,7 +157,7 @@ async function up() {
   }
 
   console.log("Development stack is ready:");
-  console.log(\`  Game client: \${frontendURL}\`);
+  console.log(`  Game client: ${frontendURL}`);
   console.log("  Backend:     http://127.0.0.1:8080");
   console.log("  PostgreSQL:  localhost:5432 (heart / heart)");
   console.log("Use npm run dev:down to stop the application and database.");
@@ -169,7 +169,7 @@ async function down() {
   await stopProcess(state.backendPid);
   if (existsSync(stateFile)) unlinkSync(stateFile);
   try { await compose(["stop", "postgres"]); }
-  catch (error) { console.warn(\`Could not stop PostgreSQL: \${error.message}\`); }
+  catch (error) { console.warn(`Could not stop PostgreSQL: ${error.message}`); }
   console.log("Development stack stopped. Database volume was preserved.");
 }
 
@@ -186,10 +186,10 @@ async function status() {
     try { return (await fetch(url, { signal: AbortSignal.timeout(1000) })).ok; }
     catch { return false; }
   };
-  console.log(\`PostgreSQL: \${databaseRunning ? "running" : "stopped"}\`);
-  console.log(\`Backend:    \${backendRunning && await healthy(backendURL) ? "healthy" : "stopped / unhealthy"}\`);
-  console.log(\`Frontend:   \${frontendRunning && await healthy(frontendURL) ? "healthy" : "stopped / unhealthy"}\`);
-  if (state.startedAt) console.log(\`Started:    \${state.startedAt}\`);
+  console.log(`PostgreSQL: ${databaseRunning ? "running" : "stopped"}`);
+  console.log(`Backend:    ${backendRunning && await healthy(backendURL) ? "healthy" : "stopped / unhealthy"}`);
+  console.log(`Frontend:   ${frontendRunning && await healthy(frontendURL) ? "healthy" : "stopped / unhealthy"}`);
+  if (state.startedAt) console.log(`Started:    ${state.startedAt}`);
 }
 
 async function resetDatabase() {
