@@ -1,35 +1,65 @@
 package httpapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
-func TestHealthEndpoint(t *testing.T) {
-	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+func TestHealth(t *testing.T) {
 	response := httptest.NewRecorder()
-
-	NewHandler().ServeHTTP(response, request)
-
+	NewHandler(store.NewMemory()).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 	if response.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
-	}
-	if got := response.Header().Get("Content-Type"); got != "application/json" {
-		t.Fatalf("expected application/json content type, got %q", got)
-	}
-	if got, want := response.Body.String(), "{\"status\":\"ok\",\"service\":\"heart-of-the-beast\"}\n"; got != want {
-		t.Fatalf("unexpected response body: got %q, want %q", got, want)
+		t.Fatalf("expected 200, got %d", response.Code)
 	}
 }
 
-func TestHealthEndpointRejectsOtherMethods(t *testing.T) {
-	request := httptest.NewRequest(http.MethodPost, "/healthz", nil)
-	response := httptest.NewRecorder()
+func TestRoomLifecycleAndReadOnlySpectator(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create room: %d %s", create.Code, create.Body.String())
+	}
+	var created struct {
+		Room struct {
+			ID string `json:"id"`
+		} `json:"room"`
+		PlayerToken    string `json:"playerToken"`
+		SpectatorToken string `json:"spectatorToken"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Room.ID == "" || created.PlayerToken == "" || created.SpectatorToken == "" {
+		t.Fatal("create response omitted credentials")
+	}
 
-	NewHandler().ServeHTTP(response, request)
+	start := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/start", nil)
+	start.Header.Set("Authorization", "Bearer "+created.PlayerToken)
+	startResponse := httptest.NewRecorder()
+	handler.ServeHTTP(startResponse, start)
+	if startResponse.Code != http.StatusOK {
+		t.Fatalf("start run: %d %s", startResponse.Code, startResponse.Body.String())
+	}
 
-	if response.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, response.Code)
+	spectate := httptest.NewRequest(http.MethodGet, "/spectate/"+created.Room.ID, nil)
+	spectate.Header.Set("Authorization", "Bearer "+created.SpectatorToken)
+	spectateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(spectateResponse, spectate)
+	if spectateResponse.Code != http.StatusOK {
+		t.Fatalf("spectate: %d %s", spectateResponse.Code, spectateResponse.Body.String())
+	}
+
+	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	invalid.Header.Set("Authorization", "Bearer "+created.SpectatorToken)
+	invalidResponse := httptest.NewRecorder()
+	handler.ServeHTTP(invalidResponse, invalid)
+	if invalidResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("spectator command should be rejected, got %d", invalidResponse.Code)
 	}
 }

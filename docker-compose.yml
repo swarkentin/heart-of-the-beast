@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: heart_of_the_beast
+      POSTGRES_USER: heart
+      POSTGRES_PASSWORD: heart
+    ports:
+      - "5432:5432"
+    volumes:
+      - heart-of-the-beast-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heart -d heart_of_the_beast"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  heart-of-the-beast-postgres:

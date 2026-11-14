@@ -1,0 +1,82 @@
+package game
+
+import "time"
+
+type RunPhase string
+
+const (
+	PhaseLobby     RunPhase = "lobby"
+	PhaseCombat    RunPhase = "combat"
+	PhaseExploring RunPhase = "exploring"
+	PhaseCompleted RunPhase = "completed"
+)
+
+type EncounterStatus string
+
+const (
+	EncounterActive  EncounterStatus = "active"
+	EncounterCleared EncounterStatus = "cleared"
+)
+
+type Room struct {
+	ID                 string            `json:"id"`
+	Code               string            `json:"code"`
+	OwnerPlayerID      string            `json:"ownerPlayerId"`
+	PlayerIDs          []string          `json:"playerIds"`
+	PlayerTokenHashes  map[string]string `json:"playerTokenHashes"`
+	SpectatorTokenHash string            `json:"spectatorTokenHash"`
+	Run                *Run              `json:"run,omitempty"`
+	Version            int64             `json:"version"`
+	CreatedAt          time.Time         `json:"createdAt"`
+	UpdatedAt          time.Time         `json:"updatedAt"`
+}
+
+type Run struct {
+	ID            string                  `json:"id"`
+	Phase         RunPhase                `json:"phase"`
+	CurrentRoomID string                  `json:"currentRoomId"`
+	Rooms         map[string]*DungeonRoom `json:"rooms"`
+	Players       map[string]*PlayerState `json:"players"`
+	StartedAt     time.Time               `json:"startedAt"`
+	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
+}
+
+type PlayerState struct {
+	ID        string `json:"id"`
+	Health    int    `json:"health"`
+	MaxHealth int    `json:"maxHealth"`
+}
+
+type DungeonRoom struct {
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Exits       []Exit     `json:"exits"`
+	Encounter   *Encounter `json:"encounter,omitempty"`
+	Cleared     bool       `json:"cleared"`
+}
+
+type Exit struct {
+	ID          string `json:"id"`
+	Destination string `json:"destination"`
+	Label       string `json:"label"`
+}
+
+type Encounter struct {
+	Status  EncounterStatus `json:"status"`
+	Enemies []Enemy         `json:"enemies"`
+}
+
+type Enemy struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Health    int    `json:"health"`
+	MaxHealth int    `json:"maxHealth"`
+}
+
+type Command struct {
+	Type     string `json:"type"`
+	ExitID   string `json:"exitId,omitempty"`
+	Action   string `json:"action,omitempty"`
+	TargetID string `json:"targetId,omitempty"`
+}

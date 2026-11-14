@@ -17,13 +17,13 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish project overview and working agreements.
 - [x] Agree on MVP game loop, solo/co-op rules, combat, and progression.
 - [x] Record initial architecture, deployment, audio, presentation, and spectator-access decisions.
-- [x] Establish baseline GitHub Actions CI for pull requests and pushes to `main`, installing frontend dependencies and running the TypeScript check plus production build. CI generates the npm lockfile and publishes it as an artifact so it can be committed without a local npm environment; once committed, CI verifies it stays in sync and uses `npm ci`. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check.
+- [x] Establish baseline GitHub Actions CI for pull requests and pushes to main, installing frontend dependencies and running the TypeScript check plus production build. CI generates the npm lockfile and publishes it as an artifact so it can be committed without a local npm environment; once committed, CI verifies it stays in sync and uses npm ci. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check.
 - [x] Bootstrap the frontend workspace, root-level local development commands, and baseline CI.
 - [x] Select Go for the independently buildable authoritative backend (ADR 0009).
 - [x] Add the initial Go service, health endpoint, container build, and independent backend CI.
-- [ ] Introduce the persistence-backed room/session model, local PostgreSQL workflow, and versioned migrations.
+- [x] Introduce the persisted room/session aggregate, local PostgreSQL workflow, and initial versioned migration.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
-- [ ] Define room lifecycle and authoritative game-state model.
+- [x] Define the room/run lifecycle and deterministic authoritative state transitions.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
 - [x] Choose first-person-inspired forward-facing player camera for exploration and combat; separate cinematic spectator renderer over shared game state.
 - [x] Decide spectator access is independent of player participation, with a server-enforced read-only connection.
@@ -35,9 +35,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PRs #5 and #6).
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Provide a separate, host-controlled spectator viewing link/QR code that does not consume a player slot or require party membership.
+- [x] Add initial player-authenticated room creation, run start, validated command, reconnect snapshot, and separately authorized read-only spectator snapshot endpoints.
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
 - [ ] Ensure spectators cannot issue commands and do not affect party size, scaling, presence, votes, readiness, or deadlines.
-- [ ] Responsive player interface and separate spectator/cast presentation.
+- [ ] Connect the responsive player interface and separate spectator/cast presentation to the authoritative API.
 - [ ] Presence, reconnect, and graceful leave behavior for players.
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.

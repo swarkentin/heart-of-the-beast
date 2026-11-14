@@ -17,7 +17,7 @@ Status: proposed direction for the first playable slice. Render and Neon are the
 - **Game domain:** characters, attributes, abilities, inventory, encounters, room graph, voting, rewards, and deterministic rule resolution.
 - **Session/room orchestration:** create/join/leave, party membership, reconnect, safe checkpoints, timers, and run lifecycle.
 - **Realtime gateway:** player connections submit authorized game intent; spectator connections receive authorized read-only snapshots and events. These are distinct permission paths.
-- **Persistence boundary:** repository interfaces and migrations for durable records. Neon-hosted PostgreSQL is the prototype database. Active run state may initially live in memory, with an explicit understanding that process restarts can lose sessions until snapshots/recovery are implemented.
+- **Persistence boundary:** repository interfaces and versioned migrations for durable records. Neon-hosted PostgreSQL is the prototype database. Active room/run aggregates are persisted as JSONB snapshots; optimistic version checks prevent concurrent commands from silently overwriting one another.
 - **Content:** data-driven definitions for enemies, items, abilities, rooms, themes, bosses, and side missions.
 - **Clients:** responsive player UI and a separate read-only cast/spectator UI. They share game state, not player permissions or controls.
 
@@ -27,7 +27,7 @@ Spectating is independent of participating in a run:
 
 - A spectator opens a dedicated viewing link or QR code. No character creation, player slot, party membership, or account is required.
 - The host controls whether viewing access is enabled and shares a room-scoped viewing token/link.
-- The server authorizes spectator subscriptions separately from player connections. Spectators receive only the snapshots/events intended for viewers and cannot submit gameplay commands.
+- The server authorizes spectator subscriptions separately from player connections. Spectators receive only the snapshots/events intended for viewers and cannot submit game commands.
 - Spectators do not count toward party limits, encounter scaling, presence, votes, readiness, or action deadlines.
 - Spectators may connect, disconnect, and reconnect independently at any point without affecting the run.
 - Read-only access is enforced server-side, not merely by hiding controls in the spectator UI.
@@ -36,13 +36,15 @@ The spectator client uses its own cinematic renderer/camera and restrained prese
 
 ## Suggested implementation shape
 
-Start with a modular monolith and clear package boundaries. The browser client is a React, TypeScript, and Vite application in the `frontend/` workspace. The authoritative backend is a Go module in `backend/`, initially using the standard library for its HTTP process and health endpoint. See ADR 0009 for the backend language/tooling decision.
+Start with a modular monolith and clear package boundaries. The browser client is a React, TypeScript, and Vite application in the frontend/ workspace. The authoritative backend is a Go module in backend/, initially using the standard library for its HTTP process and health endpoint. See ADR 0009 for the backend language/tooling decision and ADR 0010 for the initial room/run persistence model.
 
 Use PostgreSQL as the persistence contract, with Neon as the hosted prototype instance. Avoid coupling domain code to Neon-specific features; standard PostgreSQL connectivity and migrations should also work against a local PostgreSQL instance.
 
 ## Realtime and game state
 
 The server owns the canonical run state and timestamps/deadlines. Player clients submit commands such as choose direction, select combat action, use item, or ready up. The server validates commands against the current phase, resolves timeouts, and broadcasts state changes. Spectator clients subscribe to authorized snapshots and events through a read-only path; they cannot issue game commands. Clients must not authoritatively decide combat results or rewards.
+
+The first HTTP slice supports room creation, host-authorized solo run start, player-authorized commands, player reconnect snapshots, and a separate spectator-authorized read-only snapshot. Each successful mutation increments an aggregate version; PostgreSQL updates compare the expected version so concurrent commands cannot silently lose updates. Player and spectator bearer tokens are generated once and stored only as SHA-256 hashes. The current combat rules are deliberately minimal and deterministic; multiplayer action windows, enemy turns, WebSocket delivery, token rotation, and full spectator policy remain future work.
 
 Every timed phase needs an explicit deadline and fallback behavior. Solo sessions should skip group coordination waits. Disconnects and idle players must not block state transitions. Spectator connection or disconnection must never affect these rules.
 
@@ -51,15 +53,15 @@ Every timed phase needs an explicit deadline and fallback behavior. Solo session
 ### Prototype deployment
 
 - Deploy the application to Render.
-- Configure automatic deployment from the repository's `main` branch.
+- Configure automatic deployment from the repository's main branch.
 - Use Neon as the hosted PostgreSQL database.
 - Keep secrets and connection strings in environment configuration; never commit credentials.
 - Use versioned database migrations and ensure deploys apply compatible schema changes safely.
 
 ### Local development
 
-- The full application must be runnable locally with documented setup commands.
-- Support a local PostgreSQL instance (for example through Docker Compose) using the same schema and migrations as Neon.
+- Start PostgreSQL with the root docker-compose.yml and apply backend/migrations/0001_create_rooms.sql.
+- Configure DATABASE_URL so local PostgreSQL and Neon use the same driver and schema.
 - Keep configuration environment-driven so developers can switch between local PostgreSQL and Neon without code changes.
 - Document any external services required for local development and provide sensible local defaults where possible.
 
@@ -77,7 +79,6 @@ Render and Neon are the selected prototype providers, not permanent architectura
 ## Open decisions
 
 - WebSocket library and message protocol.
-- Active-run snapshot/recovery timing.
-- Database schema and the point at which durable run persistence becomes necessary.
+- Active-run snapshot/recovery timing and event history.
 - Exact Render service topology and deployment configuration.
 - Spectator token lifetime, revocation/rotation UX, viewer limits, and hidden-information policy.

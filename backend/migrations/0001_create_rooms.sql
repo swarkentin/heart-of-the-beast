@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS rooms (
+    id TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    version BIGINT NOT NULL,
+    state JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS rooms_code_idx ON rooms (code);

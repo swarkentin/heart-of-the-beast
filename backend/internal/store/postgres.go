@@ -1,0 +1,73 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
+)
+
+type Postgres struct {
+	db *sql.DB
+}
+
+func NewPostgres(db *sql.DB) *Postgres {
+	return &Postgres{db: db}
+}
+
+func (p *Postgres) Create(ctx context.Context, room *game.Room) error {
+	state, err := json.Marshal(room)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.ExecContext(ctx,
+		`INSERT INTO rooms (id, code, version, state) VALUES ($1, $2, $3, $4)`,
+		room.ID, room.Code, room.Version, state)
+	return err
+}
+
+func (p *Postgres) Get(ctx context.Context, id string) (*game.Room, error) {
+	var state []byte
+	err := p.db.QueryRowContext(ctx, `SELECT state FROM rooms WHERE id = $1`, id).Scan(&state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	var room game.Room
+	if err := json.Unmarshal(state, &room); err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
+func (p *Postgres) Save(ctx context.Context, room *game.Room, expectedVersion int64) error {
+	state, err := json.Marshal(room)
+	if err != nil {
+		return err
+	}
+	result, err := p.db.ExecContext(ctx,
+		`UPDATE rooms SET state = $1, version = $2 WHERE id = $3 AND version = $4`,
+		state, room.Version, room.ID, expectedVersion)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		var exists bool
+		if err := p.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM rooms WHERE id = $1)`, room.ID).Scan(&exists); err != nil {
+			return err
+		}
+		if !exists {
+			return ErrNotFound
+		}
+		return ErrConflict
+	}
+	return nil
+}
