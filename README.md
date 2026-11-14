@@ -15,7 +15,7 @@ Players explore illustrated, high-definition pixel-art environments, make choice
 
 ## Project status
 
-Early discovery and foundation. The initial game-design and architecture decisions are being documented before implementation.
+Foundation documented; the first client-side combat-room prototype is in progress. It is a local UI simulation, not yet connected to an authoritative game server.
 
 ## Start here
 
