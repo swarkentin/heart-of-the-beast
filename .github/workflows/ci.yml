@@ -99,3 +99,38 @@ jobs:
 
       - name: TypeScript check and production build
         run: npm run build
+
+  backend:
+    name: Backend workspace checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.mod
+
+      - name: Check formatting
+        working-directory: backend
+        run: |
+          test -z "$(gofmt -l .)"
+
+      - name: Vet
+        working-directory: backend
+        run: go vet ./...
+
+      - name: Test
+        working-directory: backend
+        run: go test -race ./...
+
+      - name: Build
+        working-directory: backend
+        run: go build ./cmd/server
