@@ -186,10 +186,10 @@ export default function App() {
           <div className="round-indicator">ROUND <b>{round}</b></div>
         </div>
         <div className="action-dock">
-          {actions.map(a => <button key={a.id} className={"move-button move-" + a.id} onClick={() => gameOver ? reset() : play(a.id)} disabled={gameOver && !defeated && a.id !== "strike"}>
+          {actions.map(a => <button key={a.id} className={"move-button move-" + a.id} onClick={() => play(a.id)} disabled={gameOver}>
             <span className="move-glyph">{a.glyph}</span><span className="move-label">{gameOver ? (defeated ? "Play again" : "Fallen") : a.label}<small>{gameOver ? (defeated ? "Restart encounter" : " ") : a.hint}</small></span>
           </button>)}
-          <button className="turn-button" onClick={gameOver ? reset : () => play("strike")}>{gameOver ? "RESTART" : "QUICK STRIKE"} <span>↗</span></button>
+          {gameOver ? <button className="turn-button" onClick={reset}>RESTART ENCOUNTER <span>↗</span></button> : null}
         </div>
         <div className={"event-message" + (gameOver ? " event-final" : "")} role="status">{gameOver ? (defeated ? "THE HALL IS SILENT — VICTORY" : "YOU HAVE FALLEN") : message}</div>
       </section>
