@@ -7,11 +7,11 @@ Players explore illustrated, high-definition pixel-art environments, make choice
 ## Design pillars
 
 - **Solo-first compatible:** every core activity, encounter, puzzle, and progression path must work for one player.
-- **Co-op by choice:** support small parties (initially 2–4) without requiring fixed roles or another player's presence.
+- **Co-op by choice:** support small parties (initially 1–4) without requiring fixed roles or another player's presence.
 - **Keep the adventure moving:** time-boxed decisions, safe defaults, reconnect support, and no idle-player deadlocks.
 - **A living world:** varied themes, memorable enemies and bosses, optional side missions, and surprising encounters.
 - **Accessible sessions:** target 20–40 minutes, with short dungeon levels and safe intermissions.
-- **Open and self-hostable:** provider-neutral architecture, no account required to play, and optional accounts for persistent identity and cosmetics.
+- **Open and self-hostable:** no account required to play; Render and Neon are the initial prototype hosting/database targets, with local development supported.
 
 ## Project status
 
