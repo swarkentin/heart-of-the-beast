@@ -19,3 +19,35 @@
 @media(max-width:700px){body{overflow:auto}.game-screen{height:100dvh;min-height:600px;padding:0 8px}.game-topline{height:52px;flex-basis:52px;gap:6px}.game-brand{font-size:10px;letter-spacing:.7px;gap:6px}.game-brand span{width:23px;height:26px;font-size:16px}.run-status{font-size:9px;letter-spacing:0}.run-status b{margin:0 3px}.view-switch{gap:2px;padding:2px}.view-switch button{padding:7px 6px;font-size:9px}.play-area{padding:7px 0}.scene{inset:7px 0 142px}.scene-art{object-fit:cover;object-position:center}.scene-location{top:8px;left:8px;padding:7px 8px;font-size:9px;letter-spacing:.3px}.enemy-intents{top:8px;right:7px;max-width:50%;gap:5px}.intent{gap:5px;padding:7px;font-size:9px}.intent b{font-size:8px}.intent-dot{width:6px;height:6px;flex-basis:6px}.scene-hint{bottom:8px;left:8px;font-size:9px;letter-spacing:.3px}.cast-overlay{right:8px;bottom:8px;min-width:0;width:190px;padding:9px;font-size:9px}.cast-health{font-size:8px}.player-hud{gap:8px;padding:7px 9px}.hero-token{width:31px;height:32px;font-size:18px}.hero-vitals{width:145px}.hero-name{font-size:9px;margin-bottom:4px}.hero-name span{font-size:9px}.bar{height:7px}.hero-health strong{font-size:10px}.hero-health strong i{font-size:9px}.round-indicator{padding-left:8px;font-size:9px}.round-indicator b{font-size:15px}.action-dock{gap:5px;margin-top:6px;padding:5px}.move-button{flex:1;min-width:0;justify-content:center;gap:5px;padding:9px 4px;flex-direction:column;text-align:center}.move-glyph{font-size:18px}.move-label{font-size:10px;gap:2px}.move-label small{font-size:8px}.turn-button{min-width:0;flex:1.1;padding:0 5px;font-size:8px;letter-spacing:0}.turn-button span{padding-left:3px;font-size:11px}.event-message{position:relative;right:auto;bottom:auto;max-width:none;min-height:34px;margin-top:5px;padding:8px;border:1px solid #51463d;text-align:center;font-size:10px}.cast-caption{right:8px;bottom:8px;max-width:80%;font-size:10px}.game-foot{height:22px;flex-basis:22px;font-size:8px;letter-spacing:.4px}.game-foot span:last-child{display:none}}
 @media(max-width:380px){.run-status{display:none}.hero-vitals{width:125px}.intent b{display:none}.view-switch button{font-size:8px;padding:6px 5px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* Directional exploration prototype */
+.navigation-dock{position:relative;z-index:1;display:grid;grid-template-columns:minmax(145px,.7fr) repeat(2,minmax(0,1.3fr));gap:8px;margin-top:9px;padding:9px;background:#11141df2;border:1px solid #74604a;box-shadow:0 8px 25px #0008}
+.navigation-intro{display:flex;flex-direction:column;justify-content:center;gap:7px;padding:8px 12px;border-right:1px solid #51463d}
+.navigation-intro strong{color:#eac28e;font-size:12px;letter-spacing:1.2px}
+.navigation-intro span{color:#b9aa99;font-size:11px;line-height:1.5}
+.path-button{display:flex;align-items:center;gap:11px;min-width:0;padding:10px 12px;text-align:left;background:linear-gradient(120deg,#29231f,#1b1d25);border:1px solid #665443;color:#eee3d5;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.path-button:hover{background:#383027;border-color:#d9ad73;transform:translateY(-2px)}
+.path-direction{display:grid;place-items:center;flex:0 0 34px;height:34px;border:1px solid #92704f;color:#e8bd83;font-size:20px}
+.path-button>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.path-button b{font-size:12px;font-weight:500;color:#f0dfc9}
+.path-button small{overflow:hidden;color:#b8aa9a;font-size:10px;line-height:1.4;text-overflow:ellipsis}
+.path-button i{color:#e0b47e;font-size:10px;font-style:normal;letter-spacing:.8px;white-space:nowrap}
+.room-reliquary .scene-art{filter:hue-rotate(18deg) saturate(.78) brightness(.9)}
+.room-flooded-crossing .scene-art{filter:hue-rotate(155deg) saturate(.82) brightness(.88)}
+.room-warden-gate .scene-art{filter:hue-rotate(285deg) saturate(1.1) brightness(.86)}
+.scene{animation:room-arrive .42s ease-out}
+@keyframes room-arrive{from{opacity:.55;transform:scale(1.015)}to{opacity:1;transform:scale(1)}}
+@media(max-width:700px){.navigation-dock{grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding:6px}.navigation-intro{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;padding:3px 5px 7px;border-right:0;border-bottom:1px solid #51463d}.navigation-intro strong{font-size:10px}.navigation-intro span{font-size:9px}.path-button{gap:6px;padding:8px 6px}.path-direction{flex-basis:25px;height:28px;font-size:16px}.path-button b{font-size:9px}.path-button small{font-size:8px}.path-button i{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.scene{animation:none}.path-button{transition:none}.path-button:hover{transform:none}}
+
+/* In-scene directional exits */
+.scene-exits{position:absolute;inset:0;z-index:3;pointer-events:none}
+.scene-exit{position:absolute;top:43%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:clamp(118px,16%,190px);min-height:112px;padding:12px 8px;color:#f3dfc3;background:linear-gradient(180deg,#10151bd9,#171a20c9);border:1px solid #d8ad78a8;box-shadow:0 0 0 1px #211910,0 0 26px #e5a85a55,inset 0 0 24px #d89b4a20;clip-path:polygon(12% 0,88% 0,100% 14%,100% 100%,0 100%,0 14%);cursor:pointer;pointer-events:auto;transform:translate(-50%,-50%);transition:filter .18s,box-shadow .18s,background .18s}
+.scene-exit-left{left:22%}.scene-exit-right{left:78%}.scene-exit-center{left:50%;top:37%}
+.scene-exit:hover,.scene-exit:focus-visible{filter:brightness(1.35);background:linear-gradient(180deg,#3b3024ed,#211d1adf);box-shadow:0 0 0 2px #f1c98e,0 0 38px #f3b76bba,inset 0 0 30px #e5ad5b55}
+.exit-chevron{font-size:27px;line-height:1;color:#f4c987;text-shadow:0 0 12px #f2b766}
+.scene-exit strong{font:13px "Marcellus",serif;text-align:center;text-shadow:0 2px 5px #000}
+.scene-exit small{font-size:9px;letter-spacing:1.2px;color:#f0c58b}
+.scene-exits:before{content:"THE PATH OPENS · CHOOSE A WAY";position:absolute;top:17%;left:50%;transform:translateX(-50%);padding:8px 12px;background:#10131be8;border:1px solid #98744f;color:#f0d2a8;font-size:11px;letter-spacing:1px;white-space:nowrap;box-shadow:0 3px 14px #0008}
+@media(max-width:700px){.scene-exit{top:47%;width:clamp(100px,29%,145px);min-height:88px;padding:8px 5px;gap:4px}.scene-exit-left{left:24%}.scene-exit-right{left:76%}.scene-exit-center{left:50%;top:40%}.scene-exit strong{font-size:11px}.scene-exit small{font-size:8px}.exit-chevron{font-size:22px}.scene-exits:before{top:22%;font-size:9px;padding:6px 8px}}
+@media(prefers-reduced-motion:reduce){.scene-exit{transition:none}}

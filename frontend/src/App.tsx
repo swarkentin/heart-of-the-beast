@@ -7,6 +7,23 @@ const initialEnemies: Enemy[] = [
   { id: "scout", name: "Crypt Stalker", hp: 48, maxHp: 48, intent: "Claw rake", damage: 12, x: 430 },
   { id: "acolyte", name: "Ashen Acolyte", hp: 62, maxHp: 62, intent: "Soul spark", damage: 9, x: 670 },
 ];
+type RoomId = "watcher-hall" | "reliquary" | "flooded-crossing" | "warden-gate";
+type Room = { id: RoomId; name: string; floor: string; description: string; exits: RoomId[] };
+const rooms: Record<RoomId, Room> = {
+  "watcher-hall": { id: "watcher-hall", name: "The Watcher's Hall", floor: "01", description: "The dead stir beneath the old watchfires.", exits: ["reliquary", "flooded-crossing"] },
+  reliquary: { id: "reliquary", name: "The Silent Reliquary", floor: "02", description: "Dusty alcoves hold the remains of forgotten kings.", exits: ["warden-gate"] },
+  "flooded-crossing": { id: "flooded-crossing", name: "The Drowned Crossing", floor: "02", description: "Black water ripples around a half-submerged causeway.", exits: ["watcher-hall", "warden-gate"] },
+  "warden-gate": { id: "warden-gate", name: "The Warden's Gate", floor: "03", description: "A sealed iron gate hums with a cold, green light.", exits: ["reliquary", "flooded-crossing"] },
+};
+const roomEnemies: Record<RoomId, Enemy[]> = {
+  "watcher-hall": initialEnemies,
+  reliquary: [{ id: "acolyte", name: "Reliquary Keeper", hp: 54, maxHp: 54, intent: "Grave pulse", damage: 8, x: 550 }],
+  "flooded-crossing": [{ id: "scout", name: "Drowned Sentinel", hp: 58, maxHp: 58, intent: "Rusted sweep", damage: 10, x: 550 }],
+  "warden-gate": [
+    { id: "scout", name: "Crypt Warden", hp: 82, maxHp: 82, intent: "Gatebreaker", damage: 15, x: 430 },
+    { id: "acolyte", name: "Soulbound Shade", hp: 66, maxHp: 66, intent: "Soul drain", damage: 11, x: 670 },
+  ],
+};
 const actions: { id: Action; label: string; hint: string; glyph: string }[] = [
   { id: "strike", label: "Strike", hint: "24 damage", glyph: "⚔" },
   { id: "bolt", label: "Ember", hint: "34 damage", glyph: "✦" },
@@ -44,9 +61,9 @@ function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boo
   </g>;
 }
 
-function PlayerView({ enemies, target, onTarget }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void }) {
-  return <div className="scene player-scene">
-    <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label="First-person view down a torchlit catacomb corridor toward two undead enemies">
+function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: RoomId[]; onNavigate: (id: RoomId) => void }) {
+  return <div className={"scene player-scene room-" + room.id}>
+    <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
       <defs>
         <linearGradient id="wall" x2="0" y2="1"><stop stopColor="#34303a"/><stop offset="1" stopColor="#171922"/></linearGradient>
         <linearGradient id="floor" x2="0" y2="1"><stop stopColor="#8a7059"/><stop offset="1" stopColor="#211f27"/></linearGradient>
@@ -71,16 +88,16 @@ function PlayerView({ enemies, target, onTarget }: { enemies: Enemy[]; target: s
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    <div className="scene-vignette"/>
-    <div className="scene-location"><span>◆</span> THE WATCHER'S HALL <i>·</i> 01</div>
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit)} aria-label={"Enter "+rooms[exit].name}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{rooms[exit].name}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
+    <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
-    <div className="scene-hint">THE WAYFARER'S VIEW · SELECT A THREAT</div>
+    <div className="scene-hint">THE WAYFARER'S VIEW · {room.description.toUpperCase()}</div>
   </div>;
 }
 
-function CastView({ enemies, playerHp }: { enemies: Enemy[]; playerHp: number }) {
-  return <div className="scene cast-scene">
-    <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label="Cinematic elevated view of the adventurer facing enemies in the catacomb hall">
+function CastView({ enemies, playerHp, room }: { enemies: Enemy[]; playerHp: number; room: Room }) {
+  return <div className={"scene cast-scene room-" + room.id}>
+    <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
       <rect width="1100" height="620" fill="#11131b"/><path d="M0 0H1100V620H0Z" fill="url(#castfloor)"/><path d="M0 0H1100V620H0Z" fill="url(#casttiles)"/>
       <path d="M0 0H1100V85H0zM0 535H1100V620H0z" fill="#0b0e16" opacity=".8"/>
@@ -93,21 +110,24 @@ function CastView({ enemies, playerHp }: { enemies: Enemy[]; playerHp: number })
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
     <div className="scene-vignette"/>
-    <div className="scene-location"><span>◆</span> THE WATCHER'S HALL <i>·</i> SPECTATOR CAMERA</div>
-    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR 01 · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={100}/><b>{playerHp}/100</b></div></div>
+    <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
+    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={100}/><b>{playerHp}/100</b></div></div>
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
   </div>;
 }
 
 export default function App() {
-  const [enemies,setEnemies]=useState<Enemy[]>(initialEnemies);
+  const [roomId,setRoomId]=useState<RoomId>("watcher-hall");
+  const [enemies,setEnemies]=useState<Enemy[]>(initialEnemies.map(e=>({...e})));
   const [playerHp,setPlayerHp]=useState(100);
   const [target,setTarget]=useState<Enemy["id"]>("scout");
   const [round,setRound]=useState(1);
   const [message,setMessage]=useState("The dead stir in the torchlight.");
   const [view,setView]=useState<View>("player");
+  const room=rooms[roomId];
   const defeated=enemies.every(e=>e.hp<=0);
-  const gameOver=playerHp<=0||defeated;
+  const finalRoom=roomId==="warden-gate";
+  const gameOver=playerHp<=0||(defeated&&finalRoom);
   const livingTarget=enemies.find(e=>e.id===target&&e.hp>0)||enemies.find(e=>e.hp>0);
 
   function play(action:Action) {
@@ -120,14 +140,22 @@ export default function App() {
     setEnemies(next);setPlayerHp(hp);setRound(n=>n+1);setMessage(events.join("  ·  "));
     const nextTarget=next.find(e=>e.hp>0);if(nextTarget)setTarget(nextTarget.id);
   }
-  function reset(){setEnemies(initialEnemies.map(e=>({...e})));setPlayerHp(100);setTarget("scout");setRound(1);setMessage("The dead stir in the torchlight.");}
+  function navigate(nextRoom: RoomId) {
+    if (!room.exits.includes(nextRoom) || !defeated || playerHp <= 0) return;
+    setRoomId(nextRoom);
+    setEnemies(roomEnemies[nextRoom].map(e=>({...e})));
+    setTarget(roomEnemies[nextRoom][0].id);
+    setRound(n=>n+1);
+    setMessage(rooms[nextRoom].description);
+  }
+  function reset(){setRoomId("watcher-hall");setEnemies(initialEnemies.map(e=>({...e})));setPlayerHp(100);setTarget("scout");setRound(1);setMessage("The dead stir in the torchlight.");}
 
   return <main className="game-screen">
-    <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> SOLO RUN <b>·</b> FLOOR 01</div><div className="view-switch" aria-label="Presentation view"><button className={view==="player"?"selected":""} onClick={()=>setView("player")}>PLAYER</button><button className={view==="cast"?"selected":""} onClick={()=>setView("cast")}>SPECTATOR / CAST</button></div></header>
+    <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> SOLO RUN <b>·</b> FLOOR {room.floor}</div><div className="view-switch" aria-label="Presentation view"><button className={view==="player"?"selected":""} onClick={()=>setView("player")}>PLAYER</button><button className={view==="cast"?"selected":""} onClick={()=>setView("cast")}>SPECTATOR / CAST</button></div></header>
     <section className="play-area">
-      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget}/>:<CastView enemies={enemies} playerHp={playerHp}/>}
+      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room} exits={defeated && playerHp>0 ? room.exits : []} onNavigate={navigate}/>:<CastView enemies={enemies} playerHp={playerHp} room={room}/>}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={100}/><strong>{playerHp}<i>/100</i></strong></div></div><div className="round-indicator">ROUND <b>{round}</b></div></div>
-      {view==="player"?<><div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART ENCOUNTER <span>↗</span></button>:null}</div><div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE HALL IS SILENT — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE HALL IS SILENT — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
+      {view==="player"?<>{!defeated || finalRoom || playerHp<=0 ? <div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART RUN <span>↗</span></button>:null}</div> : null}<div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE CATACOMBS ARE CLEARED — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE GATE FALLS — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
     </section>
     <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{view==="player"?"PLAYER VIEW · ACTIONS RESOLVE IMMEDIATELY":"SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
   </main>;
