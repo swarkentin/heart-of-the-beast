@@ -190,10 +190,13 @@ async function status() {
     try { return (await fetch(url, { signal: AbortSignal.timeout(1000) })).ok; }
     catch { return false; }
   };
+  const backendHealthy = backendRunning && await healthy(backendURL);
+  const frontendHealthy = frontendRunning && await healthy(frontendURL);
   console.log(`PostgreSQL: ${databaseRunning ? "running" : "stopped"}`);
-  console.log(`Backend:    ${backendRunning && await healthy(backendURL) ? "healthy" : "stopped / unhealthy"}`);
-  console.log(`Frontend:   ${frontendRunning && await healthy(frontendURL) ? "healthy" : "stopped / unhealthy"}`);
+  console.log(`Backend:    ${backendHealthy ? "healthy" : "stopped / unhealthy"}`);
+  console.log(`Frontend:   ${frontendHealthy ? "healthy" : "stopped / unhealthy"}`);
   if (state.startedAt) console.log(`Started:    ${state.startedAt}`);
+  if (!databaseRunning || !backendHealthy || !frontendHealthy) process.exitCode = 1;
 }
 
 async function resetDatabase() {
