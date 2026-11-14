@@ -44,6 +44,22 @@ func (p *Postgres) Get(ctx context.Context, id string) (*game.Room, error) {
 	return &room, nil
 }
 
+func (p *Postgres) GetByCode(ctx context.Context, code string) (*game.Room, error) {
+	var state []byte
+	err := p.db.QueryRowContext(ctx, `SELECT state FROM rooms WHERE code = $1`, code).Scan(&state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	var room game.Room
+	if err := json.Unmarshal(state, &room); err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
 func (p *Postgres) Save(ctx context.Context, room *game.Room, expectedVersion int64) error {
 	state, err := json.Marshal(room)
 	if err != nil {

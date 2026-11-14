@@ -15,6 +15,7 @@ var ErrConflict = errors.New("room was changed by another command")
 type Repository interface {
 	Create(context.Context, *game.Room) error
 	Get(context.Context, string) (*game.Room, error)
+	GetByCode(context.Context, string) (*game.Room, error)
 	Save(context.Context, *game.Room, int64) error
 }
 
@@ -65,6 +66,21 @@ func (m *Memory) Get(_ context.Context, id string) (*game.Room, error) {
 		return nil, err
 	}
 	return &room, nil
+}
+
+func (m *Memory) GetByCode(_ context.Context, code string) (*game.Room, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, data := range m.rooms {
+		var room game.Room
+		if err := json.Unmarshal(data, &room); err != nil {
+			return nil, err
+		}
+		if room.Code == code {
+			return &room, nil
+		}
+	}
+	return nil, ErrNotFound
 }
 
 func (m *Memory) Save(_ context.Context, room *game.Room, expectedVersion int64) error {
