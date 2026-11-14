@@ -1,33 +1,47 @@
-# First Combat Room Prototype
+# First Combat Room and Camera Prototype
 
 ## Purpose
 
-Validate an immersive, game-first presentation for one solo combat encounter. The browser-only combat simulation remains intentionally small while we test the scene, HUD hierarchy, and interaction cost.
+Validate two coordinated presentations of one encounter: an immersive forward-facing player camera and a separate cinematic spectator/cast camera. Both render the same local encounter state; the spectator view is read-only and never owns game rules.
+
+## Player presentation
+
+- The player view is first-person-inspired and looks forward down the corridor into the room. Enemies are encountered ahead, not arranged in a side-on JRPG battle line.
+- Combat keeps the same forward-facing spatial language as exploration. Target selection happens on visible enemies or their compact intent labels.
+- Health, round, enemy intent, and actions stay in a restrained overlay around the scene. Choosing an action resolves immediately.
+- The current scene is a perspective illusion built in SVG; it is not a commitment to a 3D renderer or true first-person movement.
+- Directional navigation, room transitions, and route choices are future work; this prototype validates the camera language rather than a complete exploration loop.
+
+## Spectator / cast presentation
+
+- Use the **Spectator / Cast** toggle to see the same encounter from a distinct elevated, cinematic room camera.
+- Player actions update the spectator scene immediately because both views consume the same encounter state.
+- The cast view is read-only: no targeting or combat controls. It favors party/enemy/room composition over the player's close-up perspective.
+- This is an initial static camera composition. Following movement, pulling back for combat, widening for bosses, and briefly focusing on important events are future camera behaviors, not yet implemented.
+- In multiplayer, the player view and cast view must subscribe to the same authoritative server state/event stream; they must not maintain separate simulations.
 
 ## Current interaction
 
-- The dungeon scene is the primary view; persistent website navigation, page headings, sidebars, stats panels, and battle-history panel have been removed.
-- Player health and round are compact overlays at the bottom of the scene.
-- Enemy health, target selection, and telegraphed intent are presented in the scene. Players can select a target directly in the artwork or from its compact intent label.
-- Three contextual moves live in one bottom action dock. Choosing a move resolves the round immediately; there is no separate select-then-resolve step.
-- Recent combat feedback appears as one short status line rather than a scrolling combat log.
-- The mobile layout keeps the scene dominant and turns the action dock into compact touch targets instead of stacking desktop panels.
+- Player mode: select an enemy in the scene or intent strip, then choose Strike, Ember, or Brace. The action resolves immediately.
+- Spectator mode: observe the same health, enemy, round, and event state without controls.
+- The view switch is presentation-only; switching views does not reset or fork the encounter.
+- Mobile keeps the scene dominant and preserves large touch targets.
 
-## Art status
+## Art and implementation status
 
-The scene is a hand-authored SVG pixel-art-style composition using crisp-edged sprite shapes, tiled stone textures, layered lighting, and atmospheric depth. It is still prototype artwork, not a finished production asset pack. The art direction should be validated before investing in a full set of environment and character sprites.
+The scene is hand-authored SVG with crisp-edged sprite shapes, perspective geometry, tiled textures, and layered lighting. It is prototype art, not a production pixel-art asset pack or established pipeline. The spectator camera is a separate composition, not a second game simulation.
 
 ## Explicit limitations
 
-- All state and combat resolution live in the browser; this is not server-authoritative.
-- The encounter is a fixed scripted scenario, not a balanced combat system.
-- Character and enemy sprites are still hand-authored placeholders; no production pixel-art asset pipeline or animation system exists yet.
-- No navigation, multiplayer, reconnect, inventory, audio, or persistence is implemented.
-- Google Fonts are loaded from the network; system fallbacks remain available if they cannot load.
+- State and combat resolution remain browser-local and scripted; this is not server-authoritative or multiplayer.
+- The encounter is fixed and is not a balanced combat system.
+- No directional navigation, room graph, camera animation, production sprite pipeline, or character animation exists yet.
+- No persistence, inventory, audio, reconnect, or progression is implemented.
+- Google Fonts are loaded from the network; system fallbacks remain available.
 
 ## Validation questions
 
-- Does the single scene feel like playing a game rather than operating a website?
-- Can players understand enemy intent, health, and target selection without scanning separate panels?
-- Are the three moves discoverable and comfortable to use on a narrow phone?
-- Does the pixel-art-style treatment feel closer to the intended art direction, and what needs to change before commissioning/creating production assets?
+- Does the forward-facing player view feel like looking into a dungeon rather than watching a side-on battle?
+- Is it clear that combat and exploration will share this camera language?
+- Does the cast view communicate party position, enemy threats, and encounter progress at a glance?
+- Is the separation between player controls and spectator presentation clear on desktop and mobile?
