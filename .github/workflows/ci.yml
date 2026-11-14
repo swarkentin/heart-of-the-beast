@@ -121,6 +121,7 @@ jobs:
       - name: Check formatting
         working-directory: backend
         run: |
+          gofmt -d .
           gofmt -l .
           test -z "$(gofmt -l .)"
 
