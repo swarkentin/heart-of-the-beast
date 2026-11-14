@@ -103,7 +103,7 @@ async function waitFor(url, label) {
     } catch { /* service is still starting */ }
     await delay(500);
   }
-  throw new Error(`${label} did not become healthy within 30 seconds. Check .dev/logs.`);
+  throw new Error(`${label} did not become healthy within 60 seconds. Check .dev/logs.`);
 }
 
 async function isRunning(pid) {
