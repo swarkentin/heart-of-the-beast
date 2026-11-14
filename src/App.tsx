@@ -134,7 +134,6 @@ export default function App() {
   const [action, setAction] = useState<Action>("strike");
   const [target, setTarget] = useState<EnemyId>("scout");
   const [round, setRound] = useState(1);
-  const [guarded, setGuarded] = useState(false);
   const [log, setLog] = useState<string[]>(["The Crypt Stalker and Ashen Acolyte emerge from the gloom.", "Both enemies are watching your next move."]);
   const defeated = enemies.every((enemy) => enemy.hp <= 0);
   const gameOver = playerHp <= 0 || defeated;
@@ -158,14 +157,13 @@ export default function App() {
 
     for (const enemy of nextEnemies) {
       if (enemy.hp <= 0) continue;
-      const damage = guarded ? Math.ceil(enemy.damage / 2) : enemy.damage;
+      const damage = action === "guard" ? Math.ceil(enemy.damage / 2) : enemy.damage;
       nextPlayerHp = Math.max(0, nextPlayerHp - damage);
       events.push(`${enemy.name} uses ${enemy.intent.toLowerCase()} for ${damage} damage.`);
     }
 
     setEnemies(nextEnemies);
     setPlayerHp(nextPlayerHp);
-    setGuarded(action === "guard");
     setRound((value) => value + 1);
     setLog((current) => [...events, ...current].slice(0, 5));
     const nextLiving = nextEnemies.find((enemy) => enemy.hp > 0);
@@ -178,7 +176,6 @@ export default function App() {
     setAction("strike");
     setTarget("scout");
     setRound(1);
-    setGuarded(false);
     setLog(["The Crypt Stalker and Ashen Acolyte emerge from the gloom.", "Both enemies are watching your next move."]);
   }
 
