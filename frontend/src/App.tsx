@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 type Action = "strike" | "guard";
 type View = "player" | "cast";
 type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; damage: number; x: number };
-const initialEnemies: Enemy[] = [
-  { id: "scout", name: "Crypt Stalker", hp: 48, maxHp: 48, intent: "Claw rake", damage: 12, x: 430 },
-  { id: "acolyte", name: "Ashen Acolyte", hp: 62, maxHp: 62, intent: "Soul spark", damage: 9, x: 670 },
-];
 type RoomId = "watcher-hall" | "reliquary" | "flooded-crossing" | "warden-gate";
 type Room = { id: RoomId; name: string; floor: string; description: string; exits: RoomId[] };
 const rooms: Record<RoomId, Room> = {
@@ -122,7 +118,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
     <div className="scene-hint">THE WAYFARER'S VIEW · {room.description.toUpperCase()}</div>
@@ -180,7 +176,6 @@ export default function App() {
   const playerMaxHp = player?.maxHealth ?? 30;
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
-  const defeated = serverRoom?.cleared ?? false;
   const gameOver = run?.phase === "completed";
   const exploring = run?.phase === "exploring";
 
@@ -191,7 +186,7 @@ export default function App() {
       try {
         const next = await apiRequest<ApiRoom>(spectator ? "/spectate/" + roomId : "/rooms/" + roomId, token);
         if (active) {
-          setSnapshot(next);
+          setSnapshot(current => !current || next.version >= current.version ? next : current);
           setError("");
         }
       } catch (err) {
