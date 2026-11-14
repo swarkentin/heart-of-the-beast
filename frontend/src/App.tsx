@@ -61,7 +61,7 @@ function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boo
   </g>;
 }
 
-function PlayerView({ enemies, target, onTarget, room }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room }) {
+function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: RoomId[]; onNavigate: (id: RoomId) => void }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
       <defs>
@@ -88,7 +88,7 @@ function PlayerView({ enemies, target, onTarget, room }: { enemies: Enemy[]; tar
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    <div className="scene-vignette"/>
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit)} aria-label={"Enter "+rooms[exit].name}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{rooms[exit].name}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
     <div className="scene-hint">THE WAYFARER'S VIEW · {room.description.toUpperCase()}</div>
@@ -153,9 +153,9 @@ export default function App() {
   return <main className="game-screen">
     <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> SOLO RUN <b>·</b> FLOOR {room.floor}</div><div className="view-switch" aria-label="Presentation view"><button className={view==="player"?"selected":""} onClick={()=>setView("player")}>PLAYER</button><button className={view==="cast"?"selected":""} onClick={()=>setView("cast")}>SPECTATOR / CAST</button></div></header>
     <section className="play-area">
-      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room}/>:<CastView enemies={enemies} playerHp={playerHp} room={room}/>}
+      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room} exits={defeated && playerHp>0 ? room.exits : []} onNavigate={navigate}/>:<CastView enemies={enemies} playerHp={playerHp} room={room}/>}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={100}/><strong>{playerHp}<i>/100</i></strong></div></div><div className="round-indicator">ROUND <b>{round}</b></div></div>
-      {view==="player"?<>{defeated && !finalRoom && playerHp>0 ? <nav className="navigation-dock" aria-label="Choose a direction"><div className="navigation-intro"><strong>THE PATH OPENS</strong><span>Choose where to go next</span></div>{room.exits.map((exit,index)=><button key={exit} className="path-button" onClick={()=>navigate(exit)}><span className="path-direction">{index===0?"↖":"↗"}</span><span><b>{rooms[exit].name}</b><small>{rooms[exit].description}</small></span><i>ENTER</i></button>)}</nav> : <div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART RUN <span>↗</span></button>:null}</div>}<div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE CATACOMBS ARE CLEARED — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE GATE FALLS — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
+      {view==="player"?<>{!defeated || finalRoom || playerHp<=0 ? <div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART RUN <span>↗</span></button>:null}</div> : null}<div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE CATACOMBS ARE CLEARED — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE GATE FALLS — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
     </section>
     <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{view==="player"?"PLAYER VIEW · ACTIONS RESOLVE IMMEDIATELY":"SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
   </main>;
