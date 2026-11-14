@@ -286,12 +286,27 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 			return
 		}
 		now := time.Now().UTC()
-		presence.LastSeenAt = now
-		if leaving {
-			presence.LeftAt = &now
-			delete(room.PlayerTokenHashes, playerID)
+		if !leaving {
+			if err := h.rooms.TouchPlayer(r.Context(), room.ID, playerID, now); err != nil {
+				if errors.Is(err, store.ErrPlayerLeft) {
+					writeError(w, http.StatusUnauthorized, "player token is no longer active")
+					return
+				}
+				writeStoreError(w, err)
+				return
+			}
+			latest, err := h.rooms.Get(r.Context(), room.ID)
+			if err != nil {
+				writeStoreError(w, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, publicRoom(latest))
+			return
 		}
+		presence.LastSeenAt = now
+		presence.LeftAt = &now
 		room.Presence[playerID] = presence
+		delete(room.PlayerTokenHashes, playerID)
 		expectedVersion := room.Version
 		room.Version++
 		room.UpdatedAt = now
