@@ -17,7 +17,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish project overview and working agreements.
 - [x] Agree on MVP game loop, solo/co-op rules, combat, and progression.
 - [x] Record initial architecture, deployment, audio, presentation, and spectator-access decisions.
-- [x] Establish baseline GitHub Actions CI for pull requests and pushes to main, installing frontend dependencies and running the TypeScript check plus production build. CI generates the npm lockfile and publishes it as an artifact so it can be committed without a local npm environment; once committed, CI verifies it stays in sync and uses npm ci. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check.
+- [x] Establish GitHub Actions CI for pull requests and pushes to main: lockfile consistency, frontend type-check/build, Go formatting/vet/race-enabled tests/build, PostgreSQL-backed HTTP integration tests, and local development stack smoke test. CI generates the npm lockfile when needed and verifies it stays in sync once committed.
 - [x] Bootstrap the frontend workspace, root-level local development commands, and baseline CI.
 - [x] Select Go for the independently buildable authoritative backend (ADR 0009).
 - [x] Add the initial Go service, health endpoint, container build, and independent backend CI.
