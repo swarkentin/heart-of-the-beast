@@ -17,6 +17,12 @@ Room membership now supports multiple guest players, but the server cannot disti
 - Presence is exposed as derived online, disconnected, or left status in player and spectator snapshots. Spectators do not heartbeat and never count toward party membership.
 - Snapshot polling remains the transport for now. A brief network interruption does not clear local credentials; normal polling and heartbeat resume when connectivity returns.
 
+## Validation
+
+- The API's clock is injectable so presence timeout behavior can be tested deterministically without waiting 30 seconds.
+- A PostgreSQL-backed HTTP integration test covers room creation, guest joining, online/disconnected/reconnected transitions, spectator read-only access, explicit leave, token revocation, persisted state after handler recreation, and lobby slot reuse. CI runs it against a PostgreSQL service on every pull request.
+- Unit tests continue to cover fast, isolated behavior; manual checks are reserved for visual and experiential qualities that automation cannot judge reliably.
+
 ## Consequences
 
 - A refresh or short network interruption can reconnect as the same player.
