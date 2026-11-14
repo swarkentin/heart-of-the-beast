@@ -283,7 +283,7 @@ func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
 			"left":         {LastSeenAt: now, LeftAt: &leftAt},
 		},
 	}
-	snapshot := publicRoom(room)
+	snapshot := publicRoom(room, now)
 	if snapshot.Presence["online"].Status != "online" {
 		t.Fatalf("expected online status, got %q", snapshot.Presence["online"].Status)
 	}
