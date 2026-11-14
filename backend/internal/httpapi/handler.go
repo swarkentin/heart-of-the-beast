@@ -52,15 +52,15 @@ type playerPresenceResponse struct {
 }
 
 type roomResponse struct {
-	ID            string                              `json:"id"`
-	Code          string                              `json:"code"`
-	OwnerPlayerID string                              `json:"ownerPlayerId"`
-	PlayerIDs     []string                            `json:"playerIds"`
-	Presence      map[string]playerPresenceResponse   `json:"presence"`
-	Run           *game.Run                           `json:"run,omitempty"`
-	Version       int64                               `json:"version"`
-	CreatedAt     time.Time                           `json:"createdAt"`
-	UpdatedAt     time.Time                           `json:"updatedAt"`
+	ID            string                            `json:"id"`
+	Code          string                            `json:"code"`
+	OwnerPlayerID string                            `json:"ownerPlayerId"`
+	PlayerIDs     []string                          `json:"playerIds"`
+	Presence      map[string]playerPresenceResponse `json:"presence"`
+	Run           *game.Run                         `json:"run,omitempty"`
+	Version       int64                             `json:"version"`
+	CreatedAt     time.Time                         `json:"createdAt"`
+	UpdatedAt     time.Time                         `json:"updatedAt"`
 }
 
 const presenceTimeout = 30 * time.Second
