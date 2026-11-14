@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
@@ -270,5 +272,29 @@ func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
 	handler.ServeHTTP(replacement, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
 	if replacement.Code != http.StatusCreated {
 		t.Fatalf("leaving should free a lobby slot: %d %s", replacement.Code, replacement.Body.String())
+	}
+}
+
+
+func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
+	now := time.Now().UTC()
+	leftAt := now
+	room := &game.Room{
+		PlayerIDs: []string{"online", "disconnected", "left"},
+		Presence: map[string]game.PlayerPresence{
+			"online":       {LastSeenAt: now},
+			"disconnected": {LastSeenAt: now.Add(-presenceTimeout - time.Second)},
+			"left":         {LastSeenAt: now, LeftAt: &leftAt},
+		},
+	}
+	snapshot := publicRoom(room)
+	if snapshot.Presence["online"].Status != "online" {
+		t.Fatalf("expected online status, got %q", snapshot.Presence["online"].Status)
+	}
+	if snapshot.Presence["disconnected"].Status != "disconnected" {
+		t.Fatalf("expected disconnected status, got %q", snapshot.Presence["disconnected"].Status)
+	}
+	if snapshot.Presence["left"].Status != "left" {
+		t.Fatalf("expected left status, got %q", snapshot.Presence["left"].Status)
 	}
 }
