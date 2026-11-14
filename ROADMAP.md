@@ -39,7 +39,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add initial player-authenticated room creation, run start, validated command, reconnect snapshot, and separately authorized read-only spectator snapshot endpoints.
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
 - [ ] Ensure spectators cannot issue commands and do not affect party size, scaling, presence, votes, readiness, or deadlines.
-- [ ] Connect the responsive player interface and separate spectator/cast presentation to the authoritative API.
+- [x] Connect the player interface and independent spectator/cast presentation to the authoritative room API (PR #11; initial snapshot polling, with realtime subscriptions still pending).
 - [ ] Presence, reconnect, and graceful leave behavior for players.
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
