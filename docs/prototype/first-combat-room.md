@@ -2,29 +2,32 @@
 
 ## Purpose
 
-Validate the visual hierarchy and interaction loop for one solo combat encounter before adding server, multiplayer, progression, or procedural content.
+Validate an immersive, game-first presentation for one solo combat encounter. The browser-only combat simulation remains intentionally small while we test the scene, HUD hierarchy, and interaction cost.
 
-## What's represented
+## Current interaction
 
-- A torchlit chamber in the Forgotten Catacombs.
-- One Vanguard-style adventurer and two distinct undead enemies.
-- Enemy health and intent are visible before the player commits an action.
-- The player chooses a quick strike, ember bolt, or defensive brace.
-- Offensive actions target one living enemy; brace reduces incoming damage.
-- Resolving a turn applies the player's action and then each surviving enemy's telegraphed attack.
-- The encounter can be won or lost and restarted.
+- The dungeon scene is the primary view; persistent website navigation, page headings, sidebars, stats panels, and battle-history panel have been removed.
+- Player health and round are compact overlays at the bottom of the scene.
+- Enemy health, target selection, and telegraphed intent are presented in the scene. Players can select a target directly in the artwork or from its compact intent label.
+- Three contextual moves live in one bottom action dock. Choosing a move resolves the round immediately; there is no separate select-then-resolve step.
+- Recent combat feedback appears as one short status line rather than a scrolling combat log.
+- The mobile layout keeps the scene dominant and turns the action dock into compact touch targets instead of stacking desktop panels.
+
+## Art status
+
+The scene is a hand-authored SVG pixel-art-style composition using crisp-edged sprite shapes, tiled stone textures, layered lighting, and atmospheric depth. It is still prototype artwork, not a finished production asset pack. The art direction should be validated before investing in a full set of environment and character sprites.
 
 ## Explicit limitations
 
 - All state and combat resolution live in the browser; this is not server-authoritative.
 - The encounter is a fixed scripted scenario, not a balanced combat system.
-- Character and enemy art are SVG/CSS placeholders, not production pixel-art assets.
+- Character and enemy sprites are still hand-authored placeholders; no production pixel-art asset pipeline or animation system exists yet.
 - No navigation, multiplayer, reconnect, inventory, audio, or persistence is implemented.
 - Google Fonts are loaded from the network; system fallbacks remain available if they cannot load.
 
 ## Validation questions
 
-- Can players understand the room, enemy silhouettes, target selection, and telegraphed intents at a glance?
-- Are the action choices and outcome clear on a phone-sized screen?
-- Does the scene retain enough visual presence on tablet and desktop without hiding critical controls?
-- Does the compact cast-view direction need to be prototyped separately before committing to a final scene composition?
+- Does the single scene feel like playing a game rather than operating a website?
+- Can players understand enemy intent, health, and target selection without scanning separate panels?
+- Are the three moves discoverable and comfortable to use on a narrow phone?
+- Does the pixel-art-style treatment feel closer to the intended art direction, and what needs to change before commissioning/creating production assets?
