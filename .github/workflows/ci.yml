@@ -35,6 +35,7 @@ jobs:
 
       # Lockfile generation does not run package lifecycle scripts. Keep this
       # write-enabled job separate from the build job, which executes project code.
+      # Generate from the root npm workspace so every frontend dependency is locked centrally.
       - name: Generate dependency lockfile
         run: npm install --package-lock-only --ignore-scripts
 
