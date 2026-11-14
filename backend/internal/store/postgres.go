@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 )
@@ -58,6 +59,41 @@ func (p *Postgres) GetByCode(ctx context.Context, code string) (*game.Room, erro
 		return nil, err
 	}
 	return &room, nil
+}
+
+func (p *Postgres) TouchPlayer(ctx context.Context, roomID, playerID string, seenAt time.Time) error {
+	result, err := p.db.ExecContext(ctx, `
+		UPDATE rooms
+		SET state = jsonb_set(
+			state,
+			'{presence}',
+			COALESCE(state->'presence', '{}'::jsonb) ||
+				jsonb_build_object($2, COALESCE(state->'presence'->$2, '{}'::jsonb) ||
+					jsonb_build_object('lastSeenAt', to_jsonb($3::timestamptz))),
+			true
+		)
+		WHERE id = $1
+			AND (state->'playerTokenHashes') ? $2
+			AND NOT (COALESCE(state->'presence'->$2, '{}'::jsonb) ? 'leftAt')`,
+		roomID, playerID, seenAt)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		var exists bool
+		if err := p.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM rooms WHERE id = $1)`, roomID).Scan(&exists); err != nil {
+			return err
+		}
+		if !exists {
+			return ErrNotFound
+		}
+		return ErrPlayerLeft
+	}
+	return nil
 }
 
 func (p *Postgres) Save(ctx context.Context, room *game.Room, expectedVersion int64) error {

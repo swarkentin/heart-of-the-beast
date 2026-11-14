@@ -5,17 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 )
 
 var ErrNotFound = errors.New("room not found")
 var ErrConflict = errors.New("room was changed by another command")
+var ErrPlayerLeft = errors.New("player has left the room")
 
 type Repository interface {
 	Create(context.Context, *game.Room) error
 	Get(context.Context, string) (*game.Room, error)
 	GetByCode(context.Context, string) (*game.Room, error)
+	TouchPlayer(context.Context, string, string, time.Time) error
 	Save(context.Context, *game.Room, int64) error
 }
 
@@ -81,6 +84,37 @@ func (m *Memory) GetByCode(_ context.Context, code string) (*game.Room, error) {
 		}
 	}
 	return nil, ErrNotFound
+}
+
+func (m *Memory) TouchPlayer(_ context.Context, roomID, playerID string, seenAt time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	data, exists := m.rooms[roomID]
+	if !exists {
+		return ErrNotFound
+	}
+	var room game.Room
+	if err := json.Unmarshal(data, &room); err != nil {
+		return err
+	}
+	if _, active := room.PlayerTokenHashes[playerID]; !active {
+		return ErrPlayerLeft
+	}
+	if room.Presence == nil {
+		room.Presence = make(map[string]game.PlayerPresence)
+	}
+	presence := room.Presence[playerID]
+	if presence.LeftAt != nil {
+		return ErrPlayerLeft
+	}
+	presence.LastSeenAt = seenAt
+	room.Presence[playerID] = presence
+	encoded, err := json.Marshal(&room)
+	if err != nil {
+		return err
+	}
+	m.rooms[roomID] = encoded
+	return nil
 }
 
 func (m *Memory) Save(_ context.Context, room *game.Room, expectedVersion int64) error {

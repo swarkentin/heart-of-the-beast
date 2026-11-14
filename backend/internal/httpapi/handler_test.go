@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
@@ -183,5 +185,112 @@ func TestJoinRejectsStartedFullAndUnknownRooms(t *testing.T) {
 	}
 	if response := join(created.Room.Code); response.Code != http.StatusConflict {
 		t.Fatalf("started room should reject join: %d", response.Code)
+	}
+}
+
+func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	var host struct {
+		Room struct {
+			ID   string `json:"id"`
+			Code string `json:"code"`
+		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &host); err != nil {
+		t.Fatal(err)
+	}
+
+	body, _ := json.Marshal(map[string]string{"code": host.Room.Code})
+	joined := httptest.NewRecorder()
+	handler.ServeHTTP(joined, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+	var guest struct {
+		Room struct {
+			Version int64 `json:"version"`
+		} `json:"room"`
+		PlayerID    string `json:"playerId"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
+		t.Fatal(err)
+	}
+
+	request := func(path, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, path, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		return response
+	}
+	heartbeat := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken)
+	if heartbeat.Code != http.StatusOK {
+		t.Fatalf("heartbeat: %d %s", heartbeat.Code, heartbeat.Body.String())
+	}
+	var heartbeatSnapshot struct {
+		Version int64 `json:"version"`
+	}
+	if err := json.Unmarshal(heartbeat.Body.Bytes(), &heartbeatSnapshot); err != nil {
+		t.Fatal(err)
+	}
+	if heartbeatSnapshot.Version != guest.Room.Version {
+		t.Fatalf("heartbeat should not contend with gameplay versioning: before %d after %d", guest.Room.Version, heartbeatSnapshot.Version)
+	}
+
+	leave := request("/rooms/"+host.Room.ID+"/leave", guest.PlayerToken)
+	if leave.Code != http.StatusOK {
+		t.Fatalf("leave: %d %s", leave.Code, leave.Body.String())
+	}
+	var left struct {
+		Presence map[string]struct {
+			Status string `json:"status"`
+		} `json:"presence"`
+	}
+	if err := json.Unmarshal(leave.Body.Bytes(), &left); err != nil {
+		t.Fatal(err)
+	}
+	if left.Presence[guest.PlayerID].Status != "left" {
+		t.Fatalf("expected left presence, got %+v", left.Presence[guest.PlayerID])
+	}
+
+	get := httptest.NewRequest(http.MethodGet, "/rooms/"+host.Room.ID, nil)
+	get.Header.Set("Authorization", "Bearer "+host.PlayerToken)
+	snapshot := httptest.NewRecorder()
+	handler.ServeHTTP(snapshot, get)
+	if snapshot.Code != http.StatusOK {
+		t.Fatalf("host snapshot: %d %s", snapshot.Code, snapshot.Body.String())
+	}
+	if response := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken); response.Code != http.StatusUnauthorized {
+		t.Fatalf("left player token should be revoked, got %d", response.Code)
+	}
+
+	replacement := httptest.NewRecorder()
+	handler.ServeHTTP(replacement, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+	if replacement.Code != http.StatusCreated {
+		t.Fatalf("leaving should free a lobby slot: %d %s", replacement.Code, replacement.Body.String())
+	}
+}
+
+func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
+	now := time.Now().UTC()
+	leftAt := now
+	room := &game.Room{
+		PlayerIDs: []string{"online", "disconnected", "left"},
+		Presence: map[string]game.PlayerPresence{
+			"online":       {LastSeenAt: now},
+			"disconnected": {LastSeenAt: now.Add(-presenceTimeout - time.Second)},
+			"left":         {LastSeenAt: now, LeftAt: &leftAt},
+		},
+	}
+	snapshot := publicRoom(room, now)
+	if snapshot.Presence["online"].Status != "online" {
+		t.Fatalf("expected online status, got %q", snapshot.Presence["online"].Status)
+	}
+	if snapshot.Presence["disconnected"].Status != "disconnected" {
+		t.Fatalf("expected disconnected status, got %q", snapshot.Presence["disconnected"].Status)
+	}
+	if snapshot.Presence["left"].Status != "left" {
+		t.Fatalf("expected left status, got %q", snapshot.Presence["left"].Status)
 	}
 }

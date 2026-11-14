@@ -21,15 +21,26 @@ type healthResponse struct {
 
 type Handler struct {
 	rooms store.Repository
+	now   func() time.Time
 }
 
 func NewHandler(rooms store.Repository) http.Handler {
-	h := &Handler{rooms: rooms}
+	return NewHandlerWithClock(rooms, time.Now)
+}
+
+// NewHandlerWithClock injects the time source so time-dependent API behavior can be tested deterministically.
+func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Handler {
+	if now == nil {
+		now = time.Now
+	}
+	h := &Handler{rooms: rooms, now: now}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", health)
 	mux.HandleFunc("POST /rooms", h.createRoom)
 	mux.HandleFunc("POST /rooms/join", h.joinRoom)
 	mux.HandleFunc("GET /rooms/{id}", h.getRoom)
+	mux.HandleFunc("POST /rooms/{id}/heartbeat", h.heartbeat)
+	mux.HandleFunc("POST /rooms/{id}/leave", h.leaveRoom)
 	mux.HandleFunc("POST /rooms/{id}/start", h.startRun)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
@@ -43,27 +54,43 @@ func health(w http.ResponseWriter, _ *http.Request) {
 	_ = json.NewEncoder(w).Encode(healthResponse{Status: "ok", Service: "heart-of-the-beast"})
 }
 
-type roomResponse struct {
-	ID            string    `json:"id"`
-	Code          string    `json:"code"`
-	OwnerPlayerID string    `json:"ownerPlayerId"`
-	PlayerIDs     []string  `json:"playerIds"`
-	Run           *game.Run `json:"run,omitempty"`
-	Version       int64     `json:"version"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+type playerPresenceResponse struct {
+	Status     string     `json:"status"`
+	LastSeenAt time.Time  `json:"lastSeenAt"`
+	LeftAt     *time.Time `json:"leftAt,omitempty"`
 }
 
-func publicRoom(room *game.Room) roomResponse {
+type roomResponse struct {
+	ID            string                            `json:"id"`
+	Code          string                            `json:"code"`
+	OwnerPlayerID string                            `json:"ownerPlayerId"`
+	PlayerIDs     []string                          `json:"playerIds"`
+	Presence      map[string]playerPresenceResponse `json:"presence"`
+	Run           *game.Run                         `json:"run,omitempty"`
+	Version       int64                             `json:"version"`
+	CreatedAt     time.Time                         `json:"createdAt"`
+	UpdatedAt     time.Time                         `json:"updatedAt"`
+}
+
+const presenceTimeout = 30 * time.Second
+
+func publicRoom(room *game.Room, now time.Time) roomResponse {
+	now = now.UTC()
+	presence := make(map[string]playerPresenceResponse, len(room.PlayerIDs))
+	for _, playerID := range room.PlayerIDs {
+		entry := room.Presence[playerID]
+		status := "disconnected"
+		if entry.LeftAt != nil {
+			status = "left"
+		} else if !entry.LastSeenAt.IsZero() && now.Sub(entry.LastSeenAt) <= presenceTimeout {
+			status = "online"
+		}
+		presence[playerID] = playerPresenceResponse{Status: status, LastSeenAt: entry.LastSeenAt, LeftAt: entry.LeftAt}
+	}
 	return roomResponse{
-		ID:            room.ID,
-		Code:          room.Code,
-		OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs:     room.PlayerIDs,
-		Run:           room.Run,
-		Version:       room.Version,
-		CreatedAt:     room.CreatedAt,
-		UpdatedAt:     room.UpdatedAt,
+		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
+		PlayerIDs: room.PlayerIDs, Presence: presence, Run: room.Run,
+		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
 
@@ -130,13 +157,14 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not create room")
 		return
 	}
-	now := time.Now().UTC()
+	now := h.now().UTC()
 	room := &game.Room{
 		ID:                 roomID,
 		Code:               strings.ToUpper(code),
 		OwnerPlayerID:      playerID,
 		PlayerIDs:          []string{playerID},
 		PlayerTokenHashes:  map[string]string{playerID: tokenHash(playerToken)},
+		Presence:           map[string]game.PlayerPresence{playerID: {LastSeenAt: now}},
 		SpectatorTokenHash: tokenHash(spectatorToken),
 		Version:            1,
 		CreatedAt:          now,
@@ -147,7 +175,7 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room":           publicRoom(room),
+		"room":           publicRoom(room, h.now()),
 		"playerToken":    playerToken,
 		"spectatorToken": spectatorToken,
 	})
@@ -183,7 +211,7 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "this run has already started; new players can join at a future safe checkpoint")
 		return
 	}
-	if len(room.PlayerIDs) >= maxRoomPlayers {
+	if activePlayerCount(room) >= maxRoomPlayers {
 		writeError(w, http.StatusConflict, "this room is full")
 		return
 	}
@@ -203,17 +231,105 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		room.PlayerTokenHashes = make(map[string]string)
 	}
 	room.PlayerTokenHashes[playerID] = tokenHash(playerToken)
+	if room.Presence == nil {
+		room.Presence = make(map[string]game.PlayerPresence)
+	}
+	room.Presence[playerID] = game.PlayerPresence{LastSeenAt: h.now().UTC()}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room":        publicRoom(room),
+		"room":        publicRoom(room, h.now()),
 		"playerId":    playerID,
 		"playerToken": playerToken,
 	})
+}
+
+func activePlayerCount(room *game.Room) int {
+	active := 0
+	for _, playerID := range room.PlayerIDs {
+		if room.Presence[playerID].LeftAt == nil {
+			active++
+		}
+	}
+	return active
+}
+
+func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request) {
+	h.updatePlayerPresence(w, r, false)
+}
+
+func (h *Handler) leaveRoom(w http.ResponseWriter, r *http.Request) {
+	h.updatePlayerPresence(w, r, true)
+}
+
+// Retry optimistic conflicts because multiple party members can heartbeat at once.
+func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, leaving bool) {
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room not found")
+			return
+		}
+		hash := tokenHash(bearer(r))
+		playerID := ""
+		for id, expected := range room.PlayerTokenHashes {
+			if hash == expected {
+				playerID = id
+				break
+			}
+		}
+		if playerID == "" {
+			writeError(w, http.StatusUnauthorized, "invalid player token")
+			return
+		}
+		if room.Presence == nil {
+			room.Presence = make(map[string]game.PlayerPresence)
+		}
+		presence := room.Presence[playerID]
+		if presence.LeftAt != nil {
+			writeError(w, http.StatusConflict, "player has already left the room")
+			return
+		}
+		now := h.now().UTC()
+		if !leaving {
+			if err := h.rooms.TouchPlayer(r.Context(), room.ID, playerID, now); err != nil {
+				if errors.Is(err, store.ErrPlayerLeft) {
+					writeError(w, http.StatusUnauthorized, "player token is no longer active")
+					return
+				}
+				writeStoreError(w, err)
+				return
+			}
+			latest, err := h.rooms.Get(r.Context(), room.ID)
+			if err != nil {
+				writeStoreError(w, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, publicRoom(latest, h.now()))
+			return
+		}
+		presence.LastSeenAt = now
+		presence.LeftAt = &now
+		room.Presence[playerID] = presence
+		delete(room.PlayerTokenHashes, playerID)
+		expectedVersion := room.Version
+		room.Version++
+		room.UpdatedAt = now
+		if err := h.rooms.Save(r.Context(), room, expectedVersion); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the presence update")
 }
 
 func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +337,7 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -239,17 +355,17 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not start run")
 		return
 	}
-	if err := game.StartRun(room, runID, time.Now().UTC()); err != nil {
+	if err := game.StartRun(room, runID, h.now().UTC()); err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
@@ -263,17 +379,17 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	expected := room.Version
-	if err := game.ApplyCommand(room, actor, command, time.Now().UTC()); err != nil {
+	if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
@@ -286,7 +402,7 @@ func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "invalid spectator token")
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func writeStoreError(w http.ResponseWriter, err error) {
