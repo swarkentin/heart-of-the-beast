@@ -96,7 +96,9 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
 }
 
 function CastView({ enemies, playerHp, room, exits }: { enemies: Enemy[]; playerHp: number; room: Room; exits: RoomId[] }) {
-  return <div className={"scene cast-scene room-" + room.id}>
+  const livingEnemies = enemies.filter(enemy => enemy.hp > 0);
+  const cameraMode = playerHp <= 0 ? "fallen" : exits.length > 0 ? "cleared" : room.id === "warden-gate" ? "boss" : livingEnemies.length === 1 ? (livingEnemies[0].x < 550 ? "focus-left" : "focus-right") : "combat";
+  return <div className={"scene cast-scene cast-camera-" + cameraMode + " room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
       <rect width="1100" height="620" fill="#11131b"/><path d="M0 0H1100V620H0Z" fill="url(#castfloor)"/><path d="M0 0H1100V620H0Z" fill="url(#casttiles)"/>
