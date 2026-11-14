@@ -275,7 +275,6 @@ func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
 	}
 }
 
-
 func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
 	now := time.Now().UTC()
 	leftAt := now
