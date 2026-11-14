@@ -73,8 +73,12 @@ func (m *Memory) GetByCode(_ context.Context, code string) (*game.Room, error) {
 	defer m.mu.RUnlock()
 	for _, data := range m.rooms {
 		var room game.Room
-		if err := json.Unmarshal(data, &room); err != nil { return nil, err }
-		if room.Code == code { return &room, nil }
+		if err := json.Unmarshal(data, &room); err != nil {
+			return nil, err
+		}
+		if room.Code == code {
+			return &room, nil
+		}
 	}
 	return nil, ErrNotFound
 }
