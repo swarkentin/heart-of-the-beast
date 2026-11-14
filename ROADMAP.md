@@ -25,7 +25,6 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 1 — Playable multiplayer/solo vertical slice
 
 - [ ] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and a basic action/resolve loop (first pass in PR).
-
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Responsive player interface and separate spectator/cast presentation.
 - [ ] Presence, reconnect, and graceful leave behavior.
