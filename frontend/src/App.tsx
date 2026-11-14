@@ -21,7 +21,8 @@ type ApiExit = { id: string; destination: string; label: string };
 type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
 type ApiPlayer = { id: string; health: number; maxHealth: number };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer> };
-type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; run?: ApiRun; version: number };
+type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
+type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 type SpectatorAccess = { roomId: string; token: string };
 const SESSION_KEY = "heart-of-the-beast.player-session";
@@ -204,6 +205,23 @@ export default function App() {
   }, [roomId, token, spectator]);
 
   useEffect(() => {
+    if (!session || spectator) return;
+    let active = true;
+    const heartbeat = async () => {
+      try {
+        const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/heartbeat", session.playerToken, { method: "POST" });
+        if (active) setSnapshot(current => !current || next.version >= current.version ? next : current);
+      } catch {
+        // Snapshot polling continues during a temporary disconnect; the server
+        // marks the player disconnected only after the heartbeat grace period.
+      }
+    };
+    void heartbeat();
+    const timer = window.setInterval(() => { void heartbeat(); }, 10000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [session?.roomId, session?.playerToken, spectator]);
+
+  useEffect(() => {
     if (livingTarget && target !== livingTarget.id) setTarget(livingTarget.id);
   }, [livingTarget?.id, target]);
 
@@ -244,6 +262,20 @@ export default function App() {
       setMessage("The party has entered the catacombs.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the run");
+    } finally { setBusy(false); }
+  }
+
+  async function leaveRoom() {
+    if (!session || busy) return;
+    setBusy(true); setError("");
+    try {
+      await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/leave", session.playerToken, { method: "POST" });
+      window.localStorage.removeItem(SESSION_KEY);
+      setSession(null);
+      setSnapshot(null);
+      setMessage("You left the party.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not leave the room");
     } finally { setBusy(false); }
   }
 
@@ -306,8 +338,8 @@ export default function App() {
         <h1 style={{ fontSize: 34, margin: "12px 0" }}>The party is gathering</h1>
         <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
         <div style={{ padding: 18, margin: "20px 0", background: "#0f1118", border: "1px solid #625246", fontSize: 30, letterSpacing: ".28em", textAlign: "center" }}>{snapshot.code}</div>
-        <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.length}/4)</h2>
-        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left").length}/4)</h2>
+        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
         {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
       </section>
@@ -320,7 +352,7 @@ export default function App() {
       <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {room.floor}</div>
       {!spectator ? <div className="view-switch" aria-label="Presentation view"><button className={view === "player" ? "selected" : ""} onClick={() => setView("player")}>PLAYER</button><button className={view === "cast" ? "selected" : ""} onClick={() => setView("cast")}>SPECTATOR / CAST</button></div> : <div className="view-switch"><button className="selected">SPECTATOR / CAST</button></div>}
     </header>
-    {!spectator && session?.spectatorToken && <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 16, padding: "8px 24px" }}><a href={spectatorLink} target="_blank" rel="noreferrer" style={{ color: "#d8a76e" }}>OPEN SPECTATOR VIEW</a><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></div>}
+    {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: 16, padding: "8px 24px" }}>{session?.spectatorToken ? <><a href={spectatorLink} target="_blank" rel="noreferrer" style={{ color: "#d8a76e" }}>OPEN SPECTATOR VIEW</a><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></> : null}<button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button></div>}
     <section className="play-area">
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
@@ -332,7 +364,7 @@ export default function App() {
         </>
         : null}
       <div className="event-message" role="status">{gameOver ? "THE CATACOMBS ARE CLEARED — VICTORY" : message}</div>
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, padding: "8px 16px", color: "#c7b9a8", fontSize: 12, letterSpacing: ".08em" }}>PARTY · {snapshot.playerIds.map((id, index) => <span key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1}{id === playerId ? " (YOU)" : ""}</span>)}</div>
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, padding: "8px 16px", color: "#c7b9a8", fontSize: 12, letterSpacing: ".08em" }}>PARTY · {snapshot.playerIds.map((id, index) => <span key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1}{id === playerId ? " (YOU)" : ""} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"}</span>)}</div>
       {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
     </section>
     <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
