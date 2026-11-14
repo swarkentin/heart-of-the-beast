@@ -23,32 +23,41 @@ func StartRun(room *Room, runID string, now time.Time) error {
 	if len(room.PlayerIDs) == 0 || runID == "" {
 		return errors.New("room requires a player and run id")
 	}
+
 	rooms := map[string]*DungeonRoom{
 		"entry": {
-			ID: "entry", Name: "The Watcher's Hall",
+			ID:          "entry",
+			Name:        "The Watcher's Hall",
 			Description: "A narrow hall opens into a chamber watched by a restless sentinel.",
-			Exits: []Exit{{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
+			Exits:       []Exit{{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
-			ID: "reliquary", Name: "The Silent Reliquary",
+			ID:          "reliquary",
+			Name:        "The Silent Reliquary",
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
-			Exits: []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Health: 15, MaxHealth: 15}}},
+			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Health: 15, MaxHealth: 15}}},
 		},
 		"warden": {
-			ID: "warden", Name: "The Warden's Gate",
+			ID:          "warden",
+			Name:        "The Warden's Gate",
 			Description: "The crypt warden waits before the sealed gate.",
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Health: 30, MaxHealth: 30}}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Health: 30, MaxHealth: 30}}},
 		},
 	}
+
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
 		players[id] = &PlayerState{ID: id, Health: 30, MaxHealth: 30}
 	}
 	room.Run = &Run{
-		ID: runID, Phase: PhaseCombat, CurrentRoomID: "entry",
-		Rooms: rooms, Players: players, StartedAt: now,
+		ID:            runID,
+		Phase:         PhaseCombat,
+		CurrentRoomID: "entry",
+		Rooms:         rooms,
+		Players:       players,
+		StartedAt:     now,
 	}
 	return nil
 }
@@ -62,6 +71,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	if _, ok := room.Run.Players[actorID]; !ok {
 		return ErrNotPlayer
 	}
+
 	run := room.Run
 	current := run.Rooms[run.CurrentRoomID]
 
