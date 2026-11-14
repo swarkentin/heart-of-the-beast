@@ -280,7 +280,7 @@ export default function App() {
     <section className="play-area">
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
-        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) }))} />}
+        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} />}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
       {view === "player" && !spectator
         ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
