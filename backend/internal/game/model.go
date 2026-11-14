@@ -24,11 +24,17 @@ type Room struct {
 	OwnerPlayerID      string            `json:"ownerPlayerId"`
 	PlayerIDs          []string          `json:"playerIds"`
 	PlayerTokenHashes  map[string]string `json:"playerTokenHashes"`
+	Presence           map[string]PlayerPresence `json:"presence,omitempty"`
 	SpectatorTokenHash string            `json:"spectatorTokenHash"`
 	Run                *Run              `json:"run,omitempty"`
 	Version            int64             `json:"version"`
 	CreatedAt          time.Time         `json:"createdAt"`
 	UpdatedAt          time.Time         `json:"updatedAt"`
+}
+
+type PlayerPresence struct {
+	LastSeenAt time.Time  `json:"lastSeenAt"`
+	LeftAt     *time.Time `json:"leftAt,omitempty"`
 }
 
 type Run struct {
