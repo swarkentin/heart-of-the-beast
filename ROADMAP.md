@@ -19,7 +19,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Record initial architecture, deployment, audio, presentation, and spectator-access decisions.
 - [x] Establish baseline GitHub Actions CI for pull requests and pushes to `main`, installing frontend dependencies and running the TypeScript check plus production build. CI generates the npm lockfile and publishes it as an artifact so it can be committed without a local npm environment; once committed, CI verifies it stays in sync and uses `npm ci`. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check.
 - [x] Bootstrap the frontend workspace, root-level local development commands, and baseline CI.
-- [ ] Introduce the independently buildable backend service, local database workflow, and backend CI when its stack is selected.
+- [x] Select Go for the independently buildable authoritative backend (ADR 0009).
+- [x] Add the initial Go service, health endpoint, container build, and independent backend CI.
+- [ ] Introduce the persistence-backed room/session model, local PostgreSQL workflow, and versioned migrations.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
@@ -30,8 +32,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 
 - [x] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and immediate action resolution (PR #2).
 - [x] Validate forward-facing player composition alongside a separate spectator/cast composition over the same encounter state.
-- [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PR in review).
-- [ ] Evolve the spectator camera into context-aware cinematic movement as the room and encounter experience is validated.
+- [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PRs #5 and #6).
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Provide a separate, host-controlled spectator viewing link/QR code that does not consume a player slot or require party membership.
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.

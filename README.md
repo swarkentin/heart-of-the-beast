@@ -7,11 +7,11 @@ Players explore illustrated, high-definition pixel-art environments, make choice
 ## Repository layout
 
 - `frontend/` — React, TypeScript, and Vite browser client.
-- `backend/` — reserved for the future authoritative game service. The backend language and framework remain intentionally undecided.
+- `backend/` — independently buildable Go service; the future authoritative game server.
 - `docs/` — product design, architecture, prototype notes, and architecture decision records.
 - `.github/workflows/` — repository automation and CI.
 
-The frontend is an npm workspace. The backend will be independently buildable and will not depend on the Node.js toolchain.
+The frontend is an npm workspace. The backend is a separate Go module with its own build, test, and CI workflow; it does not depend on Node.js.
 
 ## Design pillars
 
@@ -24,7 +24,7 @@ The frontend is an npm workspace. The backend will be independently buildable an
 
 ## Project status
 
-Foundation documented; the first client-side combat-room prototype is in progress. It is a local UI simulation, not yet connected to an authoritative game server.
+The frontend has a client-side combat and directional-navigation prototype. The Go backend now has an independent service entry point, process health endpoint, container build, and automated tests. The next slice is the authoritative room/session model and its first persistence-backed lifecycle—not more isolated UI simulation.
 
 ## Local frontend development
 
@@ -38,6 +38,18 @@ npm run preview
 ```
 
 Run these commands from the repository root. npm installs and manages the frontend workspace dependencies from the root lockfile.
+
+## Local backend development
+
+Requires Go 1.25 or later.
+
+```sh
+cd backend
+go run ./cmd/server
+go test ./...
+```
+
+The backend listens on port 8080 by default; set `PORT` to override it. See [backend development notes](backend/README.md) for build and container commands.
 
 ## Start here
 
