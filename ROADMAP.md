@@ -20,11 +20,11 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Bootstrap frontend, backend, local development, and CI.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
-- [x] Establish responsive scene, character, enemy, and HUD presentation rules.
+- [x] Establish responsive scene, character, enemy, and HUD presentation rules.\n- [x] Choose first-person-inspired forward-facing player camera for exploration and combat; separate cinematic spectator renderer over shared game state.
 
 ## Phase 1 — Playable multiplayer/solo vertical slice
 
-- [ ] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and a basic action/resolve loop (first pass in PR).
+- [x] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and immediate action resolution (PR #2).\n- [x] Validate forward-facing player composition alongside a separate spectator/cast composition over the same encounter state.\n- [ ] Add directional room navigation and context-aware spectator camera movement.
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Responsive player interface and separate spectator/cast presentation.
 - [ ] Presence, reconnect, and graceful leave behavior.
