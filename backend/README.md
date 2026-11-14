@@ -4,16 +4,16 @@ The Go backend is the authoritative game service. It is an independently buildab
 
 ## Local development
 
-Requires Go 1.25+, Docker Compose, and psql.
+For the full local stack, install Docker Desktop, Node.js 22+, and Go 1.25+, then follow the root [local development guide](../README.md#local-development). The root scripts start PostgreSQL, apply pending migrations, and launch the backend and frontend together.
 
-Start PostgreSQL and apply the versioned schema:
+To run only the backend manually, start PostgreSQL with Docker Compose and apply migrations from the repository root:
 
 ~~~sh
-docker compose up -d postgres
-psql "postgres://heart:heart@localhost:5432/heart_of_the_beast?sslmode=disable" -f backend/migrations/0001_create_rooms.sql
+docker compose up -d --wait postgres
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U heart -d heart_of_the_beast < backend/migrations/0001_create_rooms.sql
 ~~~
 
-Start the service:
+Then start the service:
 
 ~~~sh
 cd backend
@@ -56,4 +56,4 @@ docker build -f backend/Dockerfile -t heart-of-the-beast-backend ./backend
 
 ## Architecture boundary
 
-Domain transitions are deterministic and independent of HTTP and storage. The repository interface has in-memory and PostgreSQL implementations; PostgreSQL is the runtime store. The initial schema is in migrations/ and is applied explicitly during local setup/deployment. Keep future WebSocket, party coordination, and spectator streaming adapters outside the domain package.
+Domain transitions are deterministic and independent of HTTP and storage. The repository interface has in-memory and PostgreSQL implementations; PostgreSQL is the runtime store. SQL migrations are versioned in migrations/ and the local development tooling tracks applied filenames in schema_migrations. Keep future WebSocket, party coordination, and spectator streaming adapters outside the domain package.

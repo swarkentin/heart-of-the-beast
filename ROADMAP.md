@@ -22,6 +22,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Select Go for the independently buildable authoritative backend (ADR 0009).
 - [x] Add the initial Go service, health endpoint, container build, and independent backend CI.
 - [x] Introduce the persisted room/session aggregate, local PostgreSQL workflow, and initial versioned migration.
+- [x] Provide one-command local startup/shutdown, health status, and transactional versioned migration tooling (ADR 0011).
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [x] Define the room/run lifecycle and deterministic authoritative state transitions.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
@@ -89,7 +90,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 
 ## Phase 7 — Self-hosting and community
 
-- [ ] One-command local development and container deployment.
+- [ ] One-command container deployment.
 - [ ] Provider-neutral configuration and PostgreSQL compatibility.
 - [ ] Deployment guides for multiple hosting providers.
 - [ ] Backup/restore, health checks, contribution guide, and release process.
