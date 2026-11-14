@@ -143,11 +143,13 @@ async function up() {
     });
     saveState({ backendPid, startedAt: new Date().toISOString() });
 
-    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-    frontendPid = await startDetached("frontend", npm, [
-      "run", "dev", "--workspace", "@heart-of-the-beast/frontend", "--",
-      "--host", "127.0.0.1", "--port", "5173", "--strictPort",
-    ], { shell: process.platform === "win32" });
+    // Launch Vite through the current Node executable instead of npm.cmd.
+    // On Windows, wrapping npm.cmd in another shell can create visible/repeated
+    // cmd.exe windows and makes detached-process cleanup unreliable.
+    const viteEntry = join(root, "node_modules", "vite", "bin", "vite.js");
+    frontendPid = await startDetached("frontend", process.execPath, [
+      viteEntry, "--host", "127.0.0.1", "--port", "5173", "--strictPort",
+    ], { cwd: root });
     saveState({ backendPid, frontendPid, startedAt: new Date().toISOString() });
 
     await waitFor(backendURL, "Backend");
