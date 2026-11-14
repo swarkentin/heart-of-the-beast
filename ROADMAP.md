@@ -30,7 +30,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 
 - [x] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and immediate action resolution (PR #2).
 - [x] Validate forward-facing player composition alongside a separate spectator/cast composition over the same encounter state.
-- [ ] Add directional room navigation and context-aware spectator camera movement.
+- [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PR in review).\n- [ ] Evolve the spectator camera into context-aware cinematic movement as the room and encounter experience is validated.
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Provide a separate, host-controlled spectator viewing link/QR code that does not consume a player slot or require party membership.
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
