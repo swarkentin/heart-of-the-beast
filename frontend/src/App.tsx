@@ -95,7 +95,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
   </div>;
 }
 
-function CastView({ enemies, playerHp, room }: { enemies: Enemy[]; playerHp: number; room: Room }) {
+function CastView({ enemies, playerHp, room, exits }: { enemies: Enemy[]; playerHp: number; room: Room; exits: RoomId[] }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
@@ -110,6 +110,7 @@ function CastView({ enemies, playerHp, room }: { enemies: Enemy[]; playerHp: num
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
     <div className="scene-vignette"/>
+    {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{exits.map((exit, index) => <div key={exit} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{rooms[exit].name}</strong><small>AVAILABLE PATH</small></div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
     <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={100}/><b>{playerHp}/100</b></div></div>
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
@@ -153,7 +154,7 @@ export default function App() {
   return <main className="game-screen">
     <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> SOLO RUN <b>·</b> FLOOR {room.floor}</div><div className="view-switch" aria-label="Presentation view"><button className={view==="player"?"selected":""} onClick={()=>setView("player")}>PLAYER</button><button className={view==="cast"?"selected":""} onClick={()=>setView("cast")}>SPECTATOR / CAST</button></div></header>
     <section className="play-area">
-      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room} exits={defeated && playerHp>0 ? room.exits : []} onNavigate={navigate}/>:<CastView enemies={enemies} playerHp={playerHp} room={room}/>}
+      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room} exits={defeated && playerHp>0 ? room.exits : []} onNavigate={navigate}/>:<CastView enemies={enemies} playerHp={playerHp} room={room} exits={defeated && playerHp > 0 ? room.exits : []}/>}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={100}/><strong>{playerHp}<i>/100</i></strong></div></div><div className="round-indicator">ROUND <b>{round}</b></div></div>
       {view==="player"?<>{!defeated || finalRoom || playerHp<=0 ? <div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART RUN <span>↗</span></button>:null}</div> : null}<div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE CATACOMBS ARE CLEARED — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE GATE FALLS — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
     </section>
