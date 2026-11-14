@@ -22,7 +22,7 @@ type ApiDungeonRoom = { id: string; name: string; description: string; exits: Ap
 type ApiPlayer = { id: string; health: number; maxHealth: number };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer> };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; run?: ApiRun; version: number };
-type PlayerSession = { roomId: string; playerToken: string; spectatorToken: string };
+type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 type SpectatorAccess = { roomId: string; token: string };
 const SESSION_KEY = "heart-of-the-beast.player-session";
 
@@ -162,6 +162,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("Create a room to begin your run.");
   const [shareCopied, setShareCopied] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -171,8 +172,9 @@ export default function App() {
   const roomIdForView = serverRoom ? visualRoomId(serverRoom.id) : "watcher-hall";
   const room: Room = { ...rooms[roomIdForView], name: serverRoom?.name || rooms[roomIdForView].name, description: serverRoom?.description || rooms[roomIdForView].description };
   const enemies = (serverRoom?.encounter?.enemies || []).map((enemy, index, all) => visualEnemy(enemy, index, all.length));
-  const playerId = snapshot?.ownerPlayerId || snapshot?.playerIds[0];
+  const playerId = session?.playerId || snapshot?.ownerPlayerId || snapshot?.playerIds[0];
   const player = playerId ? run?.players[playerId] : undefined;
+  const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const playerHp = player?.health ?? 30;
   const playerMaxHp = player?.maxHealth ?? 30;
   const exits: ApiExit[] = serverRoom?.exits || [];
@@ -209,17 +211,40 @@ export default function App() {
     setBusy(true); setError("");
     try {
       const created = await apiRequest<{ room: ApiRoom; playerToken: string; spectatorToken: string }>("/rooms", undefined, { method: "POST" });
-      const nextSession = { roomId: created.room.id, playerToken: created.playerToken, spectatorToken: created.spectatorToken };
+      const nextSession = { roomId: created.room.id, playerId: created.room.ownerPlayerId, playerToken: created.playerToken, spectatorToken: created.spectatorToken };
       window.localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
       setSession(nextSession);
-      const started = await apiRequest<ApiRoom>("/rooms/" + nextSession.roomId + "/start", nextSession.playerToken, { method: "POST" });
-      setSnapshot(started);
-      setMessage("The run has begun. The server is now authoritative.");
+      setSnapshot(created.room);
+      setMessage("Room created. Share the invite code and start when everyone is ready.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create the run");
-    } finally {
-      setBusy(false);
-    }
+      setError(err instanceof Error ? err.message : "Could not create the room");
+    } finally { setBusy(false); }
+  }
+
+  async function joinRoom() {
+    setBusy(true); setError("");
+    try {
+      const joined = await apiRequest<{ room: ApiRoom; playerId: string; playerToken: string }>("/rooms/join", undefined, { method: "POST", body: JSON.stringify({ code: joinCode.trim() }) });
+      const nextSession = { roomId: joined.room.id, playerId: joined.playerId, playerToken: joined.playerToken };
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+      setSession(nextSession);
+      setSnapshot(joined.room);
+      setMessage("Joined the room. Waiting for the host to start the run.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not join the room");
+    } finally { setBusy(false); }
+  }
+
+  async function startRun() {
+    if (!session || !isHost || busy) return;
+    setBusy(true); setError("");
+    try {
+      const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, { method: "POST" });
+      setSnapshot(started);
+      setMessage("The party has entered the catacombs.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start the run");
+    } finally { setBusy(false); }
   }
 
   async function sendCommand(command: { type: string; action?: string; targetId?: string; exitId?: string }) {
@@ -253,11 +278,17 @@ export default function App() {
   if (!roomId || !token) {
     return <main className="game-screen">
       <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> LOCAL DEVELOPMENT</div></header>
-      <section style={{ maxWidth: 680, margin: "12vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
+      <section style={{ maxWidth: 760, margin: "10vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
         <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>THE FORGOTTEN CATACOMBS</p>
-        <h1 style={{ fontSize: 34, margin: "12px 0" }}>Begin a new run</h1>
-        <p style={{ lineHeight: 1.6, color: "#c7b9a8" }}>Create a solo room backed by the Go game server and PostgreSQL. Your player view sends commands to the server; a separate spectator link opens a read-only cast view.</p>
-        <button className="turn-button" onClick={() => void createRun()} disabled={busy}>{busy ? "CREATING ROOM…" : "CREATE SOLO RUN"} <span>↗</span></button>
+        <h1 style={{ fontSize: 34, margin: "12px 0" }}>Gather your party</h1>
+        <p style={{ lineHeight: 1.6, color: "#c7b9a8" }}>Create a room and invite up to three friends, or join an existing lobby with its six-character code. No account required.</p>
+        <button className="turn-button" onClick={() => void createRun()} disabled={busy}>{busy ? "CREATING ROOM…" : "CREATE ROOM"} <span>↗</span></button>
+        <div style={{ margin: "28px 0", borderTop: "1px solid #51463e" }}/>
+        <label htmlFor="join-code" style={{ display: "block", color: "#d8a76e", letterSpacing: ".12em", marginBottom: 10 }}>JOIN A PARTY</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <input id="join-code" value={joinCode} onChange={event => setJoinCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} placeholder="6-CHARACTER CODE" maxLength={6} autoComplete="off" style={{ flex: "1 1 220px", minWidth: 0, padding: "13px 14px", background: "#0f1118", border: "1px solid #625246", color: "#f1e5d5", letterSpacing: ".2em", fontSize: 18 }} />
+          <button className="turn-button" onClick={() => void joinRoom()} disabled={busy || joinCode.length !== 6}>JOIN ROOM <span>↗</span></button>
+        </div>
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
       </section>
     </main>;
@@ -268,7 +299,19 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <main className="game-screen"><p role="status" style={{ padding: 32, color: "#f1e5d5" }}>{spectator ? "The run has not started yet." : "The room is ready, but the run has not started."}</p>{error ? <p role="alert">{error}</p> : null}</main>;
+    return <main className="game-screen">
+      <header className="game-topline"><a className="game-brand" href="#"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> PARTY LOBBY</div></header>
+      <section style={{ maxWidth: 760, margin: "8vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
+        <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>ROOM {snapshot.code}</p>
+        <h1 style={{ fontSize: 34, margin: "12px 0" }}>The party is gathering</h1>
+        <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
+        <div style={{ padding: 18, margin: "20px 0", background: "#0f1118", border: "1px solid #625246", fontSize: 30, letterSpacing: ".28em", textAlign: "center" }}>{snapshot.code}</div>
+        <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.length}/4)</h2>
+        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
+        {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
+      </section>
+    </main>;
   }
 
   return <main className="game-screen">
@@ -282,13 +325,14 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} />}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
+      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
       {view === "player" && !spectator
         ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
       <div className="event-message" role="status">{gameOver ? "THE CATACOMBS ARE CLEARED — VICTORY" : message}</div>
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, padding: "8px 16px", color: "#c7b9a8", fontSize: 12, letterSpacing: ".08em" }}>PARTY · {snapshot.playerIds.map((id, index) => <span key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1}{id === playerId ? " (YOU)" : ""}</span>)}</div>
       {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
     </section>
     <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
