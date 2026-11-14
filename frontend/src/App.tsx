@@ -56,7 +56,7 @@ function visualRoomId(id: string): RoomId {
 }
 
 function visualEnemy(enemy: ApiEnemy, index: number, count: number): Enemy {
-  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: "Threatens the wayfarer", damage: 0, x: count === 1 ? 550 : index === 0 ? 430 : 670 };
+  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: "Encounter active", damage: 0, x: count === 1 ? 550 : index === 0 ? 430 : 670 };
 }
 
 
