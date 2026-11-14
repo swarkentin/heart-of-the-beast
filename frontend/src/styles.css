@@ -39,3 +39,15 @@
 @keyframes room-arrive{from{opacity:.55;transform:scale(1.015)}to{opacity:1;transform:scale(1)}}
 @media(max-width:700px){.navigation-dock{grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding:6px}.navigation-intro{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;padding:3px 5px 7px;border-right:0;border-bottom:1px solid #51463d}.navigation-intro strong{font-size:10px}.navigation-intro span{font-size:9px}.path-button{gap:6px;padding:8px 6px}.path-direction{flex-basis:25px;height:28px;font-size:16px}.path-button b{font-size:9px}.path-button small{font-size:8px}.path-button i{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.scene{animation:none}.path-button{transition:none}.path-button:hover{transform:none}}
+
+/* In-scene directional exits */
+.scene-exits{position:absolute;inset:0;z-index:3;pointer-events:none}
+.scene-exit{position:absolute;top:43%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:clamp(118px,16%,190px);min-height:112px;padding:12px 8px;color:#f3dfc3;background:linear-gradient(180deg,#10151bd9,#171a20c9);border:1px solid #d8ad78a8;box-shadow:0 0 0 1px #211910,0 0 26px #e5a85a55,inset 0 0 24px #d89b4a20;clip-path:polygon(12% 0,88% 0,100% 14%,100% 100%,0 100%,0 14%);cursor:pointer;pointer-events:auto;transform:translate(-50%,-50%);transition:filter .18s,box-shadow .18s,background .18s}
+.scene-exit-left{left:22%}.scene-exit-right{left:78%}.scene-exit-center{left:50%;top:37%}
+.scene-exit:hover,.scene-exit:focus-visible{filter:brightness(1.35);background:linear-gradient(180deg,#3b3024ed,#211d1adf);box-shadow:0 0 0 2px #f1c98e,0 0 38px #f3b76bba,inset 0 0 30px #e5ad5b55}
+.exit-chevron{font-size:27px;line-height:1;color:#f4c987;text-shadow:0 0 12px #f2b766}
+.scene-exit strong{font:13px "Marcellus",serif;text-align:center;text-shadow:0 2px 5px #000}
+.scene-exit small{font-size:9px;letter-spacing:1.2px;color:#f0c58b}
+.scene-exits:before{content:"THE PATH OPENS · CHOOSE A WAY";position:absolute;top:17%;left:50%;transform:translateX(-50%);padding:8px 12px;background:#10131be8;border:1px solid #98744f;color:#f0d2a8;font-size:11px;letter-spacing:1px;white-space:nowrap;box-shadow:0 3px 14px #0008}
+@media(max-width:700px){.scene-exit{top:47%;width:clamp(100px,29%,145px);min-height:88px;padding:8px 5px;gap:4px}.scene-exit-left{left:24%}.scene-exit-right{left:76%}.scene-exit-center{left:50%;top:40%}.scene-exit strong{font-size:11px}.scene-exit small{font-size:8px}.exit-chevron{font-size:22px}.scene-exits:before{top:22%;font-size:9px;padding:6px 8px}}
+@media(prefers-reduced-motion:reduce){.scene-exit{transition:none}}
