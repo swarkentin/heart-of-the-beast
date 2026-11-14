@@ -149,7 +149,7 @@ async function up() {
     const viteEntry = join(root, "node_modules", "vite", "bin", "vite.js");
     frontendPid = await startDetached("frontend", process.execPath, [
       viteEntry, "--host", "127.0.0.1", "--port", "5173", "--strictPort",
-    ], { cwd: root });
+    ], { cwd: join(root, "frontend") });
     saveState({ backendPid, frontendPid, startedAt: new Date().toISOString() });
 
     await waitFor(backendURL, "Backend");
