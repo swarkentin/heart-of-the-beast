@@ -30,6 +30,8 @@ func NewHandler(rooms store.Repository) http.Handler {
 	mux.HandleFunc("POST /rooms", h.createRoom)
 	mux.HandleFunc("POST /rooms/join", h.joinRoom)
 	mux.HandleFunc("GET /rooms/{id}", h.getRoom)
+	mux.HandleFunc("POST /rooms/{id}/heartbeat", h.heartbeat)
+	mux.HandleFunc("POST /rooms/{id}/leave", h.leaveRoom)
 	mux.HandleFunc("POST /rooms/{id}/start", h.startRun)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
@@ -43,27 +45,43 @@ func health(w http.ResponseWriter, _ *http.Request) {
 	_ = json.NewEncoder(w).Encode(healthResponse{Status: "ok", Service: "heart-of-the-beast"})
 }
 
-type roomResponse struct {
-	ID            string    `json:"id"`
-	Code          string    `json:"code"`
-	OwnerPlayerID string    `json:"ownerPlayerId"`
-	PlayerIDs     []string  `json:"playerIds"`
-	Run           *game.Run `json:"run,omitempty"`
-	Version       int64     `json:"version"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+type playerPresenceResponse struct {
+	Status     string     `json:"status"`
+	LastSeenAt time.Time  `json:"lastSeenAt"`
+	LeftAt     *time.Time `json:"leftAt,omitempty"`
 }
 
+type roomResponse struct {
+	ID            string                              `json:"id"`
+	Code          string                              `json:"code"`
+	OwnerPlayerID string                              `json:"ownerPlayerId"`
+	PlayerIDs     []string                            `json:"playerIds"`
+	Presence      map[string]playerPresenceResponse   `json:"presence"`
+	Run           *game.Run                           `json:"run,omitempty"`
+	Version       int64                               `json:"version"`
+	CreatedAt     time.Time                           `json:"createdAt"`
+	UpdatedAt     time.Time                           `json:"updatedAt"`
+}
+
+const presenceTimeout = 30 * time.Second
+
 func publicRoom(room *game.Room) roomResponse {
+	now := time.Now().UTC()
+	presence := make(map[string]playerPresenceResponse, len(room.PlayerIDs))
+	for _, playerID := range room.PlayerIDs {
+		entry := room.Presence[playerID]
+		status := "disconnected"
+		if entry.LeftAt != nil {
+			status = "left"
+		} else if !entry.LastSeenAt.IsZero() && now.Sub(entry.LastSeenAt) <= presenceTimeout {
+			status = "online"
+		}
+		presence[playerID] = playerPresenceResponse{Status: status, LastSeenAt: entry.LastSeenAt, LeftAt: entry.LeftAt}
+	}
 	return roomResponse{
-		ID:            room.ID,
-		Code:          room.Code,
-		OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs:     room.PlayerIDs,
-		Run:           room.Run,
-		Version:       room.Version,
-		CreatedAt:     room.CreatedAt,
-		UpdatedAt:     room.UpdatedAt,
+		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
+		PlayerIDs: room.PlayerIDs, Presence: presence, Run: room.Run,
+		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
 
@@ -137,6 +155,7 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		OwnerPlayerID:      playerID,
 		PlayerIDs:          []string{playerID},
 		PlayerTokenHashes:  map[string]string{playerID: tokenHash(playerToken)},
+		Presence:           map[string]game.PlayerPresence{playerID: {LastSeenAt: now}},
 		SpectatorTokenHash: tokenHash(spectatorToken),
 		Version:            1,
 		CreatedAt:          now,
@@ -183,7 +202,7 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "this run has already started; new players can join at a future safe checkpoint")
 		return
 	}
-	if len(room.PlayerIDs) >= maxRoomPlayers {
+	if activePlayerCount(room) >= maxRoomPlayers {
 		writeError(w, http.StatusConflict, "this room is full")
 		return
 	}
@@ -203,6 +222,10 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		room.PlayerTokenHashes = make(map[string]string)
 	}
 	room.PlayerTokenHashes[playerID] = tokenHash(playerToken)
+	if room.Presence == nil {
+		room.Presence = make(map[string]game.PlayerPresence)
+	}
+	room.Presence[playerID] = game.PlayerPresence{LastSeenAt: time.Now().UTC()}
 	room.Version++
 	room.UpdatedAt = time.Now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
@@ -214,6 +237,75 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		"playerId":    playerID,
 		"playerToken": playerToken,
 	})
+}
+
+func activePlayerCount(room *game.Room) int {
+	active := 0
+	for _, playerID := range room.PlayerIDs {
+		if room.Presence[playerID].LeftAt == nil {
+			active++
+		}
+	}
+	return active
+}
+
+func (h *Handler) heartbeat(w http.ResponseWriter, r *http.Request) {
+	h.updatePlayerPresence(w, r, false)
+}
+
+func (h *Handler) leaveRoom(w http.ResponseWriter, r *http.Request) {
+	h.updatePlayerPresence(w, r, true)
+}
+
+// Retry optimistic conflicts because multiple party members can heartbeat at once.
+func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, leaving bool) {
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room not found")
+			return
+		}
+		hash := tokenHash(bearer(r))
+		playerID := ""
+		for id, expected := range room.PlayerTokenHashes {
+			if hash == expected {
+				playerID = id
+				break
+			}
+		}
+		if playerID == "" {
+			writeError(w, http.StatusUnauthorized, "invalid player token")
+			return
+		}
+		if room.Presence == nil {
+			room.Presence = make(map[string]game.PlayerPresence)
+		}
+		presence := room.Presence[playerID]
+		if presence.LeftAt != nil {
+			writeError(w, http.StatusConflict, "player has already left the room")
+			return
+		}
+		now := time.Now().UTC()
+		presence.LastSeenAt = now
+		if leaving {
+			presence.LeftAt = &now
+			delete(room.PlayerTokenHashes, playerID)
+		}
+		room.Presence[playerID] = presence
+		expectedVersion := room.Version
+		room.Version++
+		room.UpdatedAt = now
+		if err := h.rooms.Save(r.Context(), room, expectedVersion); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the presence update")
 }
 
 func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
