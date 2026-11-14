@@ -97,9 +97,6 @@ func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 			ID        string   `json:"id"`
 			PlayerIDs []string `json:"playerIds"`
 		} `json:"room"`
-		Room struct {
-			Version int64 `json:"version"`
-		} `json:"room"`
 		PlayerID    string `json:"playerId"`
 		PlayerToken string `json:"playerToken"`
 	}
