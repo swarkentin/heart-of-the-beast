@@ -43,14 +43,14 @@ func health(w http.ResponseWriter, _ *http.Request) {
 }
 
 type roomResponse struct {
-	ID            string     `json:"id"`
-	Code          string     `json:"code"`
-	OwnerPlayerID string     `json:"ownerPlayerId"`
-	PlayerIDs     []string   `json:"playerIds"`
-	Run           *game.Run  `json:"run,omitempty"`
-	Version       int64      `json:"version"`
-	CreatedAt     time.Time  `json:"createdAt"`
-	UpdatedAt     time.Time  `json:"updatedAt"`
+	ID            string    `json:"id"`
+	Code          string    `json:"code"`
+	OwnerPlayerID string    `json:"ownerPlayerId"`
+	PlayerIDs     []string  `json:"playerIds"`
+	Run           *game.Run `json:"run,omitempty"`
+	Version       int64     `json:"version"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 func publicRoom(room *game.Room) roomResponse {
