@@ -185,3 +185,75 @@ func TestJoinRejectsStartedFullAndUnknownRooms(t *testing.T) {
 		t.Fatalf("started room should reject join: %d", response.Code)
 	}
 }
+
+
+func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	var host struct {
+		Room struct {
+			ID   string `json:"id"`
+			Code string `json:"code"`
+		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &host); err != nil {
+		t.Fatal(err)
+	}
+
+	body, _ := json.Marshal(map[string]string{"code": host.Room.Code})
+	joined := httptest.NewRecorder()
+	handler.ServeHTTP(joined, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+	var guest struct {
+		PlayerID    string `json:"playerId"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
+		t.Fatal(err)
+	}
+
+	request := func(path, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, path, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		return response
+	}
+	if response := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken); response.Code != http.StatusOK {
+		t.Fatalf("heartbeat: %d %s", response.Code, response.Body.String())
+	}
+
+	leave := request("/rooms/"+host.Room.ID+"/leave", guest.PlayerToken)
+	if leave.Code != http.StatusOK {
+		t.Fatalf("leave: %d %s", leave.Code, leave.Body.String())
+	}
+	var left struct {
+		Presence map[string]struct {
+			Status string `json:"status"`
+		} `json:"presence"`
+	}
+	if err := json.Unmarshal(leave.Body.Bytes(), &left); err != nil {
+		t.Fatal(err)
+	}
+	if left.Presence[guest.PlayerID].Status != "left" {
+		t.Fatalf("expected left presence, got %+v", left.Presence[guest.PlayerID])
+	}
+
+	get := httptest.NewRequest(http.MethodGet, "/rooms/"+host.Room.ID, nil)
+	get.Header.Set("Authorization", "Bearer "+host.PlayerToken)
+	snapshot := httptest.NewRecorder()
+	handler.ServeHTTP(snapshot, get)
+	if snapshot.Code != http.StatusOK {
+		t.Fatalf("host snapshot: %d %s", snapshot.Code, snapshot.Body.String())
+	}
+	if response := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken); response.Code != http.StatusUnauthorized {
+		t.Fatalf("left player token should be revoked, got %d", response.Code)
+	}
+
+	replacement := httptest.NewRecorder()
+	handler.ServeHTTP(replacement, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+	if replacement.Code != http.StatusCreated {
+		t.Fatalf("leaving should free a lobby slot: %d %s", replacement.Code, replacement.Body.String())
+	}
+}
