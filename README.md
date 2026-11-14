@@ -51,7 +51,7 @@ The first start creates the PostgreSQL container and volume, waits for the datab
 
 Application logs and process state are written under `.dev/` (ignored by Git). If startup fails, inspect `.dev/logs/backend.err.log` and `.dev/logs/frontend.err.log`.
 
-The default local database is `heart` / `heart` on port 5432. You can override the backend connection string by setting `DATABASE_URL` before `npm run dev:up`. Do not point local development commands at the production database: `db:reset` permanently deletes the configured database volume and is intended only for the local Compose database.
+The default local database is `heart` / `heart` on port 5432. The orchestration commands intentionally use this local Compose database; do not change them to point at production. `db:reset` permanently deletes the local database volume.
 
 ## Backend checks
 
