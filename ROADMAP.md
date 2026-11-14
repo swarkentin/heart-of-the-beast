@@ -16,6 +16,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish project overview and working agreements.
 - [x] Agree on MVP game loop, solo/co-op rules, combat, and progression.
 - [x] Record initial architecture, deployment, audio, and presentation decisions.
+- [ ] **ASAP: Add GitHub Actions CI before substantial feature work.** Run frontend dependency install, TypeScript checks, production build, and automated tests on pull requests and pushes to `main`; expand the workflow to backend checks as the backend is introduced. Keep CI separate from deployment, and make required checks a merge gate once the baseline is reliable.
 - [ ] Bootstrap frontend, backend, local development, and CI.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
