@@ -95,6 +95,9 @@ func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 			ID        string   `json:"id"`
 			PlayerIDs []string `json:"playerIds"`
 		} `json:"room"`
+		Room struct {
+			Version int64 `json:"version"`
+		} `json:"room"`
 		PlayerID    string `json:"playerId"`
 		PlayerToken string `json:"playerToken"`
 	}
@@ -219,8 +222,18 @@ func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
 		handler.ServeHTTP(response, req)
 		return response
 	}
-	if response := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken); response.Code != http.StatusOK {
-		t.Fatalf("heartbeat: %d %s", response.Code, response.Body.String())
+	heartbeat := request("/rooms/"+host.Room.ID+"/heartbeat", guest.PlayerToken)
+	if heartbeat.Code != http.StatusOK {
+		t.Fatalf("heartbeat: %d %s", heartbeat.Code, heartbeat.Body.String())
+	}
+	var heartbeatSnapshot struct {
+		Version int64 `json:"version"`
+	}
+	if err := json.Unmarshal(heartbeat.Body.Bytes(), &heartbeatSnapshot); err != nil {
+		t.Fatal(err)
+	}
+	if heartbeatSnapshot.Version != guest.Room.Version {
+		t.Fatalf("heartbeat should not contend with gameplay versioning: before %d after %d", guest.Room.Version, heartbeatSnapshot.Version)
 	}
 
 	leave := request("/rooms/"+host.Room.ID+"/leave", guest.PlayerToken)
