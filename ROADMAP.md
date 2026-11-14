@@ -40,7 +40,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
 - [ ] Ensure spectators cannot issue commands and do not affect party size, scaling, presence, votes, readiness, or deadlines.
 - [x] Connect the player interface and independent spectator/cast presentation to the authoritative room API (PR #11; initial snapshot polling, with realtime subscriptions still pending).
-- [ ] Presence, reconnect, and graceful leave behavior for players.
+- [x] Server-authoritative player presence (10-second heartbeat, 30-second disconnect threshold), same-identity reconnect, and explicit leave/token revocation (ADR 0014).
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [ ] Party direction voting; solo decisions resolve immediately.
