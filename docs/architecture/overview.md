@@ -36,7 +36,7 @@ The spectator client uses its own cinematic renderer/camera and restrained prese
 
 ## Suggested implementation shape
 
-Start with a modular monolith and clear package boundaries. The browser client is a React, TypeScript, and Vite application in the `frontend/` workspace. The backend belongs in the independent `backend/` workspace; its language and framework remain undecided.
+Start with a modular monolith and clear package boundaries. The browser client is a React, TypeScript, and Vite application in the `frontend/` workspace. The authoritative backend is a Go module in `backend/`, initially using the standard library for its HTTP process and health endpoint. See ADR 0009 for the backend language/tooling decision.
 
 Use PostgreSQL as the persistence contract, with Neon as the hosted prototype instance. Avoid coupling domain code to Neon-specific features; standard PostgreSQL connectivity and migrations should also work against a local PostgreSQL instance.
 
@@ -76,7 +76,6 @@ Render and Neon are the selected prototype providers, not permanent architectura
 
 ## Open decisions
 
-- Backend language and framework.
 - WebSocket library and message protocol.
 - Active-run snapshot/recovery timing.
 - Database schema and the point at which durable run persistence becomes necessary.
