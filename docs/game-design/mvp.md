@@ -25,6 +25,23 @@ For groups, choices are time-boxed and resolved by a documented policy (for exam
 
 Exploration content must not require simultaneous actions from multiple players. A puzzle that has a cooperative solution should also have a solo route, sequential interaction, or ability-based alternative.
 
+## Character, enemy, and interface presentation
+
+The visual direction is illustrated, high-definition pixel art. The scene should establish place and mood, while characters and enemies remain immediately recognizable and readable.
+
+Working presentation principles for the first slice:
+
+- Compose each room as a scene first, with clear visual hierarchy between environment, interactable points of interest, enemies, characters, and UI.
+- Present the player character and enemies as distinct illustrated sprites or character cutouts integrated into the scene. Their silhouettes, facing, and current state should be understandable at a glance.
+- Use restrained, purposeful animation: subtle idle motion to give characters life, with clearer action, hit, defeat, and boss-telegraph animations when those events matter.
+- Animation must reinforce game state, not obscure it. Never rely on animation alone to communicate danger, damage, target selection, or an available action.
+- Keep navigation, combat choices, enemy intent, health, and party status legible without covering the important part of the scene.
+- Adapt layout and information density for phones, tablets, and desktop screens. On small screens, prioritize the current scene, the most important encounter information, and reachable controls; secondary details can move into compact panels or progressive disclosure.
+- Provide reduced-motion behavior and avoid flashing or constant motion that makes the interface tiring.
+- Treat the spectator/cast presentation as a separate composition optimized for viewing at a distance, not simply a stretched player screen.
+
+Exact sprite scale, animation frame style, camera composition, and HUD arrangement remain visual-design decisions to validate with a small prototype across target screen sizes.
+
 ## Combat: hybrid simultaneous tactics
 
 1. The encounter begins with enemy positions, health, and telegraphed intentions visible.
@@ -37,7 +54,7 @@ A 6–8 second action window is a starting hypothesis for groups, to be validate
 
 ### Solo encounter tuning
 
-Do not balance solo by merely dividing enemy health. Scale encounter composition and mechanics:
+Do not balance solo by merely dividing enemy health:
 - Reduce simultaneous enemy pressure and avoid unavoidable multi-target attacks with no counterplay.
 - Preserve readable telegraphs and adequate reaction windows.
 - Ensure required interrupts, shields, healing, and utility have solo-accessible counters (build abilities, consumables, terrain, or sequential mechanics).
@@ -84,6 +101,7 @@ The MVP is not complete until all of these are demonstrated:
 6. A four-player group can complete the same core loop without encounter mechanics becoming trivial or unmanageable.
 7. Players can leave or reconnect without permanently stalling the run.
 8. The party receives rewards and reaches a safe intermission.
+9. Core player screens remain usable at mobile, tablet, and desktop sizes.
 
 ## Out of scope for the first playable slice
 
