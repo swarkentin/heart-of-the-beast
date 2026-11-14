@@ -208,6 +208,9 @@ func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
 	joined := httptest.NewRecorder()
 	handler.ServeHTTP(joined, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
 	var guest struct {
+		Room struct {
+			Version int64 `json:"version"`
+		} `json:"room"`
 		PlayerID    string `json:"playerId"`
 		PlayerToken string `json:"playerToken"`
 	}
