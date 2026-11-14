@@ -162,11 +162,21 @@ async function up() {
     throw error;
   }
 
-  console.log("Development stack is ready:");
-  console.log(`  Game client: ${frontendURL}`);
-  console.log("  Backend:     http://127.0.0.1:8080");
-  console.log("  PostgreSQL:  localhost:5432 (heart / heart)");
-  console.log("Use npm run dev:down to stop the application and database.");
+  console.log("");
+  console.log("Heart of the Beast is ready!");
+  console.log("");
+  console.log("Open the game in your browser:");
+  console.log(`  Player view:     ${frontendURL.replace("127.0.0.1", "localhost")}`);
+  console.log("");
+  console.log("Local services:");
+  console.log("  Frontend:        http://localhost:5173 (Vite)");
+  console.log("  Backend health:  http://localhost:8080/healthz");
+  console.log("  PostgreSQL:      localhost:5432 (database: heart_of_the_beast)");
+  console.log("");
+  console.log("Useful commands:");
+  console.log("  npm run dev:status  Check service health");
+  console.log("  npm run dev:down    Stop the app and database");
+  console.log("  npm run db:reset    Recreate the local database (destructive)");
 }
 
 async function down() {
