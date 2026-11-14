@@ -17,7 +17,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish project overview and working agreements.
 - [x] Agree on MVP game loop, solo/co-op rules, combat, and progression.
 - [x] Record initial architecture, deployment, audio, presentation, and spectator-access decisions.
-- [x] Establish baseline GitHub Actions CI for pull requests and pushes to `main`, installing frontend dependencies and running the TypeScript check plus production build. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check after its first successful run.
+- [ ] Establish baseline GitHub Actions CI for pull requests and pushes to `main`, installing frontend dependencies and running the TypeScript check plus production build. CI generates the npm lockfile and publishes it as an artifact so it can be committed without a local npm environment; once committed, CI verifies it stays in sync and uses `npm ci`. Add automated test execution as test suites are introduced, expand checks to the backend when it exists, and configure the workflow as a required merge check.
 - [ ] Bootstrap frontend, backend, local development, and CI.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
