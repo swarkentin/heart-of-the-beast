@@ -21,10 +21,19 @@ type healthResponse struct {
 
 type Handler struct {
 	rooms store.Repository
+	now   func() time.Time
 }
 
 func NewHandler(rooms store.Repository) http.Handler {
-	h := &Handler{rooms: rooms}
+	return NewHandlerWithClock(rooms, time.Now)
+}
+
+// NewHandlerWithClock injects the time source so time-dependent API behavior can be tested deterministically.
+func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Handler {
+	if now == nil {
+		now = time.Now
+	}
+	h := &Handler{rooms: rooms, now: now}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", health)
 	mux.HandleFunc("POST /rooms", h.createRoom)
@@ -65,8 +74,8 @@ type roomResponse struct {
 
 const presenceTimeout = 30 * time.Second
 
-func publicRoom(room *game.Room) roomResponse {
-	now := time.Now().UTC()
+func publicRoom(room *game.Room, now time.Time) roomResponse {
+	now = now.UTC()
 	presence := make(map[string]playerPresenceResponse, len(room.PlayerIDs))
 	for _, playerID := range room.PlayerIDs {
 		entry := room.Presence[playerID]
@@ -148,7 +157,7 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not create room")
 		return
 	}
-	now := time.Now().UTC()
+	now := h.now().UTC()
 	room := &game.Room{
 		ID:                 roomID,
 		Code:               strings.ToUpper(code),
@@ -166,7 +175,7 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room":           publicRoom(room),
+		"room":           publicRoom(room, h.now()),
 		"playerToken":    playerToken,
 		"spectatorToken": spectatorToken,
 	})
@@ -225,15 +234,15 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 	if room.Presence == nil {
 		room.Presence = make(map[string]game.PlayerPresence)
 	}
-	room.Presence[playerID] = game.PlayerPresence{LastSeenAt: time.Now().UTC()}
+	room.Presence[playerID] = game.PlayerPresence{LastSeenAt: h.now().UTC()}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room":        publicRoom(room),
+		"room":        publicRoom(room, h.now()),
 		"playerId":    playerID,
 		"playerToken": playerToken,
 	})
@@ -285,7 +294,7 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 			writeError(w, http.StatusConflict, "player has already left the room")
 			return
 		}
-		now := time.Now().UTC()
+		now := h.now().UTC()
 		if !leaving {
 			if err := h.rooms.TouchPlayer(r.Context(), room.ID, playerID, now); err != nil {
 				if errors.Is(err, store.ErrPlayerLeft) {
@@ -300,7 +309,7 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 				writeStoreError(w, err)
 				return
 			}
-			writeJSON(w, http.StatusOK, publicRoom(latest))
+			writeJSON(w, http.StatusOK, publicRoom(latest, h.now()))
 			return
 		}
 		presence.LastSeenAt = now
@@ -317,7 +326,7 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 			writeStoreError(w, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, publicRoom(room))
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 		return
 	}
 	writeError(w, http.StatusConflict, "room is busy; retry the presence update")
@@ -328,7 +337,7 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -346,17 +355,17 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not start run")
 		return
 	}
-	if err := game.StartRun(room, runID, time.Now().UTC()); err != nil {
+	if err := game.StartRun(room, runID, h.now().UTC()); err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
@@ -370,17 +379,17 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	expected := room.Version
-	if err := game.ApplyCommand(room, actor, command, time.Now().UTC()); err != nil {
+	if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}
 	room.Version++
-	room.UpdatedAt = time.Now().UTC()
+	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
@@ -393,7 +402,7 @@ func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "invalid spectator token")
 		return
 	}
-	writeJSON(w, http.StatusOK, publicRoom(room))
+	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 }
 
 func writeStoreError(w http.ResponseWriter, err error) {
