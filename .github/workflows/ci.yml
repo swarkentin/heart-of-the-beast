@@ -84,6 +84,10 @@ jobs:
         if: github.event_name == 'push'
         run: git diff --exit-code -- package-lock.json
 
+      - name: Verify generated lockfile matches committed file
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: git diff --exit-code -- package-lock.json
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
