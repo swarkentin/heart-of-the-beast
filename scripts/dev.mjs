@@ -9,7 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const stateDir = join(root, ".dev");
 const stateFile = join(stateDir, "processes.json");
 const logsDir = join(stateDir, "logs");
-const databaseURL = process.env.DATABASE_URL || "postgres://heart:heart@localhost:5432/heart_of_the_beast?sslmode=disable";
+const databaseURL = "postgres://heart:heart@localhost:5432/heart_of_the_beast?sslmode=disable";
 const backendURL = "http://127.0.0.1:8080/healthz";
 const frontendURL = "http://127.0.0.1:5173/";
 
