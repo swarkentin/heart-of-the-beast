@@ -94,6 +94,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Check local development tooling syntax
+        run: node --check scripts/dev.mjs
+
       - name: Install locked dependencies
         run: npm ci
 
