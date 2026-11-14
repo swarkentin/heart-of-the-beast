@@ -4,6 +4,15 @@ A cooperative, social-first roguelike dungeon crawler designed to be fun with on
 
 Players explore illustrated, high-definition pixel-art environments, make choices together, fight tactical encounters, discover gear and abilities, and return to safe hubs between increasingly dangerous expeditions.
 
+## Repository layout
+
+- `frontend/` — React, TypeScript, and Vite browser client.
+- `backend/` — reserved for the future authoritative game service. The backend language and framework remain intentionally undecided.
+- `docs/` — product design, architecture, prototype notes, and architecture decision records.
+- `.github/workflows/` — repository automation and CI.
+
+The frontend is an npm workspace. The backend will be independently buildable and will not depend on the Node.js toolchain.
+
 ## Design pillars
 
 - **Solo-first compatible:** every core activity, encounter, puzzle, and progression path must work for one player.
@@ -16,6 +25,19 @@ Players explore illustrated, high-definition pixel-art environments, make choice
 ## Project status
 
 Foundation documented; the first client-side combat-room prototype is in progress. It is a local UI simulation, not yet connected to an authoritative game server.
+
+## Local frontend development
+
+Requires Node.js 22 or later.
+
+```sh
+npm install
+npm run dev
+npm run build
+npm run preview
+```
+
+Run these commands from the repository root. npm installs and manages the frontend workspace dependencies from the root lockfile.
 
 ## Start here
 

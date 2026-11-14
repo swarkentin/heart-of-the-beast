@@ -60,7 +60,7 @@ jobs:
           retention-days: 14
 
   frontend:
-    name: Frontend checks
+    name: Frontend workspace checks
     needs: lockfile
     if: always() && (github.event_name == 'push' || needs.lockfile.result == 'success')
     runs-on: ubuntu-latest
