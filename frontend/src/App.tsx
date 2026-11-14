@@ -341,6 +341,7 @@ export default function App() {
         <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left").length}/4)</h2>
         <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
         {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
+        <button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button>
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
       </section>
     </main>;
