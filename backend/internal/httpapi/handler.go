@@ -146,8 +146,8 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"room":          publicRoom(room),
-		"playerToken":   playerToken,
+		"room":           publicRoom(room),
+		"playerToken":    playerToken,
 		"spectatorToken": spectatorToken,
 	})
 }
