@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type Action = "strike" | "bolt" | "guard";
+type Action = "strike" | "guard";
 type View = "player" | "cast";
-type Enemy = { id: "scout" | "acolyte"; name: string; hp: number; maxHp: number; intent: string; damage: number; x: number };
+type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; damage: number; x: number };
 const initialEnemies: Enemy[] = [
   { id: "scout", name: "Crypt Stalker", hp: 48, maxHp: 48, intent: "Claw rake", damage: 12, x: 430 },
   { id: "acolyte", name: "Ashen Acolyte", hp: 62, maxHp: 62, intent: "Soul spark", damage: 9, x: 670 },
@@ -15,20 +15,54 @@ const rooms: Record<RoomId, Room> = {
   "flooded-crossing": { id: "flooded-crossing", name: "The Drowned Crossing", floor: "02", description: "Black water ripples around a half-submerged causeway.", exits: ["watcher-hall", "warden-gate"] },
   "warden-gate": { id: "warden-gate", name: "The Warden's Gate", floor: "03", description: "A sealed iron gate hums with a cold, green light.", exits: ["reliquary", "flooded-crossing"] },
 };
-const roomEnemies: Record<RoomId, Enemy[]> = {
-  "watcher-hall": initialEnemies,
-  reliquary: [{ id: "acolyte", name: "Reliquary Keeper", hp: 54, maxHp: 54, intent: "Grave pulse", damage: 8, x: 550 }],
-  "flooded-crossing": [{ id: "scout", name: "Drowned Sentinel", hp: 58, maxHp: 58, intent: "Rusted sweep", damage: 10, x: 550 }],
-  "warden-gate": [
-    { id: "scout", name: "Crypt Warden", hp: 82, maxHp: 82, intent: "Gatebreaker", damage: 15, x: 430 },
-    { id: "acolyte", name: "Soulbound Shade", hp: 66, maxHp: 66, intent: "Soul drain", damage: 11, x: 670 },
-  ],
-};
 const actions: { id: Action; label: string; hint: string; glyph: string }[] = [
-  { id: "strike", label: "Strike", hint: "24 damage", glyph: "⚔" },
-  { id: "bolt", label: "Ember", hint: "34 damage", glyph: "✦" },
-  { id: "guard", label: "Brace", hint: "Half damage", glyph: "⬟" },
+  { id: "strike", label: "Strike", hint: "10 damage", glyph: "⚔" },
+  { id: "guard", label: "Defend", hint: "Recover 1 health", glyph: "⬟" },
 ];
+
+type ApiEnemy = { id: string; name: string; health: number; maxHealth: number };
+type ApiExit = { id: string; destination: string; label: string };
+type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
+type ApiPlayer = { id: string; health: number; maxHealth: number };
+type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer> };
+type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; run?: ApiRun; version: number };
+type PlayerSession = { roomId: string; playerToken: string; spectatorToken: string };
+type SpectatorAccess = { roomId: string; token: string };
+const SESSION_KEY = "heart-of-the-beast.player-session";
+
+async function apiRequest<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body) headers.set("Content-Type", "application/json");
+  if (token) headers.set("Authorization", "Bearer " + token);
+  const response = await fetch("/api" + path, { ...init, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Request failed (" + response.status + ")");
+  return payload as T;
+}
+
+function readSpectatorAccess(): SpectatorAccess | null {
+  if (typeof window === "undefined" || !window.location.hash.startsWith("#spectate=")) return null;
+  try {
+    const value = decodeURIComponent(window.location.hash.slice("#spectate=".length));
+    const separator = value.indexOf(":");
+    if (separator <= 0) return null;
+    return { roomId: value.slice(0, separator), token: value.slice(separator + 1) };
+  } catch {
+    return null;
+  }
+}
+
+function visualRoomId(id: string): RoomId {
+  if (id === "reliquary") return "reliquary";
+  if (id === "warden") return "warden-gate";
+  return "watcher-hall";
+}
+
+function visualEnemy(enemy: ApiEnemy, index: number, count: number): Enemy {
+  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: "Threatens the wayfarer", damage: 0, x: count === 1 ? 550 : index === 0 ? 430 : 670 };
+}
+
 
 function Bar({ value, max }: { value: number; max: number }) {
   return <span className="bar"><i style={{ width: (Math.max(0, value) / max * 100) + "%" }} /></span>;
@@ -61,7 +95,7 @@ function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boo
   </g>;
 }
 
-function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: RoomId[]; onNavigate: (id: RoomId) => void }) {
+function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string }[]; onNavigate: (id: string) => void }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
       <defs>
@@ -88,14 +122,14 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit)} aria-label={"Enter "+rooms[exit].name}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{rooms[exit].name}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}\n    <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
     <div className="scene-hint">THE WAYFARER'S VIEW · {room.description.toUpperCase()}</div>
   </div>;
 }
 
-function CastView({ enemies, playerHp, room, exits }: { enemies: Enemy[]; playerHp: number; room: Room; exits: RoomId[] }) {
+function CastView({ enemies, playerHp, playerMaxHp, room, exits }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; exits: { id: string; destination: RoomId; label: string }[] }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
@@ -110,54 +144,157 @@ function CastView({ enemies, playerHp, room, exits }: { enemies: Enemy[]; player
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
     <div className="scene-vignette"/>
-    {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{exits.map((exit, index) => <div key={exit} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{rooms[exit].name}</strong><small>AVAILABLE PATH</small></div>)}</div> : null}
+    {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>AVAILABLE PATH</small></div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
-    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={100}/><b>{playerHp}/100</b></div></div>
+    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
   </div>;
 }
 
 export default function App() {
-  const [roomId,setRoomId]=useState<RoomId>("watcher-hall");
-  const [enemies,setEnemies]=useState<Enemy[]>(initialEnemies.map(e=>({...e})));
-  const [playerHp,setPlayerHp]=useState(100);
-  const [target,setTarget]=useState<Enemy["id"]>("scout");
-  const [round,setRound]=useState(1);
-  const [message,setMessage]=useState("The dead stir in the torchlight.");
-  const [view,setView]=useState<View>("player");
-  const room=rooms[roomId];
-  const defeated=enemies.every(e=>e.hp<=0);
-  const finalRoom=roomId==="warden-gate";
-  const gameOver=playerHp<=0||(defeated&&finalRoom);
-  const livingTarget=enemies.find(e=>e.id===target&&e.hp>0)||enemies.find(e=>e.hp>0);
+  const [spectatorAccess] = useState<SpectatorAccess | null>(readSpectatorAccess);
+  const [session, setSession] = useState<PlayerSession | null>(() => {
+    if (typeof window === "undefined" || readSpectatorAccess()) return null;
+    try { return JSON.parse(window.localStorage.getItem(SESSION_KEY) || "null") as PlayerSession | null; }
+    catch { return null; }
+  });
+  const [snapshot, setSnapshot] = useState<ApiRoom | null>(null);
+  const [view, setView] = useState<View>(spectatorAccess ? "cast" : "player");
+  const [target, setTarget] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("Create a room to begin your run.");
+  const [shareCopied, setShareCopied] = useState(false);
 
-  function play(action:Action) {
-    if(gameOver)return;
-    const next=enemies.map(e=>({...e}));
-    let hp=playerHp;const events:string[]=[];
-    if(action==="guard")events.push("You brace behind your shield.");
-    else if(livingTarget){const damage=action==="strike"?24:34;const foe=next.find(e=>e.id===livingTarget.id)!;foe.hp=Math.max(0,foe.hp-damage);events.push(foe.name+" takes "+damage+" damage.");if(foe.hp===0)events.push(foe.name+" crumbles into dust.");}
-    next.forEach(e=>{if(e.hp>0){const incoming=action==="guard"?Math.ceil(e.damage/2):e.damage;hp=Math.max(0,hp-incoming);events.push(e.name+" attacks for "+incoming+".");}});
-    setEnemies(next);setPlayerHp(hp);setRound(n=>n+1);setMessage(events.join("  ·  "));
-    const nextTarget=next.find(e=>e.hp>0);if(nextTarget)setTarget(nextTarget.id);
+  const spectator = Boolean(spectatorAccess);
+  const roomId = spectatorAccess?.roomId || session?.roomId;
+  const token = spectatorAccess?.token || session?.playerToken;
+  const run = snapshot?.run;
+  const serverRoom = run?.rooms[run.currentRoomId];
+  const roomIdForView = serverRoom ? visualRoomId(serverRoom.id) : "watcher-hall";
+  const room = rooms[roomIdForView];
+  const enemies = (serverRoom?.encounter?.enemies || []).map((enemy, index, all) => visualEnemy(enemy, index, all.length));
+  const playerId = snapshot?.ownerPlayerId || snapshot?.playerIds[0];
+  const player = playerId ? run?.players[playerId] : undefined;
+  const playerHp = player?.health ?? 30;
+  const playerMaxHp = player?.maxHealth ?? 30;
+  const exits: ApiExit[] = serverRoom?.exits || [];
+  const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
+  const defeated = serverRoom?.cleared ?? false;
+  const gameOver = run?.phase === "completed";
+  const exploring = run?.phase === "exploring";
+
+  useEffect(() => {
+    if (!roomId || !token) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const next = await apiRequest<ApiRoom>(spectator ? "/spectate/" + roomId : "/rooms/" + roomId, token);
+        if (active) {
+          setSnapshot(next);
+          setError("");
+        }
+      } catch (err) {
+        if (active) setError(err instanceof Error ? err.message : "Unable to load room");
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => { void load(); }, 1500);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [roomId, token, spectator]);
+
+  useEffect(() => {
+    if (livingTarget && target !== livingTarget.id) setTarget(livingTarget.id);
+  }, [livingTarget?.id, target]);
+
+  async function createRun() {
+    setBusy(true); setError("");
+    try {
+      const created = await apiRequest<{ room: ApiRoom; playerToken: string; spectatorToken: string }>("/rooms", undefined, { method: "POST" });
+      const nextSession = { roomId: created.room.id, playerToken: created.playerToken, spectatorToken: created.spectatorToken };
+      window.localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+      setSession(nextSession);
+      const started = await apiRequest<ApiRoom>("/rooms/" + nextSession.roomId + "/start", nextSession.playerToken, { method: "POST" });
+      setSnapshot(started);
+      setMessage("The run has begun. The server is now authoritative.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create the run");
+    } finally {
+      setBusy(false);
+    }
   }
-  function navigate(nextRoom: RoomId) {
-    if (!room.exits.includes(nextRoom) || !defeated || playerHp <= 0) return;
-    setRoomId(nextRoom);
-    setEnemies(roomEnemies[nextRoom].map(e=>({...e})));
-    setTarget(roomEnemies[nextRoom][0].id);
-    setRound(n=>n+1);
-    setMessage(rooms[nextRoom].description);
+
+  async function sendCommand(command: { type: string; action?: string; targetId?: string; exitId?: string }) {
+    if (!session || busy) return;
+    setBusy(true); setError("");
+    try {
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/commands", session.playerToken, { method: "POST", body: JSON.stringify(command) });
+      setSnapshot(next);
+      setMessage(command.type === "choose_exit" ? "You enter the next chamber." : command.action === "defend" ? "You steady yourself and recover." : "Your attack strikes true.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Command failed");
+      try {
+        const latest = await apiRequest<ApiRoom>("/rooms/" + session.roomId, session.playerToken);
+        setSnapshot(latest);
+      } catch { /* Keep the original command error visible. */ }
+    } finally {
+      setBusy(false);
+    }
   }
-  function reset(){setRoomId("watcher-hall");setEnemies(initialEnemies.map(e=>({...e})));setPlayerHp(100);setTarget("scout");setRound(1);setMessage("The dead stir in the torchlight.");}
+
+  function play(action: Action) {
+    if (action === "guard") void sendCommand({ type: "combat", action: "defend" });
+    else if (livingTarget) void sendCommand({ type: "combat", action: "attack", targetId: livingTarget.id });
+  }
+
+  function shareSpectatorLink() {
+    if (!session) return;
+    const link = window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken);
+    void navigator.clipboard.writeText(link).then(() => setShareCopied(true)).catch(() => setError("Clipboard access was blocked. You can copy the spectator URL from the address bar after opening it."));
+  }
+
+  if (!roomId || !token) {
+    return <main className="game-screen">
+      <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> LOCAL DEVELOPMENT</div></header>
+      <section style={{ maxWidth: 680, margin: "12vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
+        <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>THE FORGOTTEN CATACOMBS</p>
+        <h1 style={{ fontSize: 34, margin: "12px 0" }}>Begin a new run</h1>
+        <p style={{ lineHeight: 1.6, color: "#c7b9a8" }}>Create a solo room backed by the Go game server and PostgreSQL. Your player view sends commands to the server; a separate spectator link opens a read-only cast view.</p>
+        <button className="turn-button" onClick={() => void createRun()} disabled={busy}>{busy ? "CREATING ROOM…" : "CREATE SOLO RUN"} <span>↗</span></button>
+        {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
+      </section>
+    </main>;
+  }
+
+  if (!snapshot) {
+    return <main className="game-screen"><header className="game-topline"><a className="game-brand" href="#"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> CONNECTING</div></header><p role="status" style={{ padding: 32, color: "#f1e5d5" }}>{error || "Connecting to the room…"}</p></main>;
+  }
+
+  if (!run || !serverRoom) {
+    return <main className="game-screen"><p role="status" style={{ padding: 32, color: "#f1e5d5" }}>{spectator ? "The run has not started yet." : "The room is ready, but the run has not started."}</p>{error ? <p role="alert">{error}</p> : null}</main>;
+  }
 
   return <main className="game-screen">
-    <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> SOLO RUN <b>·</b> FLOOR {room.floor}</div><div className="view-switch" aria-label="Presentation view"><button className={view==="player"?"selected":""} onClick={()=>setView("player")}>PLAYER</button><button className={view==="cast"?"selected":""} onClick={()=>setView("cast")}>SPECTATOR / CAST</button></div></header>
+    <header className="game-topline">
+      <a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a>
+      <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {room.floor}</div>
+      {!spectator ? <div className="view-switch" aria-label="Presentation view"><button className={view === "player" ? "selected" : ""} onClick={() => setView("player")}>PLAYER</button><button className={view === "cast" ? "selected" : ""} onClick={() => setView("cast")}>SPECTATOR / CAST</button></div> : <div className="view-switch"><button className="selected">SPECTATOR / CAST</button></div>}
+    </header>
+    {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 24px" }}><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></div>}
     <section className="play-area">
-      {view==="player"?<PlayerView enemies={enemies} target={livingTarget?.id||target} onTarget={setTarget} room={room} exits={defeated && playerHp>0 ? room.exits : []} onNavigate={navigate}/>:<CastView enemies={enemies} playerHp={playerHp} room={room} exits={defeated && playerHp > 0 ? room.exits : []}/>}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={100}/><strong>{playerHp}<i>/100</i></strong></div></div><div className="round-indicator">ROUND <b>{round}</b></div></div>
-      {view==="player"?<>{!defeated || finalRoom || playerHp<=0 ? <div className="action-dock">{actions.map(a=><button key={a.id} className={"move-button move-"+a.id} onClick={()=>play(a.id)} disabled={gameOver}><span className="move-glyph">{a.glyph}</span><span className="move-label">{a.label}<small>{a.hint}</small></span></button>)}{gameOver?<button className="turn-button" onClick={reset}>RESTART RUN <span>↗</span></button>:null}</div> : null}<div className={"event-message"+(gameOver?" event-final":"")} role="status">{gameOver?(defeated?"THE CATACOMBS ARE CLEARED — VICTORY":"YOU HAVE FALLEN"):message}</div></>:<div className="cast-caption" role="status">{gameOver?(defeated?"THE GATE FALLS — VICTORY":"THE WAYFARER HAS FALLEN"):message}</div>}
+      {view === "player" && !spectator
+        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) }))} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
+        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) }))} />}
+      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
+      {view === "player" && !spectator
+        ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
+          {exploring ? <div className="action-dock">{exits.map(exit => <button key={exit.id} className="move-button" onClick={() => void sendCommand({ type: "choose_exit", exitId: exit.id })} disabled={busy}><span className="move-glyph">↗</span><span className="move-label">{exit.label}<small>ENTER PATH</small></span></button>)}</div> : null}
+          {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
+        </>
+        : null}
+      <div className="event-message" role="status">{gameOver ? "THE CATACOMBS ARE CLEARED — VICTORY" : message}</div>
+      {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
     </section>
-    <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{view==="player"?"PLAYER VIEW · ACTIONS RESOLVE IMMEDIATELY":"SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
+    <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
   </main>;
 }
