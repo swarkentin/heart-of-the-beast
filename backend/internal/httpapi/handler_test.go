@@ -186,7 +186,6 @@ func TestJoinRejectsStartedFullAndUnknownRooms(t *testing.T) {
 	}
 }
 
-
 func TestPlayerHeartbeatLeaveAndReconnectPresence(t *testing.T) {
 	handler := NewHandler(store.NewMemory())
 	create := httptest.NewRecorder()
