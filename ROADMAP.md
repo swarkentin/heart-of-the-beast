@@ -14,14 +14,16 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 0 — Foundation and discovery
 
 - [x] Establish project overview and working agreements.
-- [ ] Agree on MVP game loop, solo/co-op rules, combat, and progression.
-- [ ] Record initial architecture, deployment, audio, and presentation decisions.
+- [x] Agree on MVP game loop, solo/co-op rules, combat, and progression.
+- [x] Record initial architecture, deployment, audio, and presentation decisions.
 - [ ] Bootstrap frontend, backend, local development, and CI.
 - [ ] Configure Render auto-deploy and Neon PostgreSQL for the prototype.
 - [ ] Define room lifecycle and authoritative game-state model.
-- [ ] Establish responsive scene, character, enemy, and HUD presentation rules.
+- [x] Establish responsive scene, character, enemy, and HUD presentation rules.
 
 ## Phase 1 — Playable multiplayer/solo vertical slice
+
+- [ ] Prototype one responsive combat room with one adventurer, two enemies, visible enemy intent, and a basic action/resolve loop (first pass in PR).
 
 - [ ] Create a room and join by invite link/code; no account required.
 - [ ] Responsive player interface and separate spectator/cast presentation.
