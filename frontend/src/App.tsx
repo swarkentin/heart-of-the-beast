@@ -168,7 +168,7 @@ export default function App() {
   const run = snapshot?.run;
   const serverRoom = run?.rooms[run.currentRoomId];
   const roomIdForView = serverRoom ? visualRoomId(serverRoom.id) : "watcher-hall";
-  const room = rooms[roomIdForView];
+  const room: Room = { ...rooms[roomIdForView], name: serverRoom?.name || rooms[roomIdForView].name, description: serverRoom?.description || rooms[roomIdForView].description };
   const enemies = (serverRoom?.encounter?.enemies || []).map((enemy, index, all) => visualEnemy(enemy, index, all.length));
   const playerId = snapshot?.ownerPlayerId || snapshot?.playerIds[0];
   const player = playerId ? run?.players[playerId] : undefined;
@@ -178,6 +178,8 @@ export default function App() {
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
   const gameOver = run?.phase === "completed";
   const exploring = run?.phase === "exploring";
+  const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
+  const spectatorLink = session ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -244,8 +246,7 @@ export default function App() {
 
   function shareSpectatorLink() {
     if (!session) return;
-    const link = window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken);
-    void navigator.clipboard.writeText(link).then(() => setShareCopied(true)).catch(() => setError("Clipboard access was blocked. You can copy the spectator URL from the address bar after opening it."));
+    void navigator.clipboard.writeText(spectatorLink).then(() => setShareCopied(true)).catch(() => setError("Clipboard access was blocked. You can copy the spectator URL from the address bar after opening it."));
   }
 
   if (!roomId || !token) {
@@ -275,15 +276,14 @@ export default function App() {
       <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {room.floor}</div>
       {!spectator ? <div className="view-switch" aria-label="Presentation view"><button className={view === "player" ? "selected" : ""} onClick={() => setView("player")}>PLAYER</button><button className={view === "cast" ? "selected" : ""} onClick={() => setView("cast")}>SPECTATOR / CAST</button></div> : <div className="view-switch"><button className="selected">SPECTATOR / CAST</button></div>}
     </header>
-    {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 24px" }}><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></div>}
+    {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 16, padding: "8px 24px" }}><a href={spectatorLink} target="_blank" rel="noreferrer" style={{ color: "#d8a76e" }}>OPEN SPECTATOR VIEW</a><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></div>}
     <section className="play-area">
       {view === "player" && !spectator
-        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) }))} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
+        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) }))} />}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">THE WAYFARER <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
       {view === "player" && !spectator
         ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
-          {exploring ? <div className="action-dock">{exits.map(exit => <button key={exit.id} className="move-button" onClick={() => void sendCommand({ type: "choose_exit", exitId: exit.id })} disabled={busy}><span className="move-glyph">↗</span><span className="move-label">{exit.label}<small>ENTER PATH</small></span></button>)}</div> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
