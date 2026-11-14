@@ -95,7 +95,7 @@ async function startDetached(name, command, args, options = {}) {
 }
 
 async function waitFor(url, label) {
-  const deadline = Date.now() + 30000;
+  const deadline = Date.now() + 60000;
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(1500) });
@@ -135,17 +135,21 @@ async function up() {
   await migrate();
 
   const env = { ...process.env, DATABASE_URL: databaseURL, PORT: "8080" };
-  const backendPid = await startDetached("backend", "go", ["run", "./cmd/server"], {
-    cwd: join(root, "backend"), env,
-  });
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  const frontendPid = await startDetached("frontend", npm, [
-    "run", "dev", "--workspace", "@heart-of-the-beast/frontend", "--",
-    "--host", "127.0.0.1", "--port", "5173", "--strictPort",
-  ], { shell: process.platform === "win32" });
-
-  saveState({ backendPid, frontendPid, startedAt: new Date().toISOString() });
+  let backendPid;
+  let frontendPid;
   try {
+    backendPid = await startDetached("backend", "go", ["run", "./cmd/server"], {
+      cwd: join(root, "backend"), env,
+    });
+    saveState({ backendPid, startedAt: new Date().toISOString() });
+
+    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+    frontendPid = await startDetached("frontend", npm, [
+      "run", "dev", "--workspace", "@heart-of-the-beast/frontend", "--",
+      "--host", "127.0.0.1", "--port", "5173", "--strictPort",
+    ], { shell: process.platform === "win32" });
+    saveState({ backendPid, frontendPid, startedAt: new Date().toISOString() });
+
     await waitFor(backendURL, "Backend");
     await waitFor(frontendURL, "Frontend");
   } catch (error) {
