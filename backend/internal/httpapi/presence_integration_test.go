@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,8 +39,14 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(string(migration)); err != nil {
-		t.Fatalf("apply room schema: %v", err)
+	for _, statement := range strings.Split(string(migration), ";") {
+		statement = strings.TrimSpace(statement)
+		if statement == "" {
+			continue
+		}
+		if _, err := db.Exec(statement); err != nil {
+			t.Fatalf("apply room schema: %v", err)
+		}
 	}
 
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
