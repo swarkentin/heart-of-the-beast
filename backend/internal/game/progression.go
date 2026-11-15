@@ -7,7 +7,7 @@ var (
 	ErrArchetypeLocked  = errors.New("archetype can only be changed before the run starts")
 	ErrInvalidTalent   = errors.New("talent is not available to this archetype")
 	ErrTalentLocked    = errors.New("talent prerequisites are not met")
-	ErrNoTalentPoints  = errors.New("no talent points available")
+	ErrNoTalentPoints   = errors.New("no talent points available")
 	ErrTalentChosen    = errors.New("talent has already been chosen")
 )
 
@@ -127,7 +127,9 @@ func ChooseTalent(room *Room, playerID, talentID string) error {
 	maxHealthIncrease := bonusesFor(player).MaxHealth - oldMaxHealthBonus
 	if maxHealthIncrease > 0 {
 		player.MaxHealth += maxHealthIncrease
-		if player.Health > 0 { player.Health += maxHealthIncrease }
+		if player.Health > 0 {
+			player.Health += maxHealthIncrease
+		}
 	}
 	return nil
 }
@@ -180,7 +182,9 @@ func grantEncounterExperience(room *Room, round int) {
 			switch player.Level {
 			case 2:
 				player.MaxHealth += 4
-				if player.Health > 0 { player.Health += 4 }
+				if player.Health > 0 {
+					player.Health += 4
+				}
 				player.Stats.Power++
 			case 3:
 				player.Stats.Focus += 2
