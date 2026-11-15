@@ -23,7 +23,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add the initial Go service, health endpoint, container build, and independent backend CI.
 - [x] Introduce the persisted room/session aggregate, local PostgreSQL workflow, and initial versioned migration.
 - [x] Provide one-command local startup/shutdown, health status, and transactional versioned migration tooling (ADR 0011).
-- [x] Add the Render Blueprint for the static frontend and Go API, CI-gated auto-deploys, startup migrations, readiness checks, and graceful HTTP shutdown (ADR 0025).
+- [x] Add the Render Blueprint for the static frontend and Go API on free compute, CI-gated auto-deploys, startup migrations, readiness checks, and graceful HTTP shutdown (ADR 0025).
 - [ ] Create the Neon project, configure its pooled DATABASE_URL secret in Render, and verify the first production deploy.
 - [x] Define the room/run lifecycle and deterministic authoritative state transitions.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
