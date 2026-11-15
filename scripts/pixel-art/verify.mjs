@@ -14,6 +14,8 @@ import { encodePNG } from "./engine.mjs";
 import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
 import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
+import { renderInterface, renderHero } from "./build-interface.mjs";
+import { heroes } from "./heroes.mjs";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art/monsters");
 const errors = [], warnings = [];
@@ -72,6 +74,24 @@ for (const theme of themes) {
   if (!existsSync(goPath)) fail(`${GO_BINDINGS_PATH} missing - run npm run art:build`);
   else if (readFileSync(goPath, "utf8") !== goBindings(themes)) fail(`${GO_BINDINGS_PATH} is stale - run npm run art:build`);
 }
+// Heroes and the interface kit: nothing stale, resting poses unclipped and animated.
+const ART = resolve(OUT, "..");
+const a1 = renderInterface(), a2 = renderInterface();
+for (const [path, data] of Object.entries(a1)) {
+  if (sha(data) !== sha(a2[path])) fail(`[interface] ${path}: render is not deterministic`);
+  const file = resolve(ART, path);
+  if (!existsSync(file)) fail(`[interface] ${path}: missing on disk - run npm run art:build`);
+  else if (sha(readFileSync(file)) !== sha(data)) fail(`[interface] ${path}: stale on disk - run npm run art:build`);
+}
+const heroIds = new Set();
+for (const h of heroes) {
+  if (heroIds.has(h.id)) fail(`[heroes] ${h.id}: duplicate hero id`); heroIds.add(h.id);
+  const { frames } = renderHero(h);
+  frames.idle.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${h.id}: idle[${i}] is empty`); if (touchesEdge(img)) fail(`[heroes] ${h.id}: idle[${i}] touches the frame edge (clipped)`); });
+  frames.flourish.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${h.id}: flourish[${i}] is empty`); if (touchesEdge(img)) warn(`[heroes] ${h.id}: flourish[${i}] touches the frame edge`); });
+  if (![1, 2, 3].some((i) => differs(frames.idle[0], frames.idle[i]))) fail(`[heroes] ${h.id}: idle loop does not animate`);
+  if (!differs(frames.idle[0], frames.flourish[3])) fail(`[heroes] ${h.id}: flourish peak identical to idle`);
+}
 for (const w of warnings) console.warn("warn:", w);
 if (errors.length) { for (const e of errors) console.error("FAIL:", e); console.error(`\n${errors.length} problem(s) across ${total} creatures.`); process.exit(1); }
-console.log(`OK: ${themes.length} themes, ${total} creatures verified (${warnings.length} warning${warnings.length === 1 ? "" : "s"}).`);
+console.log(`OK: ${themes.length} themes, ${total} creatures, ${heroes.length} heroes and ${Object.keys(a1).length} interface files verified (${warnings.length} warning${warnings.length === 1 ? "" : "s"}).`);

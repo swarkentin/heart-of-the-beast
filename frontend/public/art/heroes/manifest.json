@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "frame": {
+    "w": 64,
+    "h": 64
+  },
+  "columns": 6,
+  "bust": {
+    "w": 32,
+    "h": 32
+  },
+  "anchor": {
+    "x": 32,
+    "y": 61
+  },
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    "flourish": {
+      "row": 1,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    }
+  },
+  "heroes": [
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "sheet": "heroes/bulwark.png",
+      "bust": "heroes/bulwark-bust.png",
+      "flourish": "brace"
+    },
+    {
+      "id": "juggernaut",
+      "name": "Juggernaut",
+      "sheet": "heroes/juggernaut.png",
+      "bust": "heroes/juggernaut-bust.png",
+      "flourish": "smash"
+    },
+    {
+      "id": "spellguard",
+      "name": "Spellguard",
+      "sheet": "heroes/spellguard.png",
+      "bust": "heroes/spellguard-bust.png",
+      "flourish": "channel"
+    },
+    {
+      "id": "assassin",
+      "name": "Assassin",
+      "sheet": "heroes/assassin.png",
+      "bust": "heroes/assassin-bust.png",
+      "flourish": "slash"
+    },
+    {
+      "id": "arcanist",
+      "name": "Arcanist",
+      "sheet": "heroes/arcanist.png",
+      "bust": "heroes/arcanist-bust.png",
+      "flourish": "channel"
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "sheet": "heroes/ranger.png",
+      "bust": "heroes/ranger-bust.png",
+      "flourish": "shoot"
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "sheet": "heroes/cleric.png",
+      "bust": "heroes/cleric-bust.png",
+      "flourish": "channel"
+    },
+    {
+      "id": "tactician",
+      "name": "Tactician",
+      "sheet": "heroes/tactician.png",
+      "bust": "heroes/tactician-bust.png",
+      "flourish": "slash"
+    },
+    {
+      "id": "beastcaller",
+      "name": "Beastcaller",
+      "sheet": "heroes/beastcaller.png",
+      "bust": "heroes/beastcaller-bust.png",
+      "flourish": "channel"
+    }
+  ]
+}

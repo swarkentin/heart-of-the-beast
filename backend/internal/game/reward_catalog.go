@@ -132,12 +132,9 @@ func applyRunReward(room *Room, definition RunRewardDefinition, round int, flagI
 			case RunRewardExperience:
 				grantExperience(member, room, playerID, round, operation.Amount)
 			case RunRewardHeal:
-				before := member.Health
-				member.Health += operation.Amount
-				if member.Health > member.MaxHealth {
-					member.Health = member.MaxHealth
-				}
-				actual := member.Health - before
+				transition := resolveHealthHealing(member.Health, member.MaxHealth, operation.Amount)
+				member.Health = transition.Health
+				actual := transition.Applied
 				if actual > 0 && operation.ImpactKind != "" {
 					addCombatImpact(run, round, operation.ImpactKind, fmt.Sprintf(operation.ImpactText, adventurerLabel(room, playerID), actual), "heal", playerID, "player", actual)
 				}

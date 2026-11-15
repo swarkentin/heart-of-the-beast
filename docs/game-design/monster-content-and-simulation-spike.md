@@ -178,3 +178,12 @@ encounters in `encounters.go` and `encounters_themes.go`; themes in `dungeon_the
 The new monsters use provisional role templates and relative budgets. They exist to be simulated, not because they are tuned; calibrating
 them is the next use of the simulator. The floor generator still builds only Catacombs floors.
 
+
+
+## Follow-up slice: pure health transitions
+
+The first deterministic runtime boundary is extracted in `backend/internal/game/health_transitions.go`. Damage and healing now use shared pure functions that return both the resulting health and the effective amount applied after clamping. Live combat attacks, interrupts, enemy attacks and healing, reflected damage, encounter healing, class abilities/passives, and catalog-driven run rewards all use these same functions.
+
+The helpers deliberately do not decide who is eligible to receive an effect; that remains in the authoritative command/reward flow. They also do not emit events or mutate room state. This keeps the arithmetic deterministic and independently testable without moving presentation or multiplayer orchestration into the simulation layer. Existing combat tests continue to exercise the live integration, while focused unit tests cover lethal/partial/zero/negative damage and healing at the health cap.
+
+Next, extract pure attack damage and incoming mitigation/intent resolution, then progression transitions. Once those rules are shared, add a seeded simulation runner over explicit combat state snapshots and compare its outcomes with live transition tests.

@@ -1,0 +1,48 @@
+# ADR 0024: Pixel-art heroes and interface kit, starting with the lobby and class selection
+
+- Status: Accepted
+- Date: 2026-11-15
+
+## Context
+
+ADR 0022 gave the game a cohesive pixel-art bestiary, but the interface around it did not match. The title screen,
+party lobby, and class selection mixed serif and monospace type, thin CSS borders, gradients, inline styles, and a
+hand-built SVG class portrait. Several rounds of overrides had been layered on top of each other in `styles.css`.
+These are the first screens a player sees, and class selection is where a player first meets their character, so the
+mismatch was most visible exactly where first impressions are made. ADR 0004 also left player-character art open.
+
+## Decision
+
+Draw player characters and interface art with the same generator as the bestiary, and rebuild the title screen, party
+lobby, and class selection on that art.
+
+- **Heroes.** `scripts/pixel-art/heroes.mjs` defines one front-facing hero per class, with ids matching the backend
+  class catalog. They use the bestiary rigs, material ramps, dithering, outline, and emissive glow, on the same 64x64
+  cell and pixel density as monsters. Each sheet has an `idle` loop (4 frames) and a `flourish` (6 frames, the class's
+  signature move). A 32x32 bust crop per hero serves roster portraits, and an `empty` silhouette fills open party slots.
+- **Interface kit.** `scripts/pixel-art/ui.mjs` draws 9-slice frames (panel, recessed slot, selected slot, three
+  buttons), seamless wall and floor tiles, an animated torch, the game crest, and a 16x16 icon sheet (stats, skill
+  kinds, archetypes, host, ready, waiting, locked). Colours come from the same ramp function as the sprites.
+- **One pixel grid.** All bitmap art is authored at 1x and scaled in CSS by a whole number (`--px`: 3 on desktop, 2
+  below 980 px) with `image-rendering: pixelated`. Frames use `border-image`; sprites animate with `steps()`.
+- **Screens.** `frontend/src/lobby.tsx` and `lobby.css` hold the title screen, connecting screen, party lobby, class
+  selection, and talent preview. The party is shown as a line-up of hero sprites standing in a torchlit room; choosing
+  a class plays that hero's flourish and puts them in the line-up. The superseded lobby and class-picker rules were
+  removed from `styles.css`.
+- **Type.** Press Start 2P is used for headings, names, and buttons, and VT323 at 18 px and above for body copy and
+  labels. Both were already loaded by the app.
+- **Build and verification.** `npm run art:build` also writes `frontend/public/art/heroes/` and
+  `frontend/public/art/ui/`. `npm run art:verify` checks those files are not stale and that hero idle frames are
+  unclipped and animate.
+
+## Consequences
+
+- The first screens share the bestiary's look, and the rest of the interface can be converted panel by panel using the
+  same kit. The run view (HUD, action dock, exits, talent modal, spectator view) has not been converted yet.
+- Adding a class means adding a hero definition and listing its id in `HERO_ART` in `lobby.tsx`. A class without art
+  falls back to the silhouette.
+- Heroes have no hit, attack, or defeat animations yet. They are needed before heroes appear in the combat and
+  spectator scenes.
+- Web fonts still load from Google Fonts. Self-hosting them, or drawing a bitmap font with the generator, would
+  remove the external request and the flash of fallback type.
+- Reduced motion: sprite and torch animations stop and hold their first frame; no state is shown by animation alone.
