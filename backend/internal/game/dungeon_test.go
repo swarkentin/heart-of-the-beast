@@ -100,6 +100,12 @@ func TestInterFloorPerkIsPartyWideAndInvalidChoicesDoNotAdvance(t *testing.T) {
 	if run.Depth != 1 || !run.PendingInterFloorChoice {
 		t.Fatal("invalid choice must not advance the run")
 	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "choose_inter_floor", ChoiceID: "perk"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if run.Depth != 1 || run.Phase != PhaseIntermission {
+		t.Fatal("the first co-op vote should wait for the rest of the party")
+	}
 	if err := ApplyCommand(room, "player-2", Command{Type: "choose_inter_floor", ChoiceID: "perk"}, now); err != nil {
 		t.Fatal(err)
 	}
