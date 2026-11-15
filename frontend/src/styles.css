@@ -96,3 +96,7 @@
 .scene-exit-selected{border-color:#f2ce96;box-shadow:0 0 0 2px #e8b978,0 0 34px #f3b76b88,inset 0 0 26px #e5ad5b33}
 .scene-exit>i{color:#f3d3a0;font-size:8px;font-style:normal;letter-spacing:1px}
 @media(max-width:700px){.path-vote-status{top:8px;min-width:185px;max-width:54%;padding:5px 7px;column-gap:7px}.path-vote-status strong{font-size:8px;letter-spacing:.5px}.path-vote-status b{font-size:15px}.path-vote-status small{font-size:7px;letter-spacing:.1px}}
+
+.path-vote-progress{grid-column:1/-1;height:3px;overflow:hidden;background:#39333a}
+.path-vote-progress i{display:block;height:100%;background:#c99a61;transition:width .1s linear}
+@media(prefers-reduced-motion:reduce){.path-vote-progress i{transition:none}}
