@@ -101,3 +101,26 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 		t.Fatalf("Thorns effect missing: %+v", bonusesFor(player))
 	}
 }
+
+
+func TestSupportTalentsBenefitTheWholeLivingParty(t *testing.T) {
+	room := progressionRoom()
+	support := newPlayerState("player-1", "support")
+	ally := newPlayerState("player-2", "damage")
+	ally.Health = 20
+	room.PlayerIDs = append(room.PlayerIDs, "player-2")
+	room.Presence["player-2"] = PlayerPresence{LastSeenAt: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	support.Talents = []string{"support-protective-ward", "support-rallying-cry"}
+	room.Run = &Run{Players: map[string]*PlayerState{"player-1": support, "player-2": ally}}
+
+	bonuses := partyBonusesFor(room)
+	if bonuses.PartyGuardReduction != 2 || bonuses.PartyEncounterHeal != 2 {
+		t.Fatalf("support party auras missing: %+v", bonuses)
+	}
+	support.Health = 0
+	bonuses = partyBonusesFor(room)
+	if bonuses.PartyGuardReduction != 0 || bonuses.PartyEncounterHeal != 0 {
+		t.Fatalf("downed support should not maintain party auras: %+v", bonuses)
+	}
+}
+
