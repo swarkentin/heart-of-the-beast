@@ -44,20 +44,23 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
-- [ ] One complete dungeon path with basic encounters and a boss.
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
 - [x] Add a contextual interrupt counter for the Crypt Warden Soul Drain; see ADR 0018 and `docs/game-design/combat-roadmap.md`.
 - [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then support and consumable actions.
-- [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).\n- [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
+- [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).
+- [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
 
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
-- [ ] Temporary run progression: award encounter XP, level up stats, choose a run archetype, and spend talent points on combat-shaping talents (first playable pass in PR #24; revise archetypes and modal talent selection from playtest feedback).
-- [x] First within-run reward choices: Emberheart increases party Strike damage; Stoneward increases party guard mitigation.
+- [ ] Implement the extensible archetype/class system per `docs/game-design/classes-and-archetypes.md` and ADR 0021: central class catalog with stable IDs, nine initial class definitions, unique starting stats/equipment, one signature ability and passive per class, and server-authoritative selection/combat.
+- [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
+- [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
+- [ ] Snapshot class/build definition versions in active runs and test compatibility across reconnects and content updates.
+- [ ] First implementation should keep classes as build directions, not mandatory roles; every class must remain viable solo and duplicate classes must remain viable in parties.
 - [ ] Expand run rewards into gear, loot, inventory, spells, abilities, and consumables.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
@@ -68,9 +71,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Distinguish persistent character meta-progression from temporary, within-run roguelike progression.
 - [ ] Award character experience server-side for meaningful run accomplishments: dungeon completions, boss and mini-quest victories, discoveries, and special challenges.
 - [ ] Provide persistent character levels with cosmetic and expressive unlocks such as name customization, interface themes, music selections, portraits, titles, and visual effects.
+- [ ] Add class unlocks as persistent content-access rewards, using data-defined requirements (character level, achievements, quests, or other milestones); unlocks must not grant combat power.
 - [ ] Give guest characters a randomly assigned name initially; unlock player-selected naming at an early level.
 - [ ] Support a useful local guest progression path before account creation, with a clear path to link and preserve that identity later.
-- [ ] Keep character levels and unlocks cosmetic; never grant combat power or gameplay advantages through meta-progression.
+- [ ] Keep character levels and unlocks cosmetic/content-access focused; never grant combat power or gameplay advantages through meta-progression.
 - [ ] Make accomplishment rewards idempotent, resistant to farming, and fair to eligible party members, including meaningful partial progress on unsuccessful runs.
 
 ## Phase 3 — Procedural dungeons and replayability
