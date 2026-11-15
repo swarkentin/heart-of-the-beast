@@ -69,7 +69,9 @@ func ChooseRoomEvent(room *Room, actorID, choiceID string, now time.Time) error 
 		}
 	case "shrine_ward":
 		for _, member := range run.Players {
-			if member != nil { member.GuardReduction++ }
+			if member != nil {
+				member.GuardReduction++
+			}
 		}
 		run.Flags["shrine_ward"] = true
 	case "leave":
