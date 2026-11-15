@@ -163,3 +163,18 @@ Encounter-clear and floor-boundary rewards now use the validated, data-only `Run
 Target policies preserve the existing distinctions: encounter XP goes to participating players including those who are downed but not those who have left; room rewards affect living run members; floor restoration affects living members who have not left; and miniboss/floor perks affect every run member. Reward values and timing are unchanged. Runtime application remains an explicit server-authoritative transition, not executable catalog callbacks. Catalog validation runs with the game content catalog and tests cover invalid definitions, target policies, and idempotency.
 
 With this slice, the authored modifier/effect/reward definitions are catalog-backed. The remaining major extraction is to move combat and reward application into shared deterministic transition functions used by both live play and the future simulation runner.
+
+
+## Follow-up slice: art-backed monsters, dungeon themes and the full bestiary
+
+Every monster definition now carries required pixel art (`defineMonster(art.X, ...)`; see ADR 0023), enforced at compile time by the
+generated `backend/internal/art` registry and by catalog validation. A `DungeonThemeCatalog` ties eleven themes to their art and
+to themed encounters (`EncounterDefinition.ThemeID`), and the catalogs now contain every creature in the bestiary: the original Catacombs
+monsters mapped to Catacombs art, plus 82 new monsters and 72 new encounters. Runtime enemies carry an optional `sprite` ID for clients.
+
+Canonical locations: legacy Catacombs monsters in `monster_catalog.go`; other themes' monsters and abilities in `monster_catalog_themes.go`;
+encounters in `encounters.go` and `encounters_themes.go`; themes in `dungeon_theme_catalog.go`.
+
+The new monsters use provisional role templates and relative budgets. They exist to be simulated, not because they are tuned; calibrating
+them is the next use of the simulator. The floor generator still builds only Catacombs floors.
+

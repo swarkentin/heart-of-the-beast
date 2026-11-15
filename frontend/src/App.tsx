@@ -19,7 +19,7 @@ const actions: { id: Action; label: string; hint: string; glyph: string }[] = [
 ];
 
 type ApiEnemyIntent = { kind: string; label: string; damage: number; heal?: number; targetPlayerId?: string; targetAll?: boolean; interruptible?: boolean };
-type ApiEnemy = { id: string; name: string; behavior?: string; turnsTaken: number; health: number; maxHealth: number; intent?: ApiEnemyIntent };
+type ApiEnemy = { id: string; name: string; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; intent?: ApiEnemyIntent };
 type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number };
 type ApiExit = { id: string; destination: string; label: string; description?: string };
 type ApiEventChoice = { id: string; label: string; description: string };

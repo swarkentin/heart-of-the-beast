@@ -85,3 +85,11 @@ npm run art:gallery   # regenerate docs/art/bestiary.png
 to a fresh render, correct dimensions, no empty frames, no clipping of idle/hit frames, and an idle loop that
 actually animates. Oversized creatures are automatically scaled down (same pixel density) until their idle and
 hit frames fit their cell. Run `art:build` and commit the output after changing any theme file.
+
+## Backend registry
+
+`npm run art:build` also writes `backend/internal/art/sprites_gen.go`, the Go registry of every theme and sprite. Backend content must reference art through
+its exported variables (`art.SunkenDrownedKnight`); the ids cannot be forged or misspelled, so a monster that needs art which does not exist fails to
+compile. Monsters are declared with `defineMonster(sprite, MonsterDefinition{...})`. See ADR 0023. Commit `sprites_gen.go` together with the art.
+Enemy snapshots carry the sprite as `sprite: "<theme>/<creature>"`, which maps to `/art/monsters/<theme>/<creature>.png`.
+

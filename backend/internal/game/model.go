@@ -148,10 +148,13 @@ type EnemyIntent struct {
 }
 
 type Enemy struct {
-	ID           string       `json:"id"`
-	DefinitionID string       `json:"definitionId,omitempty"`
-	Name         string       `json:"name"`
-	Behavior     string       `json:"behavior,omitempty"`
+	ID           string `json:"id"`
+	DefinitionID string `json:"definitionId,omitempty"`
+	Name         string `json:"name"`
+	Behavior     string `json:"behavior,omitempty"`
+	// SpriteID is "<theme>/<creature>" for the pixel-art sheet at /art/monsters/<SpriteID>.png. Runs persisted
+	// before art existed lack it; clients must fall back to a placeholder.
+	SpriteID     string       `json:"sprite,omitempty"`
 	TurnsTaken   int          `json:"turnsTaken"`
 	Health       int          `json:"health"`
 	MaxHealth    int          `json:"maxHealth"`

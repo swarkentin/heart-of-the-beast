@@ -1,6 +1,10 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/art"
+)
 
 // MonsterRole describes the tactical job a monster performs in an encounter.
 // Roles are descriptive content metadata, not mandatory party composition rules.
@@ -31,14 +35,28 @@ type AbilityDefinition struct {
 	ExceptEveryTurns int
 }
 
+// MonsterDefinition is an immutable authored monster. Every definition has pixel art: Sprite is set by
+// defineMonster, which takes the art as a required argument, and art.SpriteID values cannot be forged outside
+// package art, so a monster without art, or with art the pipeline never built, does not compile.
 type MonsterDefinition struct {
-	ID             string
-	Name           string
-	Role           MonsterRole
+	ID   string
+	Name string
+	Role MonsterRole
+	// Sprite is the monster's sprite sheet. Set it through defineMonster, never directly.
+	Sprite art.SpriteID
+	// BehaviorID names the monster definition whose abilities this monster uses. Legacy monsters share one
+	// of the original behavior definitions; themed monsters name themselves.
 	BehaviorID     string
 	BaseHealth     int
 	HealthPerDepth int
 	AbilityIDs     []string
+}
+
+// defineMonster attaches required art to a monster definition. Leaving the art out of a monster entry is a
+// compile error, because the sprite is a mandatory parameter of the only supported way to declare one.
+func defineMonster(sprite art.SpriteID, definition MonsterDefinition) MonsterDefinition {
+	definition.Sprite = sprite
+	return definition
 }
 
 // MonsterScaling holds the explicit inputs used to derive an enemy's health.
@@ -71,29 +89,40 @@ func newMonsterCatalog() MonsterCatalog {
 		abilityMap[ability.ID] = ability
 	}
 	monsters := []MonsterDefinition{
-		{ID: "scout", Name: "Crypt Stalker", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}},
-		{ID: "guardian", Name: "Ashbound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 13, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "sentinel", Name: "Threshold Warden", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 12, AbilityIDs: []string{"stone-strike"}},
-		{ID: "miniboss", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 18, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}},
-		{ID: "warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
-		{ID: "stonebound-guard", Name: "Stonebound Guard", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 14, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "gravebound-scout", Name: "Gravebound Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 10, AbilityIDs: []string{"quick-jab"}},
-		{ID: "ossuary-champion", Name: "Ossuary Champion", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
-		{ID: "depth-reliquary-brute", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 23, HealthPerDepth: 3, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}},
-		{ID: "restless-sentinel", Name: "Restless Sentinel", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 10, AbilityIDs: []string{"stone-strike"}},
-		{ID: "reliquary-guardian", Name: "Reliquary Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "drowned-scout", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 15, AbilityIDs: []string{"quick-jab"}},
-		{ID: "drowned-scout-light", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}},
-		{ID: "drowned-scout-crossing-solo", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}},
-		{ID: "bonebound-guardian", Name: "Bonebound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 22, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "crypt-skirmisher", Name: "Crypt Skirmisher", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 16, AbilityIDs: []string{"quick-jab"}},
-		{ID: "gatekeeper", Name: "Gatekeeper", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "gravebound-sentry", Name: "Gravebound Sentry", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}},
-		{ID: "crypt-warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 42, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
-		{ID: "crypt-warden-solo", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 36, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "scout", Name: "Crypt Stalker", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "guardian", Name: "Ashbound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 13, AbilityIDs: []string{"heavy-blow", "stone-strike"}}),
+		defineMonster(art.CatacombsSkeletonSentinel, MonsterDefinition{ID: "sentinel", Name: "Threshold Warden", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 12, AbilityIDs: []string{"stone-strike"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "miniboss", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 18, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}}),
+		defineMonster(art.CatacombsCryptWarden, MonsterDefinition{ID: "warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "stonebound-guard", Name: "Stonebound Guard", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 14, AbilityIDs: []string{"heavy-blow", "stone-strike"}}),
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "gravebound-scout", Name: "Gravebound Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 10, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsOssuaryColossus, MonsterDefinition{ID: "ossuary-champion", Name: "Ossuary Champion", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "depth-reliquary-brute", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 23, HealthPerDepth: 3, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}}),
+		defineMonster(art.CatacombsSkeletonSentinel, MonsterDefinition{ID: "restless-sentinel", Name: "Restless Sentinel", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 10, AbilityIDs: []string{"stone-strike"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "reliquary-guardian", Name: "Reliquary Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}}),
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "drowned-scout", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 15, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "drowned-scout-light", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "drowned-scout-crossing-solo", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsBoneboundGuardian, MonsterDefinition{ID: "bonebound-guardian", Name: "Bonebound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 22, AbilityIDs: []string{"heavy-blow", "stone-strike"}}),
+		defineMonster(art.CatacombsDrownedScout, MonsterDefinition{ID: "crypt-skirmisher", Name: "Crypt Skirmisher", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 16, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsGraveboundSentry, MonsterDefinition{ID: "gatekeeper", Name: "Gatekeeper", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}}),
+		defineMonster(art.CatacombsGraveboundSentry, MonsterDefinition{ID: "gravebound-sentry", Name: "Gravebound Sentry", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}}),
+		defineMonster(art.CatacombsCryptWarden, MonsterDefinition{ID: "crypt-warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 42, AbilityIDs: []string{"soul-drain", "soul-sweep"}}),
+		defineMonster(art.CatacombsCryptWarden, MonsterDefinition{ID: "crypt-warden-solo", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 36, AbilityIDs: []string{"soul-drain", "soul-sweep"}}),
 	}
+	themedAbilities, themedMonsters := themedMonsterContent()
+	for _, ability := range themedAbilities {
+		if _, duplicate := abilityMap[ability.ID]; duplicate {
+			panic(fmt.Sprintf("duplicate built-in monster ability %q", ability.ID))
+		}
+		abilityMap[ability.ID] = ability
+	}
+	monsters = append(monsters, themedMonsters...)
 	monsterMap := make(map[string]MonsterDefinition, len(monsters))
 	for _, monster := range monsters {
+		if _, duplicate := monsterMap[monster.ID]; duplicate {
+			panic(fmt.Sprintf("duplicate built-in monster %q", monster.ID))
+		}
 		monsterMap[monster.ID] = monster
 	}
 	return MonsterCatalog{Monsters: monsterMap, Abilities: abilityMap}
@@ -119,6 +148,16 @@ func (catalog MonsterCatalog) Validate() error {
 	for id, monster := range catalog.Monsters {
 		if id == "" || monster.ID != id || monster.BaseHealth <= 0 || monster.HealthPerDepth < 0 || monster.BehaviorID == "" || len(monster.AbilityIDs) == 0 {
 			return fmt.Errorf("invalid monster definition %q", id)
+		}
+		sprite, ok := art.Lookup(monster.Sprite)
+		if !ok {
+			return fmt.Errorf("monster %q has no pixel art", id)
+		}
+		if monster.Role == MonsterRoleBoss && !sprite.Boss {
+			return fmt.Errorf("boss monster %q uses non-boss sprite %s", id, monster.Sprite)
+		}
+		if _, ok := catalog.Monsters[monster.BehaviorID]; !ok {
+			return fmt.Errorf("monster %q uses undefined behavior %q", id, monster.BehaviorID)
 		}
 		for _, abilityID := range monster.AbilityIDs {
 			if _, ok := catalog.Abilities[abilityID]; !ok {
@@ -181,7 +220,7 @@ func (catalog MonsterCatalog) NewEnemy(instanceID, monsterID string, scaling Mon
 	}
 	return Enemy{
 		ID: instanceID, DefinitionID: monster.ID, Name: monster.Name,
-		Behavior: monster.BehaviorID, Health: health, MaxHealth: health,
+		Behavior: monster.BehaviorID, SpriteID: monster.Sprite.String(), Health: health, MaxHealth: health,
 	}, nil
 }
 
