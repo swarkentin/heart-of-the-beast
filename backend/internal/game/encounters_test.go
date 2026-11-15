@@ -61,19 +61,19 @@ func TestEncounterCatalogInstantiatesStableSlotsAndPartyVariants(t *testing.T) {
 
 func TestEncounterCatalogRejectsInvalidBudgetAndMonsterReferences(t *testing.T) {
 	tests := []struct {
-		name string
+		name       string
 		definition EncounterDefinition
 	}{
 		{
-			name: "budget mismatch",
+			name:       "budget mismatch",
 			definition: EncounterDefinition{ID: "broken", Budget: 3, Enemies: []EncounterMonsterDefinition{{ID: "enemy", MonsterID: "scout", BudgetCost: 2}}},
 		},
 		{
-			name: "unknown monster",
+			name:       "unknown monster",
 			definition: EncounterDefinition{ID: "broken", Budget: 2, Enemies: []EncounterMonsterDefinition{{ID: "enemy", MonsterID: "missing", BudgetCost: 2}}},
 		},
 		{
-			name: "duplicate slot",
+			name:       "duplicate slot",
 			definition: EncounterDefinition{ID: "broken", Budget: 2, Enemies: []EncounterMonsterDefinition{{ID: "enemy", MonsterID: "scout", BudgetCost: 1}, {ID: "enemy", MonsterID: "guardian", BudgetCost: 1}}},
 		},
 	}
