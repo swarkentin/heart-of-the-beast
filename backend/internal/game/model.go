@@ -26,7 +26,7 @@ type Room struct {
 	PlayerIDs          []string                  `json:"playerIds"`
 	PlayerTokenHashes  map[string]string         `json:"playerTokenHashes"`
 	Presence           map[string]PlayerPresence `json:"presence,omitempty"`
-	PlayerArchetypes    map[string]string         `json:"playerArchetypes,omitempty"`
+	PlayerArchetypes   map[string]string         `json:"playerArchetypes,omitempty"`
 	SpectatorTokenHash string                    `json:"spectatorTokenHash"`
 	Run                *Run                      `json:"run,omitempty"`
 	Version            int64                     `json:"version"`
@@ -63,7 +63,7 @@ type PlayerState struct {
 	ID        string `json:"id"`
 	Health    int    `json:"health"`
 	MaxHealth int    `json:"maxHealth"`
-	Guarding       bool        `json:"guarding,omitempty"`
+	Guarding     bool        `json:"guarding,omitempty"`
 	Archetype      string      `json:"archetype"`
 	Experience     int         `json:"experience"`
 	Level          int         `json:"level"`
