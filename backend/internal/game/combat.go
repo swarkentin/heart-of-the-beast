@@ -32,8 +32,12 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 	if run == nil || run.Phase != PhaseCombat {
 		return ErrInvalidPhase
 	}
-	if _, ok := run.Players[actorID]; !ok {
+	player, ok := run.Players[actorID]
+	if !ok {
 		return ErrNotPlayer
+	}
+	if player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
+		return ErrInvalidPhase
 	}
 	if run.CombatRound == nil {
 		return ErrRoundNotActive
