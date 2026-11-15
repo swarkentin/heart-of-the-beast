@@ -115,12 +115,9 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 				target = player
 			}
 			amount := 7 + player.Stats.Focus
-			before := target.Health
-			target.Health += amount
-			if target.Health > target.MaxHealth {
-				target.Health = target.MaxHealth
-			}
-			actual := target.Health - before
+			transition := resolveHealthHealing(target.Health, target.MaxHealth, amount)
+			target.Health = transition.Health
+			actual := transition.Applied
 			if actual > 0 {
 				addCombatImpact(room.Run, round, "renewal", adventurerLabel(room, player.ID)+" uses Renewal on "+adventurerLabel(room, target.ID)+" for "+itoa(actual)+" health.", "heal", target.ID, "player", actual)
 			} else {
@@ -302,19 +299,13 @@ func dealClassAbilityDamage(room *Room, player *PlayerState, enemy *Enemy, round
 		return
 	}
 	damage += classPassiveEffects(player, enemy, nil).AttackDamage
-	if damage < 0 {
-		damage = 0
-	}
 	if enemy.MarkedDamage > 0 {
 		damage += enemy.MarkedDamage
 		enemy.MarkedDamage = 0
 	}
-	before := enemy.Health
-	enemy.Health -= damage
-	if enemy.Health < 0 {
-		enemy.Health = 0
-	}
-	actual := before - enemy.Health
+	transition := resolveHealthDamage(enemy.Health, damage)
+	enemy.Health = transition.Health
+	actual := transition.Applied
 	addCombatImpact(room.Run, round, kind, adventurerLabel(room, player.ID)+" "+description+" "+enemy.Name+" for "+itoa(actual)+" damage.", "damage", enemy.ID, "enemy", actual)
 	if enemy.Health == 0 {
 		enemy.Intent = nil
@@ -354,8 +345,11 @@ func applyCompanionInstinct(room *Room, round int) {
 		if target == nil {
 			continue
 		}
-		target.Health++
-		addCombatImpact(room.Run, round, "companion_instinct", adventurerLabel(room, playerID)+"'s companion tends "+adventurerLabel(room, target.ID)+" for 1 health.", "heal", target.ID, "player", 1)
+		transition := resolveHealthHealing(target.Health, target.MaxHealth, 1)
+		target.Health = transition.Health
+		if transition.Applied > 0 {
+			addCombatImpact(room.Run, round, "companion_instinct", adventurerLabel(room, playerID)+"'s companion tends "+adventurerLabel(room, target.ID)+" for 1 health.", "heal", target.ID, "player", transition.Applied)
+		}
 	}
 }
 
