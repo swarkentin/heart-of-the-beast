@@ -83,7 +83,6 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	}
 
 	run := room.Run
-	current := run.Rooms[run.CurrentRoomID]
 
 	switch command.Type {
 	case "combat":
