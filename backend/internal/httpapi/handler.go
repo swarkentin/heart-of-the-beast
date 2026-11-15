@@ -346,7 +346,12 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room, error) {
-	if !game.AdvanceCombatRound(room, h.now().UTC()) {
+	now := h.now().UTC()
+	changed := game.AdvanceCombatRound(room, now)
+	if game.AdvanceNavigationVote(room, now) {
+		changed = true
+	}
+	if !changed {
 		return room, nil
 	}
 	expected := room.Version
