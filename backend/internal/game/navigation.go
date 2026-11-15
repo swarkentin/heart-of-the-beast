@@ -167,9 +167,18 @@ func transitionToExit(room *Room, exitID string, now time.Time) {
 			return
 		}
 		run.CurrentRoomID = next.ID
-		run.Phase = PhaseCombat
 		run.NavigationVote = nil
-		startCombatRound(room, now)
+		run.CombatRound = nil
+		if next.Encounter != nil && next.Encounter.Status == EncounterActive {
+			run.Phase = PhaseCombat
+			startCombatRound(room, now)
+		} else {
+			run.Phase = PhaseExploring
+			if next.Event == nil {
+				next.Cleared = true
+				startNavigationVote(room, now)
+			}
+		}
 		return
 	}
 }
