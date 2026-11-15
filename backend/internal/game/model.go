@@ -38,13 +38,13 @@ type PlayerPresence struct {
 }
 
 type Run struct {
-	ID            string                  `json:"id"`
-	Phase         RunPhase                `json:"phase"`
-	CurrentRoomID string                  `json:"currentRoomId"`
-	Rooms         map[string]*DungeonRoom `json:"rooms"`
-	Players       map[string]*PlayerState `json:"players"`
-	StartedAt     time.Time               `json:"startedAt"`
-	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
+	ID                string                  `json:"id"`
+	Phase             RunPhase                `json:"phase"`
+	CurrentRoomID     string                  `json:"currentRoomId"`
+	Rooms             map[string]*DungeonRoom `json:"rooms"`
+	Players           map[string]*PlayerState `json:"players"`
+	StartedAt         time.Time               `json:"startedAt"`
+	CompletedAt       *time.Time              `json:"completedAt,omitempty"`
 	CombatRoundNumber int                     `json:"combatRoundNumber"`
 	CombatRound       *CombatRound            `json:"combatRound,omitempty"`
 }
