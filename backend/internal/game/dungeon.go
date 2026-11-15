@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/rand"
+	"math/rand/v2"
 	"time"
 )
 
@@ -29,6 +30,8 @@ func StartMultiLevelRun(room *Room, runID string, now time.Time) error {
 	return nil
 }
 
+const InterFloorChoiceWindow = 15 * time.Second
+
 func resolveInterFloorChoice(room *Room, actorID, choiceID string, now time.Time) error {
 	run := room.Run
 	if run == nil || run.Phase != PhaseIntermission || !run.PendingInterFloorChoice {
@@ -41,6 +44,79 @@ func resolveInterFloorChoice(room *Room, actorID, choiceID string, now time.Time
 	if player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
 		return ErrInvalidPhase
 	}
+	if choiceID != "restore" && choiceID != "perk" {
+		return ErrInvalidInterFloorChoice
+	}
+	eligible := eligibleCombatPlayers(room)
+	if len(eligible) <= 1 {
+		applyInterFloorChoice(room, choiceID, now)
+		return nil
+	}
+	if run.InterFloorVote == nil {
+		run.InterFloorVote = &NavigationVote{StartedAt: now.UTC(), Deadline: now.UTC().Add(InterFloorChoiceWindow), Votes: make(map[string]string)}
+	}
+	if !now.Before(run.InterFloorVote.Deadline) {
+		AdvanceInterFloorChoice(room, now)
+		return ErrInvalidPhase
+	}
+	run.InterFloorVote.Votes[actorID] = choiceID
+	if allInterFloorVotesSubmitted(room) {
+		resolveInterFloorVote(room, now)
+	}
+	return nil
+}
+
+// AdvanceInterFloorChoice resolves a party choice when everyone has voted or
+// the discussion window expires. It is safe to call from snapshot polling.
+func AdvanceInterFloorChoice(room *Room, now time.Time) bool {
+	run := room.Run
+	if run == nil || run.Phase != PhaseIntermission || !run.PendingInterFloorChoice || run.InterFloorVote == nil {
+		return false
+	}
+	if now.Before(run.InterFloorVote.Deadline) && !allInterFloorVotesSubmitted(room) {
+		return false
+	}
+	resolveInterFloorVote(room, now)
+	return true
+}
+
+func allInterFloorVotesSubmitted(room *Room) bool {
+	run := room.Run
+	if run == nil || run.InterFloorVote == nil {
+		return false
+	}
+	eligible := eligibleCombatPlayers(room)
+	if len(eligible) == 0 {
+		return false
+	}
+	for _, playerID := range eligible {
+		if _, voted := run.InterFloorVote.Votes[playerID]; !voted {
+			return false
+		}
+	}
+	return true
+}
+
+func resolveInterFloorVote(room *Room, now time.Time) {
+	votes := room.Run.InterFloorVote.Votes
+	restoreVotes, perkVotes := 0, 0
+	for _, choice := range votes {
+		switch choice {
+		case "restore":
+			restoreVotes++
+		case "perk":
+			perkVotes++
+		}
+	}
+	choice := "restore"
+	if perkVotes > restoreVotes || perkVotes == restoreVotes && rand.IntN(2) == 1 {
+		choice = "perk"
+	}
+	applyInterFloorChoice(room, choice, now)
+}
+
+func applyInterFloorChoice(room *Room, choiceID string, now time.Time) {
+	run := room.Run
 	if run.Flags == nil {
 		run.Flags = make(map[string]bool)
 	}
@@ -68,11 +144,10 @@ func resolveInterFloorChoice(room *Room, actorID, choiceID string, now time.Time
 			}
 		}
 		run.Flags[fmt.Sprintf("floor-%d-perk", run.Depth)] = true
-	default:
-		return ErrInvalidInterFloorChoice
 	}
 
 	run.PendingInterFloorChoice = false
+	run.InterFloorVote = nil
 	run.Depth++
 	run.MusicIntensity = run.Depth
 	entryID, rooms := generateDungeonFloor(run.Seed, run.Depth, len(eligibleCombatPlayers(room)))
@@ -85,7 +160,6 @@ func resolveInterFloorChoice(room *Room, actorID, choiceID string, now time.Time
 	run.NavigationVote = nil
 	addCombatEvent(run, 0, "descent", fmt.Sprintf("The party descends to floor %d. The dungeon's song grows heavier.", run.Depth))
 	startCombatRound(room, now)
-	return nil
 }
 
 // generateDungeonFloor uses only authored encounter/event templates. The seed
