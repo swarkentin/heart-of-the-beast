@@ -264,7 +264,7 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
   const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; events: string[]; version: number } | null>(null);
 
   const enable = useCallback(async () => {
-    const next = { ...settings, enabled: true };
+    const next = { ...settings, enabled: true, muted: false };
     setSettings(next);
     await engine.enable(next);
     engine.startScene(scene, phase === "combat");
