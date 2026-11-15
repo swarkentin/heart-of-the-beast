@@ -224,7 +224,6 @@ func bonusesFor(player *PlayerState) TalentBonuses {
 	return bonuses
 }
 
-
 func partyBonusesFor(room *Room) TalentBonuses {
 	var bonuses TalentBonuses
 	if room == nil || room.Run == nil {
