@@ -149,8 +149,11 @@ func (catalog ClassPassiveEffectCatalog) Validate(passives []ClassPassiveDefinit
 		}
 	}
 	for _, passive := range passives {
-		if _, ok := catalog.byID[passive.EffectID]; !ok {
+		if !seen[passive.EffectID] {
 			return fmt.Errorf("passive %q has no definition for effect %q", passive.ID, passive.EffectID)
+		}
+		if _, ok := catalog.byID[passive.EffectID]; !ok {
+			return fmt.Errorf("passive effect %q is missing from the catalog index", passive.EffectID)
 		}
 	}
 	if len(seen) != len(passives) {
