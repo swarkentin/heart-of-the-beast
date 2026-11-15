@@ -110,55 +110,6 @@ function Bar({ value, max }: { value: number; max: number }) {
   return <span className="bar"><i style={{ width: (Math.max(0, value) / max * 100) + "%" }} /></span>;
 }
 
-function ClassPortrait({ classId, archetype, name }: { classId: string; archetype: string; name: string }) {
-  const palettes: Record<string, { cloth: string; trim: string; metal: string; light: string }> = {
-    bulwark: { cloth: "#3d625a", trim: "#d6b477", metal: "#9ba7a0", light: "#80c5a5" }, juggernaut: { cloth: "#743f3b", trim: "#e49a58", metal: "#756c68", light: "#ef9c65" }, spellguard: { cloth: "#405477", trim: "#9fbcdb", metal: "#9ba7a0", light: "#94d9ec" }, assassin: { cloth: "#633f64", trim: "#d99cae", metal: "#857d8a", light: "#e390b2" }, arcanist: { cloth: "#4b477d", trim: "#c9a8e8", metal: "#8a86a0", light: "#c8a4ff" }, ranger: { cloth: "#496447", trim: "#c3ad74", metal: "#8d9280", light: "#a6d679" }, cleric: { cloth: "#887145", trim: "#f0d79c", metal: "#b8b5a6", light: "#f5da83" }, tactician: { cloth: "#425c70", trim: "#d1a878", metal: "#8c9aa1", light: "#84d1d0" }, beastcaller: { cloth: "#49654e", trim: "#c3a66a", metal: "#879789", light: "#9cda89" },
-  };
-  const p = palettes[classId] || palettes[archetype] || palettes.bulwark;
-  const mage = classId === "arcanist" || classId === "spellguard" || classId === "cleric";
-  const hood = classId === "assassin" || classId === "ranger" || classId === "beastcaller";
-  return <svg className="class-portrait-art" viewBox="0 0 220 230" role="img" aria-label={name + " character portrait"} shapeRendering="crispEdges">
-    <rect width="220" height="230" fill="#171a23"/><path d="M12 190h196v28H12zM24 38h16v112H24zM180 38h16v112h-16z" fill="#39343b"/><path d="M18 58h184M18 146h184" stroke="#755b43" strokeWidth="6"/>
-    <path d="M43 205v-42l26-25h82l26 25v42z" fill={p.cloth}/><path d="M65 158l45-20 45 20-13 47H78z" fill={p.metal}/><path d="M84 148h52v54H84z" fill={p.cloth}/><path d="M75 165h70v10H75zM99 140h22v62H99z" fill={p.trim}/>
-    <path d="M72 74h76v60H72z" fill="#d5b49a"/><path d="M65 64h90v22H65zM72 52h76v22H72z" fill={hood ? p.cloth : p.metal}/>{hood ? <path d="M66 64h20v72h-20zM128 64h28v72h-28z" fill={p.cloth}/> : <path d="M72 52h76v10H72zM62 75h96v12H62z" fill={p.trim}/>}
-    <path d="M86 94h10v10H86zM124 94h10v10h-10z" fill={p.light}/><path d="M100 116h20v7h-20z" fill="#704d48"/><path d="M43 155h28v50H43zM149 155h28v50h-28z" fill={p.cloth}/>
-    {mage ? <><path d="M184 77h8v128h-8z" fill="#9a7651"/><path d="M176 66h24v24h-24z" fill={p.light}/><path d="M182 57h12v42h-12z" fill="#f0d79c"/></> : <><path d="M187 101h10v104h-10z" fill="#9a7651"/><path d="M176 98h32v12h-32zM184 84h16v12h-16z" fill={p.metal}/></>}
-    <path d="M18 218h184" stroke={p.trim} strokeWidth="4"/><text x="110" y="227" textAnchor="middle" fill="#f0d2a8" fontSize="8" fontFamily="monospace">{name.toUpperCase()}</text>
-  </svg>;
-}
-
-function SkillIcon({ id }: { id: string }) {
-  const kind = /heal|renewal|recovery|companion|nature/i.test(id) ? "life" : /shield|ward|guard|resolve/i.test(id) ? "guard" : /fire|element|arcane|focus/i.test(id) ? "arcane" : /interrupt|pin|command|disrupt/i.test(id) ? "control" : "strike";
-  return <span className={"skill-icon skill-icon-" + kind} aria-hidden="true"><svg viewBox="0 0 32 32"><path d={kind === "guard" ? "M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z" : kind === "life" ? "M16 27S4 20 4 11c0-6 8-9 12-2 4-7 12-4 12 2 0 9-12 16-12 16z" : kind === "arcane" ? "m16 2 3 9 9 5-9 4-3 10-4-10-9-4 9-5z" : kind === "control" ? "M6 6 25 25M22 5 8 24M3 16h26M16 3v26" : "M21 3 9 16l7 1-5 12 13-16-8-1z"} fill="currentColor" stroke="#17151b" strokeWidth="2" strokeLinejoin="round"/></svg></span>;
-}
-
-function EnemyFigure({ enemy, selected, hit, onClick }: { enemy: Enemy; selected: boolean; hit?: boolean; onClick?: () => void }) {
-  const dead = enemy.hp <= 0;
-  return <g transform={`translate(${enemy.x} 0)`} opacity={dead ? .18 : 1} onClick={onClick} className={(onClick && !dead ? "enemy-sprite " : "") + (hit ? "enemy-hit" : "")}>
-    {selected && !dead ? <ellipse cx="0" cy="448" rx="92" ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
-    <ellipse cx="0" cy="454" rx="62" ry="14" fill="#080a10" opacity=".8" />
-    {enemy.id === "scout" ? <g shapeRendering="crispEdges">
-      <path d="M-43 280h86v145h-86z" fill="#737d7b"/><path d="M-52 302h18v100h-18zM34 302h18v100H34z" fill="#a5aaa0"/>
-      <path d="M-39 226h78v70h-78z" fill="#c4c4b3"/><path d="M-48 215h96v22h-96z" fill="#858f8a"/>
-      <path d="M-24 252h13v13h-13zM11 252h13v13H11z" fill="#e58b5c"/>
-      <path d="M-34 420h27v34h-27zM7 420h27v34H7z" fill="#555d5b"/>
-      <path d="M-50 310l-55 91 17 12 65-72M50 310l55 91-17 12-65-72" fill="#c0c1b4"/>
-    </g> : <g shapeRendering="crispEdges">
-      <path d="M-48 285h96v145h-96z" fill="#453d52"/><path d="M-58 310h20v100h-20zM38 310h20v100H38z" fill="#786583"/>
-      <path d="M-42 228h84v72h-84z" fill="#b9aaa4"/><path d="M-53 216h106v22h-106z" fill="#453747"/>
-      <path d="M-24 250h13v13h-13zM11 250h13v13H11z" fill="#a5e4d9"/>
-      <path d="M-34 425h27v30h-27zM7 425h27v30H7z" fill="#41384d"/>
-      <path d="M0 295l-25 75h50z" fill="#a5e4d9" opacity=".8"/>
-      <path d="M-55 315l-42 82 16 12 55-65M55 315l42 82-16 12-55-65" fill="#b9aaa4"/>
-    </g>}
-    <g transform="translate(0 175)">
-      <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2"/>
-      <rect x="-69" y="5" width={138 * enemy.hp / enemy.maxHp} height="16" fill="#b45e53"/>
-      <text x="0" y="-13" textAnchor="middle" fill="#f1e5d5" fontSize="20" fontWeight="bold">{enemy.name}</text>
-    </g>
-  </g>;
-}
-
 function CombatImpacts({ events, enemies, playerId, view }: { events: ApiCombatEvent[]; enemies: Enemy[]; playerId: string; view: "player" | "cast" }) {
   const visible = events.filter(event => event.effect && (event.amount ?? 0) > 0 && (event.targetType === "enemy" || event.targetType === "player"));
   return <div className="combat-impacts" aria-live="polite" aria-label="Combat effects">
