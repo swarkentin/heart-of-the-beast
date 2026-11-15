@@ -56,6 +56,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
+- [ ] Temporary run progression: award encounter XP, level up stats, choose a run archetype, and spend talent points on combat-shaping talents (first playable pass in PR #24; revise archetypes and modal talent selection from playtest feedback).
 - [ ] Gear, loot, inventory, spells, abilities, and consumables.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.

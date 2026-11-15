@@ -23,13 +23,43 @@ type ApiEnemy = { id: string; name: string; behavior?: string; turnsTaken: numbe
 type ApiCombatEvent = { round: number; kind: string; message: string };
 type ApiExit = { id: string; destination: string; label: string };
 type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
-type ApiPlayer = { id: string; health: number; maxHealth: number };
+
+type ApiStats = { power: number; focus: number; agility: number };
+type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats };
+type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
+const archetypes = [
+  { id: "support", name: "Support", description: "Control enemy plans, create openings, and help the whole party." },
+  { id: "damage", name: "Damage", description: "Exploit openings and specialize in taking dangerous enemies down quickly." },
+  { id: "tank", name: "Tank", description: "Absorb pressure, hold enemy attention, and protect the party." },
+];
+const talentChoices: TalentChoice[] = [
+  { id: "support-disruption", archetype: "support", name: "Disruption", description: "Interrupts deal 4 additional damage.", tier: 1 },
+  { id: "support-protective-ward", archetype: "support", name: "Protective Ward", description: "All party members block 2 additional damage when defending.", tier: 1 },
+  { id: "support-expose-weakness", archetype: "support", name: "Expose Weakness", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "support-disruption" },
+  { id: "support-rallying-cry", archetype: "support", name: "Rallying Cry", description: "All living party members recover 2 health after clearing an encounter.", tier: 2, requires: "support-protective-ward" },
+  { id: "damage-heavy-hands", archetype: "damage", name: "Heavy Hands", description: "Attacks deal 3 additional damage.", tier: 1 },
+  { id: "damage-precision", archetype: "damage", name: "Precision", description: "Attacks deal 2 additional damage.", tier: 1 },
+  { id: "damage-opportunist", archetype: "damage", name: "Opportunist", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "damage-precision" },
+  { id: "damage-counterstrike", archetype: "damage", name: "Counterstrike", description: "Interrupts deal 4 additional damage.", tier: 2, requires: "damage-heavy-hands" },
+  { id: "tank-bulwark", archetype: "tank", name: "Bulwark", description: "+6 maximum health.", tier: 1 },
+  { id: "tank-braced-stance", archetype: "tank", name: "Braced Stance", description: "Defend blocks 3 additional damage.", tier: 1 },
+  { id: "tank-thorns", archetype: "tank", name: "Thorns", description: "Reflect 2 damage when struck.", tier: 2, requires: "tank-bulwark" },
+  { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
+];
+const levelThresholds = [0, 50, 100, 200, 325];
+function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Damage"; }
+function xpProgress(player: ApiPlayer) {
+  const current = levelThresholds[player.level - 1] ?? 325;
+  const next = levelThresholds[player.level] ?? current;
+  return { current: Math.max(0, player.experience - current), needed: Math.max(0, next - current), percent: next > current ? Math.min(100, Math.max(0, (player.experience - current) / (next - current) * 100)) : 100 };
+}
+
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed" | "failed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
-type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
+type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 type SpectatorAccess = { roomId: string; token: string };
 const SESSION_KEY = "heart-of-the-beast.player-session";
@@ -213,6 +243,8 @@ export default function App() {
   const [shareCopied, setShareCopied] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [clockNow, setClockNow] = useState(() => Date.now());
+  const [progressionOpen, setProgressionOpen] = useState(false);
+  const [selectedTalentId, setSelectedTalentId] = useState("");
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -249,6 +281,13 @@ export default function App() {
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
   const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+
+  useEffect(() => {
+    if (!spectator && run?.phase === "exploring" && (player?.talentPoints ?? 0) > 0) {
+      setProgressionOpen(true);
+      setSelectedTalentId("");
+    }
+  }, [run?.phase, player?.level, player?.talentPoints, spectator]);
 
   useEffect(() => {
     if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
@@ -325,6 +364,31 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
+
+  async function selectArchetype(archetype: string) {
+    if (!session || busy || run) return;
+    setBusy(true); setError("");
+    try {
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/archetype", session.playerToken, { method: "POST", body: JSON.stringify({ archetype }) });
+      setSnapshot(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not select archetype");
+    } finally { setBusy(false); }
+  }
+
+  async function acceptTalentChoice() {
+    if (!selectedTalentId || !session || busy || spectator) return;
+    setBusy(true); setError("");
+    try {
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/talents", session.playerToken, { method: "POST", body: JSON.stringify({ talentId: selectedTalentId }) });
+      setSnapshot(next);
+      setProgressionOpen(false);
+      setSelectedTalentId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not choose talent");
+    } finally { setBusy(false); }
+  }
+
   async function startRun() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
@@ -337,7 +401,6 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-
   async function returnToLobby() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
@@ -349,6 +412,7 @@ export default function App() {
       setError(err instanceof Error ? err.message : "Could not return to the lobby");
     } finally { setBusy(false); }
   }
+
 
   async function leaveRoom() {
     if (!session || busy) return;
@@ -429,7 +493,12 @@ export default function App() {
         <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
         <div style={{ padding: 18, margin: "20px 0", background: "#0f1118", border: "1px solid #625246", fontSize: 30, letterSpacing: ".28em", textAlign: "center" }}>{snapshot.code}</div>
         <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left").length}/4)</h2>
-        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {archetypeName(snapshot.playerArchetypes?.[id])} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        <div className="archetype-picker">
+          <div className="progression-eyebrow">CHOOSE YOUR RUN ARCHETYPE</div>
+          <p>Every archetype can finish the dungeon alone. Your talents will shape it as you level.</p>
+          <div className="archetype-grid">{archetypes.map(item => <button key={item.id} className={"archetype-choice" + ((snapshot.playerArchetypes?.[session?.playerId || ""] || "damage") === item.id ? " selected" : "")} onClick={() => void selectArchetype(item.id)} disabled={busy || !session}><strong>{item.name}</strong><span>{item.description}</span></button>)}</div>
+        </div>
         {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
         <button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button>
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
@@ -449,13 +518,27 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div></div>
+      <div className="player-hud"><div className="hero-token">{(player?.archetype || "damage").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
+      {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">
+        <section className="progression-modal" role="dialog" aria-modal="true" aria-labelledby="progression-title">
+          <div className="progression-modal-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · RUN PROGRESSION</span><h2 id="progression-title">Choose your next talent</h2><p>{archetypeName(player.archetype)} · {player.talentPoints} point{player.talentPoints === 1 ? "" : "s"} available. Browse both branches before committing.</p></div><button className="progression-close" onClick={() => setProgressionOpen(false)} aria-label="Close talent selection">×</button></div>
+          <div className="talent-tree">{[1,2].map(tier => <div className="talent-tier" key={tier}><div className="talent-tier-label">{tier === 1 ? "FOUNDATION" : "SPECIALIZATION"}</div><div className="talent-tier-nodes">{talentChoices.filter(talent => talent.archetype === player.archetype && talent.tier === tier).map(talent => {
+            const chosen = player.talents?.includes(talent.id);
+            const locked = player.level < talent.tier + 1 || Boolean(talent.requires && !player.talents?.includes(talent.requires));
+            const selected = selectedTalentId === talent.id;
+            return <button key={talent.id} className={"talent-node" + (chosen ? " chosen" : "") + (locked ? " locked" : "") + (selected ? " selected" : "")} onClick={() => !chosen && !locked && setSelectedTalentId(talent.id)} disabled={chosen || busy}>
+              <span>{chosen ? "LEARNED" : locked ? "LOCKED" : "TIER " + tier}</span><strong>{talent.name}</strong><small>{talent.description}</small>{talent.requires ? <i>Requires {talentChoices.find(item => item.id === talent.requires)?.name}</i> : <i>{tier === 1 ? "Available now" : "Unlocks at level 3"}</i>}
+            </button>;
+          })}</div></div>)}</div>
+          <div className="talent-inspector">{selectedTalentId ? <><strong>{talentChoices.find(talent => talent.id === selectedTalentId)?.name}</strong><span>{talentChoices.find(talent => talent.id === selectedTalentId)?.description}</span></> : <span>Select a talent to preview its effect. Your choice is not saved until you accept.</span>}</div>
+          <div className="progression-modal-actions"><button className="progression-secondary" onClick={() => { setProgressionOpen(false); setSelectedTalentId(""); }}>Decide later</button><button className="progression-accept" onClick={() => void acceptTalentChoice()} disabled={!selectedTalentId || busy}>{busy ? "SAVING…" : "ACCEPT TALENT"}</button></div>
+        </section>
+      </div> : null}
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
-          
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className="action-target-hint">YOUR ACTIONS · TARGET: {livingTarget?.name || "NONE"} · STRIKE / INTERRUPT HIT THAT ENEMY · DEFEND PROTECTS YOU</div><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
+          {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => void returnToLobby()} disabled={busy}>{busy ? "RETURNING TO LOBBY…" : "RETURN TO LOBBY"} <span>↗</span></button></div> : null}
         </>
         : null}
-      {gameOver && !spectator && isHost ? <div className="action-dock"><button className="turn-button" onClick={() => void returnToLobby()} disabled={busy}>{busy ? "RETURNING TO LOBBY…" : "RETURN TO LOBBY"} <span>↗</span></button></div> : null}
       {gameOver ? <div className="event-message" role="status">{run.phase === "completed" ? "THE CATACOMBS ARE CLEARED — VICTORY" : "THE PARTY HAS FALLEN — RUN OVER"}</div> : null}
       <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, padding: "8px 16px", color: "#c7b9a8", fontSize: 12, letterSpacing: ".08em" }}>PARTY · {snapshot.playerIds.map((id, index) => <span key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1}{id === playerId ? " (YOU)" : ""} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"}</span>)}</div>
       {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
