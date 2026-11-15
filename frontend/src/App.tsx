@@ -483,7 +483,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <main className="game-screen">
+    return <main className="game-screen lobby-screen">
       <header className="game-topline"><a className="game-brand" href="#"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> PARTY LOBBY</div></header>
       <section className="lobby-panel party-lobby-panel">
         <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>ROOM {snapshot.code}</p>
