@@ -212,9 +212,9 @@ class GameAudioEngine {
 
 const engine = new GameAudioEngine();
 
-export function useGameAudio(scene: string, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], version: number) {
+export function useGameAudio(scene: string, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], events: { round: number; kind: string; message: string }[], version: number) {
   const [settings, setSettings] = useState<AudioSettings>(readSettings);
-  const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; version: number } | null>(null);
+  const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; events: string[]; version: number } | null>(null);
 
   const enable = useCallback(async () => {
     const next = { ...settings, enabled: true, muted: false };
@@ -244,19 +244,28 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
   useEffect(() => {
     const before = previous.current;
     const enemies = Object.fromEntries(enemyHealths.map(enemy => [enemy.id, enemy.hp]));
+    const eventKeys = events.map(event => event.round + ":" + event.kind + ":" + event.message);
     if (settings.enabled && before && version !== before.version) {
       if (scene !== before.scene) engine.effect("door");
-      else if (phase === "combat" && before.phase !== "combat") engine.effect("encounter");
-      else if (phase === "completed" && before.phase !== "completed") engine.effect("victory");
-      else if (phase === "failed" && before.phase !== "failed") engine.effect("failure");
-      else if (playerHealth < before.playerHealth) engine.effect("impact");
-      else if (enemyHealths.some(enemy => enemy.hp < (before.enemies[enemy.id] ?? enemy.hp))) {
-        const defeated = enemyHealths.some(enemy => enemy.hp <= 0 && (before.enemies[enemy.id] ?? 0) > 0);
-        engine.effect(defeated ? "defeat" : "impact");
+      else {
+        const freshEvents = events.filter((event, index) => !before.events.includes(eventKeys[index]));
+        const kinds = new Set(freshEvents.map(event => event.kind));
+        if (kinds.has("player_attack") || kinds.has("enemy_attack")) engine.effect("impact");
+        if (kinds.has("player_defend")) engine.effect("block");
+        if (kinds.has("player_interrupt") || kinds.has("enemy_heal")) engine.effect("magic");
+        if (kinds.has("enemy_defeated")) engine.effect("defeat");
+        if (kinds.has("victory") || (phase === "completed" && before.phase !== "completed")) engine.effect("victory");
+        if (kinds.has("defeat") || (phase === "failed" && before.phase !== "failed")) engine.effect("failure");
+        if (freshEvents.length === 0 && phase === "combat" && before.phase !== "combat") engine.effect("encounter");
+        if (freshEvents.length === 0 && playerHealth < before.playerHealth) engine.effect("impact");
+        if (freshEvents.length === 0 && enemyHealths.some(enemy => enemy.hp < (before.enemies[enemy.id] ?? enemy.hp))) {
+          const defeated = enemyHealths.some(enemy => enemy.hp <= 0 && (before.enemies[enemy.id] ?? 0) > 0);
+          engine.effect(defeated ? "defeat" : "impact");
+        }
       }
     }
-    previous.current = { scene, phase, playerHealth, enemies, version };
-  }, [scene, phase, playerHealth, enemyHealths, version, settings.enabled]);
+    previous.current = { scene, phase, playerHealth, enemies, events: eventKeys, version };
+  }, [scene, phase, playerHealth, enemyHealths, events, version, settings.enabled]);
 
   return { settings, enable, updateSettings };
 }
