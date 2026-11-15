@@ -162,40 +162,41 @@ func experienceForNextLevel(level int) int {
 }
 
 func grantEncounterExperience(room *Room, round int) {
-	run := room.Run
-	reward := EncounterExperienceReward
-	if isBossRoom(run.Rooms[run.CurrentRoomID]) {
-		reward = BossExperienceReward
+	rewardID := "encounter.regular_xp"
+	if isBossRoom(room.Run.Rooms[room.Run.CurrentRoomID]) {
+		rewardID = "encounter.boss_xp"
 	}
-	for _, playerID := range room.PlayerIDs {
-		player := run.Players[playerID]
-		if player == nil || room.Presence[playerID].LeftAt != nil {
-			continue
+	definition, ok := defaultRunRewardCatalog.Reward(rewardID)
+	if !ok {
+		return
+	}
+	applyRunReward(room, definition, round, "")
+}
+
+func grantExperience(player *PlayerState, room *Room, playerID string, round, amount int) {
+	player.Experience += amount
+	addCombatEvent(room.Run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(amount)+" XP.")
+	for player.Level < 5 {
+		next := experienceForNextLevel(player.Level)
+		if next == 0 || player.Experience < next {
+			break
 		}
-		player.Experience += reward
-		addCombatEvent(run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(reward)+" XP.")
-		for player.Level < 5 {
-			next := experienceForNextLevel(player.Level)
-			if next == 0 || player.Experience < next {
-				break
-			}
-			player.Level++
-			player.TalentPoints++
-			switch player.Level {
-			case 2:
-				player.MaxHealth += 4
-				player.Stats.Power++
-			case 3:
-				player.Stats.Focus += 2
-			case 4:
-				player.MaxHealth += 4
-				player.Stats.Agility++
-			case 5:
-				player.Stats.Power++
-				player.Stats.Focus++
-			}
-			addCombatEvent(run, round, "level_up", adventurerLabel(room, playerID)+" reaches level "+itoa(player.Level)+"! Choose a talent between encounters.")
+		player.Level++
+		player.TalentPoints++
+		switch player.Level {
+		case 2:
+			player.MaxHealth += 4
+			player.Stats.Power++
+		case 3:
+			player.Stats.Focus += 2
+		case 4:
+			player.MaxHealth += 4
+			player.Stats.Agility++
+		case 5:
+			player.Stats.Power++
+			player.Stats.Focus++
 		}
+		addCombatEvent(room.Run, round, "level_up", adventurerLabel(room, playerID)+" reaches level "+itoa(player.Level)+"! Choose a talent between encounters.")
 	}
 }
 
