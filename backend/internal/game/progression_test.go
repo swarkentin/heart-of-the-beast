@@ -49,8 +49,8 @@ func TestBossEncounterGrantsMoreExperienceThanRegularEncounter(t *testing.T) {
 	player := newPlayerState("player-1", "tank")
 	room.Run = &Run{
 		CurrentRoomID: "boss",
-		Rooms: map[string]*DungeonRoom{"boss": {ID: "boss", RoomType: "boss"}},
-		Players: map[string]*PlayerState{"player-1": player},
+		Rooms:         map[string]*DungeonRoom{"boss": {ID: "boss", RoomType: "boss"}},
+		Players:       map[string]*PlayerState{"player-1": player},
 	}
 
 	grantEncounterExperience(room, 1)
