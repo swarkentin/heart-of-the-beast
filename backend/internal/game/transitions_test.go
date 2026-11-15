@@ -120,6 +120,7 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 		t.Fatal(err)
 	}
 	room.Run.Players["player-2"].Health = 20
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +130,7 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 	if got := room.Run.Players["player-2"].Health; got != 20 {
 		t.Fatalf("missing action should default to guard and block the telegraphed hit, health=%d", got)
 	}
-	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 0 {
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
 		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
 	}
 }
