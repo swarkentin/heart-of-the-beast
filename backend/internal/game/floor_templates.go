@@ -132,6 +132,9 @@ func (catalog FloorTemplateCatalog) Validate(themes DungeonThemeCatalog, encount
 		if !theme.Playable {
 			return fmt.Errorf("floor template %q belongs to a theme that is not marked playable", themeID)
 		}
+		if err := validateBackdrops(theme); err != nil {
+			return err
+		}
 		if len(template.LeftNames) == 0 || len(template.ShrineEvents) == 0 || len(template.Bosses) == 0 || template.ClearedText == "" {
 			return fmt.Errorf("floor template %q is incomplete", themeID)
 		}

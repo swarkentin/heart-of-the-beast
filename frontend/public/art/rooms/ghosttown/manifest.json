@@ -1,0 +1,44 @@
+{
+  "id": "ghosttown",
+  "name": "Ghost Town",
+  "width": 275,
+  "height": 155,
+  "kinds": [
+    "entry",
+    "corridor",
+    "event",
+    "boss",
+    "vault"
+  ],
+  "views": [
+    "first",
+    "cinema"
+  ],
+  "backdrops": [
+    {
+      "kind": "entry",
+      "first": "entry-first.png",
+      "cinema": "entry-cinema.png"
+    },
+    {
+      "kind": "corridor",
+      "first": "corridor-first.png",
+      "cinema": "corridor-cinema.png"
+    },
+    {
+      "kind": "event",
+      "first": "event-first.png",
+      "cinema": "event-cinema.png"
+    },
+    {
+      "kind": "boss",
+      "first": "boss-first.png",
+      "cinema": "boss-cinema.png"
+    },
+    {
+      "kind": "vault",
+      "first": "vault-first.png",
+      "cinema": "vault-cinema.png"
+    }
+  ]
+}
