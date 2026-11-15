@@ -190,7 +190,9 @@ func grantEncounterExperience(room *Room, round int) {
 				player.Stats.Focus += 2
 			case 4:
 				player.MaxHealth += 4
-				player.Health += 4
+				if player.Health > 0 {
+					player.Health += 4
+				}
 				player.Stats.Agility++
 			case 5:
 				player.Stats.Power++
