@@ -175,7 +175,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage
 					if damage > 0 {
 						enemy.Health -= damage
-						if enemy.Health < 0 { enemy.Health = 0 }
+						if enemy.Health < 0 {
+							enemy.Health = 0
+						}
 						addCombatEvent(run, roundNumber, "player_interrupt_damage", enemy.Name+" takes "+itoa(damage)+" interrupt damage.")
 					}
 					enemy.Intent = nil
@@ -208,7 +210,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 				continue
 			}
 			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction
-			if damage < 0 { damage = 0 }
+			if damage < 0 {
+				damage = 0
+			}
 			guarded := player.Guarding
 			if guarded {
 				damage -= GuardDamageReduction + bonusesFor(player).GuardReduction
@@ -230,7 +234,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 				enemy.Health -= bonusesFor(player).ReflectDamage
 				if enemy.Health < 0 { enemy.Health = 0 }
 				addCombatEvent(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(bonusesFor(player).ReflectDamage)+" reflected damage.")
-				if enemy.Health == 0 { enemy.Intent = nil; addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.") }
+				if enemy.Health == 0 {
+					enemy.Intent = nil
+					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.")
+			}
 			}
 			if player.Health == 0 {
 				addCombatEvent(run, roundNumber, "player_down", adventurerLabel(room, playerID)+" is down!")
