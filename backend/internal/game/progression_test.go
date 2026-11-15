@@ -102,7 +102,6 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	}
 }
 
-
 func TestSupportTalentsBenefitTheWholeLivingParty(t *testing.T) {
 	room := progressionRoom()
 	support := newPlayerState("player-1", "support")
