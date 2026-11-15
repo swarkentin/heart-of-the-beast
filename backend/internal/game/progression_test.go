@@ -122,4 +122,3 @@ func TestSupportTalentsBenefitTheWholeLivingParty(t *testing.T) {
 		t.Fatalf("downed support should not maintain party auras: %+v", bonuses)
 	}
 }
-
