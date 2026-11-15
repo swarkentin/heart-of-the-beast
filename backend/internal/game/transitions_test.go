@@ -148,14 +148,11 @@ func TestCombatRejectsActionFromExpiredRound(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
-		t.Fatal("round should advance after its deadline")
-	}
-	if room.Run.CombatRound.Number != 2 {
-		t.Fatalf("expected next round to be 2, got %d", room.Run.CombatRound.Number)
-	}
 	err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now.Add(CombatActionWindow))
 	if !errors.Is(err, ErrStaleCombatRound) {
 		t.Fatalf("expected stale round error, got %v", err)
+	}
+	if room.Run.CombatRound.Number != 2 {
+		t.Fatalf("expected late command to advance to round 2, got %d", room.Run.CombatRound.Number)
 	}
 }
