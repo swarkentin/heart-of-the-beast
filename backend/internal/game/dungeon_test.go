@@ -115,3 +115,62 @@ func TestInterFloorPerkIsPartyWideAndInvalidChoicesDoNotAdvance(t *testing.T) {
 		}
 	}
 }
+
+func TestFloorBossesOpenIntermissionUntilFinalDepth(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartMultiLevelRun(room, "multi-floor-bosses", now); err != nil {
+		t.Fatal(err)
+	}
+	run := room.Run
+	run.CurrentRoomID = "warden"
+	run.Phase = PhaseCombat
+	run.Rooms["warden"].Encounter.Enemies[0].Health = 1
+	startCombatRound(room, now)
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: "warden"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if run.Phase != PhaseIntermission || !run.PendingInterFloorChoice || run.CompletedAt != nil {
+		t.Fatal("a non-final floor boss should open an intermission, not complete the run")
+	}
+	if run.InterFloorVote == nil {
+		t.Fatal("co-op choice window should be persisted at the floor boundary")
+	}
+
+	finalBoss := &DungeonRoom{ID: "d3-boss", RoomType: "boss", Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "d3-warden", Name: "Final Warden", Behavior: "warden", Health: 1, MaxHealth: 1}}}}
+	run.Rooms[finalBoss.ID] = finalBoss
+	run.Depth = MaximumDungeonDepth
+	run.CurrentRoomID = finalBoss.ID
+	run.Phase = PhaseCombat
+	run.PendingInterFloorChoice = false
+	run.InterFloorVote = nil
+	startCombatRound(room, now)
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: "d3-warden"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if run.Phase != PhaseCompleted || run.CompletedAt == nil {
+		t.Fatal("only the final floor boss should complete the run")
+	}
+}
+
+func TestInterFloorVoteResolvesAtDeadline(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartMultiLevelRun(room, "multi-floor-timeout", now); err != nil {
+		t.Fatal(err)
+	}
+	run := room.Run
+	run.Phase = PhaseIntermission
+	run.PendingInterFloorChoice = true
+	run.InterFloorVote = &NavigationVote{StartedAt: now, Deadline: now.Add(InterFloorChoiceWindow), Votes: map[string]string{"player-1": "restore"}}
+	if AdvanceInterFloorChoice(room, now.Add(InterFloorChoiceWindow-time.Second)) {
+		t.Fatal("choice should remain open before its deadline")
+	}
+	if !AdvanceInterFloorChoice(room, now.Add(InterFloorChoiceWindow)) {
+		t.Fatal("choice should resolve when its deadline expires")
+	}
+	if run.Depth != 2 || run.Phase != PhaseCombat || run.Players["player-1"].Health != run.Players["player-1"].MaxHealth {
+		t.Fatal("the submitted recovery vote should win when the other player times out")
+	}
+}
