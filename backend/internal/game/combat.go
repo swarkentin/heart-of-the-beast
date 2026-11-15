@@ -267,7 +267,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 		current.Cleared = true
 		grantEncounterExperience(room, roundNumber)
 		for _, player := range run.Players {
-			if player == nil || player.Health <= 0 { continue }
+			if player == nil || player.Health <= 0 {
+				continue
+			}
 				heal := bonusesFor(player).EncounterHeal
 				if heal > 0 {
 					before := player.Health
