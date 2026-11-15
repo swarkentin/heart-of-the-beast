@@ -77,3 +77,22 @@ func TestSimulateCombatRejectsInvalidSnapshots(t *testing.T) {
 		t.Fatal("expected empty snapshot to be rejected")
 	}
 }
+
+func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
+	reports := []CombatSimulationReport{
+		{Won: true, Rounds: 2, PlayerDamageDealt: 20, PlayerDamageReceived: 4},
+		{Won: false, Wiped: true, Rounds: 8, PlayerDamageDealt: 10, PlayerDamageReceived: 30},
+		{Won: true, Rounds: 4, PlayerDamageDealt: 30, PlayerDamageReceived: 12},
+		{Won: true, Rounds: 6, PlayerDamageDealt: 40, PlayerDamageReceived: 8},
+	}
+	summary := SummarizeCombatBatch(reports)
+	if summary.Runs != 4 || summary.Wins != 3 || summary.Wipes != 1 || summary.WinRate != 0.75 {
+		t.Fatalf("unexpected batch outcomes: %#v", summary)
+	}
+	if summary.MedianRounds != 4 || summary.P90Rounds != 8 {
+		t.Fatalf("unexpected round distribution: %#v", summary)
+	}
+	if summary.MedianDamageDealt != 30 || summary.MedianDamageReceived != 12 {
+		t.Fatalf("unexpected damage distribution: %#v", summary)
+	}
+}
