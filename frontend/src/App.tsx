@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-type Action = "strike" | "guard";
+type Action = "strike" | "guard" | "interrupt";
 type View = "player" | "cast";
-type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; intentTarget: string; damage: number; x: number };
+type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; intentTarget: string; damage: number; interruptible: boolean; x: number };
 type RoomId = "watcher-hall" | "reliquary" | "flooded-crossing" | "warden-gate";
 type Room = { id: RoomId; name: string; floor: string; description: string; exits: RoomId[] };
 const rooms: Record<RoomId, Room> = {
@@ -14,9 +14,10 @@ const rooms: Record<RoomId, Room> = {
 const actions: { id: Action; label: string; hint: string; glyph: string }[] = [
   { id: "strike", label: "Strike", hint: "10 damage", glyph: "⚔" },
   { id: "guard", label: "Defend", hint: "Block up to 6 damage", glyph: "⬟" },
+  { id: "interrupt", label: "Interrupt", hint: "Cancel a marked enemy move", glyph: "✦" },
 ];
 
-type ApiEnemyIntent = { kind: string; label: string; damage: number; heal?: number; targetPlayerId?: string; targetAll?: boolean };
+type ApiEnemyIntent = { kind: string; label: string; damage: number; heal?: number; targetPlayerId?: string; targetAll?: boolean; interruptible?: boolean };
 type ApiEnemy = { id: string; name: string; behavior?: string; turnsTaken: number; health: number; maxHealth: number; intent?: ApiEnemyIntent };
 type ApiCombatEvent = { round: number; kind: string; message: string };
 type ApiExit = { id: string; destination: string; label: string };
@@ -67,7 +68,7 @@ function visualEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: s
   const targetIndex = intent?.targetPlayerId ? playerIds.indexOf(intent.targetPlayerId) + 1 : 0;
   const intentTarget = intent?.targetAll ? "TARGET: ALL ADVENTURERS" : targetIndex > 0 ? "TARGET: ADVENTURER " + targetIndex : "NO TARGET";
   const intentLabel = intent ? intent.label + " · " + intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "No intent";
-  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: intentLabel, intentTarget, damage: intent?.damage ?? 0, x: count === 1 ? 550 : index === 0 ? 430 : 670 };
+  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: intentLabel, intentTarget, damage: intent?.damage ?? 0, interruptible: Boolean(intent?.interruptible), x: count === 1 ? 550 : index === 0 ? 430 : 670 };
 }
 
 
@@ -132,7 +133,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
     {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")+(voteStatus?.selectedExit===exit.id?" scene-exit-selected":"")} onClick={()=>onNavigate(exit.id)} disabled={Boolean(voteStatus && voteStatus.remainingSeconds <= 0)} aria-label={"Vote for "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "ENTER PATH"}</small>{voteStatus?.selectedExit===exit.id ? <i>YOUR VOTE</i> : null}</button>)}</div> : null}
     <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
-    <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}</small></button>)}</div>
+    <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></button>)}</div>
     <div className="scene-hint">THE WAYFARER'S VIEW · {room.description.toUpperCase()}</div>
   </div>;
 }
@@ -152,7 +153,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus }: {
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
     <div className="scene-vignette"/>
-    <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}</small></div>)}</div>
+    <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></div>)}</div>
     {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "AVAILABLE PATH"}</small></div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
     <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
@@ -337,6 +338,7 @@ export default function App() {
 
   function play(action: Action) {
     if (action === "guard") void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "defend" });
+    else if (livingTarget && action === "interrupt" && livingTarget.interruptible) void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "interrupt", targetId: livingTarget.id });
     else if (livingTarget) void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "attack", targetId: livingTarget.id });
   }
 
@@ -398,7 +400,7 @@ export default function App() {
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div></div>
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
