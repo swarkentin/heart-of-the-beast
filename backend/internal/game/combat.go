@@ -152,11 +152,20 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.ID != action.TargetID || enemy.Health <= 0 {
 					continue
 				}
-				enemy.Health -= 10
+				damage := player.StrikeDamage
+				if damage <= 0 {
+					damage = 10
+				}
+				if run.CurrentRoomID == "warden" && run.Flags["warden_weakness"] {
+					damage += 2
+				}
+				beforeHealth := enemy.Health
+				enemy.Health -= damage
 				if enemy.Health < 0 {
 					enemy.Health = 0
 				}
-				addCombatEvent(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for 10 damage.")
+				actualDamage := beforeHealth - enemy.Health
+				addCombatImpact(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for "+itoa(actualDamage)+" damage.", "damage", enemy.ID, "enemy", actualDamage)
 				if enemy.Health == 0 {
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.")
@@ -200,21 +209,36 @@ func resolveCombatRound(room *Room, now time.Time) {
 			damage := intent.Damage
 			guarded := player.Guarding
 			if guarded {
-				damage -= GuardDamageReduction
+				reduction := player.GuardReduction
+				if reduction <= 0 {
+					reduction = GuardDamageReduction
+				}
+				damage -= reduction
 				if damage < 0 {
 					damage = 0
 				}
 				player.Guarding = false
 			}
+			beforeHealth := player.Health
 			player.Health -= damage
 			if player.Health < 0 {
 				player.Health = 0
 			}
-			message := enemy.Name + " uses " + intent.Label + " on " + adventurerLabel(room, playerID) + " for " + itoa(damage) + " damage."
+			actualDamage := beforeHealth - player.Health
+			message := enemy.Name + " uses " + intent.Label + " on " + adventurerLabel(room, playerID) + " for " + itoa(actualDamage) + " damage."
 			if guarded {
 				message += " Guarded."
 			}
-			addCombatEvent(run, roundNumber, "enemy_attack", message)
+			if guarded && intent.Damage > damage {
+				addCombatImpact(run, roundNumber, "enemy_block", enemy.Name+"'s attack is reduced by "+itoa(intent.Damage-damage)+" damage.", "block", playerID, "player", intent.Damage-damage)
+			}
+			if actualDamage > 0 {
+				addCombatImpact(run, roundNumber, "enemy_attack", message, "damage", playerID, "player", actualDamage)
+			} else if !guarded {
+				addCombatImpact(run, roundNumber, "enemy_attack", message, "block", playerID, "player", intent.Damage)
+			} else {
+				addCombatEvent(run, roundNumber, "enemy_attack", message)
+			}
 			if player.Health == 0 {
 				addCombatEvent(run, roundNumber, "player_down", adventurerLabel(room, playerID)+" is down!")
 			}
@@ -226,7 +250,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				enemy.Health = enemy.MaxHealth
 			}
 			if enemy.Health > before {
-				addCombatEvent(run, roundNumber, "enemy_heal", enemy.Name+" drains life and restores "+itoa(enemy.Health-before)+" health.")
+				addCombatImpact(run, roundNumber, "enemy_heal", enemy.Name+" drains life and restores "+itoa(enemy.Health-before)+" health.", "heal", enemy.ID, "enemy", enemy.Health-before)
 			}
 		}
 		enemy.Intent = nil
@@ -238,6 +262,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 
 	if allEnemiesDefeated(current.Encounter) {
 		current.Encounter.Status = EncounterCleared
+		applyEncounterReward(room, current, roundNumber)
 		current.Cleared = true
 		run.CombatRound = nil
 		if run.CurrentRoomID == "warden" {
@@ -332,8 +357,18 @@ func adventurerLabel(room *Room, playerID string) string {
 
 func addCombatEvent(run *Run, round int, kind, message string) {
 	run.LastCombatEvents = append(run.LastCombatEvents, CombatEvent{Round: round, Kind: kind, Message: message})
-	if len(run.LastCombatEvents) > 8 {
-		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-8:]...)
+	if len(run.LastCombatEvents) > 32 {
+		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-32:]...)
+	}
+}
+
+func addCombatImpact(run *Run, round int, kind, message, effect, targetID, targetType string, amount int) {
+	run.LastCombatEvents = append(run.LastCombatEvents, CombatEvent{
+		Round: round, Kind: kind, Message: message, Effect: effect,
+		TargetID: targetID, TargetType: targetType, Amount: amount,
+	})
+	if len(run.LastCombatEvents) > 32 {
+		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-32:]...)
 	}
 }
 
@@ -368,4 +403,42 @@ func hasLivingEnemy(encounter *Encounter, enemyID string) bool {
 		}
 	}
 	return false
+}
+
+func applyEncounterReward(room *Room, current *DungeonRoom, roundNumber int) {
+	run := room.Run
+	if run.Flags == nil {
+		run.Flags = make(map[string]bool)
+	}
+	switch current.ID {
+	case "reliquary":
+		if run.Flags["reliquary_sigil"] {
+			return
+		}
+		run.Flags["reliquary_sigil"] = true
+		for _, player := range run.Players {
+			if player.Health > 0 {
+				player.StrikeDamage++
+			}
+		}
+		addCombatEvent(run, roundNumber, "room_reward", "The Reliquary Guardian's sigil empowers every living adventurer's Strike.")
+	case "flooded-crossing":
+		if run.Flags["crossing_cache"] {
+			return
+		}
+		run.Flags["crossing_cache"] = true
+		for playerID, player := range run.Players {
+			if player.Health > 0 {
+				before := player.Health
+				player.Health += 8
+				if player.Health > player.MaxHealth {
+					player.Health = player.MaxHealth
+				}
+				if player.Health > before {
+					addCombatImpact(run, roundNumber, "player_heal", adventurerLabel(room, playerID)+" recovers "+itoa(player.Health-before)+" health from the flooded cache.", "heal", playerID, "player", player.Health-before)
+				}
+			}
+		}
+		addCombatEvent(run, roundNumber, "room_reward", "The party finds healing draughts in the flooded cache.")
+	}
 }
