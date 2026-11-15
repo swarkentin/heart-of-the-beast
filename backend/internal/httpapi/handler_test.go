@@ -374,7 +374,6 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	}
 }
 
-
 func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
 	memory := store.NewMemory()
 	handler := NewHandler(memory)
