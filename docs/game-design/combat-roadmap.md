@@ -23,7 +23,7 @@ The tactical depth should come from choosing when to deal damage, defend, interr
 - No mandatory classes, party roles, or simultaneous multi-player-only mechanics.
 - Prefer adding enemy behaviors and encounter composition over inflating enemy health for larger parties.
 - Keep the active action vocabulary small (roughly 2–4 useful choices at once).
-- Show important outcomes in the scene or a short combat log; avoid requiring players to inspect a combat spreadsheet.
+- Show important outcomes directly at the affected character in the scene; avoid requiring players to inspect a combat spreadsheet or infer changes from health bars alone.
 
 ## Stage 1 — Read and respond (current implementation)
 
@@ -37,7 +37,9 @@ Implemented in PR #17:
 - Crypt Warden: 5-damage Soul Drain that restores up to 2 health; every third turn, a 3-damage Soul Sweep against all living players.
 - Single-target intents rotate predictably through the living party.
 - Enemy intents resolve after player actions; defeating the enemy cancels its intent.
-- Recent damage, blocks, defeats, and knockouts are visible to players and spectators.
+- Damage dealt, damage taken, blocked damage, and healing carry structured target/value data from the server.
+- Combat impacts are shown at their source: floating damage, healing, and blocked-damage values are anchored to the affected combatant in both player and spectator views, with reduced-motion support.
+- Floating combat numbers appear over the affected enemy or adventurer in both player and spectator scenes; brief hit flashes reinforce impacts. Feedback fades quickly and becomes static under reduced-motion preferences.
 - A run ends when the boss is defeated or the whole party is down.
 
 The numbers are starting values, not balance promises.
