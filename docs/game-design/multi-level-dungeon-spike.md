@@ -1,6 +1,6 @@
 # Multi-level procedural dungeon spike
 
-Status: proposed spike. This is an experiment to validate the run structure and generation model before committing to a larger procedural-content system.
+Status: playable spike under iteration in PR #39. The initial implementation exists; playtest follow-ups below must be addressed and revalidated before the spike is considered ready to merge.
 
 ## Problem
 
