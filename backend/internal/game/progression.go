@@ -5,10 +5,10 @@ import "errors"
 var (
 	ErrInvalidArchetype = errors.New("unknown archetype")
 	ErrArchetypeLocked  = errors.New("archetype can only be changed before the run starts")
-	ErrInvalidTalent   = errors.New("talent is not available to this archetype")
-	ErrTalentLocked    = errors.New("talent prerequisites are not met")
-	ErrNoTalentPoints   = errors.New("no talent points available")
-	ErrTalentChosen    = errors.New("talent has already been chosen")
+	ErrInvalidTalent    = errors.New("talent is not available to this archetype")
+	ErrTalentLocked     = errors.New("talent prerequisites are not met")
+	ErrNoTalentPoints  = errors.New("no talent points available")
+	ErrTalentChosen     = errors.New("talent has already been chosen")
 )
 
 const DefaultArchetype = "vanguard"
@@ -35,14 +35,14 @@ type PlayerStats struct {
 }
 
 type TalentBonuses struct {
-	AttackDamage       int
-	InterruptDamage    int
-	GuardReduction     int
-	DamageReduction    int
-	AttackVsTelegraph  int
-	EncounterHeal      int
-	ReflectDamage      int
-	MaxHealth          int
+	AttackDamage      int
+	InterruptDamage   int
+	GuardReduction    int
+	DamageReduction   int
+	AttackVsTelegraph int
+	EncounterHeal     int
+	ReflectDamage     int
+	MaxHealth         int
 }
 
 var archetypeCatalog = []ArchetypeDefinition{
