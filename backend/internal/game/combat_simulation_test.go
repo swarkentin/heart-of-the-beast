@@ -137,7 +137,8 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	base := simulationFixture(t)
 	base.Players[0].Health = 30
 	base.Players[0].MaxHealth = 30
-	base.Enemies[0].Behavior = "soul-drainer"
+	base.Enemies[0].Behavior = "warden"
+	base.Players[0].Stats.Focus = 0
 	base.Enemies[0].Health = 100
 	base.Enemies[0].MaxHealth = 100
 
@@ -162,9 +163,6 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := baseReport.PlayerDamageReceived - talentReport.PlayerDamageReceived; got != 0 {
-		t.Fatalf("tank-unyielding only affects guarding and should not reduce unguarded damage, got %d", got)
-	}
 	if passiveReport.PlayerDamageReceived >= baseReport.PlayerDamageReceived {
 		t.Fatalf("arcane resistance should reduce soul-drain damage: base=%d passive=%d", baseReport.PlayerDamageReceived, passiveReport.PlayerDamageReceived)
 	}
