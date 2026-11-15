@@ -29,6 +29,8 @@ Exploration content must not require simultaneous actions from multiple players.
 
 The visual direction is illustrated, high-definition pixel art. The scene should establish place and mood, while characters and enemies remain immediately recognizable and readable.
 
+The interface belongs to the same pixel-art world as the scenes. Typography, talent trees, hero actions, HUD, navigation, dialogs, and combat feedback should use crisp pixel-aware forms, stepped borders, and compact game-like framing rather than generic smooth web controls. Pixel styling must preserve legibility: reserve the most pixelated display face for short headings, and use a readable face for controls, status, descriptions, and longer text. Keep routine interface text at least 12 CSS pixels on desktop and 11 on mobile; avoid shrinking labels to fit, instead reflow or simplify them. Use a restrained palette drawn from the scene and maintain clear contrast, focus, selected, disabled, and danger states.
+
 Working presentation principles for the first slice:
 
 - Compose each room as a scene first, with clear visual hierarchy between environment, interactable points of interest, enemies, characters, and UI.
@@ -36,6 +38,7 @@ Working presentation principles for the first slice:
 - Use restrained, purposeful animation: subtle idle motion to give characters life, with clearer action, hit, defeat, and boss-telegraph animations when those events matter.
 - Animation must reinforce game state, not obscure it. Never rely on animation alone to communicate danger, damage, target selection, or an available action.
 - Keep navigation, combat choices, enemy intent, health, and party status legible without covering the important part of the scene.
+- Style player-facing controls and panels as part of the pixel-art presentation, including distinct hero action buttons and a talent tree whose nodes and connectors read as an in-world game interface.
 - Adapt layout and information density for phones, tablets, and desktop screens. On small screens, prioritize the current scene, the most important encounter information, and reachable controls; secondary details can move into compact panels or progressive disclosure.
 - Provide reduced-motion behavior and avoid flashing or constant motion that makes the interface tiring.
 - Treat the spectator/cast presentation as a separate composition optimized for viewing at a distance, not simply a stretched player screen.
