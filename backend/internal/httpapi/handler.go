@@ -42,6 +42,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/heartbeat", h.heartbeat)
 	mux.HandleFunc("POST /rooms/{id}/leave", h.leaveRoom)
 	mux.HandleFunc("POST /rooms/{id}/start", h.startRun)
+	mux.HandleFunc("POST /rooms/{id}/return-to-lobby", h.returnToLobby)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
@@ -392,6 +393,39 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+
+}
+
+func (h *Handler) returnToLobby(w http.ResponseWriter, r *http.Request) {
+	for attempt := 0; attempt < 4; attempt++ {
+		room, actor, ok := h.authorizedPlayer(w, r)
+		if !ok {
+			return
+		}
+		if actor != room.OwnerPlayerID {
+			writeError(w, http.StatusForbidden, "only the room host can return the party to the lobby")
+			return
+		}
+		if room.Run == nil || (room.Run.Phase != game.PhaseCompleted && room.Run.Phase != game.PhaseFailed) {
+			writeError(w, http.StatusConflict, "the run has not ended")
+			return
+		}
+
+		expected := room.Version
+		room.Run = nil
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry returning to the lobby")
 }
 
 func (h *Handler) command(w http.ResponseWriter, r *http.Request) {

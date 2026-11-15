@@ -372,4 +372,98 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if resolved.Run.Phase != game.PhaseExploring || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
 		t.Fatal("both party actions should resolve together and clear the encounter")
 	}
+
+}
+
+func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
+	memory := store.NewMemory()
+	handler := NewHandler(memory)
+	request := func(method, path, token, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		return response
+	}
+
+	created := request(http.MethodPost, "/rooms", "", "")
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create room: %d %s", created.Code, created.Body.String())
+	}
+	var host struct {
+		Room struct {
+			ID            string   `json:"id"`
+			Code          string   `json:"code"`
+			OwnerPlayerID string   `json:"ownerPlayerId"`
+			PlayerIDs     []string `json:"playerIds"`
+		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &host); err != nil {
+		t.Fatal(err)
+	}
+
+	joined := request(http.MethodPost, "/rooms/join", "", `{"code":"`+host.Room.Code+`"}`)
+	if joined.Code != http.StatusCreated {
+		t.Fatalf("join room: %d %s", joined.Code, joined.Body.String())
+	}
+	var guest struct {
+		PlayerID    string `json:"playerId"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
+		t.Fatal(err)
+	}
+
+	started := request(http.MethodPost, "/rooms/"+host.Room.ID+"/start", host.PlayerToken, "")
+	if started.Code != http.StatusOK {
+		t.Fatalf("start run: %d %s", started.Code, started.Body.String())
+	}
+	room, err := memory.Get(t.Context(), host.Room.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room.Run.Phase = game.PhaseCompleted
+	expectedVersion := room.Version
+	room.Version++
+	if err := memory.Save(t.Context(), room, expectedVersion); err != nil {
+		t.Fatal(err)
+	}
+
+	guestReturn := request(http.MethodPost, "/rooms/"+host.Room.ID+"/return-to-lobby", guest.PlayerToken, "")
+	if guestReturn.Code != http.StatusForbidden {
+		t.Fatalf("non-host should not return the party to the lobby, got %d", guestReturn.Code)
+	}
+
+	returned := request(http.MethodPost, "/rooms/"+host.Room.ID+"/return-to-lobby", host.PlayerToken, "")
+	if returned.Code != http.StatusOK {
+		t.Fatalf("return to lobby: %d %s", returned.Code, returned.Body.String())
+	}
+	var lobby struct {
+		ID            string    `json:"id"`
+		Code          string    `json:"code"`
+		OwnerPlayerID string    `json:"ownerPlayerId"`
+		PlayerIDs     []string  `json:"playerIds"`
+		Run           *game.Run `json:"run"`
+	}
+	if err := json.Unmarshal(returned.Body.Bytes(), &lobby); err != nil {
+		t.Fatal(err)
+	}
+	if lobby.ID != host.Room.ID || lobby.Code != host.Room.Code || lobby.OwnerPlayerID != host.Room.OwnerPlayerID || lobby.Run != nil {
+		t.Fatalf("room identity or lobby state was not preserved: %+v", lobby)
+	}
+	if len(lobby.PlayerIDs) != 2 || lobby.PlayerIDs[0] != host.Room.PlayerIDs[0] || lobby.PlayerIDs[1] != guest.PlayerID {
+		t.Fatalf("party membership changed: got %v", lobby.PlayerIDs)
+	}
+
+	guestSnapshot := request(http.MethodGet, "/rooms/"+host.Room.ID, guest.PlayerToken, "")
+	if guestSnapshot.Code != http.StatusOK {
+		t.Fatalf("guest credentials should remain valid in the lobby: %d %s", guestSnapshot.Code, guestSnapshot.Body.String())
+	}
+	restarted := request(http.MethodPost, "/rooms/"+host.Room.ID+"/start", host.PlayerToken, "")
+	if restarted.Code != http.StatusOK {
+		t.Fatalf("same party should be able to start another run: %d %s", restarted.Code, restarted.Body.String())
+	}
 }

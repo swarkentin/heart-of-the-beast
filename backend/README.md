@@ -27,6 +27,7 @@ The service listens on port 8080 by default; set PORT to override it. GET /healt
 - POST /rooms creates a room and returns its player and spectator bearer tokens. Tokens are shown once; only their SHA-256 hashes are stored.
 - GET /rooms/{id} returns the player-authorized room snapshot.
 - POST /rooms/{id}/start starts the host's solo run.
+- POST /rooms/{id}/return-to-lobby lets the host end a completed or failed run and return the existing party to its lobby without changing the room code or active player credentials.
 - POST /rooms/{id}/commands accepts validated gameplay commands.
 - GET /spectate/{id} returns a read-only snapshot using the separate spectator token. Spectator credentials cannot submit player commands.
 
