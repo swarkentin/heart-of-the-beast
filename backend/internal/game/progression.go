@@ -35,16 +35,16 @@ type PlayerStats struct {
 }
 
 type TalentBonuses struct {
-	AttackDamage      int
-	InterruptDamage   int
-	GuardReduction    int
-	DamageReduction   int
-	AttackVsTelegraph int
-	EncounterHeal     int
-	ReflectDamage     int
-	MaxHealth         int
+	AttackDamage        int
+	InterruptDamage     int
+	GuardReduction      int
+	DamageReduction     int
+	AttackVsTelegraph   int
+	EncounterHeal       int
+	ReflectDamage       int
+	MaxHealth           int
 	PartyGuardReduction int
-	PartyEncounterHeal int
+	PartyEncounterHeal  int
 }
 
 var archetypeCatalog = []ArchetypeDefinition{
