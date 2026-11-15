@@ -507,7 +507,7 @@ export default function App() {
   return <main className="game-screen">
     <header className="game-topline">
       <a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a>
-      <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {room.floor}</div>
+      <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {String(run.depth ?? 1).padStart(2, "0")}</div>
       <AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} />
       {!spectator ? <div className="view-switch" aria-label="Presentation view"><button className={view === "player" ? "selected" : ""} onClick={() => setView("player")}>PLAYER</button><button className={view === "cast" ? "selected" : ""} onClick={() => setView("cast")}>SPECTATOR / CAST</button></div> : <div className="view-switch"><button className="selected">SPECTATOR / CAST</button></div>}
     </header>
@@ -526,7 +526,7 @@ export default function App() {
             : <div className="room-event-result">THE PARTY IS DECIDING</div>}
       </section> : null}
       {run.phase === "intermission" ? <section className="room-event-panel" aria-live="polite">
-        <div className="room-event-heading"><span>FLOOR {run.depth} CLEARED · DESCENT {run.depth + 1} OF {run.maxDepth}</span><h2>Choose how to prepare</h2></div>
+        <div className="room-event-heading"><span>FLOOR {run.depth ?? 1} CLEARED · DESCENT {(run.depth ?? 1) + 1} OF {run.maxDepth ?? 3}</span><h2>Choose how to prepare</h2></div>
         <p>The party has a moment before descending. Recover now, or carry a small permanent advantage deeper into the catacombs.</p>
         <p>{run.interFloorVote ? "Party vote · " + Object.keys(run.interFloorVote.votes || {}).length + "/" + livingPlayerCount + " submitted · " + Math.max(0, Math.ceil((new Date(run.interFloorVote.deadline).getTime() - clockNow) / 1000)) + "s remaining" : "Choose how the whole party prepares for the next floor."}</p>
         {!spectator && view === "player" ? <div className="room-event-choices">
