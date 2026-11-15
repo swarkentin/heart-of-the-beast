@@ -118,7 +118,16 @@ func StartRun(room *Room, runID string, now time.Time) error {
 
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
-		player := newPlayerState(id, room.PlayerArchetypes[id])
+		var player *PlayerState
+		if classID := room.PlayerClasses[id]; classID != "" {
+			definition, ok := findClass(classID)
+			if !ok || !ClassAvailableToPlayer(classID, nil) {
+				return ErrInvalidClass
+			}
+			player = newPlayerStateForClass(id, definition)
+		} else {
+			player = newPlayerState(id, room.PlayerArchetypes[id])
+		}
 		player.StrikeDamage = 10
 		player.GuardReduction = GuardDamageReduction
 		players[id] = player
