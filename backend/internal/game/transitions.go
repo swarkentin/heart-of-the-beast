@@ -32,27 +32,27 @@ func StartRun(room *Room, runID string, now time.Time) error {
 				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"},
 				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing"},
 			},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Behavior: "sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
 			ID:          "reliquary",
 			Name:        "The Silent Reliquary",
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Health: 15, MaxHealth: 15}}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15}}},
 		},
 		"flooded-crossing": {
 			ID:          "flooded-crossing",
 			Name:        "The Drowned Crossing",
 			Description: "Black water ripples around a half-submerged causeway.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "scout", Name: "Drowned Scout", Health: 12, MaxHealth: 12}}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 12, MaxHealth: 12}}},
 		},
 		"warden": {
 			ID:          "warden",
 			Name:        "The Warden's Gate",
 			Description: "The crypt warden waits before the sealed gate.",
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Health: 30, MaxHealth: 30}}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Behavior: "warden", Health: 30, MaxHealth: 30}}},
 		},
 	}
 
@@ -68,7 +68,7 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		Players:       players,
 		StartedAt:     now,
 	}
-	startCombatRound(room.Run, now)
+	startCombatRound(room, now)
 	return nil
 }
 
