@@ -4,7 +4,7 @@ Status: proposed spike. This is an experiment to validate the run structure and 
 
 ## Problem
 
-The current run is one authored Forgotten Catacombs graph. Defeating the Crypt Warden sets the run to `completed`, so there is no descent, no next level, and no difficulty curve across levels. The roadmap already targets 20–40 minute runs and 5–8 minute dungeon levels; one short dungeon cannot deliver that loop.
+The current run is one authored Forgotten Catacombs graph. Defeating the Crypt Warden sets the run to `completed`, so there is no descent, no next level, and no difficulty curve across levels. The roadmap targets 20–40 minute sessions; the initial multi-floor experiment targets 3–5 minutes per floor. One short dungeon cannot deliver a satisfying run arc.
 
 ## Spike question
 
@@ -18,19 +18,25 @@ The spike should answer that question with a small playable implementation, not 
 - Each level is a connected graph of approximately **6–9 rooms**: an entrance, a guaranteed main route, a small number of optional branches, at least one non-combat room, and a descent/exit room. The final level ends in a boss room.
 - Generate each level from a small set of authored room/encounter/event templates. Randomness chooses and connects content; it does not invent arbitrary mechanics or prose.
 - Keep the current forward-facing room navigation and party voting. The graph is shared by players and spectators; no client-side generation.
-- A descent is a safe transition between levels: preserve player health, class/build, talents, run flags, and acquired run rewards. Clear transient combat/vote state and generate the next level.
+- A descent is a safe transition between levels: preserve player health, class/build, talents, run flags, and acquired run rewards. Clear transient combat/vote state, resolve an inter-floor choice, then generate the next level.
+- Between each pair of floors, offer a clear party-shared choice: restore a meaningful amount of health **or** gain a run perk. The choice is server-authoritative, time-boxed for co-op, immediate for solo, and applied once. Perks should be small, legible, and useful across multiple builds; the recovery option must remain relevant when the party is battered.
+- Seed occasional miniboss encounters into eligible rooms or optional branches. They should be rare enough to remain surprising, have a distinct readable mechanic, and offer a reward worth the added risk. Do not put one on every floor or make them mandatory for floor completion.
+- Make the soundtrack evolve as the party descends. Each depth should add or transform musical material (for example: percussion, bass, harmony, melody, distortion, or a recurring motif) while retaining a recognizable musical identity. Use authored stems/variants and deterministic depth/encounter cues rather than generating arbitrary music. Floor transitions and miniboss/boss states are natural points for musical changes; music should not restart abruptly on every room transition.
 - The run completes only after the final level's boss is defeated. Party defeat still ends the run immediately.
 - Use a server-generated run seed and deterministic generation from `(run seed, level depth)`. Persist the seed and generated graph in the run aggregate so reconnects, retries, and spectators see the exact same dungeon. Never regenerate a level during snapshot/poll handling.
 
 ## Difficulty progression
 
-Depth should change encounter pressure and composition, not just multiply enemy health.
+Depth should change encounter pressure, composition, atmosphere, and musical intensity—not just multiply enemy health.
 
 - Early level: teach the floor's enemy family and introduce one readable threat at a time.
 - Middle level: combine complementary enemy behaviors, add more multi-enemy encounters, and offer meaningful optional risk/reward branches.
 - Final level: use the strongest combinations and a boss with at least one mechanic that asks the party to respond to telegraphs or an interrupt window.
+- Minibosses: use a seeded encounter budget/chance with guardrails on frequency and placement. A miniboss should remix known enemy behaviors around one signature mechanic, telegraph that mechanic clearly, and pay out a perk, treasure, or other meaningful reward. Avoid stacking a miniboss with an already exceptional encounter.
+- Inter-floor choices: make the health-versus-perk decision a deliberate pacing beat. The choice should reflect current run state without forcing a single mathematically dominant option; perks should be sidegrades or modest synergies rather than mandatory power spikes.
+- Music arc: establish a recognizable theme on the first floor, then increase tension and complexity with depth. Use layered stems or authored floor variants so intensity can rise/fall with gameplay state (exploration, combat, miniboss, boss) without becoming noisy or fatiguing. Keep music and gameplay cues synchronized through authoritative state/events, while actual audio playback remains client-side.
 - Scale by active party size as well as depth. Solo must reduce simultaneous pressure or provide alternate counterplay; do not simply apply a large health multiplier for larger parties.
-- Keep player health and run-long rewards between levels. A level boundary may offer a modest recovery or reward choice, but should not erase the cost of earlier decisions.
+- Keep player health and run-long rewards between levels. The health-restoration-versus-perk choice is the baseline inter-floor decision; other rewards should come from optional exploration, minibosses, and special encounters rather than stacking free rewards at every boundary.
 - Difficulty tuning should be expressed as an encounter budget/director policy with tests, not scattered `if depth > N` adjustments throughout combat code.
 
 ## Generation constraints
@@ -47,6 +53,9 @@ Depth should change encounter pressure and composition, not just multiply enemy 
 ## Implementation shape to test
 
 - Add run metadata for seed, generator/content version, and current depth (plus a maximum depth or explicit final-floor marker).
+- Add persisted, server-authoritative state for pending/resolved inter-floor choices and acquired run perks; make resolution idempotent.
+- Add stable music progression cues to floor/run state or derive them deterministically from depth and encounter state, so reconnecting clients converge on the same soundtrack phase.
+- Model miniboss eligibility/selection as part of seeded encounter generation, with explicit frequency and placement constraints.
 - Extract the current authored room definitions into reusable content templates rather than coupling generation to HTTP handlers or React.
 - Add a pure Go generator that accepts an explicit seed, depth, party size, and content catalog and returns a validated room graph plus its start room.
 - Add a floor-transition domain operation invoked when a descent/exit room is cleared. It must be idempotent under the existing aggregate mutation/persistence model and must not reset player state.
@@ -62,6 +71,9 @@ Depth should change encounter pressure and composition, not just multiply enemy 
 - Clearing a non-final boss/guardian opens the descent and creates the next floor without resetting health, talents, class/build, or run rewards.
 - The final boss completes the run; a wipe on any floor fails it.
 - Encounter budgets increase with depth and vary by party size, with tests showing that later floors introduce additional threat combinations/mechanics rather than relying only on larger HP values.
+- Inter-floor health-versus-perk choice is offered after each non-final floor, resolves correctly for solo/co-op, persists across reconnects, and cannot be claimed twice.
+- Seeded miniboss placement is reproducible, bounded in frequency, never blocks the main path, and its encounter/reward can be completed in solo and co-op.
+- Music progression cues advance with depth and encounter state, survive reconnect/snapshot handling, and support a recognizable escalation without forcing a full track restart at each room.
 - Reconnect and spectator snapshots during and after a floor transition show the same depth, graph, current room, and encounter state.
 - Playtesting confirms the generated floors still feel authored enough to navigate and that a level generally fits the 3–5 minute target.
 
@@ -72,6 +84,8 @@ Depth should change encounter pressure and composition, not just multiply enemy 
 - A large library of enemy families, bosses, traps, puzzles, or themes.
 - Persistent character/meta progression changes.
 - Village/hub intermissions between every level (keep the boundary safe and model-ready, but validate the dungeon descent first).
+- A large perk catalog or complex perk synergies; validate a small set of readable run perks first.
+- Fully dynamic procedural music composition; use authored stems/variants and state-driven layering.
 - Replacing the existing directional navigation and party voting UX with a map-first interface.
 
 ## Decision after the spike
