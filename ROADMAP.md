@@ -65,7 +65,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Reward and difficulty curves validated through playtesting.
-- [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed, carry party state and run rewards between floors, and scale encounter pressure with depth. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
+- [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed, carry party state and run rewards between floors, and scale encounter pressure with depth. Target 3–5 minutes per level. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
 
 ### Persistent character progression and personalization
 
