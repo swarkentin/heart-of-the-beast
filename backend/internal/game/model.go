@@ -42,24 +42,24 @@ type PlayerPresence struct {
 }
 
 type Run struct {
-	ID                      string                  \`json:"id"\`
-	Seed                    uint64                  \`json:"seed,omitempty"\`
-	Depth                   int                     \`json:"depth,omitempty"\`
-	MaxDepth                int                     \`json:"maxDepth,omitempty"\`
-	MusicIntensity          int                     \`json:"musicIntensity,omitempty"\`
-	PendingInterFloorChoice bool                    \`json:"pendingInterFloorChoice,omitempty"\`
-	InterFloorVote          *NavigationVote         \`json:"interFloorVote,omitempty"\`
-	Phase                   RunPhase                \`json:"phase"\`
-	CurrentRoomID           string                  \`json:"currentRoomId"\`
-	Rooms                   map[string]*DungeonRoom \`json:"rooms"\`
-	Players                 map[string]*PlayerState \`json:"players"\`
-	Flags                   map[string]bool         \`json:"flags,omitempty"\`
-	StartedAt               time.Time               \`json:"startedAt"\`
-	CompletedAt             *time.Time              \`json:"completedAt,omitempty"\`
-	CombatRoundNumber       int                     \`json:"combatRoundNumber"\`
-	CombatRound             *CombatRound            \`json:"combatRound,omitempty"\`
-	NavigationVote          *NavigationVote         \`json:"navigationVote,omitempty"\`
-	LastCombatEvents        []CombatEvent           \`json:"lastCombatEvents,omitempty"\`
+	ID                      string                  `json:"id"`
+	Seed                    uint64                  `json:"seed,omitempty"`
+	Depth                   int                     `json:"depth,omitempty"`
+	MaxDepth                int                     `json:"maxDepth,omitempty"`
+	MusicIntensity          int                     `json:"musicIntensity,omitempty"`
+	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`
+	InterFloorVote          *NavigationVote         `json:"interFloorVote,omitempty"`
+	Phase                   RunPhase                `json:"phase"`
+	CurrentRoomID           string                  `json:"currentRoomId"`
+	Rooms                   map[string]*DungeonRoom `json:"rooms"`
+	Players                 map[string]*PlayerState `json:"players"`
+	Flags                   map[string]bool         `json:"flags,omitempty"`
+	StartedAt               time.Time               `json:"startedAt"`
+	CompletedAt             *time.Time              `json:"completedAt,omitempty"`
+	CombatRoundNumber       int                     `json:"combatRoundNumber"`
+	CombatRound             *CombatRound            `json:"combatRound,omitempty"`
+	NavigationVote          *NavigationVote         `json:"navigationVote,omitempty"`
+	LastCombatEvents        []CombatEvent           `json:"lastCombatEvents,omitempty"`
 }
 
 type NavigationVote struct {
