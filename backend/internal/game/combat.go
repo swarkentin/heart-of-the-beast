@@ -350,7 +350,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			heal := bonusesFor(player).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
+			heal := bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
 			if heal > 0 {
 				before := player.Health
 				player.Health += heal
