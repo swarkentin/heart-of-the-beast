@@ -23,6 +23,12 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		return errors.New("room requires a player and run id")
 	}
 
+	partyScaling := MonsterScaling{HealthMultiplier: 1}
+	soloScaling := MonsterScaling{HealthMultiplier: 0.75, RoundDown: true}
+	encounterScaling := partyScaling
+	if len(room.PlayerIDs) == 1 {
+		encounterScaling = soloScaling
+	}
 	rooms := map[string]*DungeonRoom{
 		"entry": {
 			ID: "entry", Name: "The Watcher's Hall", Floor: "01", RoomType: "encounter",
@@ -31,22 +37,24 @@ func StartRun(room *Room, runID string, now time.Time) error {
 				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary", Description: "Harder fight; claim a sigil that empowers your attacks."},
 				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing", Description: "Safer fight; search the waterlogged cache for healing."},
 			},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Behavior: "sentinel", Health: 10, MaxHealth: 10}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{newCatalogEnemy("sentinel", "restless-sentinel", partyScaling)}},
 		},
 		"reliquary": {
 			ID: "reliquary", Name: "The Silent Reliquary", Floor: "02", RoomType: "encounter",
 			Description: "Two rows of stone kings watch over a cracked sarcophagus. A guardian rises as a drowned scout slips from the dark.",
 			Exits:       []Exit{{ID: "east", Destination: "archive", Label: "The Archive of Names"}},
 			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 20, MaxHealth: 20},
-				{ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 15, MaxHealth: 15},
+				newCatalogEnemy("guardian", "reliquary-guardian", encounterScaling),
+				newCatalogEnemy("scout", "drowned-scout", encounterScaling),
 			}},
 		},
 		"flooded-crossing": {
 			ID: "flooded-crossing", Name: "The Drowned Crossing", Floor: "02", RoomType: "encounter",
 			Description: "A half-submerged causeway crosses black water. Pale hands grasp at the stones below.",
 			Exits:       []Exit{{ID: "east", Destination: "archive", Label: "The Archive of Names"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 14, MaxHealth: 14}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
+				newCatalogEnemy("scout", map[bool]string{true: "drowned-scout-crossing-solo", false: "drowned-scout-light"}[len(room.PlayerIDs) == 1], partyScaling),
+			}},
 		},
 		"archive": {
 			ID: "archive", Name: "The Archive of Names", Floor: "03", RoomType: "event",
@@ -62,8 +70,8 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "Pillars of fused bone frame a ceremonial dais. The gallery's guardians attack anything that disturbs the dead.",
 			Exits:       []Exit{{ID: "west", Destination: "captive-cell", Label: "The Prisoner's Cell"}, {ID: "east", Destination: "reliquary-vault", Label: "The Reliquary Vault"}},
 			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				{ID: "gallery-guardian", Name: "Bonebound Guardian", Behavior: "guardian", Health: 22, MaxHealth: 22},
-				{ID: "gallery-scout", Name: "Crypt Skirmisher", Behavior: "scout", Health: 16, MaxHealth: 16},
+				newCatalogEnemy("gallery-guardian", "bonebound-guardian", encounterScaling),
+				newCatalogEnemy("gallery-scout", "crypt-skirmisher", encounterScaling),
 			}},
 		},
 		"captive-cell": {
@@ -89,31 +97,17 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "The gate's chains tighten as two sentries step from their alcoves. The sanctum lies beyond them.",
 			Exits:       []Exit{{ID: "north", Destination: "warden", Label: "The Warden's Sanctum"}},
 			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				{ID: "gate-guardian", Name: "Gatekeeper", Behavior: "guardian", Health: 20, MaxHealth: 20},
-				{ID: "gate-scout", Name: "Gravebound Sentry", Behavior: "scout", Health: 14, MaxHealth: 14},
+				newCatalogEnemy("gate-guardian", "gatekeeper", encounterScaling),
+				newCatalogEnemy("gate-scout", "gravebound-sentry", encounterScaling),
 			}},
 		},
 		"warden": {
 			ID: "warden", Name: "The Warden's Sanctum", Floor: "07", RoomType: "boss",
 			Description: "A vast chamber opens around a throne of black iron. The Crypt Warden rises, dragging its chains across the stone.",
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Behavior: "warden", Health: 42, MaxHealth: 42}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
+				newCatalogEnemy("warden", map[bool]string{true: "crypt-warden-solo", false: "crypt-warden"}[len(room.PlayerIDs) == 1], partyScaling),
+			}},
 		},
-	}
-
-	// Solo keeps the same route and decisions, but takes less cumulative damage
-	// from the optional multi-enemy formations.
-	if len(room.PlayerIDs) == 1 {
-		for _, id := range []string{"reliquary", "bone-gallery", "warden-gate"} {
-			encounter := rooms[id].Encounter
-			for i := range encounter.Enemies {
-				encounter.Enemies[i].Health = encounter.Enemies[i].Health * 3 / 4
-				encounter.Enemies[i].MaxHealth = encounter.Enemies[i].Health
-			}
-		}
-		rooms["flooded-crossing"].Encounter.Enemies[0].Health = 11
-		rooms["flooded-crossing"].Encounter.Enemies[0].MaxHealth = 11
-		rooms["warden"].Encounter.Enemies[0].Health = 36
-		rooms["warden"].Encounter.Enemies[0].MaxHealth = 36
 	}
 
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))

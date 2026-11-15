@@ -32,11 +32,21 @@ type AbilityDefinition struct {
 }
 
 type MonsterDefinition struct {
-	ID         string
-	Name       string
-	Role       MonsterRole
-	BaseHealth int
-	AbilityIDs []string
+	ID             string
+	Name           string
+	Role           MonsterRole
+	BehaviorID     string
+	BaseHealth     int
+	HealthPerDepth int
+	AbilityIDs     []string
+}
+
+// MonsterScaling holds the explicit inputs used to derive an enemy's health.
+type MonsterScaling struct {
+	Depth            int
+	PartySize        int
+	HealthMultiplier float64
+	RoundDown        bool
 }
 
 type MonsterCatalog struct {
@@ -61,11 +71,26 @@ func newMonsterCatalog() MonsterCatalog {
 		abilityMap[ability.ID] = ability
 	}
 	monsters := []MonsterDefinition{
-		{ID: "scout", Name: "Crypt Stalker", Role: MonsterRoleStriker, BaseHealth: 11, AbilityIDs: []string{"quick-jab"}},
-		{ID: "guardian", Name: "Ashbound Guardian", Role: MonsterRoleProtector, BaseHealth: 13, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
-		{ID: "sentinel", Name: "Threshold Warden", Role: MonsterRoleProtector, BaseHealth: 12, AbilityIDs: []string{"stone-strike"}},
-		{ID: "miniboss", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BaseHealth: 18, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}},
-		{ID: "warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BaseHealth: 30, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
+		{ID: "scout", Name: "Crypt Stalker", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}},
+		{ID: "guardian", Name: "Ashbound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 13, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
+		{ID: "sentinel", Name: "Threshold Warden", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 12, AbilityIDs: []string{"stone-strike"}},
+		{ID: "miniboss", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 18, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}},
+		{ID: "warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
+		{ID: "stonebound-guard", Name: "Stonebound Guard", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 14, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
+		{ID: "gravebound-scout", Name: "Gravebound Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 10, AbilityIDs: []string{"quick-jab"}},
+		{ID: "ossuary-champion", Name: "Ossuary Champion", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
+		{ID: "depth-reliquary-brute", Name: "Reliquary Brute", Role: MonsterRoleBruiser, BehaviorID: "miniboss", BaseHealth: 23, HealthPerDepth: 3, AbilityIDs: []string{"reliquary-crush", "miniboss-stone-strike"}},
+		{ID: "restless-sentinel", Name: "Restless Sentinel", Role: MonsterRoleProtector, BehaviorID: "sentinel", BaseHealth: 10, AbilityIDs: []string{"stone-strike"}},
+		{ID: "reliquary-guardian", Name: "Reliquary Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
+		{ID: "drowned-scout", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 15, AbilityIDs: []string{"quick-jab"}},
+		{ID: "drowned-scout-light", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}},
+		{ID: "drowned-scout-crossing-solo", Name: "Drowned Scout", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 11, AbilityIDs: []string{"quick-jab"}},
+		{ID: "bonebound-guardian", Name: "Bonebound Guardian", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 22, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
+		{ID: "crypt-skirmisher", Name: "Crypt Skirmisher", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 16, AbilityIDs: []string{"quick-jab"}},
+		{ID: "gatekeeper", Name: "Gatekeeper", Role: MonsterRoleProtector, BehaviorID: "guardian", BaseHealth: 20, AbilityIDs: []string{"heavy-blow", "stone-strike"}},
+		{ID: "gravebound-sentry", Name: "Gravebound Sentry", Role: MonsterRoleStriker, BehaviorID: "scout", BaseHealth: 14, AbilityIDs: []string{"quick-jab"}},
+		{ID: "crypt-warden", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 42, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
+		{ID: "crypt-warden-solo", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 36, AbilityIDs: []string{"soul-drain", "soul-sweep"}},
 	}
 	monsterMap := make(map[string]MonsterDefinition, len(monsters))
 	for _, monster := range monsters {
@@ -92,7 +117,7 @@ func (catalog MonsterCatalog) Ability(id string) (AbilityDefinition, error) {
 
 func (catalog MonsterCatalog) Validate() error {
 	for id, monster := range catalog.Monsters {
-		if id == "" || monster.ID != id || monster.BaseHealth <= 0 || len(monster.AbilityIDs) == 0 {
+		if id == "" || monster.ID != id || monster.BaseHealth <= 0 || monster.HealthPerDepth < 0 || monster.BehaviorID == "" || len(monster.AbilityIDs) == 0 {
 			return fmt.Errorf("invalid monster definition %q", id)
 		}
 		for _, abilityID := range monster.AbilityIDs {
@@ -124,4 +149,46 @@ func (catalog MonsterCatalog) SelectAbility(monsterID string, turn int) (Ability
 		}
 	}
 	return AbilityDefinition{}, fmt.Errorf("monster %q has no ability for turn %d", monsterID, turn)
+}
+
+// NewEnemy creates a mutable runtime instance from an immutable catalog entry.
+func (catalog MonsterCatalog) NewEnemy(instanceID, monsterID string, scaling MonsterScaling) (Enemy, error) {
+	monster, err := catalog.Monster(monsterID)
+	if err != nil {
+		return Enemy{}, err
+	}
+	health := monster.BaseHealth + monster.HealthPerDepth*scaling.Depth
+	multiplier := scaling.HealthMultiplier
+	if multiplier <= 0 {
+		multiplier = 1
+		if scaling.Depth > 0 {
+			multiplier += float64(scaling.Depth-1) * 0.18
+			if scaling.PartySize > 1 {
+				multiplier += float64(scaling.PartySize-1) * 0.12
+			} else if scaling.PartySize == 1 {
+				multiplier -= 0.12
+			}
+		}
+	}
+	scaledHealth := float64(health) * multiplier
+	if scaling.RoundDown {
+		health = int(scaledHealth)
+	} else {
+		health = int(scaledHealth + 0.5)
+	}
+	if health < 1 {
+		health = 1
+	}
+	return Enemy{
+		ID: instanceID, DefinitionID: monster.ID, Name: monster.Name,
+		Behavior: monster.BehaviorID, Health: health, MaxHealth: health,
+	}, nil
+}
+
+func newCatalogEnemy(instanceID, monsterID string, scaling MonsterScaling) Enemy {
+	enemy, err := defaultMonsterCatalog.NewEnemy(instanceID, monsterID, scaling)
+	if err != nil {
+		panic(fmt.Sprintf("invalid built-in monster %q: %v", monsterID, err))
+	}
+	return enemy
 }

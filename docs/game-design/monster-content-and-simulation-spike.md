@@ -60,7 +60,7 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 ## Migration plan
 
 1. **Inventory and catalog boundary (this PR):** document all current sources; introduce typed monster/ability definitions for existing behaviors; route intent selection through the catalog without changing current numbers or cadence.
-2. **Move authored enemy stats and names:** replace inline enemy literals in dungeon generation with catalog references and explicit scaling inputs; add catalog validation.
+2. **Move authored enemy stats and names (completed in this slice):** replace inline enemy literals in both the original authored run and generated floors with catalog references; move the existing solo/depth/party health calculations into explicit catalog scaling inputs. Encounter compositions remain authored inline for now.
 3. **Modifiers and encounter compositions:** extract random bonuses/effects and define reusable encounter recipes/budgets, with seeded selection.
 4. **Pure combat engine boundary:** isolate deterministic state transitions from room/persistence/websocket concerns while retaining one implementation for live play and simulation.
 5. **Simulation runner:** add deterministic scenarios, baseline policies, batch execution, distribution reports, and regression thresholds.
@@ -92,10 +92,10 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 
 | Concern | Current source | Extraction target |
 |---|---|---|
-| Enemy runtime state | `backend/internal/game/model.go` (`Enemy`, `EnemyIntent`) | Runtime instance referencing stable monster/ability IDs |
+| Enemy runtime state | `backend/internal/game/model.go` (`Enemy`, `EnemyIntent`) | Runtime instance referencing stable monster/ability IDs (`DefinitionID` added) |
 | Behavior-to-intent rules | `backend/internal/game/combat.go` (`buildEnemyIntent`) | Monster and ability catalogs |
-| Enemy names and base health | `backend/internal/game/dungeon.go` | Monster definitions |
-| Depth/party scaling | `backend/internal/game/dungeon.go` | Explicit encounter scaling/director policy |
+| Enemy names and base health | `backend/internal/game/dungeon.go`, `transitions.go` | Catalog definitions; generated and authored encounters reference stable IDs |
+| Depth/party scaling | `backend/internal/game/dungeon.go`, `transitions.go` | `MonsterScaling` inputs and catalog health calculation; encounter composition policy remains a follow-up |
 | Player class bonuses | `classes.go`, `class_combat.go` | Existing class catalog remains separate; shared effect vocabulary can follow |
 | Encounter compositions | `backend/internal/game/dungeon.go` | Reusable encounter definitions |
 | Random effects/modifiers | Current run/perk/event and combat bonus paths | Modifier/effect catalog with seeded selection |
@@ -107,3 +107,9 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 - Replacing the current dungeon generator.
 - Building a visual content editor.
 - Introducing a second combat implementation for simulation.
+
+## Follow-up slice: catalog-backed enemy instances
+
+Enemy identity and health now live in catalog definitions rather than room construction. Both the original authored Forgotten Catacombs run and generated multi-floor encounters create runtime enemies from catalog entries. Each instance stores its stable `DefinitionID` while retaining the legacy `Behavior` field so existing persisted runs and combat intent selection remain compatible.
+
+The catalog owns the display name, base health, behavior mapping, and depth-health increment. `MonsterScaling` owns the explicit depth/party inputs and the legacy solo health adjustments. The formulas and resulting health values are intentionally unchanged. Room graphs and encounter compositions remain authored in the existing dungeon files; extracting reusable encounter recipes/budgets is a later step.
