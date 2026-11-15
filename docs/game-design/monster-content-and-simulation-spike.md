@@ -204,3 +204,14 @@ Player attack arithmetic now lives in `backend/internal/game/combat_transitions.
 Enemy intent construction now separates catalog ability selection from deterministic target resolution. The transition copies the selected ability into a telegraph and rotates single-target choices over the already sorted eligible-player list; party-wide intents remain untargeted. Legacy unknown behavior fallback remains unchanged.
 
 These functions do not decide command validity, player eligibility, emit events, or mutate room aggregates. Live combat remains responsible for those orchestration boundaries and uses the pure results to update state. No damage values, mitigation order, intent cadence, target rotation, or balance tuning changed. The next step is progression transitions, followed by a seeded simulator over explicit combat snapshots.
+
+
+## Follow-up slice: seeded combat simulation foundation
+
+The first simulation runner lives in `backend/internal/game/combat_simulation.go`. A caller supplies an explicit `CombatSimulationSnapshot` containing player states, catalog-backed runtime enemies, and an optional encounter XP reward. The runner copies that input and resolves a single encounter without constructing a room or touching persistence, clocks, HTTP, or websocket state.
+
+`SimulateCombat` runs a deterministic baseline policy: players interrupt high-damage interruptible intents when able, defend against sufficiently dangerous incoming pressure, and otherwise attack a lowest-health enemy. Seeded tie-breaking makes repeated runs reproducible while allowing a batch to explore different target choices. The simulation uses the same shared attack-damage, interrupt-damage, incoming-mitigation, health damage/healing, enemy-intent, and XP progression transitions used by live combat; it does not contain a second copy of those arithmetic rules.
+
+Reports include victory/wipe outcome, rounds, player damage dealt/received, monster healing, down counts, executed ability kinds, remaining health, and resulting progression. `SimulateCombatBatch` runs caller-supplied seeds in order, and `SummarizeCombatBatch` reports win rate plus median and nearest-rank 90th-percentile rounds and damage.
+
+This is an intentionally narrow first harness, not yet a complete balance oracle. The baseline policy does not execute class signature abilities, talent/passive effects, consumables, room/run effects, or inter-floor choices; it also simulates one encounter rather than a full floor. Those are explicit follow-up extensions. Do not tune authored monster values from this first report alone. The next validation step is to add policy coverage and compare simulator outcomes against focused live-transition fixtures before collecting broad solo/co-op balance distributions.
