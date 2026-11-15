@@ -77,8 +77,8 @@ func TestNavigationVoteDeadlineAdvancesThroughSnapshotPolling(t *testing.T) {
 	}
 	var result struct {
 		Run struct {
-			Phase          game.RunPhase `json:"phase"`
-			CurrentRoomID  string        `json:"currentRoomId"`
+			Phase          game.RunPhase        `json:"phase"`
+			CurrentRoomID  string               `json:"currentRoomId"`
 			NavigationVote *game.NavigationVote `json:"navigationVote"`
 		} `json:"run"`
 	}
