@@ -140,3 +140,8 @@ This is intentionally a partial extraction: class ability/passive handlers and t
 The room-event rewards now resolve through `RunEffectCatalog` definitions. The catalog describes the effect kind, persistent run flag, magnitude, eligible party members, and any room-scoped combat bonus. This covers the inscription's Warden-only +2 Strike bonus, the archivist's +10 living-party heal, Emberheart's +3 Strike, Stoneward's +4 Guard, Shrine Ward's +1 Guard, and the no-reward leave choice.
 
 Runtime application remains explicit and server-authoritative; the catalog contains data rather than executable callbacks. Existing effect IDs, flags, values, and timing are preserved. Stable player iteration also makes structured healing feedback reproducible. Encounter-clear rewards and floor rewards remain a separate follow-up, as do class ability/passive effect definitions.
+
+
+## Follow-up slice: typed class passive effects
+
+The nine class passives now resolve through a validated, data-only ClassPassiveEffectCatalog. Definitions identify their trigger, bonus type, magnitude, threshold, and any matching enemy-intent kinds. Runtime evaluation remains explicit and deterministic; no content-defined callbacks are stored in the catalog. Existing passive IDs, trigger timing, conditions, and values are preserved, including Resolve's heavy-block trigger and Companion Instinct's end-of-round lowest-health ally selection. Signature abilities remain registered runtime handlers because their multi-step state changes and target/mode behavior need a separate typed operation model. Encounter-clear and floor rewards remain outstanding.
