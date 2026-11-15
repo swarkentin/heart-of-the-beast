@@ -19,20 +19,46 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	player := newPlayerState("player-1", "tank")
 	room.Run = &Run{CurrentRoomID: "entry", Players: map[string]*PlayerState{"player-1": player}}
 
-	grantEncounterExperience(room, 1)
-	if player.Experience != 50 || player.Level != 2 || player.TalentPoints != 1 {
-		t.Fatalf("first reward did not reach level 2: %+v", player)
+	for i := 0; i < 3; i++ {
+		grantEncounterExperience(room, i+1)
+	}
+	if player.Experience != 3*EncounterExperienceReward || player.Level != 1 || player.TalentPoints != 0 {
+		t.Fatalf("early encounters should not immediately level a new character: %+v", player)
+	}
+	grantEncounterExperience(room, 4)
+	if player.Experience != 4*EncounterExperienceReward || player.Level != 2 || player.TalentPoints != 1 {
+		t.Fatalf("four regular encounters should earn the first level: %+v", player)
 	}
 	if player.MaxHealth != 34 || player.Health != 30 || player.Stats.Power != 1 {
 		t.Fatalf("level 2 stat growth is wrong: %+v", player)
 	}
 
-	grantEncounterExperience(room, 2)
-	if player.Experience != 100 || player.Level != 3 || player.TalentPoints != 2 {
-		t.Fatalf("second reward did not reach level 3: %+v", player)
+	for i := 0; i < 5; i++ {
+		grantEncounterExperience(room, i+5)
+	}
+	if player.Experience != 9*EncounterExperienceReward || player.Level != 3 || player.TalentPoints != 2 {
+		t.Fatalf("the next level should require a sustained run of encounters: %+v", player)
 	}
 	if player.Stats.Focus != 2 {
 		t.Fatalf("level 3 should increase focus by 2, got %+v", player.Stats)
+	}
+}
+
+func TestBossEncounterGrantsMoreExperienceThanRegularEncounter(t *testing.T) {
+	room := progressionRoom()
+	player := newPlayerState("player-1", "tank")
+	room.Run = &Run{
+		CurrentRoomID: "boss",
+		Rooms: map[string]*DungeonRoom{"boss": {ID: "boss", RoomType: "boss"}},
+		Players: map[string]*PlayerState{"player-1": player},
+	}
+
+	grantEncounterExperience(room, 1)
+	if player.Experience != BossExperienceReward || player.Experience <= EncounterExperienceReward {
+		t.Fatalf("boss should grant a larger but bounded XP reward: %+v", player)
+	}
+	if player.Level != 1 {
+		t.Fatalf("a single boss reward should not immediately level a new character: %+v", player)
 	}
 }
 
@@ -43,10 +69,10 @@ func TestEncounterExperienceIncludesDownedPlayersButDoesNotReviveThem(t *testing
 	room.Run = &Run{CurrentRoomID: "entry", Players: map[string]*PlayerState{"player-1": player}}
 
 	grantEncounterExperience(room, 1)
-	if player.Experience != 50 || player.Level != 2 {
+	if player.Experience != EncounterExperienceReward || player.Level != 1 {
 		t.Fatalf("participating downed player should receive encounter XP: %+v", player)
 	}
-	if player.Health != 0 || player.MaxHealth != 34 {
+	if player.Health != 0 || player.MaxHealth != 30 {
 		t.Fatalf("level-up must not revive a downed player: %+v", player)
 	}
 }
