@@ -151,7 +151,6 @@ func (catalog MonsterCatalog) SelectAbility(monsterID string, turn int) (Ability
 	return AbilityDefinition{}, fmt.Errorf("monster %q has no ability for turn %d", monsterID, turn)
 }
 
-
 // NewEnemy creates a mutable runtime instance from an immutable catalog entry.
 func (catalog MonsterCatalog) NewEnemy(instanceID, monsterID string, scaling MonsterScaling) (Enemy, error) {
 	monster, err := catalog.Monster(monsterID)
