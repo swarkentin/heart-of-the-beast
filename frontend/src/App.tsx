@@ -135,6 +135,28 @@ function EnemyFigure({ enemy, selected, hit, onClick }: { enemy: Enemy; selected
   </g>;
 }
 
+function CombatImpacts({ events, enemies, playerId, view }: { events: ApiCombatEvent[]; enemies: Enemy[]; playerId: string; view: "player" | "cast" }) {
+  const visible = events.filter(event => event.effect && (event.amount ?? 0) > 0 && (event.targetType === "enemy" || event.targetType === "player"));
+  return <div className="combat-impacts" aria-live="polite" aria-label="Combat effects">
+    {visible.map((event, index) => {
+      const isEnemy = event.targetType === "enemy";
+      if (!isEnemy && view === "player" && event.targetId !== playerId) return null;
+      const enemyIndex = enemies.findIndex(enemy => enemy.id === event.targetId);
+      if (isEnemy && enemyIndex < 0) return null;
+      const left = isEnemy
+        ? (view === "player" ? enemies[enemyIndex].x / 11 : (enemyIndex === 0 ? 33 : 67))
+        : 50;
+      const top = isEnemy ? (view === "player" ? 53 : 34) : (view === "player" ? 79 : 62);
+      const label = event.effect === "heal" ? "+" + event.amount
+        : event.effect === "block" ? "BLOCKED " + event.amount
+        : "−" + event.amount;
+      return <span key={event.round + "-" + event.kind + "-" + event.targetId + "-" + index}
+        className={"combat-impact combat-impact-" + event.effect}
+        style={{ left: left + "%", top: top + "%" }}>{label}</span>;
+    })}
+  </div>;
+}
+
 function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteStatus, impacts, playerId }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string; description?: string }[]; onNavigate: (id: string) => void; voteStatus?: VoteStatus; impacts: ApiCombatEvent[]; playerId: string }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
