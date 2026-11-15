@@ -329,8 +329,8 @@ func StartingBuildForClass(classID string) (ClassBuildSnapshot, error) {
 	return ClassBuildSnapshot{
 		ClassID: definition.ID, DefinitionVersion: definition.DefinitionVersion,
 		SignatureAbilityID: definition.SignatureAbilityID, PassiveID: definition.PassiveID,
-		MaxHealth: definition.StartingStats.Health,
-		Stats: PlayerStats{Power: definition.StartingStats.Power, Focus: definition.StartingStats.Focus, Agility: definition.StartingStats.Agility},
+		MaxHealth:    definition.StartingStats.Health,
+		Stats:        PlayerStats{Power: definition.StartingStats.Power, Focus: definition.StartingStats.Focus, Agility: definition.StartingStats.Agility},
 		EquipmentIDs: append([]string(nil), definition.StartingEquipment...),
 	}, nil
 }
