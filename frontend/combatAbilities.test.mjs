@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getSignatureAbility, signatureCommand, signatureTargetId } from "./src/combatAbilities.ts";
+import { getSignatureAbility, partySupportCommand, signatureCommand, signatureTargetId } from "./src/combatAbilities.ts";
 
 const classAbilities = {
   bulwark: "ability.shield-wall",
@@ -52,6 +52,15 @@ test("commands contain only the server-authoritative ability choices", () => {
   });
   assert.deepEqual(signatureCommand(getSignatureAbility("ability.shield-wall"), 1, "", "", ""), {
     type: "combat", round: 1, action: "ability",
+  });
+});
+
+test("party roster support actions submit directly to the tapped living ally", () => {
+  assert.deepEqual(partySupportCommand(getSignatureAbility("ability.renewal"), 3, "player-2"), {
+    type: "combat", round: 3, action: "ability", targetId: "player-2",
+  });
+  assert.deepEqual(partySupportCommand(getSignatureAbility("ability.companion-command"), 5, "player-3"), {
+    type: "combat", round: 5, action: "ability", mode: "defend", targetId: "player-3",
   });
 });
 

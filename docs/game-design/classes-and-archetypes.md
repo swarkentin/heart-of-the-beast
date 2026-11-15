@@ -79,7 +79,9 @@ The server-side handlers for the nine initial abilities and passives are impleme
 
 A stopped or weakened intent is resolved for the current round; surviving enemies still telegraph a fresh intent for the next round. This preserves the existing round cadence and makes control effects immediately readable. Renewal currently heals only; minor-effect cleansing will be added alongside the status-effect system rather than inventing an isolated status framework here.
 
-These effects are server-authoritative and registered by the catalog's stable effect IDs. The player combat interface presents one catalog-mapped signature action alongside Strike, Defend, and Interrupt. Arcanist and Beastcaller choose a mode; enemy actions use the currently selected living enemy, while Renewal and Beastcaller Defend can target a living ally or default to self. The player still submits only one action per round, and legacy players without a class build retain the universal actions.
+These effects are server-authoritative and registered by the catalog's stable effect IDs. The player combat interface presents one catalog-mapped signature action alongside Strike, Defend, and Interrupt. Arcanist and Beastcaller choose a mode with action buttons that submit immediately; enemy actions use the currently selected living enemy. A visible party roster shows each member's class, level, health, and the player's own stats. Clerics tap a living party member to use Renewal, and Beastcallers tap a member to guard them. The player still submits only one action per round, and legacy players without a class build retain the universal actions.
+
+The current combat catalog does not include resurrection: Renewal and companion guard accept living targets only. Downed members are shown in the roster and cannot be selected for those effects. Add a separate server-authoritative revive action with explicit timing and health rules before presenting resurrection as a combat option.
 
 ## Starting stats and equipment
 
