@@ -70,15 +70,18 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 	if _, exists := run.CombatRound.Actions[actorID]; exists {
 		return ErrRoundActionSubmitted
 	}
-	if command.Action != "attack" && command.Action != "defend" {
+	if command.Action != "attack" && command.Action != "defend" && command.Action != "interrupt" {
 		return ErrInvalidAction
 	}
-	if command.Action == "attack" {
+	if command.Action == "attack" || command.Action == "interrupt" {
 		current := run.Rooms[run.CurrentRoomID]
 		if current == nil || current.Encounter == nil || current.Encounter.Status != EncounterActive {
 			return ErrInvalidPhase
 		}
 		if !hasLivingEnemy(current.Encounter, command.TargetID) {
+			return ErrInvalidTarget
+		}
+		if command.Action == "interrupt" && !hasInterruptibleIntent(current.Encounter, command.TargetID) {
 			return ErrInvalidTarget
 		}
 	}
@@ -266,7 +269,7 @@ func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []strin
 		if roundNumber%3 == 0 {
 			intent.Kind, intent.Label, intent.Damage, intent.TargetAll = "soul_sweep", "Soul sweep", 3, true
 		} else {
-			intent.Kind, intent.Label, intent.Damage, intent.Heal = "soul_drain", "Soul drain", 5, 2
+			intent.Kind, intent.Label, intent.Damage, intent.Heal, intent.Interruptible = "soul_drain", "Soul drain", 5, 2, true
 		}
 	default:
 		intent.Kind, intent.Label, intent.Damage = "strike", "Strike", 4
@@ -337,6 +340,15 @@ func itoa(value int) string {
 		digits[left], digits[right] = digits[right], digits[left]
 	}
 	return string(digits)
+}
+
+func hasInterruptibleIntent(encounter *Encounter, enemyID string) bool {
+	for _, enemy := range encounter.Enemies {
+		if enemy.ID == enemyID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
+			return true
+		}
+	}
+	return false
 }
 
 func hasLivingEnemy(encounter *Encounter, enemyID string) bool {
