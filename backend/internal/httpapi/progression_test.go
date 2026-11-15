@@ -65,7 +65,7 @@ func TestRunArchetypeCanBeChosenInLobbyAndIsUsedAtStart(t *testing.T) {
 		}
 	}
 
-	locked := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"healer"}`))
+	locked := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"damage"}`))
 	locked.Header.Set("Authorization", "Bearer "+response.PlayerToken)
 	lockedResponse := httptest.NewRecorder()
 	handler.ServeHTTP(lockedResponse, locked)
