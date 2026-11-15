@@ -20,7 +20,7 @@ func TestEnemyIntentIsVisibleAndDefendReducesIncomingDamage(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 45 {
+	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("guard should fully block the sentinel's 4 damage strike, health=%d", got)
 	}
 	guardedMessage := false
@@ -66,7 +66,7 @@ func TestHeavyEnemyIntentCanBePartiallyBlocked(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 40 {
+	if got := room.Run.Players["player-1"].Health; got != 25 {
 		t.Fatalf("guard should reduce the guardian's 8 damage blow by 6, then the scout should deal 3, health=%d", got)
 	}
 }
@@ -89,10 +89,10 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 45 {
+	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("untargeted player should take no damage, health=%d", got)
 	}
-	if got := room.Run.Players["player-2"].Health; got != 45 {
+	if got := room.Run.Players["player-2"].Health; got != 30 {
 		t.Fatalf("targeted player should block the 4 damage strike, health=%d", got)
 	}
 	if next := room.Run.Rooms["entry"].Encounter.Enemies[0].Intent; next == nil || next.TargetPlayerID != "player-1" {
@@ -116,7 +116,7 @@ func TestDefeatingEnemyCancelsItsTelegraphedIntent(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 45 {
+	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("defeating the sentinel should cancel its telegraphed strike, health=%d", got)
 	}
 	var dealt *CombatEvent
@@ -180,10 +180,10 @@ func TestPartyWideIntentAppliesGuardIndependently(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 45 {
+	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("guard should block the party-wide hit for player one, health=%d", got)
 	}
-	if got := room.Run.Players["player-2"].Health; got != 42 {
+	if got := room.Run.Players["player-2"].Health; got != 27 {
 		t.Fatalf("unguarded player two should take the party-wide hit, health=%d", got)
 	}
 }
@@ -200,7 +200,7 @@ func TestInterruptCancelsEnemyIntentWithoutDamageOrHealing(t *testing.T) {
 	if err := SubmitCombatAction(room, "player-1", Command{Type: "combat", Round: 1, Action: "interrupt", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 45 {
+	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("interrupted move should deal no damage, health=%d", got)
 	}
 	if got := enemy.Health; got != 10 {
@@ -280,7 +280,7 @@ func TestDefeatingOneEnemyOnlyCancelsItsOwnIntent(t *testing.T) {
 	if encounter.Enemies[1].Health <= 0 {
 		t.Fatal("the scout should remain alive after focusing the guardian")
 	}
-	if got := room.Run.Players["player-1"].Health; got != 42 {
+	if got := room.Run.Players["player-1"].Health; got != 27 {
 		t.Fatalf("the surviving scout should still resolve its 3-damage jab, health=%d", got)
 	}
 }
