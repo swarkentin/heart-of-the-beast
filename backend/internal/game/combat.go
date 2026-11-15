@@ -168,16 +168,22 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.ID != action.TargetID || enemy.Health <= 0 {
 					continue
 				}
-				damage := player.StrikeDamage + player.Stats.Power + bonusesFor(player).AttackDamage + classPassiveEffects(player, enemy, nil).AttackDamage + enemy.MarkedDamage
-				if player.ClassCombat.ResolveReady {
-					damage += 3
-					player.ClassCombat.ResolveReady = false
-				}
-				enemy.MarkedDamage = 0
-				if enemy.Intent != nil && enemy.Intent.Interruptible {
-					damage += bonusesFor(player).AttackVsTelegraph
-				}
-				damage += defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID)
+				attack := resolveAttackDamage(AttackDamageInput{
+					BaseDamage:          player.StrikeDamage + player.Stats.Power,
+					BonusDamage:         bonusesFor(player).AttackDamage + classPassiveEffects(player, enemy, nil).AttackDamage,
+					MarkedDamage:        enemy.MarkedDamage,
+					IncludeMarkedDamage: true,
+					ConsumeMarkedDamage: true,
+					ResolveReady:        player.ClassCombat.ResolveReady,
+					UseResolve:          true,
+					ResolveBonus:        3,
+					Telegraph:           enemy.Intent != nil && enemy.Intent.Interruptible,
+					TelegraphBonus:      bonusesFor(player).AttackVsTelegraph,
+					StrikeBonus:         defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID),
+				})
+				damage := attack.Damage
+				enemy.MarkedDamage = attack.RemainingMarkedDamage
+				player.ClassCombat.ResolveReady = attack.ResolveReady
 				transition := resolveHealthDamage(enemy.Health, damage)
 				enemy.Health = transition.Health
 				actualDamage := transition.Applied
@@ -193,7 +199,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				enemy := &current.Encounter.Enemies[i]
 				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
 					label := enemy.Intent.Label
-					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage + classPassiveEffects(player, enemy, enemy.Intent).InterruptDamage
+					damage := resolveInterruptDamage(player.Stats.Focus, bonusesFor(player).InterruptDamage, classPassiveEffects(player, enemy, enemy.Intent).InterruptDamage)
 					if damage > 0 {
 						transition := resolveHealthDamage(enemy.Health, damage)
 						enemy.Health = transition.Health
@@ -240,40 +246,30 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
 				continue
 			}
-			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction - classPassiveEffects(player, enemy, &intent).DamageReduction
-			if damage < 0 {
-				damage = 0
-			}
-			wardReflect := 0
-			if player.ClassCombat.Ward > 0 {
-				absorbed := damage
-				if absorbed > player.ClassCombat.Ward {
-					absorbed = player.ClassCombat.Ward
-				}
-				damage -= absorbed
-				player.ClassCombat.Ward = 0
-				wardReflect = player.ClassCombat.WardReflect
-				player.ClassCombat.WardReflect = 0
-				if absorbed > 0 {
-					addCombatImpact(run, roundNumber, "runic_ward", "A Runic Ward absorbs "+itoa(absorbed)+" damage.", "block", playerID, "player", absorbed)
-				}
-			}
-			guarded := player.Guarding
-			guardBlocked := 0
-			if guarded {
-				reduction := player.GuardReduction
-				if reduction <= 0 {
-					reduction = GuardDamageReduction
-				}
-				reduction += player.ClassCombat.GuardBonus + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
-				beforeGuard := damage
-				damage -= reduction
-				if damage < 0 {
-					damage = 0
-				}
-				guardBlocked = beforeGuard - damage
-				player.Guarding = false
-				player.ClassCombat.GuardBonus = 0
+			mitigation := resolveIncomingDamage(IncomingDamageInput{
+				IntentDamage:          intent.Damage,
+				AgilityReduction:      player.Stats.Agility,
+				TalentReduction:       bonusesFor(player).DamageReduction,
+				PassiveReduction:      classPassiveEffects(player, enemy, &intent).DamageReduction,
+				Ward:                  player.ClassCombat.Ward,
+				WardReflect:           player.ClassCombat.WardReflect,
+				Guarding:              player.Guarding,
+				GuardReduction:        player.GuardReduction,
+				DefaultGuardReduction: GuardDamageReduction,
+				GuardBonus:            player.ClassCombat.GuardBonus,
+				TalentGuardReduction:  bonusesFor(player).GuardReduction,
+				PartyGuardReduction:   partyBonusesFor(room).PartyGuardReduction,
+			})
+			damage := mitigation.Damage
+			wardReflect := mitigation.WardReflect
+			guarded := mitigation.Guarded
+			guardBlocked := mitigation.GuardBlocked
+			player.ClassCombat.Ward = mitigation.WardRemaining
+			player.ClassCombat.WardReflect = mitigation.WardReflectRemaining
+			player.Guarding = mitigation.Guarding
+			player.ClassCombat.GuardBonus = mitigation.GuardBonus
+			if mitigation.WardAbsorbed > 0 {
+				addCombatImpact(run, roundNumber, "runic_ward", "A Runic Ward absorbs "+itoa(mitigation.WardAbsorbed)+" damage.", "block", playerID, "player", mitigation.WardAbsorbed)
 			}
 			onClassGuardBlocked(player, intent, guarded, guardBlocked)
 			transition := resolveHealthDamage(player.Health, damage)
@@ -284,8 +280,8 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if guarded {
 				message += " Guarded."
 			}
-			if intent.Damage > damage {
-				addCombatImpact(run, roundNumber, "enemy_block", enemy.Name+"'s attack is reduced by "+itoa(intent.Damage-damage)+" damage.", "block", playerID, "player", intent.Damage-damage)
+			if mitigation.Blocked > 0 {
+				addCombatImpact(run, roundNumber, "enemy_block", enemy.Name+"'s attack is reduced by "+itoa(mitigation.Blocked)+" damage.", "block", playerID, "player", mitigation.Blocked)
 			}
 			if actualDamage > 0 {
 				addCombatImpact(run, roundNumber, "enemy_attack", message, "damage", playerID, "player", actualDamage)
@@ -382,24 +378,6 @@ func resolveCombatRound(room *Room, now time.Time) {
 		player.ClassCombat.DamageTakenThisRound = 0
 	}
 	startCombatRound(room, now)
-}
-
-func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []string) *EnemyIntent {
-	ability, err := defaultMonsterCatalog.SelectAbility(enemy.Behavior, roundNumber)
-	if err != nil {
-		// Persisted runs may contain legacy/unknown behavior IDs. Keep their
-		// historical fallback until the explicit content-version migration.
-		ability = AbilityDefinition{Kind: "strike", Label: "Strike", Damage: 4}
-	}
-	intent := &EnemyIntent{
-		Kind: ability.Kind, Label: ability.Label, Damage: ability.Damage,
-		Heal: ability.Heal, TargetAll: ability.TargetAll, Interruptible: ability.Interruptible,
-	}
-	if !intent.TargetAll && len(players) > 0 {
-		targetIndex := (roundNumber + enemyIndex) % len(players)
-		intent.TargetPlayerID = players[targetIndex]
-	}
-	return intent
 }
 
 func intentTargets(room *Room, intent EnemyIntent) []string {
