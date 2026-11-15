@@ -337,7 +337,28 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	room, err := h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+}
+
+func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room, error) {
+	if !game.AdvanceCombatRound(room, h.now().UTC()) {
+		return room, nil
+	}
+	expected := room.Version
+	room.Version++
+	room.UpdatedAt = h.now().UTC()
+	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			return h.rooms.Get(r.Context(), room.ID)
+		}
+		return nil, err
+	}
+	return room, nil
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -373,6 +394,12 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	var err error
+	room, err = h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
 	var command game.Command
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&command); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid command")
@@ -400,6 +427,11 @@ func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
 	}
 	if tokenHash(bearer(r)) != room.SpectatorTokenHash {
 		writeError(w, http.StatusUnauthorized, "invalid spectator token")
+		return
+	}
+	room, err = h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
