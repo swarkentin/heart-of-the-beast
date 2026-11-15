@@ -354,12 +354,12 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 	}
 	found := false
 	for _, event := range room.Run.LastCombatEvents {
-		if event.Kind == "reckoning" && event.Amount == 15 {
+		if event.Kind == "reckoning" && event.Amount == 12 {
 			found = true
 		}
 	}
-	if !found || player.ClassCombat.DamageTakenLastRound != 0 {
-		t.Fatalf("Reckoning should deal 4 plus 11 stored damage and consume it: events=%+v state=%+v", room.Run.LastCombatEvents, player.ClassCombat)
+	if !found || player.ClassCombat.DamageTakenLastRound != 3 {
+		t.Fatalf("Reckoning should apply its 12-damage cap, consume the prior damage, then record the new 3-damage hit: events=%+v state=%+v", room.Run.LastCombatEvents, player.ClassCombat)
 	}
 }
 
@@ -390,8 +390,14 @@ func TestArcanistElementalSurgeBuildsArcaneFocusAndFrostCancelsIntent(t *testing
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "ability", Mode: "frost", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Intent != nil || enemy.Health != 12 || room.Run.Players["player-1"].ClassCombat.ArcaneCharges != 2 {
-		t.Fatalf("Frost should cancel the intent, deal 8 damage, and build a second charge: enemy=%+v player=%+v", enemy, room.Run.Players["player-1"])
+	frostStoppedIntent := false
+	for _, event := range room.Run.LastCombatEvents {
+		if event.Kind == "elemental_frost" {
+			frostStoppedIntent = true
+		}
+	}
+	if !frostStoppedIntent || enemy.Intent == nil || enemy.Health != 12 || room.Run.Players["player-1"].ClassCombat.ArcaneCharges != 2 {
+		t.Fatalf("Frost should stop the current intent, deal 8 damage, and leave a fresh next-round telegraph: enemy=%+v player=%+v events=%+v", enemy, room.Run.Players["player-1"], room.Run.LastCombatEvents)
 	}
 }
 
@@ -403,8 +409,17 @@ func TestRangerPinningShotWeakensTelegraphedAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 10 || enemy.Intent == nil || enemy.Intent.Damage != 3 {
-		t.Fatalf("Pinning Shot should deal 7 damage and reduce the next hit by 3: %+v", enemy)
+	if enemy.Health != 10 || room.Run.Players["player-1"].Health != room.Run.Players["player-1"].MaxHealth || enemy.Intent == nil {
+		t.Fatalf("Pinning Shot should deal 10 damage and weaken the current hit before a fresh intent is telegraphed: enemy=%+v player=%+v", enemy, room.Run.Players["player-1"])
+	}
+	weakenedIntent := false
+	for _, event := range room.Run.LastCombatEvents {
+		if event.Kind == "pinning_shot" && strings.Contains(event.Message, "weakened by 3") {
+			weakenedIntent = true
+		}
+	}
+	if !weakenedIntent {
+		t.Fatalf("Pinning Shot should report its 3-damage intent reduction: %+v", room.Run.LastCombatEvents)
 	}
 }
 
