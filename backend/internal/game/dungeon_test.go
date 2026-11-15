@@ -228,3 +228,19 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 		t.Fatalf("co-op warden health = %d, want 42", got)
 	}
 }
+
+func TestGeneratedFloorEncountersReferenceCatalogDefinitions(t *testing.T) {
+	_, rooms := generateDungeonFloor(20261115, 3, 1)
+	for roomID, room := range rooms {
+		if room.Encounter == nil {
+			continue
+		}
+		definition, err := defaultEncounterCatalog.Encounter(room.Encounter.DefinitionID)
+		if err != nil {
+			t.Fatalf("room %s has unknown encounter definition %q: %v", roomID, room.Encounter.DefinitionID, err)
+		}
+		if room.Encounter.Budget != definition.Budget || len(room.Encounter.Enemies) != len(definition.Enemies) {
+			t.Fatalf("room %s runtime encounter %+v does not match definition %+v", roomID, room.Encounter, definition)
+		}
+	}
+}
