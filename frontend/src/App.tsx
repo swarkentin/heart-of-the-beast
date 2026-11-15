@@ -196,7 +196,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
   </div>;
 }
 
-function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
+function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts, depth }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; depth: number; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
@@ -217,7 +217,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, imp
     <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></div>)}</div>
     {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>{exit.description || "AVAILABLE PATH"}</small>{voteStatus ? <small>{(voteStatus.voteCounts[exit.id] || 0)+" VOTES"}</small> : null}</div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
-    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {String(run?.depth ?? 1).padStart(2, "0")} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
+    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {String(depth).padStart(2, "0")} · PARTY RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
     <CombatImpacts events={impacts} enemies={enemies} playerId="" view="cast" />
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
   </div>;
@@ -515,7 +515,7 @@ export default function App() {
     <section className="play-area">
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} playerId={playerId || ""} />
-        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
+        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} depth={run.depth ?? 1} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
       {serverRoom?.event ? <section className="room-event-panel" aria-live="polite">
         <div className="room-event-heading"><span>{serverRoom.event.resolved ? "DECISION RECORDED" : serverRoom.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</span><h2>{serverRoom.event.title}</h2></div>
         <p>{serverRoom.event.description}</p>
