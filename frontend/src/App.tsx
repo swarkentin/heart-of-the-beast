@@ -248,7 +248,7 @@ export default function App() {
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
-  const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), snapshot?.version ?? 0);
+  const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
 
   useEffect(() => {
     if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
