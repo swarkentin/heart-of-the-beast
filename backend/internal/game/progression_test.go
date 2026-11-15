@@ -16,7 +16,7 @@ func progressionRoom() *Room {
 
 func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	room := progressionRoom()
-	player := newPlayerState("player-1", "vanguard")
+	player := newPlayerState("player-1", "tank")
 	room.Run = &Run{CurrentRoomID: "entry", Players: map[string]*PlayerState{"player-1": player}}
 
 	grantEncounterExperience(room, 1)
@@ -38,7 +38,7 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 
 func TestEncounterExperienceIncludesDownedPlayersButDoesNotReviveThem(t *testing.T) {
 	room := progressionRoom()
-	player := newPlayerState("player-1", "vanguard")
+	player := newPlayerState("player-1", "tank")
 	player.Health = 0
 	room.Run = &Run{CurrentRoomID: "entry", Players: map[string]*PlayerState{"player-1": player}}
 
@@ -53,51 +53,51 @@ func TestEncounterExperienceIncludesDownedPlayersButDoesNotReviveThem(t *testing
 
 func TestSelectArchetypeOnlyBeforeRun(t *testing.T) {
 	room := progressionRoom()
-	if err := SelectArchetype(room, "player-1", "arcanist"); err != nil {
+	if err := SelectArchetype(room, "player-1", "support"); err != nil {
 		t.Fatalf("select archetype: %v", err)
 	}
-	if room.PlayerArchetypes["player-1"] != "arcanist" {
+	if room.PlayerArchetypes["player-1"] != "support" {
 		t.Fatalf("archetype was not saved: %#v", room.PlayerArchetypes)
 	}
 	if err := SelectArchetype(room, "player-1", "unknown"); !errors.Is(err, ErrInvalidArchetype) {
 		t.Fatalf("expected invalid archetype, got %v", err)
 	}
 	room.Run = &Run{}
-	if err := SelectArchetype(room, "player-1", "rogue"); !errors.Is(err, ErrArchetypeLocked) {
+	if err := SelectArchetype(room, "player-1", "healer"); !errors.Is(err, ErrArchetypeLocked) {
 		t.Fatalf("expected locked archetype, got %v", err)
 	}
 }
 
 func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	room := progressionRoom()
-	player := newPlayerState("player-1", "vanguard")
+	player := newPlayerState("player-1", "tank")
 	player.Level = 2
 	player.TalentPoints = 1
 	player.Health = 20
 	room.Run = &Run{Phase: PhaseExploring, Players: map[string]*PlayerState{"player-1": player}}
 
-	if err := ChooseTalent(room, "player-1", "rogue-precision"); !errors.Is(err, ErrInvalidTalent) {
+	if err := ChooseTalent(room, "player-1", "healer-vitality"); !errors.Is(err, ErrInvalidTalent) {
 		t.Fatalf("expected archetype mismatch, got %v", err)
 	}
-	if err := ChooseTalent(room, "player-1", "vanguard-rally"); !errors.Is(err, ErrTalentLocked) {
+	if err := ChooseTalent(room, "player-1", "tank-thorns"); !errors.Is(err, ErrTalentLocked) {
 		t.Fatalf("expected tier/prerequisite lock, got %v", err)
 	}
-	if err := ChooseTalent(room, "player-1", "vanguard-bulwark"); err != nil {
+	if err := ChooseTalent(room, "player-1", "tank-bulwark"); err != nil {
 		t.Fatalf("choose Bulwark: %v", err)
 	}
 	if player.MaxHealth != 34 || player.Health != 20 || player.TalentPoints != 0 {
 		t.Fatalf("Bulwark did not apply its health bonus: %+v", player)
 	}
-	if err := ChooseTalent(room, "player-1", "vanguard-bulwark"); !errors.Is(err, ErrNoTalentPoints) {
+	if err := ChooseTalent(room, "player-1", "tank-bulwark"); !errors.Is(err, ErrNoTalentPoints) {
 		t.Fatalf("expected no points after spending, got %v", err)
 	}
 
 	player.Level = 3
 	player.TalentPoints = 1
-	if err := ChooseTalent(room, "player-1", "vanguard-rally"); err != nil {
+	if err := ChooseTalent(room, "player-1", "tank-thorns"); err != nil {
 		t.Fatalf("choose Rally after Bulwark: %v", err)
 	}
-	if bonusesFor(player).EncounterHeal != 4 {
-		t.Fatalf("Rally effect missing: %+v", bonusesFor(player))
+	if bonusesFor(player).ReflectDamage != 2 {
+		t.Fatalf("Thorns effect missing: %+v", bonusesFor(player))
 	}
 }
