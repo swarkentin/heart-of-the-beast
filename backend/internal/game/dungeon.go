@@ -207,7 +207,7 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
 			Description: "The final defenders of this level stand between the party and the next descent.",
 			Exits:       []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
 				newCatalogEnemy(prefix+"guard-a", "stonebound-guard", scaling),
 				newCatalogEnemy(prefix+"guard-b", "gravebound-scout", scaling),
 			}},
