@@ -59,6 +59,15 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		},
 	}
 
+	if len(room.PlayerIDs) == 1 {
+		// Solo parties still face both roles, but can remove each threat with one
+		// focused strike so the added encounter does not exhaust the run's health budget.
+		guardian := &rooms["reliquary"].Encounter.Enemies[0]
+		guardian.Health, guardian.MaxHealth = 10, 10
+		scout := &rooms["reliquary"].Encounter.Enemies[1]
+		scout.Health, scout.MaxHealth = 6, 6
+	}
+
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
 		players[id] = &PlayerState{ID: id, Health: 30, MaxHealth: 30}
