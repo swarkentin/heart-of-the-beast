@@ -271,7 +271,7 @@ func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []strin
 		intent.Kind, intent.Label, intent.Damage = "strike", "Strike", 4
 	}
 	if !intent.TargetAll && len(players) > 0 {
-		targetIndex := (roundNumber + enemyIndex - 1) % len(players)
+		targetIndex := (roundNumber + enemyIndex) % len(players)
 		intent.TargetPlayerID = players[targetIndex]
 	}
 	return intent
