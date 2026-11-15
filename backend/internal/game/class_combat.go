@@ -261,10 +261,10 @@ func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, comm
 		if command.Mode == "defend" {
 			if command.TargetID != "" {
 				target := players[command.TargetID]
-					if target == nil || target.Health <= 0 {
+				if target == nil || target.Health <= 0 {
 					return ErrInvalidAbility
 				}
-				}
+			}
 		} else if encounter == nil || !hasLivingEnemy(encounter, command.TargetID) {
 			return ErrInvalidAbility
 		}
