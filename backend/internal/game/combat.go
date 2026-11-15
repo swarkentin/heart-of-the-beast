@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CombatActionWindow = 8 * time.Second
+	CombatActionWindow   = 8 * time.Second
 	GuardDamageReduction = 6
 )
 
@@ -197,7 +197,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player.Health < 0 {
 				player.Health = 0
 			}
-			message := enemy.Name+" uses "+intent.Label+" on "+adventurerLabel(room, playerID)+" for "+itoa(damage)+" damage."
+			message := enemy.Name + " uses " + intent.Label + " on " + adventurerLabel(room, playerID) + " for " + itoa(damage) + " damage."
 			if guarded {
 				message += " Guarded."
 			}
@@ -311,7 +311,7 @@ func eligibleCombatPlayers(room *Room) []string {
 func adventurerLabel(room *Room, playerID string) string {
 	for index, id := range room.PlayerIDs {
 		if id == playerID {
-			return "Adventurer "+itoa(index+1)
+			return "Adventurer " + itoa(index+1)
 		}
 	}
 	return "Adventurer"
