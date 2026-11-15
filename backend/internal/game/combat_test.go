@@ -106,3 +106,20 @@ func TestDefeatingEnemyCancelsItsTelegraphedIntent(t *testing.T) {
 		}
 	}
 }
+
+func TestPartyDefeatEndsTheRun(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "run-defeat", now); err != nil {
+		t.Fatal(err)
+	}
+	room.Run.Players["player-1"].Health = 1
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Intent.Damage = 8
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Intent.Label = "Heavy blow"
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if room.Run.Phase != PhaseFailed || room.Run.CompletedAt == nil {
+		t.Fatalf("the run should end when every player is down, phase=%s", room.Run.Phase)
+	}
+}
