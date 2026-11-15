@@ -61,6 +61,26 @@ All signature abilities need a clear solo use. Ally-targeted effects should perm
 - Preserve the existing co-op action window, solo immediate resolution, and safe default behavior. A missing or invalid signature action must never stall a round.
 - Existing enemy telegraphs remain answerable by every class. Class abilities may provide alternate or more efficient answers, not mandatory answers.
 
+## First-pass signature ability and passive behavior
+
+The server-side handlers for the nine initial abilities and passives are implemented in PR #38. The following values are deliberately conservative starting points for playtesting, not final balance. Each ability uses the player's one action for that round.
+
+| Class | Signature ability behavior | Passive behavior |
+| --- | --- | --- |
+| Bulwark | **Shield Wall** guards the Bulwark and adds 6 guard reduction against its next hit | **Resolve**: blocking at least 1 damage from a heavy attack primes the next Strike for +3 damage |
+| Juggernaut | **Reckoning** deals 4 damage plus damage taken in the previous round, capped at 12; the stored amount is consumed | **Bloodied Strength**: +3 attack damage while at or below half health |
+| Spellguard | **Runic Ward** absorbs up to 7 damage from the next hit after normal mitigation and reflects 2 damage if it absorbs anything | **Arcane Resistance**: reduce Soul Drain and Soul Sweep damage by 2 |
+| Assassin | **Exploit Weakness** deals 5 + Agility damage, with +4 against a wounded or telegraphing enemy | **Executioner**: +3 damage against enemies at or below half health |
+| Arcanist | **Elemental Surge**: Fire deals 6 + Focus damage; Frost deals 2 + Focus damage and cancels the target's current intent | **Arcane Focus**: consecutive Elemental Surges build up to two charges, each adding 2 damage to the next surge; a non-ability action resets the chain |
+| Ranger | **Pinning Shot** deals 4 + Agility damage and reduces the target's current telegraphed attack by 3 | **First Strike**: +3 damage against enemies that have not yet completed their first turn |
+| Cleric | **Renewal** restores 7 + Focus health to the Cleric or a chosen living ally | **Recovery**: restore 2 additional health after clearing an encounter |
+| Tactician | **Commanding Strike** deals 3 + Power damage, weakens the target's current intent by 2, and marks it for +3 damage from the next party attack | **Tactical Interruption**: +2 damage when interrupting an enemy intent |
+| Beastcaller | **Companion Command**: Attack deals 4 + Focus damage; Defend grants 3 guard reduction to the Beastcaller or a chosen ally; Disrupt cancels an interruptible intent or weakens another intent by 3 | **Companion Instinct**: after each combat round, heal 1 health on the living party member with the lowest health percentage |
+
+A stopped or weakened intent is resolved for the current round; surviving enemies still telegraph a fresh intent for the next round. This preserves the existing round cadence and makes control effects immediately readable. Renewal currently heals only; minor-effect cleansing will be added alongside the status-effect system rather than inventing an isolated status framework here.
+
+These effects are server-authoritative and registered by the catalog's stable effect IDs. The current frontend still presents the universal actions only; class selection and signature-action controls are separate UI work.
+
 ## Starting stats and equipment
 
 Use the existing stat vocabulary: Health, Power, Focus, and Agility. Each class receives a data-defined starting profile and equipment loadout. Profiles should create noticeable tradeoffs rather than a strict power ranking.
@@ -135,9 +155,9 @@ The implementation must not assume that the initial roster is permanently nine c
 
 ## Implementation sequence
 
-1. **Catalog and contracts:** define stable IDs, data structures, initial class catalog, validation, and server-authoritative selection. Keep current behavior available during migration.
-2. **Selection and starting builds:** expose the nine classes, show their starting stats/equipment, and construct the starting player build on the server.
-3. **Signature abilities and passives:** implement one distinct active and passive per class, with unit tests and solo/co-op encounter coverage.
+1. **Catalog and contracts — complete (PR #35):** stable IDs, data structures, initial class catalog, validation, server-authoritative selection, and run build snapshots.
+2. **Selection and starting builds — backend complete (PR #35); UI pending:** expose the nine classes in the lobby, show their starting stats/equipment, and let the server construct the starting build.
+3. **Signature abilities and passives — backend complete (PR #38); UI pending:** registered server handlers for all nine actives/passives, with unit tests and solo/co-op encounter coverage.
 4. **Class talents:** replace archetype-only talent assumptions with class-specific talent trees while preserving the existing between-encounter selection flow.
 5. **Persistent unlock foundation:** add player-owned unlock state and data-driven requirements; initially configure the launch roster as available. Wire unlock rewards to persistent progression only when that system is ready.
 6. **Presentation and content expansion:** show equipment visually, tune balance, then add further classes as unlockable catalog entries without changing core selection/combat architecture.
