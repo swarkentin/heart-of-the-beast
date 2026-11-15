@@ -173,7 +173,7 @@ export default function App() {
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("Create a room to begin your run.");
+  const [, setMessage] = useState("Create a room to begin your run.");
   const [shareCopied, setShareCopied] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [clockNow, setClockNow] = useState(() => Date.now());
