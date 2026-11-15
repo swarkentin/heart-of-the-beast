@@ -78,31 +78,66 @@ function Bar({ value, max }: { value: number; max: number }) {
 
 function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boolean; onClick?: () => void }) {
   const dead = enemy.hp <= 0;
-  return <g transform={`translate(${enemy.x} 0)`} opacity={dead ? .18 : 1} onClick={onClick} className={onClick && !dead ? "enemy-sprite" : ""}>
-    {selected && !dead ? <ellipse cx="0" cy="448" rx="92" ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
-    <ellipse cx="0" cy="454" rx="62" ry="14" fill="#080a10" opacity=".8" />
-    {enemy.id === "scout" ? <g shapeRendering="crispEdges">
-      <path d="M-43 280h86v145h-86z" fill="#737d7b"/><path d="M-52 302h18v100h-18zM34 302h18v100H34z" fill="#a5aaa0"/>
-      <path d="M-39 226h78v70h-78z" fill="#c4c4b3"/><path d="M-48 215h96v22h-96z" fill="#858f8a"/>
-      <path d="M-24 252h13v13h-13zM11 252h13v13H11z" fill="#e58b5c"/>
-      <path d="M-34 420h27v34h-27zM7 420h27v34H7z" fill="#555d5b"/>
-      <path d="M-50 310l-55 91 17 12 65-72M50 310l55 91-17 12-65-72" fill="#c0c1b4"/>
-    </g> : <g shapeRendering="crispEdges">
-      <path d="M-48 285h96v145h-96z" fill="#453d52"/><path d="M-58 310h20v100h-20zM38 310h20v100H38z" fill="#786583"/>
-      <path d="M-42 228h84v72h-84z" fill="#b9aaa4"/><path d="M-53 216h106v22h-106z" fill="#453747"/>
-      <path d="M-24 250h13v13h-13zM11 250h13v13H11z" fill="#a5e4d9"/>
-      <path d="M-34 425h27v30h-27zM7 425h27v30H7z" fill="#41384d"/>
-      <path d="M0 295l-25 75h50z" fill="#a5e4d9" opacity=".8"/>
-      <path d="M-55 315l-42 82 16 12 55-65M55 315l42 82-16 12-55-65" fill="#b9aaa4"/>
-    </g>}
+  const boss = enemy.id === "warden";
+  const scout = enemy.id === "scout";
+  const guardian = enemy.id === "guardian";
+  return <g transform={\`translate(\${enemy.x} 0)\`} opacity={dead ? .18 : 1} onClick={onClick} className={onClick && !dead ? "enemy-sprite" : ""}>
+    {selected && !dead ? <ellipse cx="0" cy="448" rx={boss ? 112 : 82} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
+    <ellipse cx="0" cy="454" rx={boss ? 82 : 62} ry="14" fill="#080a10" opacity=".8" />
+    <g className="enemy-art" shapeRendering="crispEdges">
+      {boss ? <>
+        <path d="M-70 278h140v145H-70z" fill="#253b43"/><path d="M-86 292h35v108h-35zM51 292h35v108H51z" fill="#42666a"/>
+        <path d="M-82 305l-40 75 24 19 55-65M82 305l40 75-24 19-55-65" fill="#416d69"/>
+        <path d="M-53 245l-32-38 14-8 35 24M53 245l32-38-14-8-35 24" fill="#5b7770"/>
+        <path d="M-51 228h102v84H-51z" fill="#52666b"/><path d="M-61 215h122v25H-61z" fill="#283941"/>
+        <path d="M-45 190l-28-38 9-28 26 35 19-22 19 22 19-22 26 22 19-35 9 28-28 38z" fill="#456b69"/>
+        <path d="M-37 206h74v54h-74z" fill="#9bafa0"/><path d="M-27 222h15v13h-15zM12 222h15v13H12z" fill="#a8f1ba"/>
+        <path d="M-9 241h18v9H-9z" fill="#29383c"/><path d="M-39 261h78v22h-78z" fill="#b0a58d"/>
+        <path d="M-53 286h106v22H-53z" fill="#24343a"/><path d="M-28 286h56v52h-56z" fill="#6c8b7e"/>
+        <path d="M-43 333h28v93h-28zM15 333h28v93H15z" fill="#3d565b"/>
+        <path d="M-51 414h43v25h-43zM8 414h43v25H8z" fill="#b3a58c"/>
+        <path d="M-91 286h34v63h-34zM57 286h34v63H57z" fill="#6b8c7c"/>
+        <path d="M-104 260h28v35h-28zM76 260h28v35H76z" fill="#273d42"/>
+        <path d="M-112 248h15v-34h15v34h15v16h-45z" fill="#79e5a4"/>
+      </> : guardian ? <>
+        <path d="M-59 280h118v145H-59z" fill="#55505a"/><path d="M-75 298h26v105h-26zM49 298h26v105H49z" fill="#8d7d70"/>
+        <path d="M-48 231h96v75h-96z" fill="#77746c"/><path d="M-62 215h124v25H-62z" fill="#3c3940"/>
+        <path d="M-50 229l-20-34 18-23 25 31M50 229l20-34-18-23-25 31" fill="#a28c70"/>
+        <path d="M-34 250h18v17h-18zM16 250h18v17H16z" fill="#e3a75d"/>
+        <path d="M-23 280h46v22h-46z" fill="#b5a38a"/><path d="M-32 308h64v23h-64z" fill="#c3a77b"/>
+        <path d="M-42 336h27v86h-27zM15 336h27v86H15z" fill="#625c59"/>
+        <path d="M-52 414h42v26h-42zM10 414h42v26H10z" fill="#b8a07d"/>
+        <path d="M-74 310l-28 65 19 16 42-59M74 310l28 65-19 16-42-59" fill="#9b8b75"/>
+        <path d="M-91 363h18v42h-18zM73 363h18v42H73z" fill="#514c50"/>
+      </> : scout ? <>
+        <path d="M-44 277h88v147h-88z" fill="#176d69"/><path d="M-59 300h20v98h-20zM39 300h20v98H39z" fill="#23958a"/>
+        <path d="M-47 235h94v70h-94z" fill="#278d82"/><path d="M-57 223h114v22H-57z" fill="#124e56"/>
+        <path d="M-45 226l-18-29 23-33 40 18 40-18 23 33-18 29z" fill="#155d62"/>
+        <path d="M-27 253h15v12h-15zM12 253h15v12H12z" fill="#9cf0c9"/>
+        <path d="M-12 272h24v10h-24z" fill="#123f49"/>
+        <path d="M-38 314l-38 72 17 14 47-58M38 314l38 72-17 14-47-58" fill="#36a99a"/>
+        <path d="M-34 421h27v34h-27zM7 421h27v34H7z" fill="#174e50"/>
+        <path d="M-53 194l-17-18 11-15 20 20M53 194l17-18-11-15-20 20" fill="#45b7a3"/>
+        <path d="M-46 354h-13v24h13M46 354h13v24H46" fill="#9be2c0"/>
+      </> : <>
+        <path d="M-39 288h78v132h-78z" fill="#c6a77b"/><path d="M-52 309h18v93h-18zM34 309h18v93H34z" fill="#8d694c"/>
+        <path d="M-38 234h76v65h-76z" fill="#e0c99b"/><path d="M-48 222h96v18h-96z" fill="#80664f"/>
+        <path d="M-29 253h13v13h-13zM16 253h13v13H16z" fill="#151a20"/>
+        <path d="M-34 280h68v13h-68zM-23 294h13v24h-13zM10 294h13v24H10z" fill="#f0dfb7"/>
+        <path d="M-28 326h13v13h-13zM15 326h13v13H15zM-28 355h13v13h-13zM15 355h13v13H15z" fill="#f0dfb7"/>
+        <path d="M-33 417h25v37h-25zM8 417h25v37H8z" fill="#6e5542"/>
+        <path d="M-48 310l-44 77 15 13 54-59M48 310l44 77-15 13-54-59" fill="#c6a77b"/>
+        <path d="M-100 385h19v13h-19zM81 385h19v13H81z" fill="#9d815e"/>
+        <path d="M-5 302h10v105H-5z" fill="#f2e5c9"/>
+      </>}
+    </g>
     <g transform="translate(0 175)">
       <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2"/>
-      <rect x="-69" y="5" width={138 * enemy.hp / enemy.maxHp} height="16" fill="#b45e53"/>
+      <rect x="-69" y="5" width={138 * enemy.hp / enemy.maxHp} height="16" fill={boss ? "#5ebc91" : scout ? "#42b7a7" : "#b45e53"}/>
       <text x="0" y="-13" textAnchor="middle" fill="#f1e5d5" fontSize="20" fontWeight="bold">{enemy.name}</text>
     </g>
   </g>;
 }
-
 function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteStatus }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string }[]; onNavigate: (id: string) => void; voteStatus?: VoteStatus }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
