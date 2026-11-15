@@ -43,6 +43,8 @@ type TalentBonuses struct {
 	EncounterHeal     int
 	ReflectDamage     int
 	MaxHealth         int
+	PartyGuardReduction int
+	PartyEncounterHeal int
 }
 
 var archetypeCatalog = []ArchetypeDefinition{
@@ -53,9 +55,9 @@ var archetypeCatalog = []ArchetypeDefinition{
 
 var talentCatalog = []TalentDefinition{
 	{ID: "support-disruption", Archetype: "support", Name: "Disruption", Description: "Interrupts deal 4 additional damage.", Tier: 1},
-	{ID: "support-protective-ward", Archetype: "support", Name: "Protective Ward", Description: "Defend blocks 3 additional damage.", Tier: 1},
+	{ID: "support-protective-ward", Archetype: "support", Name: "Protective Ward", Description: "All party members block 2 additional damage when defending.", Tier: 1},
 	{ID: "support-expose-weakness", Archetype: "support", Name: "Expose Weakness", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "support-disruption"},
-	{ID: "support-rallying-cry", Archetype: "support", Name: "Rallying Cry", Description: "Recover 4 health after clearing an encounter.", Tier: 2, Requires: "support-protective-ward"},
+	{ID: "support-rallying-cry", Archetype: "support", Name: "Rallying Cry", Description: "All living party members recover 2 health after clearing an encounter.", Tier: 2, Requires: "support-protective-ward"},
 	{ID: "damage-heavy-hands", Archetype: "damage", Name: "Heavy Hands", Description: "Attacks deal 3 additional damage.", Tier: 1},
 	{ID: "damage-precision", Archetype: "damage", Name: "Precision", Description: "Attacks deal 2 additional damage.", Tier: 1},
 	{ID: "damage-opportunist", Archetype: "damage", Name: "Opportunist", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "damage-precision"},
@@ -196,11 +198,11 @@ func bonusesFor(player *PlayerState) TalentBonuses {
 		case "support-disruption":
 			bonuses.InterruptDamage += 4
 		case "support-protective-ward":
-			bonuses.GuardReduction += 3
+			bonuses.PartyGuardReduction += 2
 		case "support-expose-weakness":
 			bonuses.AttackVsTelegraph += 4
 		case "support-rallying-cry":
-			bonuses.EncounterHeal += 4
+			bonuses.PartyEncounterHeal += 2
 		case "damage-heavy-hands":
 			bonuses.AttackDamage += 3
 		case "damage-precision":
@@ -217,6 +219,28 @@ func bonusesFor(player *PlayerState) TalentBonuses {
 			bonuses.ReflectDamage += 2
 		case "tank-unyielding":
 			bonuses.GuardReduction += 3
+		}
+	}
+	return bonuses
+}
+
+
+func partyBonusesFor(room *Room) TalentBonuses {
+	var bonuses TalentBonuses
+	if room == nil || room.Run == nil {
+		return bonuses
+	}
+	for playerID, player := range room.Run.Players {
+		if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
+			continue
+		}
+		for _, talentID := range player.Talents {
+			switch talentID {
+			case "support-protective-ward":
+				bonuses.PartyGuardReduction += 2
+			case "support-rallying-cry":
+				bonuses.PartyEncounterHeal += 2
+			}
 		}
 	}
 	return bonuses
