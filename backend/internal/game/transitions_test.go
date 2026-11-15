@@ -103,7 +103,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", first, now); !errors.Is(err, ErrRoundActionSubmitted) {
 		t.Fatalf("expected duplicate action to be rejected, got %v", err)
 	}
-	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if room.Run.Phase != PhaseExploring || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
@@ -122,7 +122,7 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 		t.Fatal(err)
 	}
 	room.Run.Players["player-2"].Health = 20
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
