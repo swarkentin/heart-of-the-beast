@@ -12,11 +12,11 @@ func simulationFixture(t *testing.T) CombatSimulationSnapshot {
 		t.Fatal(err)
 	}
 	return CombatSimulationSnapshot{
-		Players: []PlayerState{{
+		Players:          []PlayerState{{
 			ID: "hero", Health: 30, MaxHealth: 30, StrikeDamage: 8,
 			Level: 1, Stats: PlayerStats{Power: 2, Focus: 2, Agility: 1},
 		}},
-		Enemies: encounter.Enemies,
+		Enemies:          encounter.Enemies,
 		ExperienceReward: 60,
 	}
 }
@@ -24,8 +24,8 @@ func simulationFixture(t *testing.T) CombatSimulationSnapshot {
 func TestSimulateCombatIsDeterministicAndDoesNotMutateSnapshot(t *testing.T) {
 	snapshot := simulationFixture(t)
 	before := CombatSimulationSnapshot{
-		Players: append([]PlayerState(nil), snapshot.Players...),
-		Enemies: append([]Enemy(nil), snapshot.Enemies...),
+		Players:          append([]PlayerState(nil), snapshot.Players...),
+		Enemies:          append([]Enemy(nil), snapshot.Enemies...),
 		ExperienceReward: snapshot.ExperienceReward,
 	}
 
