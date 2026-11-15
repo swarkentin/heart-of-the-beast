@@ -70,7 +70,7 @@ func StartRun(room *Room, runID string, now time.Time) error {
 
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
-		players[id] = &PlayerState{ID: id, Health: 30, MaxHealth: 30}
+		players[id] = newPlayerState(id, room.PlayerArchetypes[id])
 	}
 	room.Run = &Run{
 		ID:            runID,
