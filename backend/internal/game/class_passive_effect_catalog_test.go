@@ -13,7 +13,7 @@ func TestClassPassiveEffectCatalogValidatesAllAuthoredPassives(t *testing.T) {
 
 func TestClassPassiveEffectCatalogRejectsInvalidDefinitions(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		mutate func(*ClassPassiveEffectCatalog)
 	}{
 		{name: "duplicate ID", mutate: func(c *ClassPassiveEffectCatalog) { c.Definitions[1].EffectID = c.Definitions[0].EffectID }},
@@ -38,7 +38,7 @@ func TestClassPassiveCatalogTriggerHelpersUseDefinitions(t *testing.T) {
 	for _, test := range []struct {
 		classID string
 		trigger ClassPassiveTrigger
-		want bool
+		want    bool
 	}{
 		{classID: ClassBulwark, trigger: ClassPassiveTriggerHeavyGuard, want: true},
 		{classID: ClassBulwark, trigger: ClassPassiveTriggerCompanionInstinct, want: false},
