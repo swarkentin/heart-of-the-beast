@@ -5,10 +5,10 @@ import "fmt"
 // EncounterMonsterDefinition describes one stable spawn slot in an encounter.
 // SoloMonsterID is an explicit content variant for a one-player party.
 type EncounterMonsterDefinition struct {
-	ID           string
-	MonsterID    string
+	ID            string
+	MonsterID     string
 	SoloMonsterID string
-	BudgetCost   int
+	BudgetCost    int
 }
 
 // EncounterDefinition is an authored composition. Budget is a provisional,
