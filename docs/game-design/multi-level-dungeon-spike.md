@@ -113,6 +113,17 @@ Initial hands-on feedback confirms that the overall multi-floor structure, evolv
 - The music progression is working directionally. Add a restrained percussive layer that complements the existing progression and increases with depth/encounter intensity rather than replacing the musical identity.
 - Encounters do not yet ask for enough tactical thought. Players need meaningful target priorities and responses to enemy behavior, not only stronger attacks or larger enemy health pools.
 
+### First tuning slice: early XP pacing
+
+The first implementation slice reduces the early level-up cadence without changing combat damage or enemy durability before we have better encounter telemetry:
+
+| Reward | XP |
+|---|---:|
+| Regular encounter | 18 |
+| Boss encounter | 30 |
+
+Cumulative level thresholds are now 60 / 150 / 275 / 425 XP for levels 2–5. This means a new character needs four regular encounters for the first level rather than one, and subsequent levels require progressively more of the run. These are provisional tuning values, not a final progression curve; validate them against full-run length, optional encounters, and the actual rate of level-up choices.
+
 ### Follow-up iteration, in priority order
 
 1. **Combat and progression balance**

@@ -11,7 +11,12 @@ var (
 	ErrTalentChosen     = errors.New("talent has already been chosen")
 )
 
-const DefaultArchetype = "damage"
+const (
+	DefaultArchetype = "damage"
+
+	EncounterExperienceReward = 18
+	BossExperienceReward      = 30
+)
 
 type ArchetypeDefinition struct {
 	ID          string `json:"id"`
@@ -144,13 +149,13 @@ func newPlayerState(id, archetype string) *PlayerState {
 func experienceForNextLevel(level int) int {
 	switch level {
 	case 1:
-		return 50
+		return 60
 	case 2:
-		return 100
+		return 150
 	case 3:
-		return 200
+		return 275
 	case 4:
-		return 325
+		return 425
 	default:
 		return 0
 	}
@@ -158,9 +163,9 @@ func experienceForNextLevel(level int) int {
 
 func grantEncounterExperience(room *Room, round int) {
 	run := room.Run
-	reward := 50
+	reward := EncounterExperienceReward
 	if isBossRoom(run.Rooms[run.CurrentRoomID]) {
-		reward = 75
+		reward = BossExperienceReward
 	}
 	for _, playerID := range room.PlayerIDs {
 		player := run.Players[playerID]
