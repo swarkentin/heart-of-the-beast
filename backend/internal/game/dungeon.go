@@ -117,33 +117,18 @@ func resolveInterFloorVote(room *Room, now time.Time) {
 
 func applyInterFloorChoice(room *Room, choiceID string, now time.Time) {
 	run := room.Run
-	if run.Flags == nil {
-		run.Flags = make(map[string]bool)
-	}
+	rewardID := ""
+	flagID := ""
 	switch choiceID {
 	case "restore":
-		for playerID, member := range run.Players {
-			if member == nil || member.Health <= 0 || room.Presence[playerID].LeftAt != nil {
-				continue
-			}
-			before := member.Health
-			member.Health += 10
-			if member.Health > member.MaxHealth {
-				member.Health = member.MaxHealth
-			}
-			if member.Health > before {
-				addCombatImpact(run, 0, "floor_restoration", adventurerLabel(room, playerID)+" recovers "+itoa(member.Health-before)+" health before descending.", "heal", playerID, "player", member.Health-before)
-			}
-		}
-		run.Flags[fmt.Sprintf("floor-%d-restored", run.Depth)] = true
+		rewardID = "floor.restore"
+		flagID = fmt.Sprintf("floor-%d-restored", run.Depth)
 	case "perk":
-		for _, member := range run.Players {
-			if member != nil {
-				member.StrikeDamage++
-				member.GuardReduction++
-			}
-		}
-		run.Flags[fmt.Sprintf("floor-%d-perk", run.Depth)] = true
+		rewardID = "floor.perk"
+		flagID = fmt.Sprintf("floor-%d-perk", run.Depth)
+	}
+	if reward, ok := defaultRunRewardCatalog.Reward(rewardID); ok {
+		applyRunReward(room, reward, 0, flagID)
 	}
 
 	run.PendingInterFloorChoice = false
