@@ -39,6 +39,12 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 	if run.CombatRound == nil {
 		startCombatRound(run, now)
 	}
+	if !now.Before(run.CombatRound.Deadline) {
+		AdvanceCombatRound(room, now)
+		if run.Phase != PhaseCombat || run.CombatRound == nil {
+			return ErrInvalidPhase
+		}
+	}
 	if command.Round != run.CombatRound.Number {
 		return ErrStaleCombatRound
 	}
