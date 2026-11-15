@@ -40,9 +40,9 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
 			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-                {ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15},
-                {ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 12, MaxHealth: 12},
-            }},
+				{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15},
+				{ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 12, MaxHealth: 12},
+			}},
 		},
 		"flooded-crossing": {
 			ID:          "flooded-crossing",
