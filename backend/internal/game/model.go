@@ -64,12 +64,12 @@ type PlayerState struct {
 	Health       int         `json:"health"`
 	MaxHealth    int         `json:"maxHealth"`
 	Guarding     bool        `json:"guarding,omitempty"`
-	Archetype      string      `json:"archetype"`
-	Experience     int         `json:"experience"`
-	Level          int         `json:"level"`
-	TalentPoints   int         `json:"talentPoints"`
-	Talents        []string    `json:"talents"`
-	Stats          PlayerStats `json:"stats"`
+	Archetype    string      `json:"archetype"`
+	Experience   int         `json:"experience"`
+	Level        int         `json:"level"`
+	TalentPoints int         `json:"talentPoints"`
+	Talents      []string    `json:"talents"`
+	Stats        PlayerStats `json:"stats"`
 }
 
 type DungeonRoom struct {
