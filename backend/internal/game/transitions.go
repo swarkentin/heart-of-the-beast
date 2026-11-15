@@ -97,13 +97,18 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		},
 	}
 
+	return beginRun(room, runID, now, DefaultDungeonThemeID, rooms, "entry")
+}
+
+// newRunPlayers builds the initial state of every player in the room.
+func newRunPlayers(room *Room) (map[string]*PlayerState, error) {
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
 		var player *PlayerState
 		if classID := room.PlayerClasses[id]; classID != "" {
 			definition, ok := findClass(classID)
 			if !ok || !ClassAvailableToPlayer(classID, nil) {
-				return ErrInvalidClass
+				return nil, ErrInvalidClass
 			}
 			player = newPlayerStateForClass(id, definition)
 		} else {
@@ -113,8 +118,22 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		player.GuardReduction = GuardDamageReduction
 		players[id] = player
 	}
+	return players, nil
+}
+
+// beginRun creates the run aggregate for a theme from its first floor and starts the first combat round.
+func beginRun(room *Room, runID string, now time.Time, themeID string, rooms map[string]*DungeonRoom, entryID string) error {
+	players, err := newRunPlayers(room)
+	if err != nil {
+		return err
+	}
+	for _, dungeonRoom := range rooms {
+		if dungeonRoom.ThemeID == "" {
+			dungeonRoom.ThemeID = themeID
+		}
+	}
 	room.Run = &Run{
-		ID: runID, Phase: PhaseCombat, CurrentRoomID: "entry", Rooms: rooms,
+		ID: runID, ThemeID: themeID, Phase: PhaseCombat, CurrentRoomID: entryID, Rooms: rooms,
 		Players: players, Flags: make(map[string]bool), StartedAt: now,
 	}
 	startCombatRound(room, now)

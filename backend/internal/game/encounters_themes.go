@@ -18,6 +18,7 @@ func themedEncounters() []EncounterDefinition {
 		{ID: "scifi-patrol", ThemeID: "scifi", Budget: 6, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "security-bot", BudgetCost: 2}, {ID: "slot-b", MonsterID: "mutated-subject", BudgetCost: 4}}},
 		{ID: "scifi-ambush", ThemeID: "scifi", Budget: 4, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "vat-specimen", BudgetCost: 2}, {ID: "slot-b", MonsterID: "sentry-drone", BudgetCost: 2}}},
 		{ID: "scifi-vanguard", ThemeID: "scifi", Budget: 4, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "crab-drone", BudgetCost: 2}, {ID: "slot-b", MonsterID: "sentry-drone", BudgetCost: 2}}},
+		{ID: "scifi-breach", ThemeID: "scifi", Budget: 6, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "mutated-subject", BudgetCost: 4}, {ID: "slot-b", MonsterID: "crab-drone", BudgetCost: 2}}},
 		{ID: "scifi-boss-containment-mech", ThemeID: "scifi", Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: "containment-mech", BudgetCost: 8}}},
 		{ID: "scifi-boss-overseer-core", ThemeID: "scifi", Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: "overseer-core", BudgetCost: 8}}},
 		{ID: "scifi-boss-patient-zero", ThemeID: "scifi", Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: "patient-zero", BudgetCost: 8}}},

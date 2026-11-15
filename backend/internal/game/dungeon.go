@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"math/rand"
 	randv2 "math/rand/v2"
 	"time"
 )
@@ -18,12 +17,59 @@ var ErrInvalidInterFloorChoice = errors.New("choose either health restoration or
 // floor of a seeded three-floor expedition. Later floors are generated from
 // the persisted run seed and depth.
 func StartMultiLevelRun(room *Room, runID string, now time.Time) error {
-	if err := StartRun(room, runID, now); err != nil {
-		return err
+	return StartMultiLevelRunForTheme(room, runID, "", now)
+}
+
+// DefaultDungeonThemeID is the theme of runs that do not choose one, and of runs persisted before themes existed.
+const DefaultDungeonThemeID = "catacombs"
+
+var (
+	ErrUnknownDungeonTheme = errors.New("unknown dungeon theme")
+	ErrThemeNotPlayable    = errors.New("dungeon theme is not playable yet")
+)
+
+// Theme returns the run's dungeon theme, defaulting to Forgotten Catacombs for runs persisted before themes.
+func (run *Run) Theme() string {
+	if run == nil || run.ThemeID == "" {
+		return DefaultDungeonThemeID
+	}
+	return run.ThemeID
+}
+
+// StartMultiLevelRunForTheme starts a seeded three-floor expedition in a playable dungeon theme; an empty
+// themeID means Forgotten Catacombs. Catacombs keeps its authored first floor. Every other theme generates all
+// of its floors from the run seed.
+func StartMultiLevelRunForTheme(room *Room, runID, themeID string, now time.Time) error {
+	if themeID == "" {
+		themeID = DefaultDungeonThemeID
+	}
+	theme, err := defaultDungeonThemeCatalog.Theme(themeID)
+	if err != nil {
+		return fmt.Errorf("%w: %q", ErrUnknownDungeonTheme, themeID)
+	}
+	if !theme.Playable {
+		return fmt.Errorf("%w: %q", ErrThemeNotPlayable, themeID)
 	}
 	hash := fnv.New64a()
 	_, _ = hash.Write([]byte(runID))
-	room.Run.Seed = hash.Sum64()
+	seed := hash.Sum64()
+	if themeID == DefaultDungeonThemeID {
+		if err := StartRun(room, runID, now); err != nil {
+			return err
+		}
+	} else {
+		if room.Run != nil {
+			return ErrRunAlreadyStarted
+		}
+		if len(room.PlayerIDs) == 0 || runID == "" {
+			return errors.New("room requires a player and run id")
+		}
+		entryID, rooms := generateFloorForTheme(themeID, seed, InitialDungeonDepth, len(room.PlayerIDs))
+		if err := beginRun(room, runID, now, themeID, rooms, entryID); err != nil {
+			return err
+		}
+	}
+	room.Run.Seed = seed
 	room.Run.Depth = InitialDungeonDepth
 	room.Run.MaxDepth = MaximumDungeonDepth
 	room.Run.MusicIntensity = InitialDungeonDepth
@@ -135,7 +181,7 @@ func applyInterFloorChoice(room *Room, choiceID string, now time.Time) {
 	run.InterFloorVote = nil
 	run.Depth++
 	run.MusicIntensity = run.Depth
-	entryID, rooms := generateDungeonFloor(run.Seed, run.Depth, len(eligibleCombatPlayers(room)))
+	entryID, rooms := generateFloorForTheme(run.Theme(), run.Seed, run.Depth, len(eligibleCombatPlayers(room)))
 	for id, dungeonRoom := range rooms {
 		run.Rooms[id] = dungeonRoom
 	}
@@ -147,63 +193,20 @@ func applyInterFloorChoice(room *Room, choiceID string, now time.Time) {
 	startCombatRound(room, now)
 }
 
-// generateDungeonFloor uses only authored encounter/event templates. The seed
-// and depth fully determine its branch, optional miniboss, and enemy mix.
+// generateDungeonFloor builds a Forgotten Catacombs floor. It is the Catacombs case of generateFloorForTheme,
+// kept as the original entry point.
 func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string]*DungeonRoom) {
-	rng := rand.New(rand.NewSource(int64(seed + uint64(depth)*0x9e3779b97f4a7c15)))
-	prefix := fmt.Sprintf("d%d-", depth)
-	floor := fmt.Sprintf("%02d", depth)
-	scaling := MonsterScaling{Depth: depth, PartySize: partySize}
-	names := []string{"The Silted Cloister", "The Ashen Stair", "The Drowned Archive", "The Hollow Nave", "The Shattered Ossuary"}
-	routeName := names[rng.Intn(len(names))]
-	hasMiniboss := rng.Intn(100) < 48
-	leftEncounterID, rightEncounterID := "depth-left-guardian", "depth-right-scout"
-	if rng.Intn(2) == 0 {
-		leftEncounterID, rightEncounterID = "depth-left-scout", "depth-right-guardian"
+	return generateFloorForTheme("catacombs", seed, depth, partySize)
+}
+
+// generateFloorForTheme uses only authored encounter/event templates. The seed, depth and theme fully determine
+// the floor's routes, event, optional miniboss, and enemy mix.
+func generateFloorForTheme(themeID string, seed uint64, depth, partySize int) (string, map[string]*DungeonRoom) {
+	template, err := defaultFloorTemplateCatalog.Template(themeID)
+	if err != nil {
+		panic(err.Error())
 	}
-	rooms := map[string]*DungeonRoom{
-		prefix + "entry": {
-			ID: prefix + "entry", Name: "The Lower Threshold", Floor: floor, RoomType: "encounter",
-			Description: "The air grows colder. Old warding marks pulse beneath the dust as the next descent stirs awake.",
-			Exits:       []Exit{{ID: "left", Destination: prefix + "left", Label: "The Broken Cloister", Description: "A guarded passage through collapsed stone."}, {ID: "right", Destination: prefix + "right", Label: "The Silted Stair", Description: "A narrow route where something moves below the water."}},
-			Encounter:   newCatalogEncounter("depth-entry", prefix, scaling),
-		},
-		prefix + "left": {
-			ID: prefix + "left", Name: routeName, Floor: floor, RoomType: "encounter",
-			Description: "A formation of ancient defenders blocks the route. Their movements are deliberate and practiced.",
-			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
-			Encounter:   newCatalogEncounter(leftEncounterID, prefix, scaling),
-		},
-		prefix + "right": {
-			ID: prefix + "right", Name: "The Silted Stair", Floor: floor, RoomType: "encounter",
-			Description: "Black water spills down the steps. A quick-moving crypt stalker waits in the dark.",
-			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
-			Encounter:   newCatalogEncounter(rightEncounterID, prefix, scaling),
-		},
-		prefix + "shrine": {
-			ID: prefix + "shrine", Name: "The Echoing Shrine", Floor: floor, RoomType: "event",
-			Description: "A low harmonic vibrates through the stone. The shrine offers a brief moment of power, but its blessing is uncertain.",
-			Exits:       []Exit{{ID: "deeper", Destination: prefix + "guard", Label: "The Guarded Descent"}},
-			Event:       &RoomEvent{ID: prefix + "shrine-event", Title: "A Resonance in the Stone", Description: "The party can draw strength from the shrine before continuing.", Choices: []EventChoice{{ID: "ward", Label: "Take the ward", Description: "Gain a small defensive blessing for the rest of the run.", Effect: "shrine_ward"}, {ID: "leave", Label: "Leave it untouched", Description: "Keep moving without disturbing the shrine.", Effect: "leave"}}},
-		},
-		prefix + "guard": {
-			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
-			Description: "The final defenders of this level stand between the party and the next descent.",
-			Exits:       []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
-			Encounter:   newCatalogEncounter("depth-guard", prefix, scaling),
-		},
-		prefix + "boss": {
-			ID: prefix + "boss", Name: map[bool]string{true: "The Warden Below", false: "The Ossuary Champion"}[depth == MaximumDungeonDepth], Floor: floor, RoomType: "boss",
-			Description: "A vast chamber opens around an ancient guardian. The dungeon's deeper rhythm pounds through the walls.",
-			Encounter:   newCatalogEncounter(map[bool]string{true: "depth-boss-warden", false: "depth-boss-ossuary"}[depth == MaximumDungeonDepth], prefix, scaling),
-		},
-	}
-	if hasMiniboss {
-		miniScaling := scaling
-		rooms[prefix+"shrine"].Exits = append(rooms[prefix+"shrine"].Exits, Exit{ID: "challenge", Destination: prefix + "miniboss", Label: "The Sealed Reliquary", Description: "A dangerous optional challenge with a run reward."})
-		rooms[prefix+"miniboss"] = &DungeonRoom{ID: prefix + "miniboss", Name: "The Sealed Reliquary", Floor: floor, RoomType: "miniboss", Description: "A hulking champion tears free from its stone bindings. Defeating it will strengthen the whole party.", Exits: []Exit{{ID: "rejoin", Destination: prefix + "boss", Label: "Return to the Descent"}}, Encounter: newCatalogEncounter("depth-miniboss", prefix, miniScaling)}
-	}
-	return prefix + "entry", rooms
+	return generateThemedFloor(template, seed, depth, partySize)
 }
 
 func isBossRoom(room *DungeonRoom) bool {

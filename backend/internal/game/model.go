@@ -42,7 +42,10 @@ type PlayerPresence struct {
 }
 
 type Run struct {
-	ID                      string                  `json:"id"`
+	ID string `json:"id"`
+	// ThemeID is the dungeon theme (see DungeonThemeCatalog) of the whole run. Runs persisted before themes
+	// existed lack it and are Forgotten Catacombs; use Theme() rather than reading the field directly.
+	ThemeID                 string                  `json:"themeId,omitempty"`
 	Seed                    uint64                  `json:"seed,omitempty"`
 	Depth                   int                     `json:"depth,omitempty"`
 	MaxDepth                int                     `json:"maxDepth,omitempty"`
@@ -96,7 +99,9 @@ type PlayerState struct {
 }
 
 type DungeonRoom struct {
-	ID          string     `json:"id"`
+	ID string `json:"id"`
+	// ThemeID is the room's dungeon theme, which drives its art and music. Empty means Forgotten Catacombs.
+	ThemeID     string     `json:"themeId,omitempty"`
 	Name        string     `json:"name"`
 	Floor       string     `json:"floor"`
 	RoomType    string     `json:"roomType"`

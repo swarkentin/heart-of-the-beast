@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/class", h.selectClass)
 	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
 	mux.HandleFunc("GET /progression", progressionCatalog)
+	mux.HandleFunc("GET /themes", playableThemes)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
@@ -522,6 +524,22 @@ func (h *Handler) chooseTalent(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusConflict, "room is busy; retry the talent choice")
 }
 
+type themeResponse struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Tagline string `json:"tagline"`
+}
+
+// playableThemes lists the dungeon themes a host can choose when starting a run, default first.
+func playableThemes(w http.ResponseWriter, _ *http.Request) {
+	themes := game.PlayableDungeonThemes()
+	response := make([]themeResponse, 0, len(themes))
+	for _, theme := range themes {
+		response = append(response, themeResponse{ID: theme.ID, Name: theme.Name, Tagline: theme.Tagline})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"defaultThemeId": game.DefaultDungeonThemeID, "themes": response})
+}
+
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 	room, actor, ok := h.authorizedPlayer(w, r)
 	if !ok {
@@ -531,13 +549,25 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "only the room host can start the run")
 		return
 	}
+	// The body is optional: an empty body starts the default theme.
+	var request struct {
+		ThemeID string `json:"themeId"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil && !errors.Is(err, io.EOF) {
+		writeError(w, http.StatusBadRequest, "invalid start request")
+		return
+	}
 	expected := room.Version
 	runID, err := randomToken(16)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not start run")
 		return
 	}
-	if err := game.StartMultiLevelRun(room, runID, h.now().UTC()); err != nil {
+	if err := game.StartMultiLevelRunForTheme(room, runID, request.ThemeID, h.now().UTC()); err != nil {
+		if errors.Is(err, game.ErrUnknownDungeonTheme) || errors.Is(err, game.ErrThemeNotPlayable) {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}
