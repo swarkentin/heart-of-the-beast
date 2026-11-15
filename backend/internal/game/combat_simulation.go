@@ -150,7 +150,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			}
 
 			partyBonuses := simulationPartyBonuses(players)
-			incoming := simulationIncomingFor(playerID, enemies, player, bonuses.DamageReduction, partyBonuses.PartyGuardReduction)
+			incoming := simulationIncomingFor(playerID, enemies, player, bonuses.DamageReduction)
 			guard := player.GuardReduction
 			if guard <= 0 {
 				guard = GuardDamageReduction
@@ -318,7 +318,7 @@ func simulationTarget(enemies []Enemy, rng *rand.Rand) int {
 	return candidates[rng.Intn(len(candidates))]
 }
 
-func simulationIncomingFor(playerID string, enemies []Enemy, player *PlayerState, talentReduction, partyGuardReduction int) int {
+func simulationIncomingFor(playerID string, enemies []Enemy, player *PlayerState, talentReduction int) int {
 	total := 0
 	for _, enemy := range enemies {
 		if enemy.Health <= 0 || enemy.Intent == nil || (!enemy.Intent.TargetAll && enemy.Intent.TargetPlayerID != playerID) {
