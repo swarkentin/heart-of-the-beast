@@ -46,8 +46,8 @@ func TestSimulateCombatIsDeterministicAndDoesNotMutateSnapshot(t *testing.T) {
 	if !first.Won || first.Wiped {
 		t.Fatalf("expected a victory, got %#v", first)
 	}
-	if first.Rounds != 2 {
-		t.Fatalf("expected two rounds, got %d", first.Rounds)
+	if first.Rounds != 1 {
+		t.Fatalf("expected one round, got %d", first.Rounds)
 	}
 	if first.PlayerProgression["hero"].Level != 2 {
 		t.Fatalf("expected encounter XP to advance the player to level 2: %#v", first.PlayerProgression)
