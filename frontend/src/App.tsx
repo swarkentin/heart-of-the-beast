@@ -256,7 +256,6 @@ export default function App() {
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const playerHp = player?.health ?? 30;
   const playerMaxHp = player?.maxHealth ?? 30;
-  const displayedStrikeDamage = (player?.strikeDamage ?? 10) + (serverRoom?.id === "warden" && run?.flags?.warden_weakness ? 2 : 0);
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
   const gameOver = run?.phase === "completed" || run?.phase === "failed";
