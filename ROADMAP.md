@@ -59,7 +59,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
-- [ ] Migrate the lobby from archetype-only selection to the nine-class selection experience, including stats, equipment, ability, and passive previews.
+- [ ] **Selection experience is the next gate before continuing multi-level spike iteration.** Replace the full-page class list with a compact roster and focused class detail view, including a character portrait, icon-led skills/passives, stats/gear, and an in-context talent-tree preview. Show available and unlockable paths distinctly, remove implicit class defaults, and make choosing a character feel welcoming and consequential. Then continue spike iteration.
 - [ ] Add class signature actions and target/mode controls to the player combat UI.
 - [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
 - [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
@@ -80,6 +80,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ### Persistent character progression and personalization
 
 - [ ] Distinguish persistent character meta-progression from temporary, within-run roguelike progression.
+- [ ] Add a persistent guest-character identity and a memorable character-creation flow, including a generated or chosen name, class selection, and a lifetime record visible from the lobby.
+- [ ] Track each character's life story: dungeons entered, completed, escaped, deaths, revivals, bosses defeated, discoveries, and other notable milestones. Show a concise lifetime summary when choosing or reviewing a character.
+- [ ] Make character death permanent when the character is not raised before the run ends. A successful in-run resurrection preserves that character's life; once a run ends with the character dead, retire the character and require creation or selection of a living character for the next run.
+- [ ] Preserve memorial records for retired characters and their accomplishments; do not silently reset or overwrite a guest's lifetime history when creating a successor.
 - [ ] Award character experience server-side for meaningful run accomplishments: dungeon completions, boss and mini-quest victories, discoveries, and special challenges.
 - [ ] Provide persistent character levels with cosmetic and expressive unlocks such as name customization, interface themes, music selections, portraits, titles, and visual effects.
 - [ ] Add class unlocks as persistent content-access rewards, using data-defined requirements (character level, achievements, quests, or other milestones); unlocks must not grant combat power.
@@ -87,6 +91,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Support a useful local guest progression path before account creation, with a clear path to link and preserve that identity later.
 - [ ] Keep character levels and unlocks cosmetic/content-access focused; never grant combat power or gameplay advantages through meta-progression.
 - [ ] Make accomplishment rewards idempotent, resistant to farming, and fair to eligible party members, including meaningful partial progress on unsuccessful runs.
+- [ ] Define how a guest maintains or selects multiple characters locally, and how each character's record survives browser storage changes before account linking exists.
+
+Character identity, lifetime records, and permadeath rules: see `docs/game-design/guest-character-life.md`.
 
 ## Phase 3 — Procedural dungeons and replayability
 

@@ -49,7 +49,7 @@ const talentChoices: TalentChoice[] = [
   { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
 ];
 const levelThresholds = [0, 50, 100, 200, 325];
-function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Damage"; }
+function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Adventurer"; }
 function xpProgress(player: ApiPlayer) {
   const current = levelThresholds[player.level - 1] ?? 325;
   const next = levelThresholds[player.level] ?? current;
@@ -61,7 +61,11 @@ type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<st
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
-type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
+type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
+type ApiClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
+type ApiAvailability = { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string };
+type ApiNamedRule = { id: string; name: string; description: string };
+type ProgressionCatalog = { classes: ApiClass[]; classAvailability: ApiAvailability[]; classAbilities: ApiNamedRule[]; classPassives: ApiNamedRule[]; equipment: { id: string; name: string; slot: string }[] };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 type SpectatorAccess = { roomId: string; token: string };
 const SESSION_KEY = "heart-of-the-beast.player-session";
@@ -106,6 +110,28 @@ function visualEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: s
 
 function Bar({ value, max }: { value: number; max: number }) {
   return <span className="bar"><i style={{ width: (Math.max(0, value) / max * 100) + "%" }} /></span>;
+}
+
+function ClassPortrait({ classId, archetype, name }: { classId: string; archetype: string; name: string }) {
+  const palettes: Record<string, { cloth: string; trim: string; metal: string; light: string }> = {
+    bulwark: { cloth: "#3d625a", trim: "#d6b477", metal: "#9ba7a0", light: "#80c5a5" }, juggernaut: { cloth: "#743f3b", trim: "#e49a58", metal: "#756c68", light: "#ef9c65" }, spellguard: { cloth: "#405477", trim: "#9fbcdb", metal: "#9ba7a0", light: "#94d9ec" }, assassin: { cloth: "#633f64", trim: "#d99cae", metal: "#857d8a", light: "#e390b2" }, arcanist: { cloth: "#4b477d", trim: "#c9a8e8", metal: "#8a86a0", light: "#c8a4ff" }, ranger: { cloth: "#496447", trim: "#c3ad74", metal: "#8d9280", light: "#a6d679" }, cleric: { cloth: "#887145", trim: "#f0d79c", metal: "#b8b5a6", light: "#f5da83" }, tactician: { cloth: "#425c70", trim: "#d1a878", metal: "#8c9aa1", light: "#84d1d0" }, beastcaller: { cloth: "#49654e", trim: "#c3a66a", metal: "#879789", light: "#9cda89" },
+  };
+  const p = palettes[classId] || palettes[archetype] || palettes.bulwark;
+  const mage = classId === "arcanist" || classId === "spellguard" || classId === "cleric";
+  const hood = classId === "assassin" || classId === "ranger" || classId === "beastcaller";
+  return <svg className="class-portrait-art" viewBox="0 0 220 230" role="img" aria-label={name + " character portrait"} shapeRendering="crispEdges">
+    <rect width="220" height="230" fill="#171a23"/><path d="M12 190h196v28H12zM24 38h16v112H24zM180 38h16v112h-16z" fill="#39343b"/><path d="M18 58h184M18 146h184" stroke="#755b43" strokeWidth="6"/>
+    <path d="M43 205v-42l26-25h82l26 25v42z" fill={p.cloth}/><path d="M65 158l45-20 45 20-13 47H78z" fill={p.metal}/><path d="M84 148h52v54H84z" fill={p.cloth}/><path d="M75 165h70v10H75zM99 140h22v62H99z" fill={p.trim}/>
+    <path d="M72 74h76v60H72z" fill="#d5b49a"/><path d="M65 64h90v22H65zM72 52h76v22H72z" fill={hood ? p.cloth : p.metal}/>{hood ? <path d="M66 64h20v72h-20zM128 64h28v72h-28z" fill={p.cloth}/> : <path d="M72 52h76v10H72zM62 75h96v12H62z" fill={p.trim}/>}
+    <path d="M86 94h10v10H86zM124 94h10v10h-10z" fill={p.light}/><path d="M100 116h20v7h-20z" fill="#704d48"/><path d="M43 155h28v50H43zM149 155h28v50h-28z" fill={p.cloth}/>
+    {mage ? <><path d="M184 77h8v128h-8z" fill="#9a7651"/><path d="M176 66h24v24h-24z" fill={p.light}/><path d="M182 57h12v42h-12z" fill="#f0d79c"/></> : <><path d="M187 101h10v104h-10z" fill="#9a7651"/><path d="M176 98h32v12h-32zM184 84h16v12h-16z" fill={p.metal}/></>}
+    <path d="M18 218h184" stroke={p.trim} strokeWidth="4"/><text x="110" y="227" textAnchor="middle" fill="#f0d2a8" fontSize="8" fontFamily="monospace">{name.toUpperCase()}</text>
+  </svg>;
+}
+
+function SkillIcon({ id }: { id: string }) {
+  const kind = /heal|renewal|recovery|companion|nature/i.test(id) ? "life" : /shield|ward|guard|resolve/i.test(id) ? "guard" : /fire|element|arcane|focus/i.test(id) ? "arcane" : /interrupt|pin|command|disrupt/i.test(id) ? "control" : "strike";
+  return <span className={"skill-icon skill-icon-" + kind} aria-hidden="true"><svg viewBox="0 0 32 32"><path d={kind === "guard" ? "M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z" : kind === "life" ? "M16 27S4 20 4 11c0-6 8-9 12-2 4-7 12-4 12 2 0 9-12 16-12 16z" : kind === "arcane" ? "m16 2 3 9 9 5-9 4-3 10-4-10-9-4 9-5z" : kind === "control" ? "M6 6 25 25M22 5 8 24M3 16h26M16 3v26" : "M21 3 9 16l7 1-5 12 13-16-8-1z"} fill="currentColor" stroke="#17151b" strokeWidth="2" strokeLinejoin="round"/></svg></span>;
 }
 
 function EnemyFigure({ enemy, selected, hit, onClick }: { enemy: Enemy; selected: boolean; hit?: boolean; onClick?: () => void }) {
@@ -241,6 +267,9 @@ export default function App() {
   const [clockNow, setClockNow] = useState(() => Date.now());
   const [progressionOpen, setProgressionOpen] = useState(false);
   const [selectedTalentId, setSelectedTalentId] = useState("");
+  const [classCatalog, setClassCatalog] = useState<ProgressionCatalog | null>(null);
+  const [previewClassId, setPreviewClassId] = useState("");
+  const [skillTreeOpen, setSkillTreeOpen] = useState(false);
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -253,6 +282,9 @@ export default function App() {
   const enemies = (serverRoom?.encounter?.enemies || []).map((enemy, index, all) => visualEnemy(enemy, index, all.length, snapshot?.playerIds ?? []));
   const playerId = session?.playerId || snapshot?.ownerPlayerId || snapshot?.playerIds[0];
   const player = playerId ? run?.players[playerId] : undefined;
+  const selectedClassId = snapshot?.playerClasses?.[session?.playerId || ""];
+  const focusedClassId = previewClassId || selectedClassId || classCatalog?.classes.find(item => classCatalog.classAvailability.find(value => value.classId === item.id)?.initiallyAvailable)?.id || "";
+  const focusedClass = classCatalog?.classes.find(item => item.id === focusedClassId);
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const playerHp = player?.health ?? 30;
   const playerMaxHp = player?.maxHealth ?? 30;
@@ -313,6 +345,13 @@ export default function App() {
   }, [roomId, token, spectator]);
 
   useEffect(() => {
+    if (run || spectator || !snapshot) return;
+    let active = true;
+    void apiRequest<ProgressionCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
+    return () => { active = false; };
+  }, [Boolean(run), spectator, snapshot?.id]);
+
+  useEffect(() => {
     if (!session || spectator) return;
     let active = true;
     const heartbeat = async () => {
@@ -362,14 +401,14 @@ export default function App() {
   }
 
 
-  async function selectArchetype(archetype: string) {
+  async function selectClass(classId: string) {
     if (!session || busy || run) return;
     setBusy(true); setError("");
     try {
-      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/archetype", session.playerToken, { method: "POST", body: JSON.stringify({ archetype }) });
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class", session.playerToken, { method: "POST", body: JSON.stringify({ classId }) });
       setSnapshot(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not select archetype");
+      setError(err instanceof Error ? err.message : "Could not select class");
     } finally { setBusy(false); }
   }
 
@@ -491,13 +530,33 @@ export default function App() {
         <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
         <div style={{ padding: 18, margin: "20px 0", background: "#0f1118", border: "1px solid #625246", fontSize: 30, letterSpacing: ".28em", textAlign: "center" }}>{snapshot.code}</div>
         <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left").length}/4)</h2>
-        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {archetypeName(snapshot.playerArchetypes?.[id])} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
-        <div className="archetype-picker">
-          <div className="progression-eyebrow">CHOOSE YOUR RUN ARCHETYPE</div>
-          <p>Every archetype can finish the dungeon alone. Your talents will shape it as you level.</p>
-          <div className="archetype-grid">{archetypes.map(item => <button key={item.id} className={"archetype-choice" + ((snapshot.playerArchetypes?.[session?.playerId || ""] || "damage") === item.id ? " selected" : "")} onClick={() => void selectArchetype(item.id)} disabled={busy || !session}><strong>{item.name}</strong><span>{item.description}</span></button>)}</div>
+        <ul className="party-roster">{snapshot.playerIds.map((id, index) => <li key={id}><span>{id === snapshot.ownerPlayerId ? "HOST" : "ADVENTURER"} {index + 1}{session?.playerId === id ? " · YOU" : ""}</span><strong>{classCatalog?.classes.find(item => item.id === snapshot.playerClasses?.[id])?.name || "Choosing a class"}</strong><i>{snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"}</i></li>)}</ul>
+        <div className="class-picker class-picker-compact">
+          <div className="class-picker-heading"><div className="progression-eyebrow">CREATE YOUR ADVENTURER</div><h2>Choose your path</h2><p>Every class can survive the catacombs. Pick the one whose way of fighting feels like yours.</p></div>
+          {!classCatalog ? <p role="status">Preparing the class roster…</p> : <>
+            <div className="class-roster-label">AVAILABLE TO PLAY</div>
+            <div className="class-selection-layout">
+              <div className="class-roster-grid" aria-label="Choose a class">{classCatalog.classes.filter(item => classCatalog.classAvailability.find(value => value.classId === item.id)?.initiallyAvailable || item.id === selectedClassId).map(item => <button key={item.id} className={"class-roster-choice" + (item.id === focusedClassId ? " selected" : "")} onClick={() => setPreviewClassId(item.id)} aria-pressed={item.id === focusedClassId}><span className={"class-roster-swatch swatch-" + item.archetypeId} aria-hidden="true">✦</span><span><strong>{item.name}</strong><small>{item.archetypeId}</small></span>{item.id === selectedClassId ? <i>CHOSEN</i> : null}</button>)}</div>
+              {focusedClass ? (() => {
+                const ability = classCatalog.classAbilities.find(value => value.id === focusedClass.signatureAbilityId);
+                const passive = classCatalog.classPassives.find(value => value.id === focusedClass.passiveId);
+                const equipmentNames = focusedClass.startingEquipment.map(id => classCatalog.equipment.find(value => value.id === id)?.name || id);
+                return <section className="class-detail" aria-live="polite">
+                  <div className="class-detail-portrait"><ClassPortrait classId={focusedClass.id} archetype={focusedClass.archetypeId} name={focusedClass.name}/><div className="portrait-caption"><span>{focusedClass.archetypeId.toUpperCase()} PATH</span><strong>{focusedClass.name}</strong></div></div>
+                  <div className="class-detail-copy"><div className="class-detail-title"><div><span className="progression-eyebrow">MEET YOUR ADVENTURER</span><h3>{focusedClass.name}</h3></div><span className="class-classification">{focusedClass.archetypeId.toUpperCase()}</span></div><p className="class-detail-description">{focusedClass.description}</p>
+                    <div className="class-detail-stats">{[["VITALITY", focusedClass.startingStats.health], ["POWER", focusedClass.startingStats.power], ["FOCUS", focusedClass.startingStats.focus], ["AGILITY", focusedClass.startingStats.agility]].map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}</div>
+                    <div className="class-skills"><article><SkillIcon id={focusedClass.signatureAbilityId}/><div><span>SIGNATURE SKILL</span><strong>{ability?.name || "Signature ability"}</strong><small>{ability?.description}</small></div></article><article><SkillIcon id={focusedClass.passiveId}/><div><span>ALWAYS WITH YOU</span><strong>{passive?.name || "Passive trait"}</strong><small>{passive?.description}</small></div></article></div>
+                    <p className="class-gear"><b>STARTING GEAR</b> {equipmentNames.join(" · ")}</p>
+                    <div className="class-detail-actions"><button className="tree-preview-button" onClick={() => setSkillTreeOpen(true)}>VIEW TALENT TREE <span>↗</span></button><button className="choose-class-button" onClick={() => void selectClass(focusedClass.id)} disabled={busy || focusedClass.id === selectedClassId}>{busy ? "SAVING…" : focusedClass.id === selectedClassId ? "YOUR CHOSEN PATH" : "CHOOSE THIS CLASS"}</button></div>
+                  </div>
+                </section>;
+              })() : <p>No classes are available yet.</p>}
+            </div>
+            {classCatalog.classAvailability.some(value => !value.initiallyAvailable) ? <><div className="class-roster-label locked-label">UNLOCKABLE PATHS</div><div className="locked-class-list">{classCatalog.classes.filter(item => !classCatalog.classAvailability.find(value => value.classId === item.id)?.initiallyAvailable && item.id !== selectedClassId).map(item => <div className="locked-class" key={item.id}><span>LOCKED</span><strong>{item.name}</strong><small>{item.description} Unlock requirement will be shown here.</small></div>)}</div></> : null}
+          </>}
         </div>
-        {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
+        {skillTreeOpen && focusedClass ? <div className="progression-backdrop" role="presentation"><section className="progression-modal class-tree-modal" role="dialog" aria-modal="true" aria-labelledby="class-tree-title"><div className="progression-modal-heading"><div><span className="progression-eyebrow">{focusedClass.name.toUpperCase()} · {focusedClass.archetypeId.toUpperCase()} PATH</span><h2 id="class-tree-title">Talent path preview</h2><p>These are the current shared {focusedClass.archetypeId} talents. Class-specific trees are planned next.</p></div><button className="progression-close" onClick={() => setSkillTreeOpen(false)} aria-label="Close talent tree preview">×</button></div><div className="talent-tree class-tree-preview">{[1, 2].map(tier => <div className="talent-tier" key={tier}><div className="talent-tier-label">{tier === 1 ? "FOUNDATION" : "SPECIALIZATION"}</div><div className="talent-tier-nodes">{talentChoices.filter(talent => talent.archetype === focusedClass.archetypeId && talent.tier === tier).map(talent => <div className="talent-node class-tree-node" key={talent.id}><span>TIER {talent.tier}</span><strong>{talent.name}</strong><small>{talent.description}</small>{talent.requires ? <i>FOLLOWS {talentChoices.find(value => value.id === talent.requires)?.name}</i> : <i>AVAILABLE FIRST</i>}</div>)}</div></div>)}</div><div className="class-tree-footer">Choose a talent between encounters as your adventurer grows.</div></section></div> : null}
+        {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy || snapshot.playerIds.some(id => snapshot.presence?.[id]?.status !== "left" && !snapshot.playerClasses?.[id])}>{busy ? "STARTING…" : "BEGIN THE ADVENTURE"} <span>GO</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Choose your class. The host can begin once every adventurer is ready.</p>}
         <button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button>
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
       </section>

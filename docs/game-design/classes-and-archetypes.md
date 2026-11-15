@@ -149,6 +149,9 @@ The implementation must not assume that the initial roster is permanently nine c
 
 - Show archetype and class together, with clear descriptions of combat identity and solo viability.
 - Display signature ability, passive trait, starting stats, and starting equipment before selection.
+- Keep the roster compact; selecting a class opens a focused detail view instead of expanding every class into a full-page card.
+- Give each class an illustrated character portrait and icon-led skill/passive previews so the player can connect the mechanical choice to a character fantasy.
+- Let players preview the relevant talent path before committing. Until class-specific trees are implemented, label the existing shared archetype tree accurately rather than presenting it as unique to the class.
 - Make locked classes discoverable with a concise unlock hint, but do not let a player select them.
 - Avoid implying a mandatory party role. Explain that archetypes are broad styles and classes are distinct builds.
 - Selection should work at phone, tablet, and desktop sizes and remain understandable to a new player.
