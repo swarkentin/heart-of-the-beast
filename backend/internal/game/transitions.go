@@ -2,7 +2,6 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -29,8 +28,11 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			ID:          "entry",
 			Name:        "The Watcher's Hall",
 			Description: "A narrow hall opens into a chamber watched by a restless sentinel.",
-			Exits:       []Exit{{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
+			Exits: []Exit{
+				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"},
+				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing"},
+			},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
 			ID:          "reliquary",
@@ -38,6 +40,13 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
 			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Health: 15, MaxHealth: 15}}},
+		},
+		"flooded-crossing": {
+			ID:          "flooded-crossing",
+			Name:        "The Drowned Crossing",
+			Description: "Black water ripples around a half-submerged causeway.",
+			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "scout", Name: "Drowned Scout", Health: 12, MaxHealth: 12}}},
 		},
 		"warden": {
 			ID:          "warden",
@@ -73,29 +82,11 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return ErrNotPlayer
 	}
 
-	run := room.Run
-	current := run.Rooms[run.CurrentRoomID]
-
 	switch command.Type {
 	case "combat":
 		return SubmitCombatAction(room, actorID, command, now)
 	case "choose_exit":
-		if run.Phase != PhaseExploring || !current.Cleared {
-			return ErrInvalidPhase
-		}
-		for _, exit := range current.Exits {
-			if exit.ID == command.ExitID {
-				next, ok := run.Rooms[exit.Destination]
-				if !ok {
-					return fmt.Errorf("dungeon destination %q is missing", exit.Destination)
-				}
-				run.CurrentRoomID = next.ID
-				run.Phase = PhaseCombat
-				startCombatRound(run, now)
-				return nil
-			}
-		}
-		return ErrInvalidExit
+		return SubmitNavigationVote(room, actorID, command.ExitID, now)
 	default:
 		return ErrInvalidAction
 	}

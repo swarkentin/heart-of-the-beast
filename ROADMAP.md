@@ -43,9 +43,11 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Server-authoritative player presence (10-second heartbeat, 30-second disconnect threshold), same-identity reconnect, and explicit leave/token revocation (ADR 0014).
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
-- [ ] Party direction voting; solo decisions resolve immediately.
+- [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [ ] One complete dungeon path with basic encounters and a boss.
-- [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).\n- [ ] Add enemy intent telegraphs and enemy turn resolution after party actions.\n- [ ] Expand combat actions beyond attack/defend (spells, abilities, items, and status effects).
+- [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
+- [ ] Add enemy intent telegraphs and enemy turn resolution after party actions.
+- [ ] Expand combat actions beyond attack/defend (spells, abilities, items, and status effects).
 - [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.

@@ -147,6 +147,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			run.CompletedAt = &completed
 		} else {
 			run.Phase = PhaseExploring
+			startNavigationVote(room, now)
 		}
 		return
 	}

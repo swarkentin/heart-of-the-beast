@@ -47,6 +47,13 @@ type Run struct {
 	CompletedAt       *time.Time              `json:"completedAt,omitempty"`
 	CombatRoundNumber int                     `json:"combatRoundNumber"`
 	CombatRound       *CombatRound            `json:"combatRound,omitempty"`
+	NavigationVote    *NavigationVote         `json:"navigationVote,omitempty"`
+}
+
+type NavigationVote struct {
+	StartedAt time.Time         `json:"startedAt"`
+	Deadline  time.Time         `json:"deadline"`
+	Votes     map[string]string `json:"votes"`
 }
 
 type PlayerState struct {
