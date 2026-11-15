@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/rand"
-	"math/rand/v2"
+	randv2 "math/rand/v2"
 	"time"
 )
 
@@ -109,7 +109,7 @@ func resolveInterFloorVote(room *Room, now time.Time) {
 		}
 	}
 	choice := "restore"
-	if perkVotes > restoreVotes || perkVotes == restoreVotes && rand.IntN(2) == 1 {
+	if perkVotes > restoreVotes || perkVotes == restoreVotes && randv2.IntN(2) == 1 {
 		choice = "perk"
 	}
 	applyInterFloorChoice(room, choice, now)
