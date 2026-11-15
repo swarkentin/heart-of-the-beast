@@ -281,7 +281,7 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-  async function sendCommand(command: { type: string; action?: string; targetId?: string; exitId?: string }) {
+  async function sendCommand(command: { type: string; round?: number; action?: string; targetId?: string; exitId?: string }) {
     if (!session || busy) return;
     setBusy(true); setError("");
     try {
@@ -302,8 +302,8 @@ export default function App() {
   }
 
   function play(action: Action) {
-    if (action === "guard") void sendCommand({ type: "combat", action: "defend" });
-    else if (livingTarget) void sendCommand({ type: "combat", action: "attack", targetId: livingTarget.id });
+    if (action === "guard") void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "defend" });
+    else if (livingTarget) void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "attack", targetId: livingTarget.id });
   }
 
   function shareSpectatorLink() {
