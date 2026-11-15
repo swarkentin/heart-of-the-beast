@@ -83,6 +83,7 @@ type Enemy struct {
 
 type Command struct {
 	Type     string `json:"type"`
+	Round    int    `json:"round,omitempty"`
 	ExitID   string `json:"exitId,omitempty"`
 	Action   string `json:"action,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
