@@ -372,8 +372,8 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if resolved.Run.Phase != game.PhaseExploring || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
 		t.Fatal("both party actions should resolve together and clear the encounter")
 	}
-}
 
+}
 
 func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
 	memory := store.NewMemory()
@@ -442,10 +442,10 @@ func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
 		t.Fatalf("return to lobby: %d %s", returned.Code, returned.Body.String())
 	}
 	var lobby struct {
-		ID            string   `json:"id"`
-		Code          string   `json:"code"`
-		OwnerPlayerID string   `json:"ownerPlayerId"`
-		PlayerIDs     []string `json:"playerIds"`
+		ID            string    `json:"id"`
+		Code          string    `json:"code"`
+		OwnerPlayerID string    `json:"ownerPlayerId"`
+		PlayerIDs     []string  `json:"playerIds"`
 		Run           *game.Run `json:"run"`
 	}
 	if err := json.Unmarshal(returned.Body.Bytes(), &lobby); err != nil {
