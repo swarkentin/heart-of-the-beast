@@ -174,29 +174,16 @@ func grantEncounterExperience(room *Room, round int) {
 }
 
 func grantExperience(player *PlayerState, room *Room, playerID string, round, amount int) {
-	player.Experience += amount
+	transition := resolveExperienceGain(*player, amount)
+	player.Experience = transition.Experience
+	player.Level = transition.Level
+	player.TalentPoints = transition.TalentPoints
+	player.MaxHealth = transition.MaxHealth
+	player.Stats = transition.Stats
+
 	addCombatEvent(room.Run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(amount)+" XP.")
-	for player.Level < 5 {
-		next := experienceForNextLevel(player.Level)
-		if next == 0 || player.Experience < next {
-			break
-		}
-		player.Level++
-		player.TalentPoints++
-		switch player.Level {
-		case 2:
-			player.MaxHealth += 4
-			player.Stats.Power++
-		case 3:
-			player.Stats.Focus += 2
-		case 4:
-			player.MaxHealth += 4
-			player.Stats.Agility++
-		case 5:
-			player.Stats.Power++
-			player.Stats.Focus++
-		}
-		addCombatEvent(room.Run, round, "level_up", adventurerLabel(room, playerID)+" reaches level "+itoa(player.Level)+"! Choose a talent between encounters.")
+	for _, level := range transition.LevelUps {
+		addCombatEvent(room.Run, round, "level_up", adventurerLabel(room, playerID)+" reaches level "+itoa(level)+"! Choose a talent between encounters.")
 	}
 }
 
