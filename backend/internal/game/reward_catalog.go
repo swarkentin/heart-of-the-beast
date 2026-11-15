@@ -170,9 +170,7 @@ func rewardTargetIncludes(room *Room, playerID string, player *PlayerState, targ
 
 func rewardPlayerIDs(room *Room, target RunRewardTarget) []string {
 	if target == RunRewardParticipants {
-		ids := append([]string(nil), room.PlayerIDs...)
-		sort.Strings(ids)
-		return ids
+		return append([]string(nil), room.PlayerIDs...)
 	}
 	ids := make([]string, 0, len(room.Run.Players))
 	for playerID := range room.Run.Players {
