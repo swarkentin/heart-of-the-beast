@@ -100,3 +100,12 @@
 .path-vote-progress{grid-column:1/-1;height:3px;overflow:hidden;background:#39333a}
 .path-vote-progress i{display:block;height:100%;background:#c99a61;transition:width .1s linear}
 @media(prefers-reduced-motion:reduce){.path-vote-progress i{transition:none}}
+
+
+/* Enemy intent is a promise to the player: show the move, damage, and target. */
+.intent{flex-wrap:wrap;cursor:default}
+.intent b{margin-left:auto}
+.intent small{width:100%;margin-left:16px;color:#c7a985;font-size:9px;letter-spacing:.7px}
+.combat-log{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;width:100%;max-height:58px;overflow:auto;padding:5px 10px;background:#10131bdc;border:1px solid #51463d;color:#d7c6b1;font-size:10px;line-height:1.35}
+.combat-log span::before{content:"› ";color:#d8a76e}
+@media(max-width:700px){.enemy-intents{top:8px;right:8px;max-width:58%;gap:4px}.intent{gap:5px;padding:6px 7px;font-size:9px}.intent b{font-size:9px}.intent small{font-size:8px;margin-left:12px}.combat-log{max-height:48px;font-size:9px;padding:4px 7px}}
