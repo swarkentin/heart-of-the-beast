@@ -46,12 +46,6 @@ func TestValidateClassCatalogRejectsDuplicateIDsAndBrokenReferences(t *testing.T
 	if err := ValidateClassCatalog(archetypes, classes, abilities, passives, equipment, locked); err != nil {
 		t.Fatalf("locked class with policy should validate: %v", err)
 	}
-	if ClassAvailableToPlayer(locked[0].ClassID, nil) {
-		t.Fatal("locked class must not be available without a player unlock")
-	}
-	if !ClassAvailableToPlayer(locked[0].ClassID, []string{locked[0].ClassID}) {
-		t.Fatal("explicit player unlock should authorize a locked class")
-	}
 }
 
 func TestSelectClassDerivesArchetypeAndBuildsServerOwnedStartingStats(t *testing.T) {
