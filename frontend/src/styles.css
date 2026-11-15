@@ -217,3 +217,48 @@
 .progression-accept:disabled{opacity:.4;cursor:not-allowed}
 .action-target-hint{flex:1 0 100%;color:#c4b6a6;font-size:9px;letter-spacing:.8px;text-align:center}
 @media(max-width:700px){.progression-backdrop{padding:8px}.progression-modal{padding:14px}.progression-modal-heading h2{font-size:19px}.talent-tree{gap:9px;margin:14px 0}.talent-node{min-height:145px;padding:9px}.talent-node strong{font-size:13px}.talent-node small{font-size:9px}.progression-modal-actions button{flex:1;padding:10px 7px}.action-target-hint{font-size:8px}}
+
+
+/* Responsive room creation and party lobby: never clip the primary action. */
+.lobby-screen{
+  height:100dvh;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  justify-content:flex-start;
+  padding-bottom:clamp(20px,5vh,48px);
+}
+.lobby-screen .game-topline{flex:0 0 62px}
+.lobby-panel{
+  flex:0 0 auto;
+  width:min(760px,100%);
+  margin:clamp(16px,5vh,48px) auto;
+  padding:clamp(18px,4vw,32px);
+  background:#171923;
+  border:1px solid #625246;
+  color:#f1e5d5;
+}
+.lobby-panel h1{font-size:clamp(26px,4vw,34px);line-height:1.15}
+.lobby-create-button{
+  display:flex;
+  width:100%;
+  min-height:56px;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin:24px 0 0;
+}
+.lobby-create-button span{padding:0}
+.lobby-join-row{display:flex;flex-wrap:wrap;gap:12px}
+.lobby-join-row input{flex:1 1 220px;min-width:0}
+.lobby-join-row .turn-button{min-height:48px}
+.party-lobby-panel .turn-button{min-height:48px;margin:8px 8px 0 0;padding:12px 18px}
+@media(max-width:600px){
+  .lobby-screen{padding:0 10px 24px}
+  .lobby-screen .game-topline{height:54px;flex-basis:54px}
+  .lobby-panel{margin:16px auto;padding:18px}
+  .lobby-create-button{min-height:54px;margin-top:20px}
+  .lobby-join-row{flex-direction:column}
+  .lobby-join-row input,.lobby-join-row .turn-button{width:100%;min-height:48px}
+  .party-lobby-panel .turn-button{width:100%;margin:8px 0 0}
+}

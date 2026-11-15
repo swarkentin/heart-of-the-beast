@@ -462,16 +462,16 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <main className="game-screen">
+    return <main className="game-screen lobby-screen">
       <header className="game-topline"><a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> LOCAL DEVELOPMENT</div></header>
-      <section style={{ maxWidth: 760, margin: "10vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
+      <section className="lobby-panel lobby-create-panel">
         <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>THE FORGOTTEN CATACOMBS</p>
         <h1 style={{ fontSize: 34, margin: "12px 0" }}>Gather your party</h1>
         <p style={{ lineHeight: 1.6, color: "#c7b9a8" }}>Create a room and invite up to three friends, or join an existing lobby with its six-character code. No account required.</p>
-        <button className="turn-button" onClick={() => void createRun()} disabled={busy}>{busy ? "CREATING ROOM…" : "CREATE ROOM"} <span>↗</span></button>
+        <button className="turn-button lobby-create-button" onClick={() => void createRun()} disabled={busy}>{busy ? "CREATING ROOM…" : "CREATE ROOM"} <span>↗</span></button>
         <div style={{ margin: "28px 0", borderTop: "1px solid #51463e" }}/>
         <label htmlFor="join-code" style={{ display: "block", color: "#d8a76e", letterSpacing: ".12em", marginBottom: 10 }}>JOIN A PARTY</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <div className="lobby-join-row">
           <input id="join-code" value={joinCode} onChange={event => setJoinCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} placeholder="6-CHARACTER CODE" maxLength={6} autoComplete="off" style={{ flex: "1 1 220px", minWidth: 0, padding: "13px 14px", background: "#0f1118", border: "1px solid #625246", color: "#f1e5d5", letterSpacing: ".2em", fontSize: 18 }} />
           <button className="turn-button" onClick={() => void joinRoom()} disabled={busy || joinCode.length !== 6}>JOIN ROOM <span>↗</span></button>
         </div>
@@ -487,7 +487,7 @@ export default function App() {
   if (!run || !serverRoom) {
     return <main className="game-screen">
       <header className="game-topline"><a className="game-brand" href="#"><span>H</span> HEART OF THE BEAST</a><div className="run-status"><i/> PARTY LOBBY</div></header>
-      <section style={{ maxWidth: 760, margin: "8vh auto", padding: 32, background: "#171923", border: "1px solid #625246", color: "#f1e5d5" }}>
+      <section className="lobby-panel party-lobby-panel">
         <p style={{ letterSpacing: ".18em", color: "#d8a76e" }}>ROOM {snapshot.code}</p>
         <h1 style={{ fontSize: 34, margin: "12px 0" }}>The party is gathering</h1>
         <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
