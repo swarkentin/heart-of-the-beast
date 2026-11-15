@@ -372,8 +372,8 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if resolved.Run.Phase != game.PhaseExploring || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
 		t.Fatal("both party actions should resolve together and clear the encounter")
 	}
-
 }
+
 
 func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
 	memory := store.NewMemory()
