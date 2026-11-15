@@ -294,17 +294,6 @@ func classPassiveEffects(player *PlayerState, enemy *Enemy, intent *EnemyIntent)
 	return definition.Resolve(player, enemy, intent)
 }
 
-func classPassiveEffectID(player *PlayerState) string {
-	if player == nil || player.ClassBuild == nil {
-		return ""
-	}
-	passive, ok := findClassPassive(player.ClassBuild.PassiveID)
-	if !ok {
-		return ""
-	}
-	return passive.EffectID
-}
-
 func dealClassAbilityDamage(room *Room, player *PlayerState, enemy *Enemy, round int, kind string, damage int, description string) {
 	if enemy == nil || enemy.Health <= 0 {
 		return
