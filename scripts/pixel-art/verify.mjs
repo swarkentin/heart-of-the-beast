@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { encodePNG } from "./engine.mjs";
 import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
+import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art/monsters");
 const errors = [], warnings = [];
@@ -65,6 +66,11 @@ for (const theme of themes) {
     if (![1, 2, 3].some((i) => differs(a.frames.idle[0], a.frames.idle[i]))) fail(`${tag}: idle loop does not animate`);
     if (!differs(a.frames.idle[0], a.frames.attack[3])) fail(`${tag}: attack impact frame identical to idle`);
   }
+}
+{
+  const goPath = resolve(OUT, "../../../..", GO_BINDINGS_PATH);
+  if (!existsSync(goPath)) fail(`${GO_BINDINGS_PATH} missing - run npm run art:build`);
+  else if (readFileSync(goPath, "utf8") !== goBindings(themes)) fail(`${GO_BINDINGS_PATH} is stale - run npm run art:build`);
 }
 for (const w of warnings) console.warn("warn:", w);
 if (errors.length) { for (const e of errors) console.error("FAIL:", e); console.error(`\n${errors.length} problem(s) across ${total} creatures.`); process.exit(1); }

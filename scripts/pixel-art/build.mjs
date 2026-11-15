@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Generates the monster sprite sheets, manifests and previews.
 //   node scripts/pixel-art/build.mjs [themeId ...] [--preview=<dir>] [--scale=3]
-// Output: frontend/public/art/monsters/<theme>/<creature>.png (+ manifest.json, preview.png)
+// Output: frontend/public/art/monsters/<theme>/<creature>.png (+ manifest.json, preview.png), and
+// backend/internal/art/sprites_gen.go (Go sprite registry; full builds only).
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +10,7 @@ import { Canvas, Img, encodePNG, upscale, flash, shatter, dissolve, scaleAbout, 
 import { poseFor } from "./anim.mjs";
 import { drawFx } from "./fx.mjs";
 import { themes } from "./themes/index.mjs";
+import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const OUT = resolve(ROOT, "frontend/public/art/monsters");
@@ -103,6 +105,7 @@ export function build(only, { previewDir, previewScale = 3 } = {}) {
     console.log(`${theme.id}: ${theme.creatures.length} creatures (${theme.creatures.filter((c) => c.tier === "boss").length} bosses)`);
   }
   if (!only.length) writeFileSync(resolve(OUT, "index.json"), JSON.stringify(index, null, 2) + "\n");
+  if (!only.length) { const go = resolve(ROOT, GO_BINDINGS_PATH); mkdirSync(dirname(go), { recursive: true }); writeFileSync(go, goBindings(themes)); }
   return index;
 }
 
