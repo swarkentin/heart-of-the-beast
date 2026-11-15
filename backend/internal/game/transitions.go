@@ -32,7 +32,7 @@ func StartRun(room *Room, runID string, now time.Time) error {
 				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"},
 				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing"},
 			},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
 			ID:          "reliquary",
