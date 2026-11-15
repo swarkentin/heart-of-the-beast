@@ -298,12 +298,15 @@ func dealClassAbilityDamage(room *Room, player *PlayerState, enemy *Enemy, round
 	if enemy == nil || enemy.Health <= 0 {
 		return
 	}
-	damage += classPassiveEffects(player, enemy, nil).AttackDamage
-	if enemy.MarkedDamage > 0 {
-		damage += enemy.MarkedDamage
-		enemy.MarkedDamage = 0
-	}
-	transition := resolveHealthDamage(enemy.Health, damage)
+	attack := resolveAttackDamage(AttackDamageInput{
+		BaseDamage: damage,
+		BonusDamage: classPassiveEffects(player, enemy, nil).AttackDamage,
+		MarkedDamage: enemy.MarkedDamage,
+		IncludeMarkedDamage: enemy.MarkedDamage > 0,
+		ConsumeMarkedDamage: enemy.MarkedDamage > 0,
+	})
+	enemy.MarkedDamage = attack.RemainingMarkedDamage
+	transition := resolveHealthDamage(enemy.Health, attack.Damage)
 	enemy.Health = transition.Health
 	actual := transition.Applied
 	addCombatImpact(room.Run, round, kind, adventurerLabel(room, player.ID)+" "+description+" "+enemy.Name+" for "+itoa(actual)+" damage.", "damage", enemy.ID, "enemy", actual)
