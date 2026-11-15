@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 )
@@ -317,11 +318,25 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 		}
 		run.CombatRound = nil
-		if run.CurrentRoomID == "warden" {
+		if current.RoomType == "miniboss" {
+			run.Flags["miniboss-"+current.ID] = true
+			for _, member := range run.Players {
+				if member != nil {
+					member.StrikeDamage++
+				}
+			}
+			addCombatEvent(run, roundNumber, "miniboss_reward", "The reliquary brute falls. Every adventurer gains +1 Strike damage for the rest of the run.")
+		}
+		if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth {
+			run.Phase = PhaseIntermission
+			run.PendingInterFloorChoice = true
+			run.NavigationVote = nil
+			addCombatEvent(run, roundNumber, "floor_cleared", fmt.Sprintf("Floor %d is cleared. Choose health restoration or a run perk before descending.", run.Depth))
+		} else if isBossRoom(current) {
 			run.Phase = PhaseCompleted
 			completed := now.UTC()
 			run.CompletedAt = &completed
-			addCombatEvent(run, roundNumber, "victory", "The Crypt Warden falls. The catacombs are cleared!")
+			addCombatEvent(run, roundNumber, "victory", "The final guardian falls. The catacombs are cleared!")
 		} else {
 			run.Phase = PhaseExploring
 			startNavigationVote(room, now)
@@ -351,6 +366,12 @@ func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []strin
 			intent.Kind, intent.Label, intent.Damage = "heavy_strike", "Heavy blow", 8
 		} else {
 			intent.Kind, intent.Label, intent.Damage = "strike", "Stone strike", 4
+		}
+	case "miniboss":
+		if roundNumber%2 == 0 {
+			intent.Kind, intent.Label, intent.Damage, intent.Interruptible = "crusher", "Reliquary crush", 8, true
+		} else {
+			intent.Kind, intent.Label, intent.Damage = "stone_strike", "Stone strike", 5
 		}
 	case "warden":
 		if roundNumber%3 == 0 {
