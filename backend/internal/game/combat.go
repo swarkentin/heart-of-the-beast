@@ -331,7 +331,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			run.Phase = PhaseIntermission
 			run.PendingInterFloorChoice = true
 			run.NavigationVote = nil
-			run.InterFloorVote = &NavigationVote{StartedAt: now.UTC(), Deadline: now.UTC().Add(15 * time.Second), Votes: make(map[string]string)}
+			run.InterFloorVote = &NavigationVote{StartedAt: now.UTC(), Deadline: now.UTC().Add(InterFloorChoiceWindow), Votes: make(map[string]string)}
 			addCombatEvent(run, roundNumber, "floor_cleared", fmt.Sprintf("Floor %d is cleared. Choose health restoration or a run perk before descending.", run.Depth))
 		} else if isBossRoom(current) {
 			run.Phase = PhaseCompleted
