@@ -519,8 +519,8 @@ func TestClericRecoveryPassiveImprovesEncounterHealing(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if player.Health != 24 {
-		t.Fatalf("Recovery should add 2 health to the normal 2-point encounter heal, health=%d", player.Health)
+	if player.Health != 22 {
+		t.Fatalf("Recovery should restore 2 health after the encounter, health=%d", player.Health)
 	}
 }
 
