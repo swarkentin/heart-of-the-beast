@@ -187,3 +187,12 @@ The first deterministic runtime boundary is extracted in `backend/internal/game/
 The helpers deliberately do not decide who is eligible to receive an effect; that remains in the authoritative command/reward flow. They also do not emit events or mutate room state. This keeps the arithmetic deterministic and independently testable without moving presentation or multiplayer orchestration into the simulation layer. Existing combat tests continue to exercise the live integration, while focused unit tests cover lethal/partial/zero/negative damage and healing at the health cap.
 
 Next, extract pure attack damage and incoming mitigation/intent resolution, then progression transitions. Once those rules are shared, add a seeded simulation runner over explicit combat state snapshots and compare its outcomes with live transition tests.
+
+
+## Follow-up slice: pure attack, mitigation, and enemy-intent transitions
+
+Player attack arithmetic now lives in `backend/internal/game/combat_transitions.go`, including additive talent/passive bonuses, marked damage consumption, Resolve, telegraph bonuses, and room Strike bonuses. Interrupt damage uses the same pure transition boundary. Incoming damage mitigation is also shared: agility/talent/passive reductions apply first, then Ward absorption and reflection consumption, then one-hit guard reduction and guard-state consumption. The transition returns intermediate blocked/absorbed amounts so the authoritative runtime can preserve its existing combat feedback and passive triggers.
+
+Enemy intent construction now separates catalog ability selection from deterministic target resolution. The transition copies the selected ability into a telegraph and rotates single-target choices over the already sorted eligible-player list; party-wide intents remain untargeted. Legacy unknown behavior fallback remains unchanged.
+
+These functions do not decide command validity, player eligibility, emit events, or mutate room aggregates. Live combat remains responsible for those orchestration boundaries and uses the pure results to update state. No damage values, mitigation order, intent cadence, target rotation, or balance tuning changed. The next step is progression transitions, followed by a seeded simulator over explicit combat snapshots.
