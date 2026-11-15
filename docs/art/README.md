@@ -129,3 +129,35 @@ its exported variables (`art.SunkenDrownedKnight`); the ids cannot be forged or 
 compile. Monsters are declared with `defineMonster(sprite, MonsterDefinition{...})`. See ADR 0023. Commit `sprites_gen.go` together with the art.
 Enemy snapshots carry the sprite as `sprite: "<theme>/<creature>"`, which maps to `/art/monsters/<theme>/<creature>.png`.
 
+
+## Using the sprites in the frontend
+
+`frontend/src/monsters/` and `frontend/src/fx/` render the sheets and play combat effects (ADR 0024). Inside a scene's
+`<svg viewBox="0 0 1100 620">` mount:
+
+```tsx
+<EnemyStage view="player" /* or "cast" */ enemies={enemies} events={run.lastCombatEvents ?? []} target={id} onTarget={setTarget} />
+```
+
+`enemies` need `id, name, hp, maxHp, x, sprite` and the raw `rawIntent`; `sprite` is the enemy snapshot's `"<theme>/<creature>"`.
+Sheets are drawn with integer scaling (monster 5x / boss 3x in the player view, 3x / 2x in the cast view), anchored at the
+manifest anchor on the floor, and enemies without a `sprite` get a placeholder silhouette.
+
+How a creature's animations are used:
+
+| Animation | Played when |
+| --- | --- |
+| `idle` | resting loop |
+| `attack` / `special` wind-up | while the enemy's intent is shown: frames before `impactFrame` play once, then hold |
+| `attack` / `special` | when the round resolves; effects spawn on `impactFrame` |
+| `hit` | the enemy takes damage (with a shake and white flash) |
+| `death` | the enemy is defeated; the last frame is held |
+
+An intent plays `special` if its label equals the creature's `special` name, `attack` if it equals the `attack` name; otherwise
+party-wide and healing intents and the kinds `wail`, `sweep`, `cloud`, `special_strike`, `soul_sweep`, `soul_drain` play
+`special`, and everything else plays `attack` (`monsters/moves.ts`). Keep `attack`/`special` names in the art manifests identical to
+the server's ability labels so the first two rules decide it.
+
+The `move` hint on `attack`/`special` (`slash`, `claw`, `smash`, `cast`, `shoot`, `roar`, `wail`, `spit`, `summon`, ...) and keywords in
+the move label choose the effect and its element (frost, fire, acid, shock, spectral, arcane; `fx/elements.ts`). With
+`prefers-reduced-motion` sprites hold a still frame and effects become short static markers.

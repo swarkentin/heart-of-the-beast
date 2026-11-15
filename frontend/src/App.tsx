@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { AudioControls, useGameAudio } from "./audio";
+import { EnemyStage } from "./monsters/EnemyStage";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
 
 type Action = "strike" | "guard" | "interrupt";
 type View = "player" | "cast";
-type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; intentTarget: string; damage: number; interruptible: boolean; x: number };
+type Enemy = { id: string; name: string; hp: number; maxHp: number; intent: string; intentTarget: string; damage: number; interruptible: boolean; x: number; sprite?: string; rawIntent?: ApiEnemyIntent };
 type RoomId = string;
 type Room = { id: RoomId; name: string; floor: string; description: string; exits: RoomId[] };
 const rooms: Record<RoomId, Room> = {
@@ -101,39 +102,12 @@ function visualEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: s
   const targetIndex = intent?.targetPlayerId ? playerIds.indexOf(intent.targetPlayerId) + 1 : 0;
   const intentTarget = intent?.targetAll ? "TARGET: ALL ADVENTURERS" : targetIndex > 0 ? "TARGET: ADVENTURER " + targetIndex : "NO TARGET";
   const intentLabel = intent ? intent.label + " · " + intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "No intent";
-  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: intentLabel, intentTarget, damage: intent?.damage ?? 0, interruptible: Boolean(intent?.interruptible), x: count === 1 ? 550 : index === 0 ? 430 : 670 };
+  return { id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, intent: intentLabel, intentTarget, damage: intent?.damage ?? 0, interruptible: Boolean(intent?.interruptible), x: count === 1 ? 550 : 550 + (index - (count - 1) / 2) * (count === 2 ? 240 : 220), sprite: enemy.sprite, rawIntent: intent };
 }
 
 
 function Bar({ value, max }: { value: number; max: number }) {
   return <span className="bar"><i style={{ width: (Math.max(0, value) / max * 100) + "%" }} /></span>;
-}
-
-function EnemyFigure({ enemy, selected, hit, onClick }: { enemy: Enemy; selected: boolean; hit?: boolean; onClick?: () => void }) {
-  const dead = enemy.hp <= 0;
-  return <g transform={`translate(${enemy.x} 0)`} opacity={dead ? .18 : 1} onClick={onClick} className={(onClick && !dead ? "enemy-sprite " : "") + (hit ? "enemy-hit" : "")}>
-    {selected && !dead ? <ellipse cx="0" cy="448" rx="92" ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
-    <ellipse cx="0" cy="454" rx="62" ry="14" fill="#080a10" opacity=".8" />
-    {enemy.id === "scout" ? <g shapeRendering="crispEdges">
-      <path d="M-43 280h86v145h-86z" fill="#737d7b"/><path d="M-52 302h18v100h-18zM34 302h18v100H34z" fill="#a5aaa0"/>
-      <path d="M-39 226h78v70h-78z" fill="#c4c4b3"/><path d="M-48 215h96v22h-96z" fill="#858f8a"/>
-      <path d="M-24 252h13v13h-13zM11 252h13v13H11z" fill="#e58b5c"/>
-      <path d="M-34 420h27v34h-27zM7 420h27v34H7z" fill="#555d5b"/>
-      <path d="M-50 310l-55 91 17 12 65-72M50 310l55 91-17 12-65-72" fill="#c0c1b4"/>
-    </g> : <g shapeRendering="crispEdges">
-      <path d="M-48 285h96v145h-96z" fill="#453d52"/><path d="M-58 310h20v100h-20zM38 310h20v100H38z" fill="#786583"/>
-      <path d="M-42 228h84v72h-84z" fill="#b9aaa4"/><path d="M-53 216h106v22h-106z" fill="#453747"/>
-      <path d="M-24 250h13v13h-13zM11 250h13v13H11z" fill="#a5e4d9"/>
-      <path d="M-34 425h27v30h-27zM7 425h27v30H7z" fill="#41384d"/>
-      <path d="M0 295l-25 75h50z" fill="#a5e4d9" opacity=".8"/>
-      <path d="M-55 315l-42 82 16 12 55-65M55 315l42 82-16 12-55-65" fill="#b9aaa4"/>
-    </g>}
-    <g transform="translate(0 175)">
-      <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2"/>
-      <rect x="-69" y="5" width={138 * enemy.hp / enemy.maxHp} height="16" fill="#b45e53"/>
-      <text x="0" y="-13" textAnchor="middle" fill="#f1e5d5" fontSize="20" fontWeight="bold">{enemy.name}</text>
-    </g>
-  </g>;
 }
 
 function CombatImpacts({ events, enemies, playerId, view }: { events: ApiCombatEvent[]; enemies: Enemy[]; playerId: string; view: "player" | "cast" }) {
@@ -178,15 +152,12 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
       <ellipse cx="120" cy="220" rx="180" ry="180" fill="url(#torch)"/><ellipse cx="980" cy="220" rx="180" ry="180" fill="url(#torch)"/>
       <g fill="#ffbd67"><path d="M112 160h16v-48h12v48h16v12h-44zM952 160h16v-48h12v48h16v12h-44z"/><path d="M134 112l-12 32h24zM974 112l-12 32h24z"/></g>
       <path d="M0 510L420 390M1100 510L680 390M0 580L470 430M1100 580L630 430" stroke="#c5a17c" strokeOpacity=".16" strokeWidth="4"/>
-      {enemies.map(e => {
-        const hitRound = impacts.reduce((latest, event) => event.effect === "damage" && event.targetType === "enemy" && event.targetId === e.id ? Math.max(latest, event.round) : latest, 0);
-        return <EnemyFigure key={e.id + "-" + hitRound} enemy={e} selected={target === e.id} hit={hitRound > 0} onClick={() => e.hp > 0 && onTarget(e.id)} />;
-      })}
       <g transform="translate(550 0)" shapeRendering="crispEdges">
         <path d="M-190 620l22-78 62-44h-40l-48 36-38 86zM190 620l-22-78-62-44h40l48 36 38 86z" fill="#293943"/>
         <path d="M-170 620l18-72 46-36 42 0 12 108zM170 620l-18-72-46-36-42 0-12 108z" fill="#53636a"/>
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
+      <EnemyStage key={room.id} view="player" enemies={enemies} events={impacts} target={target} onTarget={onTarget} />
     </svg>
     {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")+(voteStatus?.selectedExit===exit.id?" scene-exit-selected":"")} onClick={()=>onNavigate(exit.id)} disabled={Boolean(voteStatus && voteStatus.remainingSeconds <= 0)} aria-label={"Vote for "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>{exit.description || (voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "ENTER PATH")}</small>{voteStatus ? <i>{(voteStatus.voteCounts[exit.id] || 0)+" VOTES"+(voteStatus.selectedExit===exit.id?" · YOUR VOTE":"")}</i> : null}</button>)}</div> : null}
     <div className="scene-vignette"/>
@@ -206,13 +177,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, imp
       <path d="M120 90L980 90M120 530L980 530M120 90V530M980 90V530" stroke="#92765d" strokeWidth="12" opacity=".65"/>
       <g fill="#e18b4d" opacity=".7"><circle cx="130" cy="115" r="16"/><circle cx="970" cy="115" r="16"/><circle cx="130" cy="505" r="16"/><circle cx="970" cy="505" r="16"/></g>
       <g key={impacts.reduce((latest, event) => event.effect === "damage" && event.targetType === "player" ? Math.max(latest, event.round) : latest, 0)} className={impacts.some(event => event.effect === "damage" && event.targetType === "player") ? "cast-player-hit" : ""} transform="translate(550 370)" shapeRendering="crispEdges"><ellipse cy="38" rx="65" ry="17" fill="#080a10" opacity=".8"/><path d="M-28-50h56v85h-56z" fill="#53636a"/><path d="M-23-84h46v40h-46z" fill="#c59d78"/><path d="M-28-92h56v13h-56z" fill="#49342d"/><path d="M-22 32h19v30h-19zM4 32h19v30H4z" fill="#38313a"/><text y="94" textAnchor="middle" fill="#f0d2a8" fontSize="20">THE WAYFARER</text></g>
-      {enemies.map((e,i)=>{
-        const hitRound = impacts.reduce((latest, event) => event.effect === "damage" && event.targetType === "enemy" && event.targetId === e.id ? Math.max(latest, event.round) : latest, 0);
-        return <g key={e.id + "-" + hitRound} className={hitRound > 0 ? "enemy-hit" : ""} transform={`translate(${i===0?365:735} 210)`} opacity={e.hp<=0?.18:1} shapeRendering="crispEdges">
-        <ellipse cy="44" rx="52" ry="13" fill="#080a10"/><path d="M-27-22h54v62h-54z" fill={i===0?"#737d7b":"#51445e"}/><path d="M-25-58h50v40h-50z" fill={i===0?"#c4c4b3":"#b9aaa4"}/><path d="M-13-42h8v8h-8zM7-42h8v8H7z" fill={i===0?"#e58b5c":"#a5e4d9"}/><text y="80" textAnchor="middle" fill="#eee0d0" fontSize="17">{e.name}</text><rect x="-42" y="91" width="84" height="9" fill="#29252c"/><rect x="-42" y="91" width={84*e.hp/e.maxHp} height="9" fill="#b45e53"/>
-      </g>;
-      })}
-      <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
+      <EnemyStage key={room.id} view="cast" enemies={enemies} events={impacts} />
     </svg>
     <div className="scene-vignette"/>
     <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></div>)}</div>

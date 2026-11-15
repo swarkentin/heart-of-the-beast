@@ -1,0 +1,36 @@
+/* Enemy sprites and combat effects. Pixel art is never smoothed. */
+.sprite-sheet { image-rendering: pixelated; image-rendering: crisp-edges; }
+.enemy-sprite { cursor: pointer; }
+.enemy-stage-actor { outline: none; }
+
+/* A hit: a short sideways shake with a white flash. Skipped entirely under reduced motion (the stage never adds the class). */
+.enemy-shake { animation: enemy-shake 300ms steps(6, end) 1; }
+@keyframes enemy-shake {
+  0% { transform: translateX(0); filter: brightness(3); }
+  17% { transform: translateX(-12px); filter: brightness(2.4); }
+  34% { transform: translateX(10px); filter: brightness(1.6); }
+  51% { transform: translateX(-7px); filter: brightness(1.2); }
+  68% { transform: translateX(4px); filter: none; }
+  100% { transform: translateX(0); filter: none; }
+}
+
+/* Floating damage numbers rise and fade in steps, so they stay crisp. */
+.dmg-num { animation: dmg-rise 1100ms steps(8, end) 1 forwards; }
+@keyframes dmg-rise {
+  0% { transform: translateY(14px); opacity: 0; }
+  12% { transform: translateY(0); opacity: 1; }
+  75% { transform: translateY(-28px); opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}
+
+/* The "ready" badge beside a telegraphing enemy's nameplate. */
+.enemy-ready { animation: enemy-ready 900ms steps(2, end) infinite; }
+@keyframes enemy-ready { 50% { transform: translate(-102px, 0px); opacity: .55; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .enemy-shake, .enemy-ready { animation: none; }
+  .dmg-num { animation: none; opacity: 1; }
+}
+
+/* The stage draws its own damage numbers on the sprites; the old overlay stays in the DOM for screen readers (aria-live) only. */
+.scene .combat-impacts { opacity: 0; }

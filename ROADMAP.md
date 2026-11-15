@@ -45,7 +45,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [x] Generate a pixel-art bestiary for eleven themes (six priority plus alien jungle, dreamscape, arctic, ghost town, post-apocalyptic): 5 monsters and 3 bosses each, with idle, hit, attack, special, and death animations, plus manifests and a verifier (ADR 0022, `docs/art/README.md`).
 - [x] Require art for every monster at compile time, add a dungeon theme catalog and themed encounters, and add catalog entries for the whole bestiary (82 new monsters, 72 new encounters; ADR 0023). Enemy snapshots now carry a `sprite` ID.
-- [ ] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
+- [x] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
 - [x] Generate player-character sprites for the nine classes in the bestiary style (idle loop and a signature flourish each, plus roster busts) and a pixel-art interface kit: panel, slot and button frames, wall and floor tiles, torch, crest, and an icon sheet (ADR 0024, `docs/art/README.md`).
 - [x] Rebuild the title screen, party lobby, and class selection on the hero sprites and interface kit so the first screens match the monster art (ADR 0024).
 - [ ] Hand-polish pass on the generated monster and hero sprites; add hit, attack, and defeat animations for heroes when they appear in combat and spectator scenes.
