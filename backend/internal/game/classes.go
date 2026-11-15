@@ -9,14 +9,14 @@ import (
 const ClassDefinitionVersion = 1
 
 const (
-	ClassBulwark    = "bulwark"
-	ClassJuggernaut = "juggernaut"
-	ClassSpellguard = "spellguard"
-	ClassAssassin   = "assassin"
-	ClassArcanist   = "arcanist"
-	ClassRanger     = "ranger"
-	ClassCleric     = "cleric"
-	ClassTactician  = "tactician"
+	ClassBulwark     = "bulwark"
+	ClassJuggernaut  = "juggernaut"
+	ClassSpellguard  = "spellguard"
+	ClassAssassin    = "assassin"
+	ClassArcanist    = "arcanist"
+	ClassRanger      = "ranger"
+	ClassCleric      = "cleric"
+	ClassTactician   = "tactician"
 	ClassBeastcaller = "beastcaller"
 )
 
@@ -42,11 +42,11 @@ type EquipmentModifiers struct {
 }
 
 type EquipmentDefinition struct {
-	ID          string              `json:"id"`
-	Name        string              `json:"name"`
-	Slot        EquipmentSlot       `json:"slot"`
-	Description string              `json:"description"`
-	Modifiers  EquipmentModifiers  `json:"modifiers"`
+	ID          string             `json:"id"`
+	Name        string             `json:"name"`
+	Slot        EquipmentSlot      `json:"slot"`
+	Description string             `json:"description"`
+	Modifiers   EquipmentModifiers `json:"modifiers"`
 }
 
 type ClassStatProfile struct {
@@ -71,21 +71,21 @@ type ClassPassiveDefinition struct {
 }
 
 type ClassDefinition struct {
-	ID                  string                 `json:"id"`
-	ArchetypeID         string                 `json:"archetypeId"`
-	Name                string                 `json:"name"`
-	Description         string                 `json:"description"`
-	DefinitionVersion   int                    `json:"definitionVersion"`
-	StartingStats       ClassStatProfile       `json:"startingStats"`
-	StartingEquipment  []string               `json:"startingEquipment"`
-	SignatureAbilityID  string                 `json:"signatureAbilityId"`
-	PassiveID           string                 `json:"passiveId"`
+	ID                 string           `json:"id"`
+	ArchetypeID        string           `json:"archetypeId"`
+	Name               string           `json:"name"`
+	Description        string           `json:"description"`
+	DefinitionVersion  int              `json:"definitionVersion"`
+	StartingStats      ClassStatProfile `json:"startingStats"`
+	StartingEquipment  []string         `json:"startingEquipment"`
+	SignatureAbilityID string           `json:"signatureAbilityId"`
+	PassiveID          string           `json:"passiveId"`
 }
 
 type ClassAvailability struct {
-	ClassID             string `json:"classId"`
-	InitiallyAvailable  bool   `json:"initiallyAvailable"`
-	UnlockPolicyID      string `json:"unlockPolicyId,omitempty"`
+	ClassID            string `json:"classId"`
+	InitiallyAvailable bool   `json:"initiallyAvailable"`
+	UnlockPolicyID     string `json:"unlockPolicyId,omitempty"`
 }
 
 type ClassBuildSnapshot struct {
