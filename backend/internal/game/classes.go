@@ -278,6 +278,9 @@ func ValidateCatalog() error {
 	if err := ValidateClassCatalog(archetypeCatalog, classCatalog, classAbilities, classPassives, equipmentCatalog, classAvailabilityCatalog); err != nil {
 		return err
 	}
+	if err := defaultRunRewardCatalog.Validate(); err != nil {
+		return err
+	}
 	return validateRegisteredClassEffects()
 }
 
