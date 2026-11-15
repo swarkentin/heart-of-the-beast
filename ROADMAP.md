@@ -43,6 +43,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Server-authoritative player presence (10-second heartbeat, 30-second disconnect threshold), same-identity reconnect, and explicit leave/token revocation (ADR 0014).
 - [ ] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
+- [x] Generate a pixel-art bestiary for eleven themes (six priority plus alien jungle, dreamscape, arctic, ghost town, post-apocalyptic): 5 monsters and 3 bosses each, with idle, hit, attack, special, and death animations, plus manifests and a verifier (ADR 0022, `docs/art/README.md`).
+- [ ] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
+- [ ] Hand-polish pass on the generated sprites, and player-character sprites in the same style.
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
@@ -96,6 +99,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 5 — Content and presentation
 
 - [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
+- [ ] Per-theme room backgrounds, props, and encounter tables for the eleven themes that already have monster art; server-side theme and enemy definitions that reference sprite ids.
 - [ ] More enemy families, bosses, side missions, items, and abilities.
 - [ ] Cinematic spectator camera movement, animation, audio, accessibility, and localization polish.
 - [ ] Content authoring conventions and validation tools.

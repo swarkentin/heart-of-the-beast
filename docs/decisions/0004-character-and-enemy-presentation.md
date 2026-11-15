@@ -22,7 +22,7 @@ For the first playable slice, prototype detailed illustrated room scenes with di
 
 ## Open questions
 
-- Exact character representation, sprite scale, frame style, and animation technique.
+- Exact character representation, sprite scale, frame style, and animation technique. (Enemy sprites are now settled by ADR 0022; player characters are still open.)
 - Whether scenes use fixed composition, layered parallax, or limited camera movement.
 - How many party characters and enemies can be displayed simultaneously before the scene becomes crowded.
 - Exact responsive HUD layout and cast-view composition.

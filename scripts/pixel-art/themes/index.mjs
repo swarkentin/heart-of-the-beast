@@ -1,0 +1,12 @@
+import catacombs from "./catacombs.mjs";
+import scifi from "./scifi.mjs";
+import mobster from "./mobster.mjs";
+import sunken from "./sunken.mjs";
+import clockwork from "./clockwork.mjs";
+import carnival from "./carnival.mjs";
+import jungle from "./jungle.mjs";
+import dreamscape from "./dreamscape.mjs";
+import arctic from "./arctic.mjs";
+import ghosttown from "./ghosttown.mjs";
+import wasteland from "./wasteland.mjs";
+export const themes = [catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland];
