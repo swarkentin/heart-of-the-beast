@@ -119,9 +119,6 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			}
 			enemy.TurnsTaken++
 			enemy.Intent = buildEnemyIntent(enemy, enemy.TurnsTaken, i, eligibleIDs)
-			if enemy.Intent != nil {
-				report.AbilityUses[enemy.Intent.Kind]++
-			}
 		}
 
 		// Players act in stable ID order, before any surviving enemy intent resolves.
@@ -179,6 +176,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 				continue
 			}
 			intent := *enemy.Intent
+			report.AbilityUses[intent.Kind]++
 			targetIDs := make([]string, 0, len(players))
 			if intent.TargetAll {
 				for _, id := range playerIDs {
@@ -316,4 +314,63 @@ func allSimulationPlayersDown(players map[string]*PlayerState) bool {
 		}
 	}
 	return true
+}
+
+
+// CombatSimulationBatchReport summarizes the outcome distribution for a batch.
+type CombatSimulationBatchReport struct {
+	Runs                  int     `json:"runs"`
+	Wins                  int     `json:"wins"`
+	Wipes                 int     `json:"wipes"`
+	WinRate               float64 `json:"winRate"`
+	MedianRounds          int     `json:"medianRounds"`
+	P90Rounds             int     `json:"p90Rounds"`
+	MedianDamageDealt     int     `json:"medianDamageDealt"`
+	MedianDamageReceived  int     `json:"medianDamageReceived"`
+}
+
+// SummarizeCombatBatch reports robust distribution statistics without changing
+// the caller's report order or contents. Percentiles use nearest-rank semantics.
+func SummarizeCombatBatch(reports []CombatSimulationReport) CombatSimulationBatchReport {
+	summary := CombatSimulationBatchReport{Runs: len(reports)}
+	if len(reports) == 0 {
+		return summary
+	}
+	rounds := make([]int, len(reports))
+	dealt := make([]int, len(reports))
+	received := make([]int, len(reports))
+	for i, report := range reports {
+		if report.Won {
+			summary.Wins++
+		}
+		if report.Wiped {
+			summary.Wipes++
+		}
+		rounds[i] = report.Rounds
+		dealt[i] = report.PlayerDamageDealt
+		received[i] = report.PlayerDamageReceived
+	}
+	summary.WinRate = float64(summary.Wins) / float64(summary.Runs)
+	sort.Ints(rounds)
+	sort.Ints(dealt)
+	sort.Ints(received)
+	summary.MedianRounds = nearestRank(rounds, 0.50)
+	summary.P90Rounds = nearestRank(rounds, 0.90)
+	summary.MedianDamageDealt = nearestRank(dealt, 0.50)
+	summary.MedianDamageReceived = nearestRank(received, 0.50)
+	return summary
+}
+
+func nearestRank(sortedValues []int, percentile float64) int {
+	if len(sortedValues) == 0 {
+		return 0
+	}
+	index := int(float64(len(sortedValues))*percentile + 0.999999) - 1
+	if index < 0 {
+		index = 0
+	}
+	if index >= len(sortedValues) {
+		index = len(sortedValues) - 1
+	}
+	return sortedValues[index]
 }
