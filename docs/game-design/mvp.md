@@ -44,13 +44,20 @@ Exact sprite scale, animation frame style, camera composition, and HUD arrangeme
 
 ## Combat: hybrid simultaneous tactics
 
-1. The encounter begins with enemy positions, health, and telegraphed intentions visible.
-2. Each player chooses an attack, spell, ability, item, or defensive action.
-3. Players may revise their choice until the action window closes.
-4. The server resolves player actions in a deterministic order, then resolves enemy actions.
-5. The next action phase begins.
+1. Each enemy shows a clear intent before players act: the move, damage, and intended target (or the whole party).
+2. Each living player submits one action during the shared window. The current slice offers Strike (10 damage) and Defend; additional actions are added only when they create a distinct, understandable choice.
+3. Co-op uses an eight-second action window. Solo actions resolve immediately. An idle or disconnected player defaults to Defend when the group window closes.
+4. The server resolves player actions in stable player-ID order, then surviving enemies resolve their telegraphed intents. Defeating an enemy before its turn cancels its intent.
+5. Defend blocks up to 6 damage from the next incoming hit; it is not a heal. Damage, blocks, defeats, and player knockouts are shown in a short combat event log.
+6. A run ends in victory when the boss is defeated, or defeat when every player is down.
 
-A 6–8 second action window is a starting hypothesis for groups, to be validated. Solo actions should resolve without waiting for a nonexistent party; a short tactical confirmation window may be retained only if it improves the feel. Idle or disconnected players must not stall combat; group defaults should be safe and visible (initially defend/guard).
+The initial enemy behaviors are deliberately small and learnable:
+- Restless Sentinel: a 4-damage Strike against one telegraphed adventurer.
+- Drowned Scout: a 3-damage Quick Jab against one telegraphed adventurer.
+- Reliquary Guardian: alternates an 8-damage Heavy Blow with a 4-damage Stone Strike.
+- Crypt Warden: Soul Drain hits one adventurer for 5 and restores up to 2 of its health; every third turn, Soul Sweep hits all living adventurers for 3.
+
+Enemy targets rotate predictably through the living party. This makes a targeted intent meaningful without hidden aggro rules, while party-wide attacks ask everyone to consider Defend. A 6-point guard absorbs small attacks and softens heavy attacks, so players can understand the tradeoff at a glance.
 
 ### Solo encounter tuning
 
