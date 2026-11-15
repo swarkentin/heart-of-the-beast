@@ -285,7 +285,6 @@ func TestDefeatingOneEnemyOnlyCancelsItsOwnIntent(t *testing.T) {
 	}
 }
 
-
 func newClassCombatTestRoom(t *testing.T, classID string, playerIDs ...string) (*Room, time.Time) {
 	t.Helper()
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
@@ -461,14 +460,14 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 
 func TestClassPassiveModifiersAreResolvedByRegisteredEffectID(t *testing.T) {
 	cases := []struct {
-		name string
-		classID string
-		playerHealth int
-		enemyHealth int
-		enemyTurns int
-		intent *EnemyIntent
+		name          string
+		classID       string
+		playerHealth  int
+		enemyHealth   int
+		enemyTurns    int
+		intent        *EnemyIntent
 		arcaneCharges int
-		want classPassiveBonuses
+		want          classPassiveBonuses
 	}{
 		{name: "bloodied strength", classID: ClassJuggernaut, playerHealth: 10, want: classPassiveBonuses{AttackDamage: 3}},
 		{name: "arcane resistance", classID: ClassSpellguard, playerHealth: 20, intent: &EnemyIntent{Kind: "soul_drain"}, want: classPassiveBonuses{DamageReduction: 2}},
@@ -481,9 +480,13 @@ func TestClassPassiveModifiersAreResolvedByRegisteredEffectID(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			definition, ok := findClass(test.classID)
-			if !ok { t.Fatalf("missing class %q", test.classID) }
+			if !ok {
+				t.Fatalf("missing class %q", test.classID)
+			}
 			build, err := StartingBuildForClass(test.classID)
-			if err != nil { t.Fatal(err) }
+			if err != nil {
+				t.Fatal(err)
+			}
 			player := newPlayerStateForClass("player-1", definition)
 			player.ClassBuild = &build
 			player.Health = test.playerHealth
@@ -496,7 +499,6 @@ func TestClassPassiveModifiersAreResolvedByRegisteredEffectID(t *testing.T) {
 		})
 	}
 }
-
 
 func TestAssassinExploitWeaknessPunishesEnemyTelegraph(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassAssassin)
