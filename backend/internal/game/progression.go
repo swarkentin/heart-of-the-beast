@@ -201,35 +201,29 @@ func grantEncounterExperience(room *Room, round int) {
 
 func bonusesFor(player *PlayerState) TalentBonuses {
 	var bonuses TalentBonuses
+	if player == nil {
+		return bonuses
+	}
 	for _, id := range player.Talents {
-		switch id {
-		case "support-disruption":
-			bonuses.InterruptDamage += 4
-		case "support-protective-ward":
-			bonuses.PartyGuardReduction += 2
-		case "support-expose-weakness":
-			bonuses.AttackVsTelegraph += 4
-		case "support-rallying-cry":
-			bonuses.PartyEncounterHeal += 2
-		case "damage-heavy-hands":
-			bonuses.AttackDamage += 3
-		case "damage-precision":
-			bonuses.AttackDamage += 2
-		case "damage-opportunist":
-			bonuses.AttackVsTelegraph += 4
-		case "damage-counterstrike":
-			bonuses.InterruptDamage += 4
-		case "tank-bulwark":
-			bonuses.MaxHealth += 6
-		case "tank-braced-stance":
-			bonuses.GuardReduction += 3
-		case "tank-thorns":
-			bonuses.ReflectDamage += 2
-		case "tank-unyielding":
-			bonuses.GuardReduction += 3
+		if modifier, ok := defaultCombatModifierCatalog.Modifier(id); ok {
+			bonuses = addTalentBonuses(bonuses, modifier.Bonuses)
 		}
 	}
 	return bonuses
+}
+
+func addTalentBonuses(left, right TalentBonuses) TalentBonuses {
+	left.AttackDamage += right.AttackDamage
+	left.InterruptDamage += right.InterruptDamage
+	left.GuardReduction += right.GuardReduction
+	left.DamageReduction += right.DamageReduction
+	left.AttackVsTelegraph += right.AttackVsTelegraph
+	left.EncounterHeal += right.EncounterHeal
+	left.ReflectDamage += right.ReflectDamage
+	left.MaxHealth += right.MaxHealth
+	left.PartyGuardReduction += right.PartyGuardReduction
+	left.PartyEncounterHeal += right.PartyEncounterHeal
+	return left
 }
 
 func partyBonusesFor(room *Room) TalentBonuses {
@@ -242,11 +236,9 @@ func partyBonusesFor(room *Room) TalentBonuses {
 			continue
 		}
 		for _, talentID := range player.Talents {
-			switch talentID {
-			case "support-protective-ward":
-				bonuses.PartyGuardReduction += 2
-			case "support-rallying-cry":
-				bonuses.PartyEncounterHeal += 2
+			if modifier, ok := defaultCombatModifierCatalog.Modifier(talentID); ok {
+				bonuses.PartyGuardReduction += modifier.Bonuses.PartyGuardReduction
+				bonuses.PartyEncounterHeal += modifier.Bonuses.PartyEncounterHeal
 			}
 		}
 	}
