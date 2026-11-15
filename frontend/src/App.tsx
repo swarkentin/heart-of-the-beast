@@ -165,6 +165,7 @@ export default function App() {
   const [message, setMessage] = useState("Create a room to begin your run.");
   const [shareCopied, setShareCopied] = useState(false);
   const [joinCode, setJoinCode] = useState("");
+  const [clockNow, setClockNow] = useState(() => Date.now());
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -184,9 +185,21 @@ export default function App() {
   const gameOver = run?.phase === "completed";
   const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);
   const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
+  const roundDeadline = run?.combatRound ? new Date(run.combatRound.deadline).getTime() : 0;
+  const remainingMs = run?.phase === "combat" && roundDeadline ? Math.max(0, roundDeadline - clockNow) : 0;
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  const roundTimePercent = run?.combatRound ? Math.max(0, Math.min(100, remainingMs / Math.max(1, roundDeadline - new Date(run.combatRound.startedAt).getTime()) * 100)) : 0;
+  const livingPlayerCount = snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left" && (run?.players[id]?.health ?? 0) > 0).length;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
+
+  useEffect(() => {
+    if (run?.phase !== "combat" || !run.combatRound) return;
+    setClockNow(Date.now());
+    const timer = window.setInterval(() => setClockNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline]);
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -365,7 +378,7 @@ export default function App() {
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} />}
       <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">ROUND <b>{run.combatRound?.number ?? "—"}</b></div></div>
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <><div className="event-message">ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left" && (run.players[id]?.health ?? 0) > 0).length} ACTIONS SUBMITTED · {actionSubmitted ? "YOUR ACTION IS LOCKED" : "CHOOSE ONE ACTION"}</div><div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
