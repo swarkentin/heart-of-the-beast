@@ -124,7 +124,7 @@ class GameAudioEngine {
   }
 
   effect(name: "impact" | "block" | "magic" | "defeat" | "door" | "encounter" | "victory" | "failure") {
-    if (!this.context || !effects) return;
+    if (!this.context || !this.effects) return;
     const effects = this.effects;
     if (name === "impact") {
       this.noiseBurst(0.16, 1250, 0.18);
