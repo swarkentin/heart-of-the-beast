@@ -59,7 +59,7 @@ function xpProgress(player: ApiPlayer) {
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
-type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed" | "failed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
+type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -196,7 +196,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
   </div>;
 }
 
-function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
+function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts, depth }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; depth: number; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
@@ -217,7 +217,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, imp
     <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></div>)}</div>
     {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>{exit.description || "AVAILABLE PATH"}</small>{voteStatus ? <small>{(voteStatus.voteCounts[exit.id] || 0)+" VOTES"}</small> : null}</div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
-    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
+    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {String(depth).padStart(2, "0")} · PARTY RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
     <CombatImpacts events={impacts} enemies={enemies} playerId="" view="cast" />
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
   </div>;
@@ -277,7 +277,7 @@ export default function App() {
   const exploring = run?.phase === "exploring";
   const availableExits = exploring && (!serverRoom?.event || serverRoom.event.resolved) ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
-  const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+  const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0, run?.musicIntensity ?? 1);
 
   useEffect(() => {
     if (!spectator && run?.phase === "exploring" && (player?.talentPoints ?? 0) > 0) {
@@ -287,11 +287,11 @@ export default function App() {
   }, [run?.phase, player?.level, player?.talentPoints, spectator]);
 
   useEffect(() => {
-    if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
+    if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote) && !(run?.phase === "intermission" && run.interFloorVote)) return;
     setClockNow(Date.now());
     const timer = window.setInterval(() => setClockNow(Date.now()), 100);
     return () => window.clearInterval(timer);
-  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline, run?.navigationVote?.deadline]);
+  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline, run?.navigationVote?.deadline, run?.interFloorVote?.deadline]);
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -507,7 +507,7 @@ export default function App() {
   return <main className="game-screen">
     <header className="game-topline">
       <a className="game-brand" href="#" aria-label="Heart of the Beast"><span>H</span> HEART OF THE BEAST</a>
-      <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {room.floor}</div>
+      <div className="run-status"><i/> {spectator ? "SPECTATING" : "SERVER-AUTHORITATIVE RUN"} <b>·</b> FLOOR {String(run.depth ?? 1).padStart(2, "0")}</div>
       <AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} />
       {!spectator ? <div className="view-switch" aria-label="Presentation view"><button className={view === "player" ? "selected" : ""} onClick={() => setView("player")}>PLAYER</button><button className={view === "cast" ? "selected" : ""} onClick={() => setView("cast")}>SPECTATOR / CAST</button></div> : <div className="view-switch"><button className="selected">SPECTATOR / CAST</button></div>}
     </header>
@@ -515,7 +515,7 @@ export default function App() {
     <section className="play-area">
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} playerId={playerId || ""} />
-        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
+        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} depth={run.depth ?? 1} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
       {serverRoom?.event ? <section className="room-event-panel" aria-live="polite">
         <div className="room-event-heading"><span>{serverRoom.event.resolved ? "DECISION RECORDED" : serverRoom.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</span><h2>{serverRoom.event.title}</h2></div>
         <p>{serverRoom.event.description}</p>
@@ -524,6 +524,15 @@ export default function App() {
           : !spectator && view === "player"
             ? <div className="room-event-choices">{serverRoom.event.choices.map(choice => <button key={choice.id} onClick={() => void sendCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy}><strong>{choice.label}</strong><small>{choice.description}</small></button>)}</div>
             : <div className="room-event-result">THE PARTY IS DECIDING</div>}
+      </section> : null}
+      {run.phase === "intermission" ? <section className="room-event-panel" aria-live="polite">
+        <div className="room-event-heading"><span>FLOOR {run.depth ?? 1} CLEARED · DESCENT {(run.depth ?? 1) + 1} OF {run.maxDepth ?? 3}</span><h2>Choose how to prepare</h2></div>
+        <p>The party has a moment before descending. Recover now, or carry a small permanent advantage deeper into the catacombs.</p>
+        <p>{run.interFloorVote ? "Party vote · " + Object.keys(run.interFloorVote.votes || {}).length + "/" + livingPlayerCount + " submitted · " + Math.max(0, Math.ceil((new Date(run.interFloorVote.deadline).getTime() - clockNow) / 1000)) + "s remaining" : "Choose how the whole party prepares for the next floor."}</p>
+        {!spectator && view === "player" ? <div className="room-event-choices">
+          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "restore" })} disabled={busy}><strong>{run.interFloorVote?.votes?.[playerId || ""] === "restore" ? "✓ Restore health · YOUR VOTE" : "Restore health"}</strong><small>Every living adventurer recovers up to 10 health. {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "restore").length} votes.</small></button>
+          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "perk" })} disabled={busy}><strong>{run.interFloorVote?.votes?.[playerId || ""] === "perk" ? "✓ Take a run perk · YOUR VOTE" : "Take a run perk"}</strong><small>Every adventurer gains +1 Strike damage and +1 Guard for the rest of the run. {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length} votes.</small></button>
+        </div> : <div className="room-event-result">THE PARTY IS CHOOSING ITS DESCENT · RESTORE {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "restore").length} · PERK {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length}</div>}
       </section> : null}
       <div className="player-hud"><div className="hero-token">{(player?.archetype || "damage").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
       {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">

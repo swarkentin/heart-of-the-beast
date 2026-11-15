@@ -357,6 +357,9 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	if game.AdvanceNavigationVote(room, now) {
 		changed = true
 	}
+	if game.AdvanceInterFloorChoice(room, now) {
+		changed = true
+	}
 	if !changed {
 		return room, nil
 	}
@@ -534,7 +537,7 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not start run")
 		return
 	}
-	if err := game.StartRun(room, runID, h.now().UTC()); err != nil {
+	if err := game.StartMultiLevelRun(room, runID, h.now().UTC()); err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
 	}

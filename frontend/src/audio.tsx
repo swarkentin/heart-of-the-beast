@@ -57,13 +57,13 @@ class GameAudioEngine {
     this.effects.gain.setTargetAtTime(settings.effects, now, 0.025);
   }
 
-  startScene(room: string, combat: boolean) {
+  startScene(room: string, combat: boolean, depth = 1) {
     if (!this.context || !this.music || !this.effects) return;
     this.stopScene();
     const context = this.context;
     const flooded = room === "flooded-crossing";
     const gate = room === "warden-gate";
-    const root = gate ? 38.89 : flooded ? 55 : 73.42;
+    const root = gate ? 38.89 : flooded ? 55 : depth >= 3 ? 55 : depth >= 2 ? 65.41 : 73.42;
     const padFilter = context.createBiquadFilter();
     padFilter.type = "lowpass";
     padFilter.frequency.value = flooded ? 190 : gate ? 260 : 330;
@@ -103,12 +103,13 @@ class GameAudioEngine {
     this.sceneNodes.push(ambience, ambienceFilter, ambienceGain);
 
     this.noteIndex = 0;
-    const motif = flooded ? [220, 261.63, 293.66, 261.63, 196, 220] : gate ? [155.56, 185, 207.65, 185, 138.59, 155.56] : [293.66, 349.23, 392, 349.23, 261.63, 293.66];
+    const motif = depth >= 3 || gate ? [155.56, 185, 207.65, 185, 138.59, 155.56] : depth >= 2 || flooded ? [220, 261.63, 293.66, 261.63, 196, 220] : [293.66, 349.23, 392, 349.23, 261.63, 293.66];
     const playMusicNote = () => {
       if (!this.context || !this.music) return;
       const note = motif[this.noteIndex % motif.length];
       this.noteIndex += 1;
       this.tone(note, combat ? 1.45 : 1.7, combat ? "triangle" : "sine", combat ? 0.065 : 0.035, this.music, -8);
+      if (depth >= 2) this.tone(root, 0.52, "triangle", depth >= 3 ? 0.12 : 0.075, this.music, -14);
       if (combat) {
         // A warmer, more audible pulse gives combat forward motion without losing the low drone.
         this.tone(root * 2, 0.34, "triangle", 0.14, this.music, -3);
@@ -259,7 +260,7 @@ class GameAudioEngine {
 
 const engine = new GameAudioEngine();
 
-export function useGameAudio(scene: string, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], events: { round: number; kind: string; message: string }[], version: number) {
+export function useGameAudio(scene: string, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], events: { round: number; kind: string; message: string }[], version: number, depth = 1) {
   const [settings, setSettings] = useState<AudioSettings>(readSettings);
   const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; events: string[]; version: number } | null>(null);
 
@@ -267,8 +268,8 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
     const next = { ...settings, enabled: true, muted: false };
     setSettings(next);
     await engine.enable(next);
-    engine.startScene(scene, phase === "combat");
-  }, [settings, scene, phase]);
+    engine.startScene(scene, phase === "combat", depth);
+  }, [settings, scene, phase, depth]);
 
   const updateSettings = useCallback((patch: Partial<AudioSettings>) => {
     setSettings(current => {
@@ -293,7 +294,7 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
     const activate = () => {
       if (activated) return;
       activated = true;
-      void engine.enable(settings).then(() => engine.startScene(scene, phase === "combat"));
+      void engine.enable(settings).then(() => engine.startScene(scene, phase === "combat", depth));
     };
     window.addEventListener("pointerdown", activate, { once: true, capture: true });
     window.addEventListener("keydown", activate, { once: true, capture: true });
@@ -301,11 +302,11 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
       window.removeEventListener("pointerdown", activate, true);
       window.removeEventListener("keydown", activate, true);
     };
-  }, [settings.enabled, scene, phase]);
+  }, [settings.enabled, scene, phase, depth]);
 
   useEffect(() => {
-    if (settings.enabled) engine.startScene(scene, phase === "combat");
-  }, [scene, phase, settings.enabled]);
+    if (settings.enabled) engine.startScene(scene, phase === "combat", depth);
+  }, [scene, phase, settings.enabled, depth]);
 
   useEffect(() => {
     const before = previous.current;

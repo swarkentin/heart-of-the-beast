@@ -159,7 +159,7 @@ func experienceForNextLevel(level int) int {
 func grantEncounterExperience(room *Room, round int) {
 	run := room.Run
 	reward := 50
-	if run.CurrentRoomID == "warden" {
+	if isBossRoom(run.Rooms[run.CurrentRoomID]) {
 		reward = 75
 	}
 	for _, playerID := range room.PlayerIDs {

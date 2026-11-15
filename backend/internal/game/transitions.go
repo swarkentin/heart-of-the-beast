@@ -157,6 +157,8 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return SubmitNavigationVote(room, actorID, command.ExitID, now)
 	case "choose_event":
 		return ChooseRoomEvent(room, actorID, command.ChoiceID, now)
+	case "choose_inter_floor":
+		return resolveInterFloorChoice(room, actorID, command.ChoiceID, now)
 	default:
 		return ErrInvalidAction
 	}
