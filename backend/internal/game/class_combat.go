@@ -82,7 +82,7 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 					enemy.Intent = nil
 					addCombatEvent(room.Run, round, "elemental_frost", adventurerLabel(room, player.ID)+" freezes "+enemy.Name+", stopping "+label+".")
 				} else {
-					addCombatEvent(room.Run, round, "elemental_frost", adventurerLabel(room, player.ID)+" chills "+enemy.Name with a frost surge.")
+					addCombatEvent(room.Run, round, "elemental_frost", adventurerLabel(room, player.ID)+" chills "+enemy.Name+" with a frost surge.")
 				}
 				dealClassAbilityDamage(room, player, enemy, round, "elemental_frost_damage", damage, "deals frost damage to")
 			}
@@ -253,8 +253,17 @@ func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, comm
 		if command.TargetID != "" {
 			return ErrInvalidAbility
 		}
-	case "enemy", "mode_target":
+	case "enemy":
 		if encounter == nil || !hasLivingEnemy(encounter, command.TargetID) {
+			return ErrInvalidAbility
+		}
+	case "mode_target":
+		if command.Mode == "defend" {
+			if command.TargetID != "" {
+				target := players[command.TargetID]
+					if target == nil || target.Health <= 0 { return ErrInvalidAbility }
+				}
+		} else if encounter == nil || !hasLivingEnemy(encounter, command.TargetID) {
 			return ErrInvalidAbility
 		}
 	case "player_optional":
@@ -285,8 +294,14 @@ func applyClassAbility(room *Room, player *PlayerState, command Command, round i
 	var enemy *Enemy
 	var target *PlayerState
 	switch handler.target {
-	case "enemy", "mode_target":
+	case "enemy":
 		enemy = findLivingEnemy(room.Run.Rooms[room.Run.CurrentRoomID].Encounter, command.TargetID)
+	case "mode_target":
+		if command.Mode == "defend" {
+			if command.TargetID != "" { target = room.Run.Players[command.TargetID] }
+		} else {
+			enemy = findLivingEnemy(room.Run.Rooms[room.Run.CurrentRoomID].Encounter, command.TargetID)
+		}
 	case "player_optional":
 		if command.TargetID != "" {
 			target = room.Run.Players[command.TargetID]
