@@ -60,9 +60,9 @@ func rewardTestRoom() *Room {
 		Run: &Run{
 			Flags: make(map[string]bool),
 			Players: map[string]*PlayerState{
-				"player-1": newPlayerState("player-1", "damage"),
-				"player-2": newPlayerState("player-2", "damage"),
-				"player-3": newPlayerState("player-3", "damage"),
+				"player-1": {ID: "player-1", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
+				"player-2": {ID: "player-2", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
+				"player-3": {ID: "player-3", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
 			},
 		},
 	}
