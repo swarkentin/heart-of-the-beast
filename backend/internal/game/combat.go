@@ -177,9 +177,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.Intent != nil && enemy.Intent.Interruptible {
 					damage += bonusesFor(player).AttackVsTelegraph
 				}
-				if run.CurrentRoomID == "warden" && run.Flags["warden_weakness"] {
-					damage += 2
-				}
+				damage += defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID)
 				beforeHealth := enemy.Health
 				enemy.Health -= damage
 				if enemy.Health < 0 {

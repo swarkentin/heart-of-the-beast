@@ -40,43 +40,7 @@ func ChooseRoomEvent(room *Room, actorID, choiceID string, now time.Time) error 
 	}
 
 	run.LastCombatEvents = make([]CombatEvent, 0, len(run.Players))
-	switch choice.Effect {
-	case "study_weakness":
-		run.Flags["warden_weakness"] = true
-	case "rescue_archivist":
-		run.Flags["archivist_rescued"] = true
-		for playerID, member := range run.Players {
-			if member.Health > 0 {
-				before := member.Health
-				member.Health += 10
-				if member.Health > member.MaxHealth {
-					member.Health = member.MaxHealth
-				}
-				if member.Health > before {
-					addCombatImpact(run, 0, "player_heal", adventurerLabel(room, playerID)+" recovers "+itoa(member.Health-before)+" health from the archivist's draughts.", "heal", playerID, "player", member.Health-before)
-				}
-			}
-		}
-	case "ember_charm":
-		run.Flags["emberheart"] = true
-		for _, member := range run.Players {
-			member.StrikeDamage += 3
-		}
-	case "stone_charm":
-		run.Flags["stoneward"] = true
-		for _, member := range run.Players {
-			member.GuardReduction += 4
-		}
-	case "shrine_ward":
-		for _, member := range run.Players {
-			if member != nil {
-				member.GuardReduction++
-			}
-		}
-		run.Flags["shrine_ward"] = true
-	case "leave":
-		// Choosing to move on is a valid outcome with no reward.
-	default:
+	if !applyRoomEventEffect(room, choice.Effect) {
 		return ErrInvalidEventChoice
 	}
 

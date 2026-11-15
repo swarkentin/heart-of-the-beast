@@ -100,7 +100,9 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 | Player class bonuses | `classes.go`, `class_combat.go` | Existing class catalog remains separate; shared effect vocabulary can follow |
 | Encounter compositions | `backend/internal/game/encounters.go` | Reusable definitions with party variants, spawn slots, and provisional relative difficulty budgets |
 | Talent combat modifiers | `backend/internal/game/progression.go` | Typed `CombatModifierCatalog`; extracted without changing values or selection behavior |
-| Class ability/passive effects and run/event modifiers | `backend/internal/game/class_combat.go`, `transitions.go`, `combat.go` | Typed effect definitions and explicit application rules; follow-up work |
+| Class ability/passive effects | `backend/internal/game/class_combat.go` | Typed effect definitions and explicit application rules; follow-up work |
+| Room-event run effects | `backend/internal/game/events.go`, `combat.go` | Typed `RunEffectCatalog`; party rewards and Warden weakness bonus are data-defined |
+| Encounter/floor rewards | `backend/internal/game/combat.go`, `dungeon.go` | Follow-up extraction into run-effect definitions |
 | Random encounter modifiers | Not currently authored as a random modifier pool | Future seeded selection with explicit eligibility and weights |
 
 ## Out of scope for the first extraction
@@ -131,3 +133,10 @@ Room graphs, descriptions, exits, events, optional miniboss chance, and seeded l
 The twelve existing archetype talent bonuses now resolve through `CombatModifierCatalog` definitions rather than a switch in `progression.go`. The catalog stores data-only `TalentBonuses`, validates IDs and non-negative values, and verifies every authored talent has a corresponding modifier. Both individual and party-wide bonus aggregation use the same definitions. Existing values, talent IDs, prerequisites, and application timing are unchanged.
 
 This is intentionally a partial extraction: class ability/passive handlers and the current room/run event flags still encode effects in runtime logic. Those need a separate typed effect model that can express triggers, targets, duration/consumption, and stacking without turning content into arbitrary callbacks. No random modifier pool exists yet, so seeded modifier selection is deferred until such content is authored.
+
+
+## Follow-up slice: typed room-event run effects
+
+The room-event rewards now resolve through `RunEffectCatalog` definitions. The catalog describes the effect kind, persistent run flag, magnitude, eligible party members, and any room-scoped combat bonus. This covers the inscription's Warden-only +2 Strike bonus, the archivist's +10 living-party heal, Emberheart's +3 Strike, Stoneward's +4 Guard, Shrine Ward's +1 Guard, and the no-reward leave choice.
+
+Runtime application remains explicit and server-authoritative; the catalog contains data rather than executable callbacks. Existing effect IDs, flags, values, and timing are preserved. Stable player iteration also makes structured healing feedback reproducible. Encounter-clear rewards and floor rewards remain a separate follow-up, as do class ability/passive effect definitions.
