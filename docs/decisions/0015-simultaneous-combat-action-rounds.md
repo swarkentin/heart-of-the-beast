@@ -14,7 +14,7 @@ The initial authoritative combat prototype resolves each player's attack immedia
 - A player who has not submitted by the deadline defaults to defend. This includes temporarily disconnected players; they do not stall combat.
 - Dead and explicitly departed players are excluded from the set of players whose actions are required. A dead or departed player cannot submit an action.
 - Solo rounds resolve immediately after the solo player submits, without waiting for the co-op timer.
-- Every combat command carries the round number it was chosen for; the server rejects delayed actions from an expired round instead of accidentally applying them to the next one. Player actions are resolved in stable player-ID order so the same aggregate and submitted actions always produce the same result. Targets are validated when submitted and checked again when applied.
+- Every combat command carries the monotonically increasing run-level round number it was chosen for; the server rejects delayed actions from an expired round or earlier encounter instead of accidentally applying them to a later one. Player actions are resolved in stable player-ID order so the same aggregate and submitted actions always produce the same result. Targets are validated when submitted and checked again when applied.
 - The active round, deadline, and submitted actions are part of the persisted run aggregate. Player and spectator snapshots advance an expired round and persist the resulting state, so polling clients observe progress without a background worker.
 - The initial slice supports attack and defend. Enemy intent telegraphs and enemy turn resolution, additional abilities/items/status effects, and richer action feedback are subsequent combat milestones.
 
