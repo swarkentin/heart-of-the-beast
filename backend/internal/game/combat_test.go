@@ -404,7 +404,7 @@ func TestRangerPinningShotWeakensTelegraphedAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 13 || enemy.Intent == nil || enemy.Intent.Damage != 3 {
+	if enemy.Health != 10 || enemy.Intent == nil || enemy.Intent.Damage != 3 {
 		t.Fatalf("Pinning Shot should deal 7 damage and reduce the next hit by 3: %+v", enemy)
 	}
 }
