@@ -14,7 +14,7 @@ The spike should answer that question with a small playable implementation, not 
 
 ## Proposed experiment
 
-- A run contains **three dungeon levels** initially. Target roughly 5–8 minutes per level, for a 15–24 minute dungeon core; a later safe-hub intermission can extend the full session toward the 20–40 minute target.
+- A run contains **three dungeon levels** initially. Target roughly **3–5 minutes per level**, for a 9–15 minute three-floor dungeon core. A later safe-hub intermission and optional exploration/reward choices can extend the complete session toward the 20–40 minute product target.
 - Each level is a connected graph of approximately **6–9 rooms**: an entrance, a guaranteed main route, a small number of optional branches, at least one non-combat room, and a descent/exit room. The final level ends in a boss room.
 - Generate each level from a small set of authored room/encounter/event templates. Randomness chooses and connects content; it does not invent arbitrary mechanics or prose.
 - Keep the current forward-facing room navigation and party voting. The graph is shared by players and spectators; no client-side generation.
@@ -63,7 +63,7 @@ Depth should change encounter pressure and composition, not just multiply enemy 
 - The final boss completes the run; a wipe on any floor fails it.
 - Encounter budgets increase with depth and vary by party size, with tests showing that later floors introduce additional threat combinations/mechanics rather than relying only on larger HP values.
 - Reconnect and spectator snapshots during and after a floor transition show the same depth, graph, current room, and encounter state.
-- Playtesting confirms the generated floors still feel authored enough to navigate and that a level generally fits the 5–8 minute target.
+- Playtesting confirms the generated floors still feel authored enough to navigate and that a level generally fits the 3–5 minute target.
 
 ## Explicitly out of scope
 
