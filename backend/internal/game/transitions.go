@@ -28,7 +28,10 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			ID:          "entry",
 			Name:        "The Watcher's Hall",
 			Description: "A narrow hall opens into a chamber watched by a restless sentinel.",
-			Exits:       []Exit{{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"}},
+			Exits: []Exit{
+				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary"},
+				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing"},
+			},
 			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
@@ -37,6 +40,13 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
 			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Health: 15, MaxHealth: 15}}},
+		},
+		"flooded-crossing": {
+			ID:          "flooded-crossing",
+			Name:        "The Drowned Crossing",
+			Description: "Black water ripples around a half-submerged causeway.",
+			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "scout", Name: "Drowned Scout", Health: 12, MaxHealth: 12}}},
 		},
 		"warden": {
 			ID:          "warden",
