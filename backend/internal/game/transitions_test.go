@@ -42,7 +42,7 @@ func TestRunRejectsInvalidTransitionsAndActors(t *testing.T) {
 	if err := StartRun(room, "run-1", now); err != nil {
 		t.Fatal(err)
 	}
-	if err := ApplyCommand(room, "outsider", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); !errors.Is(err, ErrNotPlayer) {
+	if err := ApplyCommand(room, "outsider", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); !errors.Is(err, ErrNotPlayer) {
 		t.Fatalf("expected not-player error, got %v", err)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); !errors.Is(err, ErrInvalidPhase) {
