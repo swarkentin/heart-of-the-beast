@@ -182,8 +182,8 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus }: {
       <path d="M120 90L980 90M120 530L980 530M120 90V530M980 90V530" stroke="#92765d" strokeWidth="12" opacity=".65"/>
       <g fill="#e18b4d" opacity=".7"><circle cx="130" cy="115" r="16"/><circle cx="970" cy="115" r="16"/><circle cx="130" cy="505" r="16"/><circle cx="970" cy="505" r="16"/></g>
       <g transform="translate(550 370)" shapeRendering="crispEdges"><ellipse cy="38" rx="65" ry="17" fill="#080a10" opacity=".8"/><path d="M-28-50h56v85h-56z" fill="#53636a"/><path d="M-23-84h46v40h-46z" fill="#c59d78"/><path d="M-28-92h56v13h-56z" fill="#49342d"/><path d="M-22 32h19v30h-19zM4 32h19v30H4z" fill="#38313a"/><text y="94" textAnchor="middle" fill="#f0d2a8" fontSize="20">THE WAYFARER</text></g>
-      {enemies.map((e,i)=><g key={e.id} transform={`translate(${i===0?365:735} 210)`} opacity={e.hp<=0?.18:1} shapeRendering="crispEdges">
-        <ellipse cy="44" rx="52" ry="13" fill="#080a10"/><path d="M-27-22h54v62h-54z" fill={i===0?"#737d7b":"#51445e"}/><path d="M-25-58h50v40h-50z" fill={i===0?"#c4c4b3":"#b9aaa4"}/><path d="M-13-42h8v8h-8zM7-42h8v8H7z" fill={i===0?"#e58b5c":"#a5e4d9"}/><text y="80" textAnchor="middle" fill="#eee0d0" fontSize="17">{e.name}</text><rect x="-42" y="91" width="84" height="9" fill="#29252c"/><rect x="-42" y="91" width={84*e.hp/e.maxHp} height="9" fill="#b45e53"/>
+      {enemies.map((enemy, index) => <g key={enemy.id} transform={`translate(${index === 0 ? 365 : 735} 150) scale(.48)`}>
+        <EnemyFigure enemy={{ ...enemy, x: 0 }} selected={false} />
       </g>)}
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
