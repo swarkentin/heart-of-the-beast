@@ -71,7 +71,7 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 		}
 	}
 	for i := 0; i < 2; i++ {
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 4, Action: "attack", TargetID: "reliquary-scout"}, now); err != nil {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 4, Action: "attack", TargetID: "scout"}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -79,7 +79,7 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 4; i++ {
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 4, Action: "attack", TargetID: "warden"}, now); err != nil {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 6, Action: "attack", TargetID: "warden"}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
