@@ -60,9 +60,9 @@ type NavigationVote struct {
 }
 
 type PlayerState struct {
-	ID        string `json:"id"`
-	Health    int    `json:"health"`
-	MaxHealth int    `json:"maxHealth"`
+	ID           string      `json:"id"`
+	Health       int         `json:"health"`
+	MaxHealth    int         `json:"maxHealth"`
 	Guarding     bool        `json:"guarding,omitempty"`
 	Archetype      string      `json:"archetype"`
 	Experience     int         `json:"experience"`
