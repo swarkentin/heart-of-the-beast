@@ -1,6 +1,6 @@
 # ADR 0003: Treat Music and Sound as Part of the Game Experience
 
-- Status: Proposed
+- Status: Accepted for the first playable prototype
 - Date: 2026-11-14
 
 ## Context
@@ -29,3 +29,10 @@ Use original, appropriately licensed, or public-domain audio assets with provena
 ## Consequences
 
 Audio can be introduced incrementally and tested on real devices. The precise soundtrack style and production pipeline remain intentionally undecided until the visual themes and first playable slice are clearer.
+
+
+## Prototype implementation (November 2026)
+
+The first browser prototype uses the built-in Web Audio API rather than introducing an audio dependency or shipping unlicensed recordings. It generates a restrained Catacombs drone, sparse melodic notes, filtered room ambience, and short synthesized combat/transition cues. The flooded crossing and Warden gate receive different tonal palettes, and combat adds a little rhythmic tension.
+
+Audio is opt-in after a user gesture to respect autoplay restrictions. The prototype exposes independent master, music, and effects levels plus mute. Ambience is currently grouped with music. This is a functional sound-design experiment, not the final soundtrack or asset pipeline; replace or layer in authored audio assets as the visual themes mature, retaining clear provenance for every asset.
