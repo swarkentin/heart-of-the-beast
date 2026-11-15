@@ -5,7 +5,7 @@ services:
   - type: web
     name: heart-of-the-beast-api
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /readyz
