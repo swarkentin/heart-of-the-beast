@@ -111,3 +111,27 @@
 .intent{cursor:pointer}
 .cast-scene .intent{cursor:default}
 @media(max-width:380px){.intent b{display:block;font-size:7px}.intent small{display:block}}
+
+/* First-pass Catacombs enemy sprite treatment */
+.enemy-art{transform-box:fill-box;transform-origin:center bottom;animation:enemy-idle 3.2s ease-in-out infinite}
+.enemy-sprite:nth-of-type(2) .enemy-art{animation-delay:-1.1s}
+.enemy-sprite:nth-of-type(3) .enemy-art{animation-delay:-2.2s}
+@keyframes enemy-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.enemy-art{animation:none}}
+
+
+/* Audio is opt-in until the first user gesture (browser autoplay policy). */
+.audio-enable,.audio-controls>summary{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 11px;border:1px solid #796044;background:#171a22;color:#e7c28e;font-size:10px;letter-spacing:.8px;white-space:nowrap;cursor:pointer;list-style:none}
+.audio-enable:hover,.audio-controls>summary:hover{border-color:#e0b47e;background:#28231f}
+.audio-controls{position:relative;z-index:8}
+.audio-controls>summary::-webkit-details-marker{display:none}
+.audio-controls[open]>summary{background:#302820;border-color:#d9ad73}
+.audio-panel{position:absolute;top:calc(100% + 9px);right:0;z-index:20;width:270px;padding:14px;background:#11141df5;border:1px solid #80684e;box-shadow:0 12px 32px #000b;color:#e9dfd2}
+.audio-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.audio-panel-heading strong{color:#eac28e;font-size:9px;font-weight:500;letter-spacing:.8px}
+.audio-panel-heading button{padding:4px 7px;border:1px solid #685440;background:#211e21;color:#d8bd99;font-size:9px;cursor:pointer}
+.audio-panel label{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:10px;margin:10px 0;color:#c5b7a6;font-size:10px;letter-spacing:.7px}
+.audio-panel input[type=range]{width:100%;accent-color:#d9ad73}
+.audio-panel small{display:block;margin-top:12px;padding-top:9px;border-top:1px solid #393139;color:#9f9284;font-size:9px;line-height:1.5}
+@media(max-width:700px){.audio-enable,.audio-controls>summary{padding:7px 6px;font-size:8px;letter-spacing:.2px}.audio-panel{right:-48px;width:250px}}
+@media(max-width:380px){.audio-enable,.audio-controls>summary{font-size:7px;padding:6px 4px}.audio-panel{right:-30px}}
