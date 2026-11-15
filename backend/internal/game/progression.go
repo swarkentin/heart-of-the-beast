@@ -121,14 +121,13 @@ func ChooseTalent(room *Room, playerID, talentID string) error {
 		return ErrTalentLocked
 	}
 
+	oldMaxHealthBonus := bonusesFor(player).MaxHealth
 	player.Talents = append(player.Talents, talentID)
 	player.TalentPoints--
-	bonuses := bonusesFor(player)
-	if bonuses.MaxHealth > player.MaxHealth-30 {
-		player.MaxHealth = 30 + bonuses.MaxHealth
-		if player.Health > player.MaxHealth {
-			player.Health = player.MaxHealth
-		}
+	maxHealthIncrease := bonusesFor(player).MaxHealth - oldMaxHealthBonus
+	if maxHealthIncrease > 0 {
+		player.MaxHealth += maxHealthIncrease
+		if player.Health > 0 { player.Health += maxHealthIncrease }
 	}
 	return nil
 }
