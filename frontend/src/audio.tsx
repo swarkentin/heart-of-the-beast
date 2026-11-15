@@ -131,10 +131,11 @@ class GameAudioEngine {
     if (!this.context || !this.effects) return;
     const effects = this.effects;
     if (name === "impact") {
-      this.noiseBurst(0.12, 900, 0.2);
-      this.crunch(0.105, 0.22);
-      this.tone(68, 0.2, "sawtooth", 0.24, effects, -5);
-      this.tone(145, 0.075, "triangle", 0.11, effects, -12);
+      // A weapon hit should read as crack + body + weight, not a pitched "boop".
+      this.noiseBurst(0.045, 3200, 0.28);
+      this.crunch(0.075, 0.3);
+      this.sweep(125, 48, 0.14, "triangle", 0.3);
+      this.noiseBurst(0.095, 620, 0.16);
     } else if (name === "block") {
       this.noiseBurst(0.12, 850, 0.12);
       this.tone(185, 0.14, "triangle", 0.18, effects, -10);
