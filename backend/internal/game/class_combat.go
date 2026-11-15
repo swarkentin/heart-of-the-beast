@@ -180,47 +180,6 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 	},
 }
 
-var classPassiveHandlers = map[string]func(*PlayerState, *Enemy, *EnemyIntent) classPassiveBonuses{
-	"passive.resolve": func(player *PlayerState, _ *Enemy, _ *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{}
-	},
-	"passive.low-health": func(player *PlayerState, _ *Enemy, _ *EnemyIntent) classPassiveBonuses {
-		if player.Health*2 <= player.MaxHealth {
-			return classPassiveBonuses{AttackDamage: 3}
-		}
-		return classPassiveBonuses{}
-	},
-	"passive.magic-resist": func(_ *PlayerState, _ *Enemy, intent *EnemyIntent) classPassiveBonuses {
-		if intent != nil && (intent.Kind == "soul_drain" || intent.Kind == "soul_sweep") {
-			return classPassiveBonuses{DamageReduction: 2}
-		}
-		return classPassiveBonuses{}
-	},
-	"passive.wounded-target": func(_ *PlayerState, enemy *Enemy, _ *EnemyIntent) classPassiveBonuses {
-		if enemy != nil && enemy.Health*2 <= enemy.MaxHealth {
-			return classPassiveBonuses{AttackDamage: 3}
-		}
-		return classPassiveBonuses{}
-	},
-	"passive.elemental-chain": func(player *PlayerState, _ *Enemy, _ *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{ElementalDamage: player.ClassCombat.ArcaneCharges * 2}
-	},
-	"passive.unacted-target": func(_ *PlayerState, enemy *Enemy, _ *EnemyIntent) classPassiveBonuses {
-		if enemy != nil && enemy.TurnsTaken <= 1 {
-			return classPassiveBonuses{AttackDamage: 3}
-		}
-		return classPassiveBonuses{}
-	},
-	"passive.encounter-recovery": func(*PlayerState, *Enemy, *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{EncounterHeal: 2}
-	},
-	"passive.interrupt": func(*PlayerState, *Enemy, *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{InterruptDamage: 2}
-	},
-	"passive.companion": func(*PlayerState, *Enemy, *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{}
-	},
-}
 
 func validateRegisteredClassEffects() error {
 	for _, ability := range classAbilities {
@@ -228,12 +187,7 @@ func validateRegisteredClassEffects() error {
 			return fmt.Errorf("ability %q has no handler for effect %q", ability.ID, ability.EffectID)
 		}
 	}
-	for _, passive := range classPassives {
-		if _, ok := classPassiveHandlers[passive.EffectID]; !ok {
-			return fmt.Errorf("passive %q has no handler for effect %q", passive.ID, passive.EffectID)
-		}
-	}
-	return nil
+	return ValidateClassPassiveEffectCatalog(classPassives, defaultClassPassiveEffectCatalog)
 }
 
 func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, command Command, players map[string]*PlayerState) error {
@@ -334,11 +288,11 @@ func classPassiveEffects(player *PlayerState, enemy *Enemy, intent *EnemyIntent)
 	if !ok {
 		return classPassiveBonuses{}
 	}
-	handler, ok := classPassiveHandlers[passive.EffectID]
+	definition, ok := defaultClassPassiveEffectCatalog.Effect(passive.EffectID)
 	if !ok {
 		return classPassiveBonuses{}
 	}
-	return handler(player, enemy, intent)
+	return definition.Resolve(player, enemy, intent)
 }
 
 func classPassiveEffectID(player *PlayerState) string {
@@ -393,7 +347,7 @@ func applyCompanionInstinct(room *Room, round int) {
 	players := eligibleCombatPlayers(room)
 	for _, playerID := range players {
 		player := room.Run.Players[playerID]
-		if classPassiveEffectID(player) != "passive.companion" {
+		if !classPassiveHasTrigger(player, ClassPassiveTriggerCompanionInstinct) {
 			continue
 		}
 		var target *PlayerState
@@ -418,7 +372,7 @@ func onClassGuardBlocked(player *PlayerState, intent EnemyIntent, guarded bool, 
 	if !guarded || blocked <= 0 || intent.Damage < 7 {
 		return
 	}
-	if classPassiveEffectID(player) == "passive.resolve" {
+	if classPassiveHasTrigger(player, ClassPassiveTriggerHeavyGuard) {
 		player.ClassCombat.ResolveReady = true
 	}
 }
