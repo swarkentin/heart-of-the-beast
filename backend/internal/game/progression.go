@@ -11,7 +11,7 @@ var (
 	ErrTalentChosen     = errors.New("talent has already been chosen")
 )
 
-const DefaultArchetype = "vanguard"
+const DefaultArchetype = "tank"
 
 type ArchetypeDefinition struct {
 	ID          string `json:"id"`
@@ -46,29 +46,24 @@ type TalentBonuses struct {
 }
 
 var archetypeCatalog = []ArchetypeDefinition{
-	{ID: "vanguard", Name: "Vanguard", Description: "Hold the line with heavy strikes and dependable defense."},
-	{ID: "rogue", Name: "Rogue", Description: "Exploit openings, avoid punishment, and strike precisely."},
-	{ID: "arcanist", Name: "Arcanist", Description: "Turn focused magic into force and disruption."},
-	{ID: "warden", Name: "Warden", Description: "Endure, restore, and protect through the longest fights."},
+	{ID: "support", Name: "Support", Description: "Disrupt enemies, create openings, and help the party stay ahead."},
+	{ID: "healer", Name: "Healer", Description: "Keep the party standing through recovery and protective magic."},
+	{ID: "tank", Name: "Tank", Description: "Absorb pressure, protect yourself, and punish enemies that strike you."},
 }
 
 var talentCatalog = []TalentDefinition{
-	{ID: "vanguard-bulwark", Archetype: "vanguard", Name: "Bulwark", Description: "+4 maximum health; defend blocks 3 more damage.", Tier: 1},
-	{ID: "vanguard-heavy-hands", Archetype: "vanguard", Name: "Heavy Hands", Description: "Attacks deal 3 additional damage.", Tier: 1},
-	{ID: "vanguard-rally", Archetype: "vanguard", Name: "Rally", Description: "Recover 4 health after clearing an encounter.", Tier: 2, Requires: "vanguard-bulwark"},
-	{ID: "vanguard-counterstrike", Archetype: "vanguard", Name: "Counterstrike", Description: "Interrupts deal 4 damage.", Tier: 2, Requires: "vanguard-heavy-hands"},
-	{ID: "rogue-precision", Archetype: "rogue", Name: "Precision", Description: "Attacks deal 2 additional damage.", Tier: 1},
-	{ID: "rogue-evasion", Archetype: "rogue", Name: "Evasion", Description: "Take 2 less damage from enemy attacks.", Tier: 1},
-	{ID: "rogue-opportunist", Archetype: "rogue", Name: "Opportunist", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "rogue-precision"},
-	{ID: "rogue-shadowstep", Archetype: "rogue", Name: "Shadowstep", Description: "Defend blocks 2 additional damage.", Tier: 2, Requires: "rogue-evasion"},
-	{ID: "arcanist-embercraft", Archetype: "arcanist", Name: "Embercraft", Description: "Attacks deal 4 additional damage.", Tier: 1},
-	{ID: "arcanist-disruption", Archetype: "arcanist", Name: "Disruption", Description: "Interrupts deal 4 damage.", Tier: 1},
-	{ID: "arcanist-overcharge", Archetype: "arcanist", Name: "Overcharge", Description: "Attacks deal 2 additional damage.", Tier: 2, Requires: "arcanist-embercraft"},
-	{ID: "arcanist-aether-shield", Archetype: "arcanist", Name: "Aether Shield", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "arcanist-disruption"},
-	{ID: "warden-vitality", Archetype: "warden", Name: "Vitality", Description: "+6 maximum health.", Tier: 1},
-	{ID: "warden-restoration", Archetype: "warden", Name: "Restoration", Description: "Recover 6 health after clearing an encounter.", Tier: 1},
-	{ID: "warden-warding", Archetype: "warden", Name: "Warding", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "warden-vitality"},
-	{ID: "warden-thorns", Archetype: "warden", Name: "Thorns", Description: "Reflect 2 damage when struck.", Tier: 2, Requires: "warden-restoration"},
+	{ID: "support-tactical-strike", Archetype: "support", Name: "Tactical Strike", Description: "Attacks deal 2 additional damage.", Tier: 1},
+	{ID: "support-disruption", Archetype: "support", Name: "Disruption", Description: "Interrupts deal 4 additional damage.", Tier: 1},
+	{ID: "support-expose-weakness", Archetype: "support", Name: "Expose Weakness", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "support-tactical-strike"},
+	{ID: "support-protective-ward", Archetype: "support", Name: "Protective Ward", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "support-disruption"},
+	{ID: "healer-vitality", Archetype: "healer", Name: "Vitality", Description: "+6 maximum health.", Tier: 1},
+	{ID: "healer-restoration", Archetype: "healer", Name: "Restoration", Description: "Recover 6 health after clearing an encounter.", Tier: 1},
+	{ID: "healer-renewal", Archetype: "healer", Name: "Renewal", Description: "Recover 4 additional health after clearing an encounter.", Tier: 2, Requires: "healer-restoration"},
+	{ID: "healer-sanctuary", Archetype: "healer", Name: "Sanctuary", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "healer-vitality"},
+	{ID: "tank-bulwark", Archetype: "tank", Name: "Bulwark", Description: "+6 maximum health.", Tier: 1},
+	{ID: "tank-braced-stance", Archetype: "tank", Name: "Braced Stance", Description: "Defend blocks 3 additional damage.", Tier: 1},
+	{ID: "tank-thorns", Archetype: "tank", Name: "Thorns", Description: "Reflect 2 damage when struck.", Tier: 2, Requires: "tank-bulwark"},
+	{ID: "tank-unyielding", Archetype: "tank", Name: "Unyielding", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "tank-braced-stance"},
 }
 
 func ArchetypeCatalog() []ArchetypeDefinition {
@@ -198,39 +193,30 @@ func bonusesFor(player *PlayerState) TalentBonuses {
 	var bonuses TalentBonuses
 	for _, id := range player.Talents {
 		switch id {
-		case "vanguard-bulwark":
-			bonuses.MaxHealth += 4
-			bonuses.GuardReduction += 3
-		case "vanguard-heavy-hands":
-			bonuses.AttackDamage += 3
-		case "vanguard-rally":
-			bonuses.EncounterHeal += 4
-		case "vanguard-counterstrike":
-			bonuses.InterruptDamage += 4
-		case "rogue-precision":
+		case "support-tactical-strike":
 			bonuses.AttackDamage += 2
-		case "rogue-evasion":
-			bonuses.DamageReduction += 2
-		case "rogue-opportunist":
+		case "support-disruption":
+			bonuses.InterruptDamage += 4
+		case "support-expose-weakness":
 			bonuses.AttackVsTelegraph += 4
-		case "rogue-shadowstep":
-			bonuses.GuardReduction += 2
-		case "arcanist-embercraft":
-			bonuses.AttackDamage += 4
-		case "arcanist-disruption":
-			bonuses.InterruptDamage += 4
-		case "arcanist-overcharge":
-			bonuses.AttackDamage += 2
-		case "arcanist-aether-shield":
+		case "support-protective-ward":
 			bonuses.GuardReduction += 3
-		case "warden-vitality":
+		case "healer-vitality":
 			bonuses.MaxHealth += 6
-		case "warden-restoration":
+		case "healer-restoration":
 			bonuses.EncounterHeal += 6
-		case "warden-warding":
+		case "healer-renewal":
+			bonuses.EncounterHeal += 4
+		case "healer-sanctuary":
 			bonuses.GuardReduction += 3
-		case "warden-thorns":
+		case "tank-bulwark":
+			bonuses.MaxHealth += 6
+		case "tank-braced-stance":
+			bonuses.GuardReduction += 3
+		case "tank-thorns":
 			bonuses.ReflectDamage += 2
+		case "tank-unyielding":
+			bonuses.GuardReduction += 3
 		}
 	}
 	return bonuses
