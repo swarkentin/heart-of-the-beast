@@ -52,6 +52,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
+- [ ] Bring the complete in-game interface into the high-definition pixel-art direction: pixel-appropriate typography, crisp stepped borders/panels, hero action controls, talent trees, HUD, navigation, dialogs, and feedback. Keep body text readable at small sizes and validate across mobile, tablet, desktop, and spectator views.
 
 ## Phase 2 — Core roguelike loop
 
