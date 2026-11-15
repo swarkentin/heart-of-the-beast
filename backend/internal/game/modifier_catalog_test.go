@@ -10,7 +10,7 @@ func TestDefaultCombatModifierCatalogValidates(t *testing.T) {
 
 func TestCombatModifierCatalogMatchesTalentBonuses(t *testing.T) {
 	cases := []struct {
-		id string
+		id   string
 		want TalentBonuses
 	}{
 		{"support-disruption", TalentBonuses{InterruptDamage: 4}},
