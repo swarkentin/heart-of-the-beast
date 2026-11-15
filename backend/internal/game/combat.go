@@ -187,7 +187,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 		case "defend":
 			player.Guarding = true
-			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to "+itoa(GuardDamageReduction+bonusesFor(player).GuardReduction)+" damage from the next hit.")
+			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to "+itoa(GuardDamageReduction+bonusesFor(player).GuardReduction+partyBonusesFor(room).PartyGuardReduction)+" damage from the next hit.")
 		}
 	}
 
@@ -270,7 +270,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			heal := bonusesFor(player).EncounterHeal
+			heal := bonusesFor(player).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
 			if heal > 0 {
 				before := player.Health
 				player.Health += heal
