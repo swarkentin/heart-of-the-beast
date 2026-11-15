@@ -180,7 +180,7 @@ func grantEncounterExperience(room *Room, round int) {
 			switch player.Level {
 			case 2:
 				player.MaxHealth += 4
-				player.Health += 4
+				if player.Health > 0 { player.Health += 4 }
 				player.Stats.Power++
 			case 3:
 				player.Stats.Focus += 2
