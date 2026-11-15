@@ -496,3 +496,46 @@ func TestClassPassiveModifiersAreResolvedByRegisteredEffectID(t *testing.T) {
 		})
 	}
 }
+
+
+func TestAssassinExploitWeaknessPunishesEnemyTelegraph(t *testing.T) {
+	room, now := newClassCombatTestRoom(t, ClassAssassin)
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 20, 20
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: enemy.ID}, now); err != nil {
+		t.Fatal(err)
+	}
+	if enemy.Health != 7 {
+		t.Fatalf("Exploit Weakness should deal 13 damage to a preparing enemy, health=%d", enemy.Health)
+	}
+}
+
+func TestClericRecoveryPassiveImprovesEncounterHealing(t *testing.T) {
+	room, now := newClassCombatTestRoom(t, ClassCleric)
+	player := room.Run.Players["player-1"]
+	player.Health = 20
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health = 1
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
+		t.Fatal(err)
+	}
+	if player.Health != 24 {
+		t.Fatalf("Recovery should add 2 health to the normal 2-point encounter heal, health=%d", player.Health)
+	}
+}
+
+func TestClassAbilityRejectsWrongModeAndArchetypeOnlyPlayers(t *testing.T) {
+	room, now := newClassCombatTestRoom(t, ClassArcanist)
+	enemy := room.Run.Rooms["entry"].Encounter.Enemies[0]
+	if err := SubmitCombatAction(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", Mode: "lightning", TargetID: enemy.ID}, now); err != ErrInvalidAbility {
+		t.Fatalf("unknown Elemental Surge mode should be rejected, got %v", err)
+	}
+
+	legacy := newTestRoom()
+	if err := StartRun(legacy, "run-legacy-ability", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := SubmitCombatAction(legacy, "player-1", Command{Type: "combat", Round: 1, Action: "ability"}, now); err != ErrInvalidAbility {
+		t.Fatalf("archetype-only legacy player should not gain an unassigned class ability, got %v", err)
+	}
+}
