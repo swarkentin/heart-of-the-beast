@@ -45,7 +45,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [x] Generate a pixel-art bestiary for eleven themes (six priority plus alien jungle, dreamscape, arctic, ghost town, post-apocalyptic): 5 monsters and 3 bosses each, with idle, hit, attack, special, and death animations, plus manifests and a verifier (ADR 0022, `docs/art/README.md`).
 - [x] Require art for every monster at compile time, add a dungeon theme catalog and themed encounters, and add catalog entries for the whole bestiary (82 new monsters, 72 new encounters; ADR 0023). Enemy snapshots now carry a `sprite` ID.
-- [ ] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
+- [x] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), add overlay combat effects, and honour reduced motion (ADR 0024).
 - [ ] Hand-polish pass on the generated sprites, and player-character sprites in the same style.
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
