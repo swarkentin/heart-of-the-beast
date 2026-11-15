@@ -90,6 +90,7 @@ func SelectArchetype(room *Room, playerID, archetypeID string) error {
 		room.PlayerArchetypes = make(map[string]string)
 	}
 	room.PlayerArchetypes[playerID] = archetypeID
+	if room.PlayerClasses != nil { delete(room.PlayerClasses, playerID) }
 	return nil
 }
 
