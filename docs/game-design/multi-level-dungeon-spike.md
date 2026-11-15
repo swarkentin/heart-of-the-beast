@@ -100,6 +100,54 @@ These are content templates, not a requirement to place every event type on ever
 - Fully dynamic procedural music composition; use authored stems/variants and state-driven layering.
 - Replacing the existing directional navigation and party voting UX with a map-first interface.
 
+## Playtest feedback and follow-up iteration
+
+Initial hands-on feedback confirms that the overall multi-floor structure, evolving musical direction, and end-of-floor recovery-versus-perk decision are promising. The current implementation is not yet balanced or tactically deep enough to merge as a validated gameplay loop.
+
+### Observations
+
+- Floors currently take **less than one minute**, well below the 3–5 minute target. The likely contributors are under-tuned health/damage relationships and encounter pacing; do not solve this by simply inflating enemy health.
+- Characters level up too quickly early in a run. Early XP thresholds and/or encounter XP rewards need to be retuned so the first level-up feels earned.
+- The final recovery-versus-perk decision was compelling when party health was low. Preserve this decision beat, but strengthen the costs and consequences around the available options.
+- Most random encounters and perks currently provide upside with little meaningful risk. Actions feel too safe and rewards too uniformly beneficial.
+- The music progression is working directionally. Add a restrained percussive layer that complements the existing progression and increases with depth/encounter intensity rather than replacing the musical identity.
+- Encounters do not yet ask for enough tactical thought. Players need meaningful target priorities and responses to enemy behavior, not only stronger attacks or larger enemy health pools.
+
+### Follow-up iteration, in priority order
+
+1. **Combat and progression balance**
+   - Tune player health, enemy health, damage, guard/mitigation, healing, and encounter rewards together.
+   - Instrument or record actual floor duration, damage taken, remaining health, healing used, and level-up timing during playtests.
+   - Slow early XP/level progression; make the first level-up a meaningful milestone.
+   - Tune solo, duo, and four-player pressure independently. Party size must change encounter composition and simultaneous threat, not only enemy health.
+   - Add enough meaningful encounters, route choices, and event beats to approach 3–5 minutes without padding rooms or making enemies damage sponges.
+
+2. **Tactical encounter design**
+   - Establish distinct enemy roles such as high-priority threats, protectors/supports, disruptors, and durable bruisers.
+   - Compose encounters from complementary roles so target priority matters.
+   - Add clear telegraphs and response windows for dangerous actions, with counterplay through target selection, guard, interrupts, or class abilities.
+   - Validate that solo players have viable counterplay and that co-op adds coordination choices rather than mandatory role requirements.
+
+3. **Risk/reward and meaningful costs**
+   - Preserve the successful end-of-floor choice, but make healing and power choices carry meaningful opportunity costs. Possible costs include temporary maximum-health loss, a curse/debuff, resource sacrifice, or accepting a harder subsequent encounter; test options rather than committing to all of them.
+   - Make shrines, random events, optional minibosses, treasure, and perks offer explicit, legible trade-offs. A strong boon may come with a drawback; optional rewards should carry a visible risk.
+   - Avoid making every event a guaranteed upgrade. Include choices to decline, pay a cost, or accept a dangerous consequence.
+   - Ensure choices are situational rather than having one mathematically dominant answer in every run.
+
+4. **Music layering**
+   - Preserve the current musical progression and add subtle percussion that complements the existing synthesized material.
+   - Let rhythmic density/intensity increase with depth and encounter state, with stronger accents for minibosses/bosses.
+   - Keep percussion restrained during exploration and avoid abrupt restarts or a genre shift.
+
+### Validation goals
+
+- Typical floors approach **3–5 minutes** in both solo and co-op playtests, with duration coming from meaningful gameplay rather than inflated enemy health.
+- Early level-ups are less frequent and feel earned; XP pacing remains satisfying over a full run.
+- Players regularly take meaningful damage and must consider healing, defense, target priority, and whether optional risks are worth taking.
+- At least some rewards/events create a real downside or opportunity cost, and players can explain why they chose one option over another.
+- Enemy combinations create distinct tactical priorities, and telegraphed threats have understandable counterplay.
+- The existing music identity remains recognizable while percussion adds a subtle sense of depth and momentum.
+
 ## Decision after the spike
 
 Keep the generator only if the tests and playtest show that it creates meaningfully different, completable floors without making room content generic. If it does, promote the generator, encounter director, and floor transition into the Phase 3 procedural-dungeon work; otherwise retain authored floor graphs and use the spike's difficulty/progression findings to guide them.
