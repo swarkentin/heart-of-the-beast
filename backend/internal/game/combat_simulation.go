@@ -324,7 +324,7 @@ func simulationIncomingFor(playerID string, enemies []Enemy, player *PlayerState
 		if enemy.Health <= 0 || enemy.Intent == nil || (!enemy.Intent.TargetAll && enemy.Intent.TargetPlayerID != playerID) {
 			continue
 		}
-		passive := classPassiveEffects(player, enemy, enemy.Intent)
+		passive := classPassiveEffects(player, &enemy, enemy.Intent)
 		damage := enemy.Intent.Damage - player.Stats.Agility - talentReduction - passive.DamageReduction
 		if damage > 0 {
 			total += damage
