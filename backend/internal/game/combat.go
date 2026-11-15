@@ -240,7 +240,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.")
 			}
-			}
+				}
 			if player.Health == 0 {
 				addCombatEvent(run, roundNumber, "player_down", adventurerLabel(room, playerID)+" is down!")
 			}
@@ -270,15 +270,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-				heal := bonusesFor(player).EncounterHeal
-				if heal > 0 {
-					before := player.Health
-					player.Health += heal
-					if player.Health > player.MaxHealth {
-						player.Health = player.MaxHealth
+					if heal > 0 {
+						before := player.Health
+						player.Health += heal
+						if player.Health > player.MaxHealth {
+							player.Health = player.MaxHealth
+						}
+						addCombatEvent(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(player.Health-before)+" health.")
 					}
-					addCombatEvent(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(player.Health-before)+" health.")
-				}
 		}
 		run.CombatRound = nil
 		if run.CurrentRoomID == "warden" {
