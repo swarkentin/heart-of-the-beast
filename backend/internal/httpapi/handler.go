@@ -369,7 +369,6 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	return room, nil
 }
 
-
 type archetypeRequest struct {
 	Archetype string `json:"archetype"`
 }
@@ -388,7 +387,9 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
 	_, actor, ok := h.authorizedPlayer(w, r)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	var request archetypeRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
 		writeError(w, http.StatusBadRequest, "choose a valid archetype")
@@ -396,8 +397,14 @@ func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
 	}
 	for attempt := 0; attempt < 4; attempt++ {
 		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
-		if err != nil { writeError(w, http.StatusNotFound, "room not found"); return }
-		if _, active := room.PlayerTokenHashes[actor]; !active { writeError(w, http.StatusUnauthorized, "player token is no longer active"); return }
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room not found")
+			return
+		}
+		if _, active := room.PlayerTokenHashes[actor]; !active {
+			writeError(w, http.StatusUnauthorized, "player token is no longer active")
+			return
+		}
 		expected := room.Version
 		if err := game.SelectArchetype(room, actor, request.Archetype); err != nil {
 			writeError(w, http.StatusConflict, err.Error())
@@ -406,7 +413,9 @@ func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
 		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
-			if errors.Is(err, store.ErrConflict) { continue }
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
 			writeStoreError(w, err)
 			return
 		}
