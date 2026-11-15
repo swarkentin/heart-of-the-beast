@@ -18,6 +18,7 @@ type classPassiveBonuses struct {
 	InterruptDamage int
 	DamageReduction int
 	EncounterHeal   int
+	ElementalDamage int
 }
 
 var classAbilityHandlers = map[string]classAbilityHandler{
@@ -70,7 +71,7 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 			if charges > 2 {
 				charges = 2
 			}
-			damage := player.Stats.Focus + charges*2
+			damage := player.Stats.Focus + classPassiveEffects(player, enemy, nil).ElementalDamage
 			if command.Mode == "fire" {
 				damage += 6
 				dealClassAbilityDamage(room, player, enemy, round, "elemental_fire", damage, "unleashes an Elemental Surge of fire")
@@ -201,8 +202,8 @@ var classPassiveHandlers = map[string]func(*PlayerState, *Enemy, *EnemyIntent) c
 		}
 		return classPassiveBonuses{}
 	},
-	"passive.elemental-chain": func(*PlayerState, *Enemy, *EnemyIntent) classPassiveBonuses {
-		return classPassiveBonuses{}
+	"passive.elemental-chain": func(player *PlayerState, _ *Enemy, _ *EnemyIntent) classPassiveBonuses {
+		return classPassiveBonuses{ElementalDamage: player.ClassCombat.ArcaneCharges * 2}
 	},
 	"passive.unacted-target": func(_ *PlayerState, enemy *Enemy, _ *EnemyIntent) classPassiveBonuses {
 		if enemy != nil && enemy.TurnsTaken <= 1 {
@@ -308,6 +309,9 @@ func applyClassAbility(room *Room, player *PlayerState, command Command, round i
 	}
 	if handler.target == "mode_target" && command.Mode == "defend" && command.TargetID == "" {
 		target = player
+	}
+	if (handler.target == "enemy" || handler.target == "mode_target" && command.Mode != "defend") && enemy == nil {
+		return ErrInvalidAbility
 	}
 	if err := handler.apply(room, player, command, enemy, target, round); err != nil {
 		return err
