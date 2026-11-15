@@ -101,17 +101,17 @@ func resolveCombatRound(room *Room, now time.Time) {
 		return
 	}
 
-	playerIDs := make([]string, 0, len(run.CombatRound.Actions))
-	for playerID := range run.CombatRound.Actions {
-		playerIDs = append(playerIDs, playerID)
-	}
+	playerIDs := append([]string(nil), room.PlayerIDs...)
 	sort.Strings(playerIDs)
 	for _, playerID := range playerIDs {
 		player := run.Players[playerID]
 		if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
 			continue
 		}
-		action := run.CombatRound.Actions[playerID]
+		action, submitted := run.CombatRound.Actions[playerID]
+		if !submitted {
+			action = Command{Type: "combat", Action: "defend"}
+		}
 		switch action.Action {
 		case "attack":
 			for i := range current.Encounter.Enemies {
