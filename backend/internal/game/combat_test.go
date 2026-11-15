@@ -151,3 +151,30 @@ func TestPartyWideIntentAppliesGuardIndependently(t *testing.T) {
 		t.Fatalf("unguarded player two should take the party-wide hit, health=%d", got)
 	}
 }
+
+
+func TestInterruptCancelsEnemyIntentWithoutDamageOrHealing(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "run-interrupt", now); err != nil { t.Fatal(err) }
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health = 10
+	enemy.Intent = &EnemyIntent{Kind: "soul_drain", Label: "Soul drain", Damage: 5, Heal: 2, Interruptible: true, TargetPlayerID: "player-1"}
+	if err := SubmitCombatAction(room, "player-1", Command{Type: "combat", Round: 1, Action: "interrupt", TargetID: enemy.ID}, now); err != nil { t.Fatal(err) }
+	if got := room.Run.Players["player-1"].Health; got != 30 { t.Fatalf("interrupted move should deal no damage, health=%d", got) }
+	if got := enemy.Health; got != 10 { t.Fatalf("interrupted move should not heal enemy, health=%d", got) }
+	interrupted := false
+	for _, event := range room.Run.LastCombatEvents {
+		if event.Kind == "player_interrupt" { interrupted = true }
+		if event.Kind == "enemy_attack" || event.Kind == "enemy_heal" { t.Fatalf("interrupted intent should not resolve: %+v", event) }
+	}
+	if !interrupted { t.Fatalf("expected interrupt feedback, events=%+v", room.Run.LastCombatEvents) }
+}
+
+func TestInterruptIsRejectedForNonInterruptibleIntent(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "run-no-interrupt", now); err != nil { t.Fatal(err) }
+	err := SubmitCombatAction(room, "player-1", Command{Type: "combat", Round: 1, Action: "interrupt", TargetID: "sentinel"}, now)
+	if err != ErrInvalidTarget { t.Fatalf("expected non-interruptible target to be rejected, got %v", err) }
+}
