@@ -9,18 +9,18 @@ type ProgressionTransition struct {
 	TalentPoints int
 	MaxHealth    int
 	Stats        PlayerStats
-	LevelUps      []int
+	LevelUps     []int
 }
 
 // resolveExperienceGain calculates XP and every level-up caused by a reward.
 // It deliberately has no access to rooms, presence, event streams, or clocks.
 func resolveExperienceGain(player PlayerState, amount int) ProgressionTransition {
 	result := ProgressionTransition{
-		Experience: player.Experience,
-		Level: player.Level,
+		Experience:   player.Experience,
+		Level:        player.Level,
 		TalentPoints: player.TalentPoints,
-		MaxHealth: player.MaxHealth,
-		Stats: player.Stats,
+		MaxHealth:    player.MaxHealth,
+		Stats:        player.Stats,
 	}
 	if amount <= 0 {
 		return result
