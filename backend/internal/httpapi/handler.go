@@ -42,6 +42,9 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/heartbeat", h.heartbeat)
 	mux.HandleFunc("POST /rooms/{id}/leave", h.leaveRoom)
 	mux.HandleFunc("POST /rooms/{id}/start", h.startRun)
+	mux.HandleFunc("POST /rooms/{id}/archetype", h.selectArchetype)
+	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
+	mux.HandleFunc("GET /progression", progressionCatalog)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
@@ -364,6 +367,83 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 		return nil, err
 	}
 	return room, nil
+}
+
+
+type archetypeRequest struct {
+	Archetype string `json:"archetype"`
+}
+
+type talentRequest struct {
+	TalentID string `json:"talentId"`
+}
+
+func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"archetypes": game.ArchetypeCatalog(),
+		"talents": game.TalentCatalog(),
+		"levelThresholds": []int{50, 125, 225, 350},
+	})
+}
+
+func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
+	_, actor, ok := h.authorizedPlayer(w, r)
+	if !ok { return }
+	var request archetypeRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "choose a valid archetype")
+		return
+	}
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil { writeError(w, http.StatusNotFound, "room not found"); return }
+		if _, active := room.PlayerTokenHashes[actor]; !active { writeError(w, http.StatusUnauthorized, "player token is no longer active"); return }
+		expected := room.Version
+		if err := game.SelectArchetype(room, actor, request.Archetype); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) { continue }
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the archetype choice")
+}
+
+func (h *Handler) chooseTalent(w http.ResponseWriter, r *http.Request) {
+	_, actor, ok := h.authorizedPlayer(w, r)
+	if !ok { return }
+	var request talentRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "choose a valid talent")
+		return
+	}
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil { writeError(w, http.StatusNotFound, "room not found"); return }
+		if _, active := room.PlayerTokenHashes[actor]; !active { writeError(w, http.StatusUnauthorized, "player token is no longer active"); return }
+		expected := room.Version
+		if err := game.ChooseTalent(room, actor, request.TalentID); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) { continue }
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the talent choice")
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
