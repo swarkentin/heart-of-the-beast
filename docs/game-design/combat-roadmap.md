@@ -38,6 +38,7 @@ Implemented in PR #17:
 - Single-target intents rotate predictably through the living party.
 - Enemy intents resolve after player actions; defeating the enemy cancels its intent.
 - Damage dealt, damage taken, blocked damage, and healing carry structured target/value data from the server.
+- Combat impacts are shown at their source: floating damage, healing, and blocked-damage values are anchored to the affected combatant in both player and spectator views, with reduced-motion support.
 - Floating combat numbers appear over the affected enemy or adventurer in both player and spectator scenes; brief hit flashes reinforce impacts. Feedback fades quickly and becomes static under reduced-motion preferences.
 - A run ends when the boss is defeated or the whole party is down.
 
