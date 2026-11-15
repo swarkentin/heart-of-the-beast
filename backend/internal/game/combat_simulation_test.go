@@ -38,9 +38,7 @@ func TestSimulateCombatIsDeterministicAndDoesNotMutateSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(first, second) {
-		t.Fatalf("same seed produced different reports:
-first: %#v
-second: %#v", first, second)
+		t.Fatalf("same seed produced different reports:\nfirst: %#v\nsecond: %#v", first, second)
 	}
 	if !reflect.DeepEqual(snapshot, before) {
 		t.Fatal("simulation mutated its input snapshot")
