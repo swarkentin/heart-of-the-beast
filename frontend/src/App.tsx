@@ -130,6 +130,8 @@ function ClassPortrait({ classId, archetype, name }: { classId: string; archetyp
 function SkillIcon({ id }: { id: string }) {
   const kind = /heal|renewal|recovery|companion|nature/i.test(id) ? "life" : /shield|ward|guard|resolve/i.test(id) ? "guard" : /fire|element|arcane|focus/i.test(id) ? "arcane" : /interrupt|pin|command|disrupt/i.test(id) ? "control" : "strike";
   return <span className={"skill-icon skill-icon-" + kind} aria-hidden="true"><svg viewBox="0 0 32 32"><path d={kind === "guard" ? "M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z" : kind === "life" ? "M16 27S4 20 4 11c0-6 8-9 12-2 4-7 12-4 12 2 0 9-12 16-12 16z" : kind === "arcane" ? "m16 2 3 9 9 5-9 4-3 10-4-10-9-4 9-5z" : kind === "control" ? "M6 6 25 25M22 5 8 24M3 16h26M16 3v26" : "M21 3 9 16l7 1-5 12 13-16-8-1z"} fill="currentColor" stroke="#17151b" strokeWidth="2" strokeLinejoin="round"/></svg></span>;
+}
+
 function EnemyFigure({ enemy, selected, hit, onClick }: { enemy: Enemy; selected: boolean; hit?: boolean; onClick?: () => void }) {
   const dead = enemy.hp <= 0;
   return <g transform={`translate(${enemy.x} 0)`} opacity={dead ? .18 : 1} onClick={onClick} className={(onClick && !dead ? "enemy-sprite " : "") + (hit ? "enemy-hit" : "")}>
