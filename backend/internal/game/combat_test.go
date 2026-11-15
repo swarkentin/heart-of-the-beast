@@ -51,8 +51,8 @@ func TestHeavyEnemyIntentCanBePartiallyBlocked(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := room.Run.Players["player-1"].Health; got != 25 {
-        t.Fatalf("guard should reduce the guardian's 8 damage blow by 6, then the scout should deal 3, health=%d", got)
-    }
+		t.Fatalf("guard should reduce the guardian's 8 damage blow by 6, then the scout should deal 3, health=%d", got)
+	}
 }
 
 func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T) {
@@ -198,28 +198,28 @@ func TestInterruptIsRejectedForNonInterruptibleIntent(t *testing.T) {
 
 
 func TestReliquaryPairCreatesTwoReadableThreats(t *testing.T) {
-    now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
-    room := newTestRoom()
-    if err := StartRun(room, "run-pair", now); err != nil { t.Fatal(err) }
-    if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil { t.Fatal(err) }
-    if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil { t.Fatal(err) }
-    encounter := room.Run.Rooms["reliquary"].Encounter
-    if len(encounter.Enemies) != 2 { t.Fatalf("reliquary should contain a complementary pair, got %d enemies", len(encounter.Enemies)) }
-    guardian, scout := encounter.Enemies[0], encounter.Enemies[1]
-    if guardian.Behavior != "guardian" || guardian.Intent == nil || guardian.Intent.Damage != 8 { t.Fatalf("guardian should telegraph its heavy opening, got %+v", guardian) }
-    if scout.Behavior != "scout" || scout.Intent == nil || scout.Intent.Damage != 3 { t.Fatalf("scout should telegraph its quick jab, got %+v", scout) }
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "run-pair", now); err != nil { t.Fatal(err) }
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil { t.Fatal(err) }
+	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil { t.Fatal(err) }
+	encounter := room.Run.Rooms["reliquary"].Encounter
+	if len(encounter.Enemies) != 2 { t.Fatalf("reliquary should contain a complementary pair, got %d enemies", len(encounter.Enemies)) }
+	guardian, scout := encounter.Enemies[0], encounter.Enemies[1]
+	if guardian.Behavior != "guardian" || guardian.Intent == nil || guardian.Intent.Damage != 8 { t.Fatalf("guardian should telegraph its heavy opening, got %+v", guardian) }
+	if scout.Behavior != "scout" || scout.Intent == nil || scout.Intent.Damage != 3 { t.Fatalf("scout should telegraph its quick jab, got %+v", scout) }
 }
 
 func TestDefeatingOneEnemyOnlyCancelsItsOwnIntent(t *testing.T) {
-    now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
-    room := newTestRoom()
-    if err := StartRun(room, "run-focus-fire", now); err != nil { t.Fatal(err) }
-    if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil { t.Fatal(err) }
-    if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil { t.Fatal(err) }
-    encounter := room.Run.Rooms["reliquary"].Encounter
-    encounter.Enemies[0].Health = 10
-    if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "attack", TargetID: "guardian"}, now); err != nil { t.Fatal(err) }
-    if encounter.Enemies[0].Health != 0 || encounter.Enemies[0].Intent != nil { t.Fatalf("defeated guardian should have no remaining intent, got %+v", encounter.Enemies[0]) }
-    if encounter.Enemies[1].Health <= 0 { t.Fatal("the scout should remain alive after focusing the guardian") }
-    if got := room.Run.Players["player-1"].Health; got != 27 { t.Fatalf("the surviving scout should still resolve its 3-damage jab, health=%d", got) }
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "run-focus-fire", now); err != nil { t.Fatal(err) }
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil { t.Fatal(err) }
+	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil { t.Fatal(err) }
+	encounter := room.Run.Rooms["reliquary"].Encounter
+	encounter.Enemies[0].Health = 10
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "attack", TargetID: "guardian"}, now); err != nil { t.Fatal(err) }
+	if encounter.Enemies[0].Health != 0 || encounter.Enemies[0].Intent != nil { t.Fatalf("defeated guardian should have no remaining intent, got %+v", encounter.Enemies[0]) }
+	if encounter.Enemies[1].Health <= 0 { t.Fatal("the scout should remain alive after focusing the guardian") }
+	if got := room.Run.Players["player-1"].Health; got != 27 { t.Fatalf("the surviving scout should still resolve its 3-damage jab, health=%d", got) }
 }
