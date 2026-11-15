@@ -139,12 +139,12 @@ This is intentionally a partial extraction: class ability/passive handlers and t
 
 The room-event rewards now resolve through `RunEffectCatalog` definitions. The catalog describes the effect kind, persistent run flag, magnitude, eligible party members, and any room-scoped combat bonus. This covers the inscription's Warden-only +2 Strike bonus, the archivist's +10 living-party heal, Emberheart's +3 Strike, Stoneward's +4 Guard, Shrine Ward's +1 Guard, and the no-reward leave choice.
 
-Runtime application remains explicit and server-authoritative; the catalog contains data rather than executable callbacks. Existing effect IDs, flags, values, and timing are preserved. Stable player iteration also makes structured healing feedback reproducible. Encounter-clear rewards and floor rewards remain a separate follow-up, as do class ability/passive effect definitions.
+Runtime application remains explicit and server-authoritative; the catalog contains data rather than executable callbacks. Existing effect IDs, flags, values, and timing are preserved. Stable player iteration also makes structured healing feedback reproducible. Encounter-clear and floor rewards are extracted separately from room-event choices.
 
 
 ## Follow-up slice: typed class passive effects
 
-The nine class passives now resolve through a validated, data-only ClassPassiveEffectCatalog. Definitions identify their trigger, bonus type, magnitude, threshold, and any matching enemy-intent kinds. Runtime evaluation remains explicit and deterministic; no content-defined callbacks are stored in the catalog. Existing passive IDs, trigger timing, conditions, and values are preserved, including Resolve's heavy-block trigger and Companion Instinct's end-of-round lowest-health ally selection. Signature abilities remain registered runtime handlers because their multi-step state changes and target/mode behavior need a separate typed operation model. Encounter-clear and floor rewards remain outstanding.
+The nine class passives now resolve through a validated, data-only ClassPassiveEffectCatalog. Definitions identify their trigger, bonus type, magnitude, threshold, and any matching enemy-intent kinds. Runtime evaluation remains explicit and deterministic; no content-defined callbacks are stored in the catalog. Existing passive IDs, trigger timing, conditions, and values are preserved, including Resolve's heavy-block trigger and Companion Instinct's end-of-round lowest-health ally selection. Signature abilities remain registered runtime handlers because their multi-step state changes and target/mode behavior need a separate typed operation model.
 
 
 ## Follow-up slice: typed class signature ability operations
@@ -154,3 +154,12 @@ All nine signature ability effect IDs now have validated, data-only operation de
 The authoritative runtime handlers remain responsible for applying state transitions in this slice. The catalog is an explicit, validated specification of those operations, not yet the execution engine; this avoids introducing a second combat implementation or changing timing while the pure combat boundary is still pending. Catalog validation requires complete one-to-one coverage of authored abilities and rejects unknown operation kinds, invalid targets, unsupported modes, and empty operation lists.
 
 The next extraction should move each operation's application into shared deterministic combat transition functions and have both live gameplay and simulation call those same functions. Encounter-clear and floor rewards remain outstanding.
+
+
+## Follow-up slice: typed encounter and floor rewards
+
+Encounter-clear and floor-boundary rewards now use the validated, data-only `RunRewardCatalog` in `backend/internal/game/reward_catalog.go`. It covers regular/boss encounter XP, the Reliquary sigil, flooded-cache healing, miniboss Strike, and both inter-floor choices. Definitions declare operation kind, magnitude, target eligibility, persistent idempotency flag, and structured event/impact copy where applicable.
+
+Target policies preserve the existing distinctions: encounter XP goes to participating players including those who are downed but not those who have left; room rewards affect living run members; floor restoration affects living members who have not left; and miniboss/floor perks affect every run member. Reward values and timing are unchanged. Runtime application remains an explicit server-authoritative transition, not executable catalog callbacks. Catalog validation runs with the game content catalog and tests cover invalid definitions, target policies, and idempotency.
+
+With this slice, the authored modifier/effect/reward definitions are catalog-backed. The remaining major extraction is to move combat and reward application into shared deterministic transition functions used by both live play and the future simulation runner.
