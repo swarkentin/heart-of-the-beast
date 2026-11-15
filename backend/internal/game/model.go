@@ -8,6 +8,7 @@ const (
 	PhaseLobby     RunPhase = "lobby"
 	PhaseCombat    RunPhase = "combat"
 	PhaseExploring RunPhase = "exploring"
+	PhaseIntermission RunPhase = "intermission"
 	PhaseCompleted RunPhase = "completed"
 	PhaseFailed    RunPhase = "failed"
 )
@@ -42,6 +43,11 @@ type PlayerPresence struct {
 
 type Run struct {
 	ID                string                  `json:"id"`
+	Seed              uint64                  `json:"seed,omitempty"`
+	Depth             int                     `json:"depth,omitempty"`
+	MaxDepth          int                     `json:"maxDepth,omitempty"`
+	MusicIntensity    int                     `json:"musicIntensity,omitempty"`
+	PendingInterFloorChoice bool               `json:"pendingInterFloorChoice,omitempty"`
 	Phase             RunPhase                `json:"phase"`
 	CurrentRoomID     string                  `json:"currentRoomId"`
 	Rooms             map[string]*DungeonRoom `json:"rooms"`
