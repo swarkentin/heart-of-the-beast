@@ -14,7 +14,7 @@ The Go API and PostgreSQL room/run persistence are ready for a hosted prototype.
 - Embed SQL migrations in the Go API binary. Apply pending migrations before listening, using a PostgreSQL advisory lock to serialize concurrent startup and a transaction per migration. Track filenames in schema_migrations, matching the local development tooling.
 - Refuse to start if the database is unavailable or any migration fails. This prevents a new instance from receiving traffic with an incomplete schema.
 - Keep /healthz as process liveness and /readyz as database readiness.
-- On SIGTERM, stop accepting new requests and drain in-flight HTTP work for up to 25 seconds. Configure Render with a 30-second shutdown allowance.
+- On SIGTERM, stop accepting new requests and drain in-flight HTTP work for up to 25 seconds. Render's default 30-second shutdown allowance is sufficient.
 - Keep migrations backward-compatible with the previous application version using expand/contract sequencing. Do not combine destructive schema changes with the first deploy that stops using the old shape.
 - Persist authoritative room/run snapshots in PostgreSQL so a replacement process can serve reconnecting players from the latest committed state.
 
@@ -24,7 +24,7 @@ The Go API and PostgreSQL room/run persistence are ready for a hosted prototype.
 - A migration failure leaves the previous healthy instance serving traffic while the new instance fails readiness.
 - A SIGTERM does not guarantee a command interrupted by a hard kill is replayed; clients must re-fetch their persisted snapshot after reconnecting.
 - The current polling/snapshot model is restart-tolerant but not a durable event log. Future realtime subscriptions, command idempotency, and stronger handoff semantics remain separate work.
-- Render API compute should not spin down during active sessions. The Blueprint uses a paid Starter instance; the static frontend remains on the CDN.
+- The prototype Blueprint uses Render's Free API compute and a free static frontend to avoid hosting charges during testing. The API spins down after 15 minutes without inbound traffic and can take about a minute to wake; free instances can also restart at any time. Upgrade the API compute plan when always-on availability is needed.
 
 ## Operational follow-up
 
