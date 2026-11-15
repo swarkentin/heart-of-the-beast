@@ -7,7 +7,7 @@ var (
 	ErrArchetypeLocked  = errors.New("archetype can only be changed before the run starts")
 	ErrInvalidTalent    = errors.New("talent is not available to this archetype")
 	ErrTalentLocked     = errors.New("talent prerequisites are not met")
-	ErrNoTalentPoints  = errors.New("no talent points available")
+	ErrNoTalentPoints   = errors.New("no talent points available")
 	ErrTalentChosen     = errors.New("talent has already been chosen")
 )
 
