@@ -152,11 +152,15 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.ID != action.TargetID || enemy.Health <= 0 {
 					continue
 				}
-				enemy.Health -= 10
+				damage := 10 + player.Stats.Power + bonusesFor(player).AttackDamage
+				if enemy.Intent != nil && enemy.Intent.Interruptible {
+					damage += bonusesFor(player).AttackVsTelegraph
+				}
+				enemy.Health -= damage
 				if enemy.Health < 0 {
 					enemy.Health = 0
 				}
-				addCombatEvent(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for 10 damage.")
+				addCombatEvent(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for "+itoa(damage)+" damage.")
 				if enemy.Health == 0 {
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.")
@@ -168,6 +172,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 				enemy := &current.Encounter.Enemies[i]
 				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
 					label := enemy.Intent.Label
+					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage
+					if damage > 0 {
+						enemy.Health -= damage
+						if enemy.Health < 0 {
+							enemy.Health = 0
+						}
+						addCombatEvent(run, roundNumber, "player_interrupt_damage", enemy.Name+" takes "+itoa(damage)+" interrupt damage.")
+					}
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+label+" from "+enemy.Name+"!")
 					break
@@ -175,7 +187,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 		case "defend":
 			player.Guarding = true
-			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to 6 damage from the next hit.")
+			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to "+itoa(GuardDamageReduction+bonusesFor(player).GuardReduction)+" damage from the next hit.")
 		}
 	}
 
@@ -197,10 +209,13 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
 				continue
 			}
-			damage := intent.Damage
+			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction
+			if damage < 0 {
+				damage = 0
+			}
 			guarded := player.Guarding
 			if guarded {
-				damage -= GuardDamageReduction
+				damage -= GuardDamageReduction + bonusesFor(player).GuardReduction
 				if damage < 0 {
 					damage = 0
 				}
@@ -215,6 +230,17 @@ func resolveCombatRound(room *Room, now time.Time) {
 				message += " Guarded."
 			}
 			addCombatEvent(run, roundNumber, "enemy_attack", message)
+			if bonusesFor(player).ReflectDamage > 0 && enemy.Health > 0 {
+				enemy.Health -= bonusesFor(player).ReflectDamage
+				if enemy.Health < 0 {
+					enemy.Health = 0
+				}
+				addCombatEvent(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(bonusesFor(player).ReflectDamage)+" reflected damage.")
+				if enemy.Health == 0 {
+					enemy.Intent = nil
+					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.")
+				}
+			}
 			if player.Health == 0 {
 				addCombatEvent(run, roundNumber, "player_down", adventurerLabel(room, playerID)+" is down!")
 			}
@@ -239,6 +265,21 @@ func resolveCombatRound(room *Room, now time.Time) {
 	if allEnemiesDefeated(current.Encounter) {
 		current.Encounter.Status = EncounterCleared
 		current.Cleared = true
+		grantEncounterExperience(room, roundNumber)
+		for _, player := range run.Players {
+			if player == nil || player.Health <= 0 {
+				continue
+			}
+			heal := bonusesFor(player).EncounterHeal
+			if heal > 0 {
+				before := player.Health
+				player.Health += heal
+				if player.Health > player.MaxHealth {
+					player.Health = player.MaxHealth
+				}
+				addCombatEvent(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(player.Health-before)+" health.")
+			}
+		}
 		run.CombatRound = nil
 		if run.CurrentRoomID == "warden" {
 			run.Phase = PhaseCompleted
