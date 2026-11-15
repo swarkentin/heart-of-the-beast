@@ -163,3 +163,12 @@ Encounter-clear and floor-boundary rewards now use the validated, data-only `Run
 Target policies preserve the existing distinctions: encounter XP goes to participating players including those who are downed but not those who have left; room rewards affect living run members; floor restoration affects living members who have not left; and miniboss/floor perks affect every run member. Reward values and timing are unchanged. Runtime application remains an explicit server-authoritative transition, not executable catalog callbacks. Catalog validation runs with the game content catalog and tests cover invalid definitions, target policies, and idempotency.
 
 With this slice, the authored modifier/effect/reward definitions are catalog-backed. The remaining major extraction is to move combat and reward application into shared deterministic transition functions used by both live play and the future simulation runner.
+
+
+## Follow-up slice: pure health transitions
+
+The first deterministic runtime boundary is extracted in `backend/internal/game/health_transitions.go`. Damage and healing now use shared pure functions that return both the resulting health and the effective amount applied after clamping. Live combat attacks, interrupts, enemy attacks and healing, reflected damage, encounter healing, class abilities/passives, and catalog-driven run rewards all use these same functions.
+
+The helpers deliberately do not decide who is eligible to receive an effect; that remains in the authoritative command/reward flow. They also do not emit events or mutate room state. This keeps the arithmetic deterministic and independently testable without moving presentation or multiplayer orchestration into the simulation layer. Existing combat tests continue to exercise the live integration, while focused unit tests cover lethal/partial/zero/negative damage and healing at the health cap.
+
+Next, extract pure attack damage and incoming mitigation/intent resolution, then progression transitions. Once those rules are shared, add a seeded simulation runner over explicit combat state snapshots and compare its outcomes with live transition tests.
