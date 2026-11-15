@@ -305,7 +305,7 @@ func TestClassAbilityHandlersAreRegisteredAndCatalogValid(t *testing.T) {
 	if err := ValidateCatalog(); err != nil {
 		t.Fatalf("class catalog and effect handlers should validate: %v", err)
 	}
-	if len(classAbilityHandlers) != len(classAbilities) || len(classPassiveHandlers) != len(classPassives) {
+	if len(classAbilityHandlers) != len(classAbilities) || len(defaultClassPassiveEffectCatalog.Definitions) != len(classPassives) {
 		t.Fatalf("every catalog ability and passive must have a registered handler")
 	}
 }
