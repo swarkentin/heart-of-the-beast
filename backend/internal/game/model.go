@@ -131,8 +131,10 @@ type Exit struct {
 }
 
 type Encounter struct {
-	Status  EncounterStatus `json:"status"`
-	Enemies []Enemy         `json:"enemies"`
+	DefinitionID string          `json:"definitionId,omitempty"`
+	Budget       int             `json:"budget,omitempty"`
+	Status       EncounterStatus `json:"status"`
+	Enemies      []Enemy         `json:"enemies"`
 }
 
 type EnemyIntent struct {
