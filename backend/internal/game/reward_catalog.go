@@ -121,9 +121,8 @@ func applyRunReward(room *Room, definition RunRewardDefinition, round int, flagI
 		run.Flags[flagID] = true
 	}
 
-	playerIDs := append([]string(nil), room.PlayerIDs...)
-	sort.Strings(playerIDs)
 	for _, operation := range definition.Operations {
+		playerIDs := rewardPlayerIDs(room, operation.Target)
 		for _, playerID := range playerIDs {
 			member := run.Players[playerID]
 			if member == nil || !rewardTargetIncludes(room, playerID, member, operation.Target) {
@@ -167,4 +166,18 @@ func rewardTargetIncludes(room *Room, playerID string, player *PlayerState, targ
 	default:
 		return false
 	}
+}
+
+func rewardPlayerIDs(room *Room, target RunRewardTarget) []string {
+	if target == RunRewardParticipants {
+		ids := append([]string(nil), room.PlayerIDs...)
+		sort.Strings(ids)
+		return ids
+	}
+	ids := make([]string, 0, len(room.Run.Players))
+	for playerID := range room.Run.Players {
+		ids = append(ids, playerID)
+	}
+	sort.Strings(ids)
+	return ids
 }
