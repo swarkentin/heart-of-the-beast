@@ -409,30 +409,15 @@ func resolveCombatRound(room *Room, now time.Time) {
 }
 
 func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []string) *EnemyIntent {
-	intent := &EnemyIntent{}
-	switch enemy.Behavior {
-	case "scout":
-		intent.Kind, intent.Label, intent.Damage = "quick_strike", "Quick jab", 3
-	case "guardian":
-		if roundNumber%2 == 1 {
-			intent.Kind, intent.Label, intent.Damage = "heavy_strike", "Heavy blow", 8
-		} else {
-			intent.Kind, intent.Label, intent.Damage = "strike", "Stone strike", 4
-		}
-	case "miniboss":
-		if roundNumber%2 == 0 {
-			intent.Kind, intent.Label, intent.Damage, intent.Interruptible = "crusher", "Reliquary crush", 8, true
-		} else {
-			intent.Kind, intent.Label, intent.Damage = "stone_strike", "Stone strike", 5
-		}
-	case "warden":
-		if roundNumber%3 == 0 {
-			intent.Kind, intent.Label, intent.Damage, intent.TargetAll = "soul_sweep", "Soul sweep", 3, true
-		} else {
-			intent.Kind, intent.Label, intent.Damage, intent.Heal, intent.Interruptible = "soul_drain", "Soul drain", 5, 2, true
-		}
-	default:
-		intent.Kind, intent.Label, intent.Damage = "strike", "Strike", 4
+	ability, err := defaultMonsterCatalog.SelectAbility(enemy.Behavior, roundNumber)
+	if err != nil {
+		// Persisted runs may contain legacy/unknown behavior IDs. Keep their
+		// historical fallback until the explicit content-version migration.
+		ability = AbilityDefinition{Kind: "strike", Label: "Strike", Damage: 4}
+	}
+	intent := &EnemyIntent{
+		Kind: ability.Kind, Label: ability.Label, Damage: ability.Damage,
+		Heal: ability.Heal, TargetAll: ability.TargetAll, Interruptible: ability.Interruptible,
 	}
 	if !intent.TargetAll && len(players) > 0 {
 		targetIndex := (roundNumber + enemyIndex) % len(players)
