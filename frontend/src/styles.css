@@ -111,3 +111,10 @@
 .intent{cursor:pointer}
 .cast-scene .intent{cursor:default}
 @media(max-width:380px){.intent b{display:block;font-size:7px}.intent small{display:block}}
+
+/* First-pass Catacombs enemy sprite treatment */
+.enemy-art{transform-box:fill-box;transform-origin:center bottom;animation:enemy-idle 3.2s ease-in-out infinite}
+.enemy-sprite:nth-of-type(2) .enemy-art{animation-delay:-1.1s}
+.enemy-sprite:nth-of-type(3) .enemy-art{animation-delay:-2.2s}
+@keyframes enemy-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.enemy-art{animation:none}}
