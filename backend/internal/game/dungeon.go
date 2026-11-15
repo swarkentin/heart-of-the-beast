@@ -218,8 +218,8 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 		prefix + "guard": {
 			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
 			Description: "The final defenders of this level stand between the party and the next descent.",
-			Exits:     []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "guard-a", Name: "Stonebound Guard", Behavior: "guardian", Health: health(14), MaxHealth: health(14)}, {ID: prefix + "guard-b", Name: "Gravebound Scout", Behavior: "scout", Health: health(10), MaxHealth: health(10)}}},
+			Exits:       []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "guard-a", Name: "Stonebound Guard", Behavior: "guardian", Health: health(14), MaxHealth: health(14)}, {ID: prefix + "guard-b", Name: "Gravebound Scout", Behavior: "scout", Health: health(10), MaxHealth: health(10)}}},
 		},
 		prefix + "boss": {
 			ID: prefix + "boss", Name: map[bool]string{true: "The Warden Below", false: "The Ossuary Champion"}[depth == MaximumDungeonDepth], Floor: floor, RoomType: "boss",
