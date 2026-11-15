@@ -135,3 +135,27 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
 	}
 }
+
+
+func TestCombatRejectsActionFromExpiredRound(t *testing.T) {
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartRun(room, "run-stale", now); err != nil {
+		t.Fatal(err)
+	}
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
+		t.Fatal("round should advance after its deadline")
+	}
+	if room.Run.CombatRound.Number != 2 {
+		t.Fatalf("expected next round to be 2, got %d", room.Run.CombatRound.Number)
+	}
+	err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now.Add(CombatActionWindow))
+	if !errors.Is(err, ErrStaleCombatRound) {
+		t.Fatalf("expected stale round error, got %v", err)
+	}
+}
