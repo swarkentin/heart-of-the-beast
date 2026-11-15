@@ -99,7 +99,9 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 | Depth/party scaling | `backend/internal/game/dungeon.go`, `transitions.go` | `MonsterScaling` inputs and catalog health calculation; encounter composition policy remains a follow-up |
 | Player class bonuses | `classes.go`, `class_combat.go` | Existing class catalog remains separate; shared effect vocabulary can follow |
 | Encounter compositions | `backend/internal/game/encounters.go` | Reusable definitions with party variants, spawn slots, and provisional relative difficulty budgets |
-| Talent combat modifiers | `backend/internal/game/progression.go` | Typed `CombatModifierCatalog`; extracted without changing values or selection behavior |\n| Class ability/passive effects and run/event modifiers | `backend/internal/game/class_combat.go`, `transitions.go`, `combat.go` | Typed effect definitions and explicit application rules; follow-up work |\n| Random encounter modifiers | Not currently authored as a random modifier pool | Future seeded selection with explicit eligibility and weights |
+| Talent combat modifiers | `backend/internal/game/progression.go` | Typed `CombatModifierCatalog`; extracted without changing values or selection behavior |
+| Class ability/passive effects and run/event modifiers | `backend/internal/game/class_combat.go`, `transitions.go`, `combat.go` | Typed effect definitions and explicit application rules; follow-up work |
+| Random encounter modifiers | Not currently authored as a random modifier pool | Future seeded selection with explicit eligibility and weights |
 
 ## Out of scope for the first extraction
 
@@ -123,4 +125,9 @@ The budget is authoring metadata only at this stage: it does not change stats or
 
 Room graphs, descriptions, exits, events, optional miniboss chance, and seeded left/right monster selection remain in their existing code paths. The extraction preserves current enemy IDs, compositions, names, health, and solo/co-op variants.
 
-\n## Follow-up slice: typed talent combat modifiers\n\nThe twelve existing archetype talent bonuses now resolve through `CombatModifierCatalog` definitions rather than a switch in `progression.go`. The catalog stores data-only `TalentBonuses`, validates IDs and non-negative values, and verifies every authored talent has a corresponding modifier. Both individual and party-wide bonus aggregation use the same definitions. Existing values, talent IDs, prerequisites, and application timing are unchanged.\n\nThis is intentionally a partial extraction: class ability/passive handlers and the current room/run event flags still encode effects in runtime logic. Those need a separate typed effect model that can express triggers, targets, duration/consumption, and stacking without turning content into arbitrary callbacks. No random modifier pool exists yet, so seeded modifier selection is deferred until such content is authored.\n
+
+## Follow-up slice: typed talent combat modifiers
+
+The twelve existing archetype talent bonuses now resolve through `CombatModifierCatalog` definitions rather than a switch in `progression.go`. The catalog stores data-only `TalentBonuses`, validates IDs and non-negative values, and verifies every authored talent has a corresponding modifier. Both individual and party-wide bonus aggregation use the same definitions. Existing values, talent IDs, prerequisites, and application timing are unchanged.
+
+This is intentionally a partial extraction: class ability/passive handlers and the current room/run event flags still encode effects in runtime logic. Those need a separate typed effect model that can express triggers, targets, duration/consumption, and stacking without turning content into arbitrary callbacks. No random modifier pool exists yet, so seeded modifier selection is deferred until such content is authored.
