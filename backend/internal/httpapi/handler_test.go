@@ -295,8 +295,6 @@ func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
 	}
 }
 
-
-
 func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 	handler := NewHandlerWithClock(store.NewMemory(), func() time.Time { return now })
