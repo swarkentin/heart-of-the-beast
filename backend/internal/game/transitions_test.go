@@ -82,3 +82,55 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 		t.Fatal("defeating the boss should complete the run")
 	}
 }
+
+
+func TestCoopCombatActionsResolveTogether(t *testing.T) {
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartRun(room, "run-coop", now); err != nil {
+		t.Fatal(err)
+	}
+
+	first := Command{Type: "combat", Action: "attack", TargetID: "sentinel"}
+	if err := ApplyCommand(room, "player-1", first, now); err != nil {
+		t.Fatal(err)
+	}
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
+		t.Fatalf("first player's action resolved before the party submitted: health=%d", got)
+	}
+	if err := ApplyCommand(room, "player-1", first, now); !errors.Is(err, ErrRoundActionSubmitted) {
+		t.Fatalf("expected duplicate action to be rejected, got %v", err)
+	}
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if room.Run.Phase != PhaseExploring || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
+		t.Fatal("both submitted attacks should resolve together and clear the encounter")
+	}
+	if room.Run.CombatRound != nil {
+		t.Fatal("a cleared encounter should not retain an active combat round")
+	}
+}
+
+func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartRun(room, "run-timeout", now); err != nil {
+		t.Fatal(err)
+	}
+	room.Run.Players["player-2"].Health = 20
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
+		t.Fatal("round should resolve when its deadline is reached")
+	}
+	if got := room.Run.Players["player-2"].Health; got != 21 {
+		t.Fatalf("missing action should default to defend, health=%d", got)
+	}
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 0 {
+		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
+	}
+}
