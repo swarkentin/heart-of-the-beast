@@ -23,8 +23,8 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		return errors.New("room requires a player and run id")
 	}
 
-	partyScaling := MonsterScaling{HealthMultiplier: 1}
-	soloScaling := MonsterScaling{HealthMultiplier: 0.75, RoundDown: true}
+	partyScaling := MonsterScaling{HealthMultiplier: 1, PartySize: len(room.PlayerIDs)}
+	soloScaling := MonsterScaling{HealthMultiplier: 0.75, RoundDown: true, PartySize: len(room.PlayerIDs)}
 	encounterScaling := partyScaling
 	if len(room.PlayerIDs) == 1 {
 		encounterScaling = soloScaling
