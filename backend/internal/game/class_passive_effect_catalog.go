@@ -47,7 +47,7 @@ var defaultClassPassiveEffectCatalog = newClassPassiveEffectCatalog()
 
 func newClassPassiveEffectCatalog() ClassPassiveEffectCatalog {
 	definitions := []ClassPassiveEffectDefinition{
-		{EffectID: "passive.resolve", Trigger: ClassPassiveTriggerHeavyGuard},
+		{EffectID: "passive.resolve", Trigger: ClassPassiveTriggerHeavyGuard, Bonus: ClassPassiveBonusNone},
 		{EffectID: "passive.low-health", Trigger: ClassPassiveTriggerLowHealthAttack, Bonus: ClassPassiveBonusAttackDamage, Amount: 3, HealthThresholdPercent: 50},
 		{EffectID: "passive.magic-resist", Trigger: ClassPassiveTriggerIntentKind, Bonus: ClassPassiveBonusDamageReduction, Amount: 2, IntentKinds: []string{"soul_drain", "soul_sweep"}},
 		{EffectID: "passive.wounded-target", Trigger: ClassPassiveTriggerWoundedTargetAttack, Bonus: ClassPassiveBonusAttackDamage, Amount: 3, HealthThresholdPercent: 50},
@@ -55,7 +55,7 @@ func newClassPassiveEffectCatalog() ClassPassiveEffectCatalog {
 		{EffectID: "passive.unacted-target", Trigger: ClassPassiveTriggerUnactedTargetAttack, Bonus: ClassPassiveBonusAttackDamage, Amount: 3, MaxTurnsTaken: 1},
 		{EffectID: "passive.encounter-recovery", Trigger: ClassPassiveTriggerEncounterClear, Bonus: ClassPassiveBonusEncounterHeal, Amount: 2},
 		{EffectID: "passive.interrupt", Trigger: ClassPassiveTriggerInterrupt, Bonus: ClassPassiveBonusInterruptDamage, Amount: 2},
-		{EffectID: "passive.companion", Trigger: ClassPassiveTriggerCompanionInstinct},
+		{EffectID: "passive.companion", Trigger: ClassPassiveTriggerCompanionInstinct, Bonus: ClassPassiveBonusNone},
 	}
 	catalog := ClassPassiveEffectCatalog{Definitions: definitions, byID: make(map[string]ClassPassiveEffectDefinition, len(definitions))}
 	for _, definition := range definitions {
