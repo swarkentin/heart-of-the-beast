@@ -169,8 +169,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
 					label := enemy.Intent.Label
 					enemy.Intent = nil
-					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+enemy.Name+" Soul Drain!")
-					_ = label
+					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+label+" from "+enemy.Name+"!")
 					break
 				}
 			}
