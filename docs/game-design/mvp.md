@@ -78,15 +78,17 @@ A solo build should be able to obtain enough survivability and utility to comple
 
 ## Dungeon and initial content candidate
 
-The Forgotten Catacombs is a provisional first setting:
-- 8–12 connected rooms.
-- 3–4 enemy types.
-- One optional side mission and one treasure room.
-- One boss encounter.
-- 3–5 possible equipment rewards.
-- A peaceful village intermission.
+The Forgotten Catacombs is the first authored adventure, replacing the original four-room demonstration graph. See [forgotten-catacombs.md](forgotten-catacombs.md) for its current route and room-by-room content:
+- Nine room nodes across alternate entry routes and an optional rescue branch.
+- Four encounter spaces along a complete route (including one of two alternate approaches), with complementary enemy pairs.
+- An exploration event that can reveal the Warden's weakness, adding bonus Strike damage against the boss.
+- An optional rescue mission that restores party health.
+- A treasure room where the party chooses a run-long damage or defense relic.
+- A gate encounter and the Crypt Warden finale.
 
-Sample boss: the Crypt Warden. Its guard can be broken through varied attacks or abilities; a soul-drain mark creates an interrupt opportunity; it summons minions and changes behavior at low health. In solo play, the mark must be answerable by the player's own kit or the environment. In co-op, teammates can help interrupt or control adds.
+The current prototype implements the room graph, server-authoritative choices, rescue recovery, and relic stat changes. Distinct scene art, deeper consequences for the rescue, more varied route layouts, and a safe village intermission remain unfinished.
+
+The Crypt Warden should grow into a multi-phase boss whose guard, soul-drain mark, summons, and enrage phase respond to what the party learned and chose during the dungeon. In solo play, every mechanic must have a self-contained answer. In co-op, teammates can help interrupt or control adds.
 
 ## Multiplayer decisions and resilience
 
