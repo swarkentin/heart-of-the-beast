@@ -189,6 +189,14 @@ The helpers deliberately do not decide who is eligible to receive an effect; tha
 Next, extract pure attack damage and incoming mitigation/intent resolution, then progression transitions. Once those rules are shared, add a seeded simulation runner over explicit combat state snapshots and compare its outcomes with live transition tests.
 
 
+## Follow-up slice: pure progression transitions
+
+Experience grants now resolve through `backend/internal/game/progression_transitions.go`. The pure transition calculates accumulated XP, all level-ups crossed by a reward, talent-point awards, maximum-health growth, and stat growth. It returns the resulting progression fields and ordered level-up milestones without mutating the input player or accessing room state.
+
+The authoritative reward flow still determines eligibility, applies the returned fields to the player, and emits the existing XP event followed by one level-up event per crossed level. Existing XP thresholds (60, 150, 275, and 425), the level cap of 5, encounter/boss reward amounts, downed-player eligibility, and level-up stat gains are unchanged. Talent selection and its validation remain in the runtime command flow.
+
+This completes the pure transition prerequisites for a deterministic simulator. The next slice should introduce explicit simulation snapshots and seeded policies that call the same combat and progression transitions used by live play; it must not duplicate their rules.
+
 ## Follow-up slice: pure attack, mitigation, and enemy-intent transitions
 
 Player attack arithmetic now lives in `backend/internal/game/combat_transitions.go`, including additive talent/passive bonuses, marked damage consumption, Resolve, telegraph bonuses, and room Strike bonuses. Interrupt damage uses the same pure transition boundary. Incoming damage mitigation is also shared: agility/talent/passive reductions apply first, then Ward absorption and reflection consumption, then one-hit guard reduction and guard-state consumption. The transition returns intermediate blocked/absorbed amounts so the authoritative runtime can preserve its existing combat feedback and passive triggers.
