@@ -19,7 +19,7 @@ func TestSoloRunLifecycle(t *testing.T) {
 	if room.Run.Phase != PhaseCombat || room.Run.CurrentRoomID != "entry" {
 		t.Fatalf("unexpected initial run state: %#v", room.Run)
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if room.Run.Phase != PhaseExploring || !room.Run.Rooms["entry"].Cleared {
@@ -48,7 +48,7 @@ func TestRunRejectsInvalidTransitionsAndActors(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); !errors.Is(err, ErrInvalidPhase) {
 		t.Fatalf("expected invalid-phase error, got %v", err)
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "missing"}, now); !errors.Is(err, ErrInvalidTarget) {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "missing"}, now); !errors.Is(err, ErrInvalidTarget) {
 		t.Fatalf("expected invalid-target error, got %v", err)
 	}
 }
@@ -66,7 +66,7 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 2; i++ {
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "guardian"}, now); err != nil {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 1, Action: "attack", TargetID: "guardian"}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -74,7 +74,7 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 3; i++ {
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Action: "attack", TargetID: "warden"}, now); err != nil {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 1, Action: "attack", TargetID: "warden"}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -93,7 +93,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	first := Command{Type: "combat", Action: "attack", TargetID: "sentinel"}
+	first := Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}
 	if err := ApplyCommand(room, "player-1", first, now); err != nil {
 		t.Fatal(err)
 	}
