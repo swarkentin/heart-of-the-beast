@@ -184,3 +184,36 @@
  .talent-choice strong{font-size:12px}
  .talent-choice small{font-size:8px}
 }
+
+
+/* Progression is a deliberate, reversible choice over the room view */
+.progression-backdrop{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;background:#07080dcc;backdrop-filter:blur(5px)}
+.progression-modal{width:min(780px,100%);max-height:min(88vh,820px);overflow:auto;padding:22px;background:#141720;border:1px solid #a17c56;box-shadow:0 22px 80px #000c;color:#eee3d5}
+.progression-modal-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.progression-modal-heading h2{margin:5px 0;color:#f0d2a8;font:25px "Marcellus",serif}
+.progression-modal-heading p{margin:0;color:#b8aa9a;font-size:12px;line-height:1.5}
+.progression-close{width:34px;height:34px;background:#252833;border:1px solid #51463d;color:#eee3d5;font-size:23px;cursor:pointer}
+.talent-tree{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0}
+.talent-tier{position:relative}
+.talent-tier-label{margin-bottom:10px;color:#d9ad73;font-size:9px;letter-spacing:1.5px}
+.talent-tier-nodes{display:grid;gap:10px}
+.talent-node{position:relative;display:flex;min-height:126px;flex-direction:column;align-items:flex-start;gap:7px;padding:13px;text-align:left;background:#20232d;border:1px solid #645342;color:#eee3d5;cursor:pointer}
+.talent-node:before{content:"";position:absolute;top:50%;left:-10px;width:9px;border-top:1px solid #80674e}
+.talent-tier:first-child .talent-node:before{display:none}
+.talent-node>span{color:#cba778;font-size:8px;letter-spacing:1px}
+.talent-node strong{color:#f0d2a8;font:17px "Marcellus",serif}
+.talent-node small{color:#c4b6a6;font-size:10px;line-height:1.45}
+.talent-node i{margin-top:auto;color:#9d8e7f;font-size:9px;font-style:normal}
+.talent-node:hover:not(:disabled),.talent-node.selected{border-color:#e1b878;background:#30291f}
+.talent-node.chosen{border-color:#819a7d;background:#1b2723}
+.talent-node.chosen>span{color:#a9c59e}
+.talent-node.locked{opacity:.55;cursor:default}
+.talent-inspector{min-height:48px;padding:12px 14px;background:#0d1017;border-left:2px solid #b48b5e;color:#c4b6a6;font-size:11px;line-height:1.5}
+.talent-inspector strong{display:block;margin-bottom:3px;color:#f0d2a8}
+.progression-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.progression-secondary,.progression-accept{padding:11px 16px;border:1px solid #6b5948;font-size:10px;letter-spacing:1px;cursor:pointer}
+.progression-secondary{background:#20232d;color:#d5c7b8}
+.progression-accept{background:#8b623c;border-color:#d2a36e;color:#fff1dc}
+.progression-accept:disabled{opacity:.4;cursor:not-allowed}
+.action-target-hint{flex:1 0 100%;color:#c4b6a6;font-size:9px;letter-spacing:.8px;text-align:center}
+@media(max-width:700px){.progression-backdrop{padding:8px}.progression-modal{padding:14px}.progression-modal-heading h2{font-size:19px}.talent-tree{gap:9px;margin:14px 0}.talent-node{min-height:145px;padding:9px}.talent-node strong{font-size:13px}.talent-node small{font-size:9px}.progression-modal-actions button{flex:1;padding:10px 7px}.action-target-hint{font-size:8px}}
