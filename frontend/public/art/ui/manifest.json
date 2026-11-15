@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "colors": {
+    "edge": "#0a0714",
+    "panel": "#191530",
+    "pit": "#0f0c1c",
+    "stone": "#5d5478",
+    "gold": "#d6a64d",
+    "ember": "#ffb45c",
+    "bone": "#e3d9bd",
+    "ink": "#f4ead6",
+    "muted": "#a99fbd",
+    "good": "#8fd6a0",
+    "bad": "#f08f7e"
+  },
+  "frames": {
+    "panel": {
+      "file": "ui/frame-panel.png",
+      "size": 24,
+      "slice": 6
+    },
+    "inset": {
+      "file": "ui/frame-inset.png",
+      "size": 16,
+      "slice": 4
+    },
+    "selected": {
+      "file": "ui/frame-selected.png",
+      "size": 16,
+      "slice": 4
+    },
+    "button": {
+      "files": [
+        "ui/button.png",
+        "ui/button-primary.png",
+        "ui/button-danger.png"
+      ],
+      "size": 16,
+      "slice": 5
+    }
+  },
+  "tiles": {
+    "wall": {
+      "file": "ui/tile-wall.png",
+      "w": 32,
+      "h": 32
+    },
+    "floor": {
+      "file": "ui/tile-floor.png",
+      "w": 32,
+      "h": 16
+    }
+  },
+  "torch": {
+    "file": "ui/torch.png",
+    "frame": {
+      "w": 16,
+      "h": 32
+    },
+    "frames": 4,
+    "fps": 8
+  },
+  "emblem": {
+    "file": "ui/emblem.png",
+    "w": 32,
+    "h": 32
+  },
+  "icons": {
+    "file": "ui/icons.png",
+    "cell": 16,
+    "order": [
+      "vitality",
+      "power",
+      "focus",
+      "agility",
+      "strike",
+      "guard",
+      "life",
+      "arcane",
+      "control",
+      "damage",
+      "support",
+      "host",
+      "ready",
+      "waiting",
+      "locked"
+    ]
+  }
+}

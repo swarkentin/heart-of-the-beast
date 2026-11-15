@@ -40,6 +40,6 @@ can be re-palettised or re-timed in one place, and does not require external too
 - The verifier compares PNG bytes to a fresh render, so it is run locally rather than in CI until the encoder is
   confirmed stable across zlib versions.
 - Not done here: wiring the sprites into the frontend (replacing the SVG monsters in `App.tsx`), mapping server
-  enemy definitions to sprite ids, per-theme room backgrounds, and player-character sprites. These are tracked in the
-  roadmap.
+  enemy definitions to sprite ids, and per-theme room backgrounds. These are tracked in the roadmap. Player-character sprites followed in
+  ADR 0024.
 - Reduced-motion handling and non-animation cues from ADR 0004 still apply when the sprites are integrated.

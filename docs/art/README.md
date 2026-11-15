@@ -1,4 +1,4 @@
-# Pixel-art bestiary
+# Pixel art: bestiary, heroes, and interface kit
 
 Front-facing pixel-art monster sprite sheets for the first-person dungeon view, one folder per theme under
 `frontend/public/art/monsters/`. Every theme has 5 monsters and 3 bosses. Every creature has `idle`, `hit`,
@@ -70,13 +70,47 @@ const a = c.animations.attack;                 // { row, frames, fps, loop, impa
 - Telegraph and response: `attack` and `special` wind up visibly before the impact frame, matching ADR 0018.
 - Reduced motion: hold `idle` frame 0 and skip to the `impactFrame` pose; do not rely on animation alone for state.
 
+## Heroes
+
+One front-facing hero per class under `frontend/public/art/heroes/`, drawn with the same rigs and shading as the
+monsters (`scripts/pixel-art/heroes.mjs`). Ids match the backend class catalog: `bulwark`, `juggernaut`, `spellguard`,
+`assassin`, `arcanist`, `ranger`, `cleric`, `tactician`, `beastcaller`.
+
+```
+frontend/public/art/heroes/
+  manifest.json        # frame size, animations, hero list
+  <class>.png          # 384x128 sheet: row 0 idle (4 frames, 6 fps, loops), row 1 flourish (6 frames, 10 fps)
+  <class>-bust.png     # 32x32 head-and-shoulders crop for roster portraits
+  empty.png            # 256x64 silhouette idle (4 frames) for open party slots; empty-bust.png to match
+```
+
+Frames are 64x64 and anchor bottom-centre like monsters. The flourish is the class's signature move and is played once
+when a player confirms that class. Heroes do not have hit, attack, or death rows yet.
+
+## Interface kit
+
+`scripts/pixel-art/ui.mjs` writes `frontend/public/art/ui/`. Everything is authored at 1x; scale by a whole number.
+
+| File | Size | Use |
+| --- | --- | --- |
+| `frame-panel.png` | 24x24, slice 6 | Main panels (`border-image`, with `fill`) |
+| `frame-inset.png`, `frame-selected.png` | 16x16, slice 4 | Recessed slots, inputs, roster cells; gold selected state |
+| `button.png`, `button-primary.png`, `button-danger.png` | 16x16, slice 5 | Buttons with a 2px lip |
+| `tile-wall.png`, `tile-floor.png` | 32x32, 32x16 | Seamless backdrop brickwork and the floor heroes stand on |
+| `torch.png` | 4 frames of 16x32 | Wall torch, 8 fps |
+| `emblem.png` | 32x32 | Game crest |
+| `icons.png` | 16x16 cells in one row | Order is listed in `ui/manifest.json` under `icons.order` |
+
+Icons are authored as small character maps in `ui.mjs` (one letter per material) and shaded by the engine. The CSS that
+uses the kit is `frontend/src/lobby.css`; `ui/manifest.json` also records the kit's colours.
+
 ## Regenerating
 
 The art is produced deterministically by code in `scripts/pixel-art/` (no external tools or network needed).
 Creature definitions live in `scripts/pixel-art/themes/<theme>.mjs`.
 
 ```
-npm run art:build     # regenerate every sheet, manifest, index and preview
+npm run art:build     # regenerate every monster sheet, manifest, index and preview, then heroes and the interface kit
 npm run art:verify    # fail if art is stale, a frame is empty or clipped, or a roster rule is broken
 npm run art:gallery   # regenerate docs/art/bestiary.png
 ```
@@ -84,7 +118,9 @@ npm run art:gallery   # regenerate docs/art/bestiary.png
 `art:verify` enforces: unique creature ids, at least 5 monsters and 1-3 bosses per theme, sheets byte-identical
 to a fresh render, correct dimensions, no empty frames, no clipping of idle/hit frames, and an idle loop that
 actually animates. Oversized creatures are automatically scaled down (same pixel density) until their idle and
-hit frames fit their cell. Run `art:build` and commit the output after changing any theme file.
+hit frames fit their cell. It also checks that hero and interface
+files are not stale and that hero idle frames are unclipped and animate. Run `art:build` and commit the output after
+changing any theme, hero, or interface file.
 
 ## Backend registry
 

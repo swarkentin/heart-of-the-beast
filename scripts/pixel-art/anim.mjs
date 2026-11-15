@@ -34,6 +34,10 @@ export const MOVES = {
   wail: [[0, {}], [0.4, { lean: -4, jaw: 0.7, spread: 0.6, glow: 0.9, aLx: -6, aRx: 6, aLy: -8, aRy: -8 }], [0.6, { lean: -2, jaw: 1, spread: 1, glow: 1, shake: 1, aLx: -9, aRx: 9, aLy: -14, aRy: -14, reach: 1 }], [0.8, { jaw: 0.8, spread: 0.8, glow: 1, shake: -1 }], [1, {}]],
   vent: [[0, {}], [0.4, { open: 0.5, rear: 0.6, crouch: 1, shake: 1 }], [0.6, { open: 1, rear: 1, crouch: -1, glow: 1, shake: -1, reach: 1 }], [0.8, { open: 0.8, rear: 0.5, shake: 1 }], [1, {}]],
   spin: [[0, {}], [0.4, { twist: -6, spread: 0.6, crouch: 1, aLx: -8, aRx: 8 }], [0.6, { twist: 6, spread: 1, glow: 1, reach: 1, aLx: -12, aRx: 12, aLy: -4, aRy: -4 }], [0.8, { twist: -4, spread: 0.7 }], [1, {}]],
+  // one hand lifts a focus while the weapon stays planted (hero flourishes; keeps tall staves inside the cell)
+  channel: [[0, {}], [0.4, { aLx: -3, aLy: -10, crouch: 1, glow: 1 }], [0.6, { aLx: -5, aLy: -20, lean: -1, glow: 1, reach: 1, spread: 0.3 }], [0.8, { aLx: -4, aLy: -16, glow: 1, reach: 0.5 }], [1, {}]],
+  // plant the feet and set the shield without hiding the face
+  brace: [[0, {}], [0.4, { crouch: 2, aLx: 4, aLy: -3, aRy: -4 }], [0.6, { crouch: 3, aLx: 6, aLy: -5, aRy: -8, glow: 1, shake: 1 }], [0.8, { crouch: 2, aLx: 5, aLy: -4, aRy: -5, glow: 1 }], [1, {}]],
   hit: [[0, { shake: 2, lean: -3, crouch: 1, glow: 1, jaw: 0.5, aLy: -3, aRy: -3 }], [1, { shake: -1, lean: -1, jaw: 0.3 }]],
   death: [[0, { lean: -3, jaw: 0.8, shake: 1, glow: 1 }], [0.35, { lean: -5, crouch: 3, jaw: 1, aLy: 6, aRy: 6, spread: 0.5, glow: 0.7, shake: -1 }], [1, { lean: -7, crouch: 12, aLy: 14, aRy: 14, jaw: 1, glow: 0, squash: -0.5 }]],
 };

@@ -46,7 +46,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Generate a pixel-art bestiary for eleven themes (six priority plus alien jungle, dreamscape, arctic, ghost town, post-apocalyptic): 5 monsters and 3 bosses each, with idle, hit, attack, special, and death animations, plus manifests and a verifier (ADR 0022, `docs/art/README.md`).
 - [x] Require art for every monster at compile time, add a dungeon theme catalog and themed encounters, and add catalog entries for the whole bestiary (82 new monsters, 72 new encounters; ADR 0023). Enemy snapshots now carry a `sprite` ID.
 - [ ] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
-- [ ] Hand-polish pass on the generated sprites, and player-character sprites in the same style.
+- [x] Generate player-character sprites for the nine classes in the bestiary style (idle loop and a signature flourish each, plus roster busts) and a pixel-art interface kit: panel, slot and button frames, wall and floor tiles, torch, crest, and an icon sheet (ADR 0024, `docs/art/README.md`).
+- [x] Rebuild the title screen, party lobby, and class selection on the hero sprites and interface kit so the first screens match the monster art (ADR 0024).
+- [ ] Hand-polish pass on the generated monster and hero sprites; add hit, attack, and defeat animations for heroes when they appear in combat and spectator scenes.
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
@@ -55,15 +57,15 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).
 - [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
-- [ ] Verify core screens on mobile, tablet, and desktop layouts.
-- [ ] Bring the complete in-game interface into the high-definition pixel-art direction: pixel-appropriate typography, crisp stepped borders/panels, hero action controls, talent trees, HUD, navigation, dialogs, and feedback. Keep body text readable at small sizes and validate across mobile, tablet, desktop, and spectator views.
+- [ ] Verify core screens on mobile, tablet, and desktop layouts. Title, lobby, and class selection were checked at 390, 820, and 1366 px wide in Chrome with fallback fonts; they still need a pass on real devices with the web fonts loaded.
+- [ ] Bring the rest of the in-game interface into the pixel-art direction using the interface kit from ADR 0024 (title, lobby, and class selection are done): pixel-appropriate typography, crisp stepped borders/panels, hero action controls, talent trees, HUD, navigation, dialogs, and feedback. Keep body text readable at small sizes and validate across mobile, tablet, desktop, and spectator views.
 
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
-- [ ] **Selection experience is the next gate before continuing multi-level spike iteration.** Replace the full-page class list with a compact roster and focused class detail view, including a character portrait, icon-led skills/passives, stats/gear, and an in-context talent-tree preview. Show available and unlockable paths distinctly, remove implicit class defaults, and make choosing a character feel welcoming and consequential. Then continue spike iteration.
+- [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and an in-context talent-tree preview. Available and locked paths are shown distinctly, and the chosen hero joins the party line-up (ADR 0024). Next: continue multi-level spike iteration.
 - [ ] Add class signature actions and target/mode controls to the player combat UI.
 - [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
 - [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
