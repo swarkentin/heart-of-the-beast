@@ -28,6 +28,7 @@ type AbilityDefinition struct {
 	Interruptible  bool
 	EveryTurns     int
 	TurnRemainder  int
+	ExceptEveryTurns int
 }
 
 type MonsterDefinition struct {
@@ -52,7 +53,7 @@ func newMonsterCatalog() MonsterCatalog {
 		{ID: "heavy-blow", Label: "Heavy blow", Kind: "heavy_strike", Damage: 8, EveryTurns: 2, TurnRemainder: 1},
 		{ID: "reliquary-crush", Label: "Reliquary crush", Kind: "crusher", Damage: 8, Interruptible: true, EveryTurns: 2},
 		{ID: "miniboss-stone-strike", Label: "Stone strike", Kind: "stone_strike", Damage: 5, EveryTurns: 2, TurnRemainder: 1},
-		{ID: "soul-drain", Label: "Soul drain", Kind: "soul_drain", Damage: 5, Heal: 2, Interruptible: true},
+		{ID: "soul-drain", Label: "Soul drain", Kind: "soul_drain", Damage: 5, Heal: 2, Interruptible: true, ExceptEveryTurns: 3},
 		{ID: "soul-sweep", Label: "Soul sweep", Kind: "soul_sweep", Damage: 3, TargetAll: true, EveryTurns: 3},
 	}
 	abilityMap := make(map[string]AbilityDefinition, len(abilities))
@@ -101,7 +102,7 @@ func (catalog MonsterCatalog) Validate() error {
 		}
 	}
 	for id, ability := range catalog.Abilities {
-		if id == "" || ability.ID != id || ability.Damage < 0 || ability.Heal < 0 || ability.EveryTurns < 0 || ability.TurnRemainder < 0 || (ability.EveryTurns > 0 && ability.TurnRemainder >= ability.EveryTurns) {
+		if id == "" || ability.ID != id || ability.Damage < 0 || ability.Heal < 0 || ability.EveryTurns < 0 || ability.TurnRemainder < 0 || ability.ExceptEveryTurns < 0 || (ability.EveryTurns > 0 && ability.TurnRemainder >= ability.EveryTurns) {
 			return fmt.Errorf("invalid monster ability %q", id)
 		}
 	}
@@ -118,7 +119,7 @@ func (catalog MonsterCatalog) SelectAbility(monsterID string, turn int) (Ability
 		if err != nil {
 			return AbilityDefinition{}, err
 		}
-		if ability.EveryTurns == 0 || turn%ability.EveryTurns == ability.TurnRemainder {
+		if (ability.EveryTurns == 0 || turn%ability.EveryTurns == ability.TurnRemainder) && (ability.ExceptEveryTurns == 0 || turn%ability.ExceptEveryTurns != 0) {
 			return ability, nil
 		}
 	}
