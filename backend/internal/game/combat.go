@@ -36,7 +36,8 @@ func startCombatRound(room *Room, now time.Time) {
 			enemy.Intent = nil
 			continue
 		}
-		enemy.Intent = buildEnemyIntent(enemy, run.CombatRound.Number, enemyIndex, players)
+		enemy.TurnsTaken++
+		enemy.Intent = buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players)
 	}
 }
 
