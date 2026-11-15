@@ -41,6 +41,9 @@ func resolveInterFloorChoice(room *Room, actorID, choiceID string, now time.Time
 	if player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
 		return ErrInvalidPhase
 	}
+	if run.Flags == nil {
+		run.Flags = make(map[string]bool)
+	}
 	switch choiceID {
 	case "restore":
 		for playerID, member := range run.Players {
@@ -99,61 +102,63 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 	}
 	health := func(base int) int {
 		value := int(float64(base)*scale + 0.5)
-		if value < 1 { return 1 }
+		if value < 1 {
+			return 1
+		}
 		return value
 	}
 	names := []string{"The Silted Cloister", "The Ashen Stair", "The Drowned Archive", "The Hollow Nave", "The Shattered Ossuary"}
 	routeName := names[rng.Intn(len(names))]
 	hasMiniboss := rng.Intn(100) < 48
-	leftEnemy := Enemy{ID: prefix+"left-guardian", Name: "Ashbound Guardian", Behavior: "guardian", Health: health(13), MaxHealth: health(13)}
-	rightEnemy := Enemy{ID: prefix+"right-scout", Name: "Crypt Stalker", Behavior: "scout", Health: health(11), MaxHealth: health(11)}
+	leftEnemy := Enemy{ID: prefix + "left-guardian", Name: "Ashbound Guardian", Behavior: "guardian", Health: health(13), MaxHealth: health(13)}
+	rightEnemy := Enemy{ID: prefix + "right-scout", Name: "Crypt Stalker", Behavior: "scout", Health: health(11), MaxHealth: health(11)}
 	if rng.Intn(2) == 0 {
 		leftEnemy, rightEnemy = rightEnemy, leftEnemy
 		leftEnemy.ID, rightEnemy.ID = prefix+"left-enemy", prefix+"right-enemy"
 	}
 	rooms := map[string]*DungeonRoom{
-		prefix+"entry": {
-			ID: prefix+"entry", Name: "The Lower Threshold", Floor: floor, RoomType: "encounter",
+		prefix + "entry": {
+			ID: prefix + "entry", Name: "The Lower Threshold", Floor: floor, RoomType: "encounter",
 			Description: "The air grows colder. Old warding marks pulse beneath the dust as the next descent stirs awake.",
-			Exits: []Exit{{ID:"left", Destination:prefix+"left", Label:"The Broken Cloister", Description:"A guarded passage through collapsed stone."}, {ID:"right", Destination:prefix+"right", Label:"The Silted Stair", Description:"A narrow route where something moves below the water."}},
-			Encounter: &Encounter{Status:EncounterActive, Enemies:[]Enemy{{ID:prefix+"threshold-guard",Name:"Threshold Warden",Behavior:"sentinel",Health:health(12),MaxHealth:health(12)}}},
+			Exits:       []Exit{{ID: "left", Destination: prefix + "left", Label: "The Broken Cloister", Description: "A guarded passage through collapsed stone."}, {ID: "right", Destination: prefix + "right", Label: "The Silted Stair", Description: "A narrow route where something moves below the water."}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "threshold-guard", Name: "Threshold Warden", Behavior: "sentinel", Health: health(12), MaxHealth: health(12)}}},
 		},
-		prefix+"left": {
-			ID:prefix+"left", Name:routeName, Floor:floor, RoomType:"encounter",
-			Description:"A formation of ancient defenders blocks the route. Their movements are deliberate and practiced.",
-			Exits:[]Exit{{ID:"forward",Destination:prefix+"shrine",Label:"The Echoing Shrine"}},
-			Encounter:&Encounter{Status:EncounterActive,Enemies:[]Enemy{leftEnemy}},
+		prefix + "left": {
+			ID: prefix + "left", Name: routeName, Floor: floor, RoomType: "encounter",
+			Description: "A formation of ancient defenders blocks the route. Their movements are deliberate and practiced.",
+			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{leftEnemy}},
 		},
-		prefix+"right": {
-			ID:prefix+"right", Name:"The Silted Stair", Floor:floor, RoomType:"encounter",
-			Description:"Black water spills down the steps. A quick-moving crypt stalker waits in the dark.",
-			Exits:[]Exit{{ID:"forward",Destination:prefix+"shrine",Label:"The Echoing Shrine"}},
-			Encounter:&Encounter{Status:EncounterActive,Enemies:[]Enemy{rightEnemy}},
+		prefix + "right": {
+			ID: prefix + "right", Name: "The Silted Stair", Floor: floor, RoomType: "encounter",
+			Description: "Black water spills down the steps. A quick-moving crypt stalker waits in the dark.",
+			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{rightEnemy}},
 		},
-		prefix+"shrine": {
-			ID:prefix+"shrine", Name:"The Echoing Shrine", Floor:floor, RoomType:"event",
-			Description:"A low harmonic vibrates through the stone. The shrine offers a brief moment of power, but its blessing is uncertain.",
-			Exits:[]Exit{{ID:"deeper",Destination:prefix+"guard",Label:"The Guarded Descent"}},
-			Event:&RoomEvent{ID:prefix+"shrine-event",Title:"A Resonance in the Stone",Description:"The party can draw strength from the shrine before continuing.",Choices:[]EventChoice{{ID:"ward",Label:"Take the ward",Description:"Gain a small defensive blessing for the rest of the run.",Effect:"shrine_ward"},{ID:"leave",Label:"Leave it untouched",Description:"Keep moving without disturbing the shrine.",Effect:"leave"}}},
+		prefix + "shrine": {
+			ID: prefix + "shrine", Name: "The Echoing Shrine", Floor: floor, RoomType: "event",
+			Description: "A low harmonic vibrates through the stone. The shrine offers a brief moment of power, but its blessing is uncertain.",
+			Exits:       []Exit{{ID: "deeper", Destination: prefix + "guard", Label: "The Guarded Descent"}},
+			Event:       &RoomEvent{ID: prefix + "shrine-event", Title: "A Resonance in the Stone", Description: "The party can draw strength from the shrine before continuing.", Choices: []EventChoice{{ID: "ward", Label: "Take the ward", Description: "Gain a small defensive blessing for the rest of the run.", Effect: "shrine_ward"}, {ID: "leave", Label: "Leave it untouched", Description: "Keep moving without disturbing the shrine.", Effect: "leave"}}},
 		},
-		prefix+"guard": {
-			ID:prefix+"guard", Name:"The Guarded Descent", Floor:floor, RoomType:"encounter",
-			Description:"The final defenders of this level stand between the party and the next descent.",
-			Exits:[]Exit{{ID:"down",Destination:prefix+"boss",Label:"The Floor Guardian"}},
-			Encounter:&Encounter{Status:EncounterActive,Enemies:[]Enemy{{ID:prefix+"guard-a",Name:"Stonebound Guard",Behavior:"guardian",Health:health(14),MaxHealth:health(14)},{ID:prefix+"guard-b",Name:"Gravebound Scout",Behavior:"scout",Health:health(10),MaxHealth:health(10)}}},
+		prefix + "guard": {
+			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
+			Description: "The final defenders of this level stand between the party and the next descent.",
+			Exits:     []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "guard-a", Name: "Stonebound Guard", Behavior: "guardian", Health: health(14), MaxHealth: health(14)}, {ID: prefix + "guard-b", Name: "Gravebound Scout", Behavior: "scout", Health: health(10), MaxHealth: health(10)}}},
 		},
-		prefix+"boss": {
-			ID:prefix+"boss", Name:map[bool]string{true:"The Warden Below",false:"The Ossuary Champion"}[depth==MaximumDungeonDepth], Floor:floor, RoomType:"boss",
-			Description:"A vast chamber opens around an ancient guardian. The dungeon's deeper rhythm pounds through the walls.",
-			Encounter:&Encounter{Status:EncounterActive,Enemies:[]Enemy{{ID:prefix+"boss-enemy",Name:map[bool]string{true:"Crypt Warden",false:"Ossuary Champion"}[depth==MaximumDungeonDepth],Behavior:"warden",Health:health(30+depth*4),MaxHealth:health(30+depth*4)}}},
+		prefix + "boss": {
+			ID: prefix + "boss", Name: map[bool]string{true: "The Warden Below", false: "The Ossuary Champion"}[depth == MaximumDungeonDepth], Floor: floor, RoomType: "boss",
+			Description: "A vast chamber opens around an ancient guardian. The dungeon's deeper rhythm pounds through the walls.",
+			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "boss-enemy", Name: map[bool]string{true: "Crypt Warden", false: "Ossuary Champion"}[depth == MaximumDungeonDepth], Behavior: "warden", Health: health(30 + depth*4), MaxHealth: health(30 + depth*4)}}},
 		},
 	}
 	if hasMiniboss {
-		miniHealth:=health(23+depth*3)
-		rooms[prefix+"shrine"].Exits=append(rooms[prefix+"shrine"].Exits,Exit{ID:"challenge",Destination:prefix+"miniboss",Label:"The Sealed Reliquary",Description:"A dangerous optional challenge with a run reward."})
-		rooms[prefix+"miniboss"]=&DungeonRoom{ID:prefix+"miniboss",Name:"The Sealed Reliquary",Floor:floor,RoomType:"miniboss",Description:"A hulking champion tears free from its stone bindings. Defeating it will strengthen the whole party.",Exits:[]Exit{{ID:"rejoin",Destination:prefix+"boss",Label:"Return to the Descent"}},Encounter:&Encounter{Status:EncounterActive,Enemies:[]Enemy{{ID:prefix+"miniboss-enemy",Name:"Reliquary Brute",Behavior:"miniboss",Health:miniHealth,MaxHealth:miniHealth}}}}
+		miniHealth := health(23 + depth*3)
+		rooms[prefix+"shrine"].Exits = append(rooms[prefix+"shrine"].Exits, Exit{ID: "challenge", Destination: prefix + "miniboss", Label: "The Sealed Reliquary", Description: "A dangerous optional challenge with a run reward."})
+		rooms[prefix+"miniboss"] = &DungeonRoom{ID: prefix + "miniboss", Name: "The Sealed Reliquary", Floor: floor, RoomType: "miniboss", Description: "A hulking champion tears free from its stone bindings. Defeating it will strengthen the whole party.", Exits: []Exit{{ID: "rejoin", Destination: prefix + "boss", Label: "Return to the Descent"}}, Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: prefix + "miniboss-enemy", Name: "Reliquary Brute", Behavior: "miniboss", Health: miniHealth, MaxHealth: miniHealth}}}}
 	}
-	return prefix+"entry", rooms
+	return prefix + "entry", rooms
 }
 
 func isBossRoom(room *DungeonRoom) bool {
