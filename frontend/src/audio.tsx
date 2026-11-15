@@ -124,16 +124,16 @@ class GameAudioEngine {
   }
 
   effect(name: "impact" | "block" | "magic" | "defeat" | "door" | "encounter" | "victory" | "failure") {
-    if (!this.context || !this.effects) return;
-    const context = this.context;
+    if (!this.context || !effects) return;
+    const effects = this.effects;
     if (name === "impact") {
       this.noiseBurst(0.16, 1250, 0.18);
-      this.tone(78, 0.19, "triangle", 0.26, this.effects, -5);
-      this.tone(540, 0.055, "square", 0.045, this.effects, -18);
+      this.tone(78, 0.19, "triangle", 0.26, effects, -5);
+      this.tone(540, 0.055, "square", 0.045, effects, -18);
     } else if (name === "block") {
       this.noiseBurst(0.12, 850, 0.12);
-      this.tone(185, 0.14, "triangle", 0.18, this.effects, -10);
-      this.tone(740, 0.07, "sine", 0.08, this.effects, -12);
+      this.tone(185, 0.14, "triangle", 0.18, effects, -10);
+      this.tone(740, 0.07, "sine", 0.08, effects, -12);
     } else if (name === "magic") {
       this.sweep(310, 920, 0.34, "sine", 0.16);
       this.noiseBurst(0.24, 2400, 0.07);
@@ -144,10 +144,10 @@ class GameAudioEngine {
       this.noiseBurst(0.38, 480, 0.11);
       this.sweep(110, 54, 0.45, "triangle", 0.13);
     } else if (name === "encounter") {
-      this.tone(110, 0.5, "triangle", 0.18, this.effects, -8);
-      this.tone(164.81, 0.65, "sine", 0.1, this.effects, -12);
+      this.tone(110, 0.5, "triangle", 0.18, effects, -8);
+      this.tone(164.81, 0.65, "sine", 0.1, effects, -12);
     } else if (name === "victory") {
-      [293.66, 369.99, 440].forEach((frequency, index) => this.tone(frequency, 0.8, "sine", 0.12, this.effects, -5 + index * 2, index * 0.08));
+      [293.66, 369.99, 440].forEach((frequency, index) => this.tone(frequency, 0.8, "sine", 0.12, effects, -5 + index * 2, index * 0.08));
     } else if (name === "failure") {
       this.sweep(220, 55, 0.9, "triangle", 0.17);
     }
@@ -248,7 +248,7 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
     if (settings.enabled && before && version !== before.version) {
       if (scene !== before.scene) engine.effect("door");
       else {
-        const freshEvents = events.filter((event, index) => !before.events.includes(eventKeys[index]));
+        const freshEvents = events.filter((_, index) => !before.events.includes(eventKeys[index]));
         const kinds = new Set(freshEvents.map(event => event.kind));
         if (kinds.has("player_attack") || kinds.has("enemy_attack")) engine.effect("impact");
         if (kinds.has("player_defend")) engine.effect("block");
