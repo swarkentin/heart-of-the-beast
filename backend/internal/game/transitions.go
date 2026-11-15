@@ -59,6 +59,7 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		Players:       players,
 		StartedAt:     now,
 	}
+	startCombatRound(room.Run, now)
 	return nil
 }
 
@@ -77,41 +78,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 
 	switch command.Type {
 	case "combat":
-		if run.Phase != PhaseCombat || current.Encounter == nil || current.Encounter.Status != EncounterActive {
-			return ErrInvalidPhase
-		}
-		switch command.Action {
-		case "attack":
-			for i := range current.Encounter.Enemies {
-				enemy := &current.Encounter.Enemies[i]
-				if enemy.ID == command.TargetID && enemy.Health > 0 {
-					enemy.Health -= 10
-					if enemy.Health < 0 {
-						enemy.Health = 0
-					}
-					if allEnemiesDefeated(current.Encounter) {
-						current.Encounter.Status = EncounterCleared
-						current.Cleared = true
-						if run.CurrentRoomID == "warden" {
-							run.Phase = PhaseCompleted
-							run.CompletedAt = &now
-						} else {
-							run.Phase = PhaseExploring
-						}
-					}
-					return nil
-				}
-			}
-			return ErrInvalidTarget
-		case "defend":
-			player := run.Players[actorID]
-			if player.Health < player.MaxHealth {
-				player.Health++
-			}
-			return nil
-		default:
-			return ErrInvalidAction
-		}
+		return SubmitCombatAction(room, actorID, command, now)
 	case "choose_exit":
 		if run.Phase != PhaseExploring || !current.Cleared {
 			return ErrInvalidPhase
