@@ -60,12 +60,13 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 ## Migration plan
 
 1. **Inventory and catalog boundary (this PR):** document all current sources; introduce typed monster/ability definitions for existing behaviors; route intent selection through the catalog without changing current numbers or cadence.
-2. **Move authored enemy stats and names (completed in this slice):** replace inline enemy literals in both the original authored run and generated floors with catalog references; move the existing solo/depth/party health calculations into explicit catalog scaling inputs. Encounter compositions remain authored inline for now.
-3. **Modifiers and encounter compositions:** extract random bonuses/effects and define reusable encounter recipes/budgets, with seeded selection.
-4. **Pure combat engine boundary:** isolate deterministic state transitions from room/persistence/websocket concerns while retaining one implementation for live play and simulation.
-5. **Simulation runner:** add deterministic scenarios, baseline policies, batch execution, distribution reports, and regression thresholds.
-6. **Balance using evidence:** use simulation and playtest results to tune health, damage, healing, encounter duration, party-size pressure, and XP together.
-7. **Tactical content:** add complementary monster roles, combinations, and readable telegraphed abilities once the catalog and simulator can evaluate them.
+2. **Move authored enemy stats and names (completed):** both authored and generated encounters instantiate catalog-backed monster definitions with explicit scaling inputs.
+3. **Encounter composition catalog (this slice):** define reusable encounter recipes, party-size variants, stable runtime definition references, and provisional relative difficulty budgets. Keep room graph/event authoring and seeded route selection unchanged.
+4. **Modifiers and effects:** extract random bonuses/effects into typed definitions with seeded selection.
+5. **Pure combat engine boundary:** isolate deterministic state transitions from room/persistence/websocket concerns while retaining one implementation for live play and simulation.
+6. **Simulation runner:** add deterministic scenarios, baseline policies, batch execution, distribution reports, and regression thresholds.
+7. **Balance using evidence:** use simulation and playtest results to tune health, damage, healing, encounter duration, party-size pressure, and XP together.
+8. **Tactical content:** add complementary monster roles, combinations, and readable telegraphed abilities once the catalog and simulator can evaluate them.
 
 ## Compatibility and safety rules
 
@@ -97,7 +98,7 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 | Enemy names and base health | `backend/internal/game/dungeon.go`, `transitions.go` | Catalog definitions; generated and authored encounters reference stable IDs |
 | Depth/party scaling | `backend/internal/game/dungeon.go`, `transitions.go` | `MonsterScaling` inputs and catalog health calculation; encounter composition policy remains a follow-up |
 | Player class bonuses | `classes.go`, `class_combat.go` | Existing class catalog remains separate; shared effect vocabulary can follow |
-| Encounter compositions | `backend/internal/game/dungeon.go` | Reusable encounter definitions |
+| Encounter compositions | `backend/internal/game/encounters.go` | Reusable definitions with party variants, spawn slots, and provisional relative difficulty budgets |
 | Random effects/modifiers | Current run/perk/event and combat bonus paths | Modifier/effect catalog with seeded selection |
 
 ## Out of scope for the first extraction
@@ -113,3 +114,11 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 Enemy identity and health now live in catalog definitions rather than room construction. Both the original authored Forgotten Catacombs run and generated multi-floor encounters create runtime enemies from catalog entries. Each instance stores its stable `DefinitionID` while retaining the legacy `Behavior` field so existing persisted runs and combat intent selection remain compatible.
 
 The catalog owns the display name, base health, behavior mapping, and depth-health increment. `MonsterScaling` owns the explicit depth/party inputs and the legacy solo health adjustments. The formulas and resulting health values are intentionally unchanged. Room graphs and encounter compositions remain authored in the existing dungeon files; extracting reusable encounter recipes/budgets is a later step.
+
+## Follow-up slice: reusable encounter compositions
+
+Encounter compositions now live in `backend/internal/game/encounters.go` instead of being assembled as inline enemy lists in the authored run and generated floors. Each encounter definition names its spawn slots, monster definition references, optional solo variant, and a provisional relative difficulty budget. Runtime encounters retain the stable encounter definition ID and budget alongside their instantiated enemy state.
+
+The budget is authoring metadata only at this stage: it does not change stats or drive encounter selection. Its purpose is to make composition cost explicit and validate that each authored budget equals the sum of its spawn-slot costs. Simulation work will calibrate those relative units against actual action economy, damage, healing, and encounter outcomes before they influence difficulty selection.
+
+Room graphs, descriptions, exits, events, optional miniboss chance, and seeded left/right monster selection remain in their existing code paths. The extraction preserves current enemy IDs, compositions, names, health, and solo/co-op variants.
