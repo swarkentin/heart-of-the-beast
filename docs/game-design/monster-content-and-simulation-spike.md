@@ -145,3 +145,12 @@ Runtime application remains explicit and server-authoritative; the catalog conta
 ## Follow-up slice: typed class passive effects
 
 The nine class passives now resolve through a validated, data-only ClassPassiveEffectCatalog. Definitions identify their trigger, bonus type, magnitude, threshold, and any matching enemy-intent kinds. Runtime evaluation remains explicit and deterministic; no content-defined callbacks are stored in the catalog. Existing passive IDs, trigger timing, conditions, and values are preserved, including Resolve's heavy-block trigger and Companion Instinct's end-of-round lowest-health ally selection. Signature abilities remain registered runtime handlers because their multi-step state changes and target/mode behavior need a separate typed operation model. Encounter-clear and floor rewards remain outstanding.
+
+
+## Follow-up slice: typed class signature ability operations
+
+All nine signature ability effect IDs now have validated, data-only operation definitions in `backend/internal/game/class_ability_operation_catalog.go`. Definitions describe target policy, supported modes, operation kinds, magnitudes, scaling stats, and conditional branches (for example frost interrupt behavior, companion mode choices, and counter damage based on damage taken last round).
+
+The authoritative runtime handlers remain responsible for applying state transitions in this slice. The catalog is an explicit, validated specification of those operations, not yet the execution engine; this avoids introducing a second combat implementation or changing timing while the pure combat boundary is still pending. Catalog validation requires complete one-to-one coverage of authored abilities and rejects unknown operation kinds, invalid targets, unsupported modes, and empty operation lists.
+
+The next extraction should move each operation's application into shared deterministic combat transition functions and have both live gameplay and simulation call those same functions. Encounter-clear and floor rewards remain outstanding.
