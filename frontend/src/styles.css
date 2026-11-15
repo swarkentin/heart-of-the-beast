@@ -299,3 +299,31 @@
 .room-captive-cell .scene-art{filter:sepia(.55) hue-rotate(340deg) brightness(.72)}
 .room-reliquary-vault .scene-art{filter:sepia(.42) hue-rotate(12deg) saturate(1.15) brightness(.88)}
 @media(max-width:700px){.room-event-panel{width:calc(100% - 12px);max-height:40%;margin:5px 0 7px;padding:9px 10px}.room-event-heading h2{font-size:15px}.room-event-panel>p{font-size:10px;margin-bottom:8px}.room-event-choices{grid-template-columns:1fr;gap:5px}.room-event-choices button{padding:8px}.room-event-choices strong{font-size:10px}.room-event-choices small{font-size:9px}}
+
+
+/* Keep the party lobby's full action list reachable on shorter laptop screens. */
+.lobby-screen{
+  max-height:100dvh;
+  overscroll-behavior-y:contain;
+  scrollbar-gutter:stable;
+}
+.lobby-screen>.lobby-panel{
+  flex:0 0 auto;
+  margin-top:clamp(12px,3vh,28px);
+  margin-bottom:clamp(20px,4vh,36px);
+}
+.party-lobby-panel .archetype-picker{margin:16px 0;padding:14px}
+.party-lobby-panel .archetype-choice{min-height:76px}
+.party-lobby-panel>.turn-button{min-width:180px}
+@media(max-height:800px){
+  .lobby-screen>.lobby-panel{margin-top:12px;margin-bottom:20px;padding:18px 22px}
+  .party-lobby-panel h1{margin:8px 0!important;font-size:28px!important}
+  .party-lobby-panel>p{margin:8px 0;line-height:1.45}
+  .party-lobby-panel .archetype-picker{margin:12px 0;padding:10px}
+  .party-lobby-panel .archetype-picker>p{margin:5px 0 9px}
+  .party-lobby-panel .archetype-choice{min-height:68px;padding:8px}
+  .party-lobby-panel ul{margin:8px 0}
+}
+@media(max-width:600px){
+  .party-lobby-panel>.turn-button{width:100%;margin:8px 0 0}
+}
