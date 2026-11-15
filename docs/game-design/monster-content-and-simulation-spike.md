@@ -100,7 +100,9 @@ Run large batches outside request handling. Keep output machine-readable (JSON/C
 | Player class bonuses | `classes.go`, `class_combat.go` | Existing class catalog remains separate; shared effect vocabulary can follow |
 | Encounter compositions | `backend/internal/game/encounters.go` | Reusable definitions with party variants, spawn slots, and provisional relative difficulty budgets |
 | Talent combat modifiers | `backend/internal/game/progression.go` | Typed `CombatModifierCatalog`; extracted without changing values or selection behavior |
-| Class ability/passive effects | `backend/internal/game/class_combat.go` | Typed effect definitions and explicit application rules; follow-up work |\n| Room-event run effects | `backend/internal/game/events.go`, `combat.go` | Typed `RunEffectCatalog`; party rewards and Warden weakness bonus are data-defined |\n| Encounter/floor rewards | `backend/internal/game/combat.go`, `dungeon.go` | Follow-up extraction into run-effect definitions |
+| Class ability/passive effects | `backend/internal/game/class_combat.go` | Typed effect definitions and explicit application rules; follow-up work |
+| Room-event run effects | `backend/internal/game/events.go`, `combat.go` | Typed `RunEffectCatalog`; party rewards and Warden weakness bonus are data-defined |
+| Encounter/floor rewards | `backend/internal/game/combat.go`, `dungeon.go` | Follow-up extraction into run-effect definitions |
 | Random encounter modifiers | Not currently authored as a random modifier pool | Future seeded selection with explicit eligibility and weights |
 
 ## Out of scope for the first extraction
