@@ -29,7 +29,7 @@ Exploration content must not require simultaneous actions from multiple players.
 
 The visual direction is illustrated, high-definition pixel art. The scene should establish place and mood, while characters and enemies remain immediately recognizable and readable.
 
-The interface belongs to the same pixel-art world as the scenes. Typography, talent trees, hero actions, HUD, navigation, dialogs, and combat feedback should use crisp pixel-aware forms, stepped borders, and compact game-like framing rather than generic smooth web controls. Pixel styling must preserve legibility: reserve the most pixelated display face for short headings and labels, and use a readable mono face for descriptions and longer text. Use a restrained palette drawn from the scene and maintain clear contrast, focus, selected, disabled, and danger states.
+The interface belongs to the same pixel-art world as the scenes. Typography, talent trees, hero actions, HUD, navigation, dialogs, and combat feedback should use crisp pixel-aware forms, stepped borders, and compact game-like framing rather than generic smooth web controls. Pixel styling must preserve legibility: reserve the most pixelated display face for short headings, and use a readable face for controls, status, descriptions, and longer text. Keep routine interface text at least 12 CSS pixels on desktop and 11 on mobile; avoid shrinking labels to fit, instead reflow or simplify them. Use a restrained palette drawn from the scene and maintain clear contrast, focus, selected, disabled, and danger states.
 
 Working presentation principles for the first slice:
 
