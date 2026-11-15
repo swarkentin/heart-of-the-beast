@@ -9,13 +9,13 @@ export type AudioSettings = {
 };
 
 const SETTINGS_KEY = "heart-of-the-beast.audio-settings";
-const DEFAULT_SETTINGS: AudioSettings = { enabled: false, muted: false, master: 0.72, music: 0.48, effects: 0.72 };
+const DEFAULT_SETTINGS: AudioSettings = { enabled: true, muted: false, master: 0.72, music: 0.48, effects: 0.72 };
 
 function readSettings(): AudioSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const stored = JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || "null") as Partial<AudioSettings> | null;
-    return stored ? { ...DEFAULT_SETTINGS, ...stored, enabled: false } : DEFAULT_SETTINGS;
+    return stored ? { ...DEFAULT_SETTINGS, ...stored } : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -47,7 +47,7 @@ class GameAudioEngine {
   setVolumes(settings: AudioSettings) {
     if (!this.context || !this.master || !this.music || !this.effects) return;
     const now = this.context.currentTime;
-    this.master.gain.setTargetAtTime(settings.muted ? 0 : settings.master, now, 0.04);
+    this.master.gain.setTargetAtTime(!settings.enabled || settings.muted ? 0 : settings.master, now, 0.04);
     this.music.gain.setTargetAtTime(settings.music, now, 0.04);
     this.effects.gain.setTargetAtTime(settings.effects, now, 0.025);
   }
@@ -259,9 +259,9 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
   const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; events: string[]; version: number } | null>(null);
 
   const enable = useCallback(async () => {
-    const next = { ...settings, enabled: true, muted: false };
-    await engine.enable(next);
+    const next = { ...settings, enabled: true };
     setSettings(next);
+    await engine.enable(next);
     engine.startScene(scene, phase === "combat");
   }, [settings, scene, phase]);
 
@@ -275,9 +275,28 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, enabled: false }));
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     engine.setVolumes(settings);
   }, [settings]);
+
+  // Browsers require a user gesture before Web Audio can start. Keep sound
+  // enabled by default, then resume it on the first interaction without an
+  // extra "enable sound" step.
+  useEffect(() => {
+    if (!settings.enabled) return;
+    let activated = false;
+    const activate = () => {
+      if (activated) return;
+      activated = true;
+      void engine.enable(settings).then(() => engine.startScene(scene, phase === "combat"));
+    };
+    window.addEventListener("pointerdown", activate, { once: true, capture: true });
+    window.addEventListener("keydown", activate, { once: true, capture: true });
+    return () => {
+      window.removeEventListener("pointerdown", activate, true);
+      window.removeEventListener("keydown", activate, true);
+    };
+  }, [settings.enabled, scene, phase]);
 
   useEffect(() => {
     if (settings.enabled) engine.startScene(scene, phase === "combat");
@@ -317,11 +336,10 @@ export function AudioControls({ settings, onEnable, onChange }: {
   onEnable: () => void;
   onChange: (patch: Partial<AudioSettings>) => void;
 }) {
-  if (!settings.enabled) return <button className="audio-enable" onClick={onEnable}>♫ ENABLE SOUND</button>;
   return <details className="audio-controls">
-    <summary aria-label="Audio settings">♫ SOUND</summary>
+    <summary aria-label="Audio settings">♫ SOUND {settings.enabled && !settings.muted ? "ON" : "OFF"}</summary>
     <div className="audio-panel">
-      <div className="audio-panel-heading"><strong>THE SOUND OF THE CATACOMBS</strong><button onClick={() => onChange({ muted: !settings.muted })}>{settings.muted ? "UNMUTE" : "MUTE"}</button></div>
+      <div className="audio-panel-heading"><strong>THE SOUND OF THE CATACOMBS</strong><button onClick={() => settings.enabled ? onChange({ enabled: false }) : onEnable()}>{settings.enabled ? "TURN SOUND OFF" : "TURN SOUND ON"}</button><button onClick={() => onChange({ muted: !settings.muted })}>{settings.muted ? "UNMUTE" : "MUTE"}</button></div>
       {([
         ["master", "MASTER"],
         ["music", "MUSIC"],
