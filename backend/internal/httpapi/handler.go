@@ -382,7 +382,7 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"archetypes": game.ArchetypeCatalog(),
 		"talents": game.TalentCatalog(),
-		"levelThresholds": []int{50, 125, 225, 350},
+		"levelThresholds": []int{50, 100, 200, 325},
 	})
 }
 
