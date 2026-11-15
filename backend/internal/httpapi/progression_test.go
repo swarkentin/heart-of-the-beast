@@ -127,6 +127,13 @@ func TestRunClassCanBeChosenAndIsServerBuiltAtStart(t *testing.T) {
 	chosen := httptest.NewRecorder()
 	handler.ServeHTTP(chosen, choose)
 	if chosen.Code != http.StatusOK { t.Fatalf("choose class: %d %s", chosen.Code, chosen.Body.String()) }
+	var lobbySnapshot struct {
+		PlayerClasses map[string]string `json:"playerClasses"`
+	}
+	if err := json.Unmarshal(chosen.Body.Bytes(), &lobbySnapshot); err != nil { t.Fatal(err) }
+	if lobbySnapshot.PlayerClasses == nil || len(lobbySnapshot.PlayerClasses) != 1 {
+		t.Fatalf("selected class should be present in lobby snapshot: %+v", lobbySnapshot.PlayerClasses)
+	}
 
 	start := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/start", nil)
 	start.Header.Set("Authorization", "Bearer "+response.PlayerToken)
