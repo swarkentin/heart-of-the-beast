@@ -8,14 +8,19 @@ export type AudioSettings = {
   effects: number;
 };
 
-const SETTINGS_KEY = "heart-of-the-beast.audio-settings";
+const SETTINGS_KEY = "heart-of-the-beast.audio-settings.v2";
+const LEGACY_SETTINGS_KEY = "heart-of-the-beast.audio-settings";
 const DEFAULT_SETTINGS: AudioSettings = { enabled: true, muted: false, master: 0.72, music: 0.48, effects: 0.72 };
 
 function readSettings(): AudioSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
-    const stored = JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || "null") as Partial<AudioSettings> | null;
-    return stored ? { ...DEFAULT_SETTINGS, ...stored } : DEFAULT_SETTINGS;
+    const current = window.localStorage.getItem(SETTINGS_KEY);
+    const legacy = !current ? window.localStorage.getItem(LEGACY_SETTINGS_KEY) : null;
+    const stored = JSON.parse(current || legacy || "null") as Partial<AudioSettings> | null;
+    // The previous version persisted enabled=false only because browsers
+    // needed an explicit opt-in each page load; it was not a user preference.
+    return stored ? { ...DEFAULT_SETTINGS, ...stored, enabled: current ? stored.enabled ?? true : true } : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
   }
