@@ -159,7 +159,6 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	}
 }
 
-
 func TestSimulationClassAbilityPolicyCoversEverySignatureEffect(t *testing.T) {
 	tests := []struct {
 		name       string
