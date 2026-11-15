@@ -17,17 +17,17 @@ type CombatSimulationSnapshot struct {
 
 // CombatSimulationReport is a machine-readable summary for one reproducible run.
 type CombatSimulationReport struct {
-	Seed                  int64            `json:"seed"`
-	Won                   bool             `json:"won"`
-	Wiped                 bool             `json:"wiped"`
-	Rounds                int              `json:"rounds"`
-	PlayerDamageDealt     int              `json:"playerDamageDealt"`
-	PlayerDamageReceived  int              `json:"playerDamageReceived"`
-	MonsterHealing        int              `json:"monsterHealing"`
-	PlayersDowned         int              `json:"playersDowned"`
-	AbilityUses           map[string]int   `json:"abilityUses"`
-	RemainingPlayerHealth map[string]int   `json:"remainingPlayerHealth"`
-	RemainingEnemyHealth  map[string]int   `json:"remainingEnemyHealth"`
+	Seed                  int64                            `json:"seed"`
+	Won                   bool                             `json:"won"`
+	Wiped                 bool                             `json:"wiped"`
+	Rounds                int                              `json:"rounds"`
+	PlayerDamageDealt     int                              `json:"playerDamageDealt"`
+	PlayerDamageReceived  int                              `json:"playerDamageReceived"`
+	MonsterHealing        int                              `json:"monsterHealing"`
+	PlayersDowned         int                              `json:"playersDowned"`
+	AbilityUses           map[string]int                   `json:"abilityUses"`
+	RemainingPlayerHealth map[string]int                   `json:"remainingPlayerHealth"`
+	RemainingEnemyHealth  map[string]int                   `json:"remainingEnemyHealth"`
 	PlayerProgression     map[string]ProgressionTransition `json:"playerProgression,omitempty"`
 }
 
@@ -86,11 +86,11 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 	}
 
 	report := CombatSimulationReport{
-		Seed: seed,
-		AbilityUses: make(map[string]int),
+		Seed:                  seed,
+		AbilityUses:           make(map[string]int),
 		RemainingPlayerHealth: make(map[string]int, len(players)),
-		RemainingEnemyHealth: make(map[string]int, len(enemies)),
-		PlayerProgression: make(map[string]ProgressionTransition),
+		RemainingEnemyHealth:  make(map[string]int, len(enemies)),
+		PlayerProgression:     make(map[string]ProgressionTransition),
 	}
 	rng := rand.New(rand.NewSource(seed))
 
@@ -153,14 +153,14 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			}
 
 			attack := resolveAttackDamage(AttackDamageInput{
-				BaseDamage: player.StrikeDamage + player.Stats.Power,
-				MarkedDamage: target.MarkedDamage,
+				BaseDamage:          player.StrikeDamage + player.Stats.Power,
+				MarkedDamage:        target.MarkedDamage,
 				IncludeMarkedDamage: true,
 				ConsumeMarkedDamage: true,
-				ResolveReady: player.ClassCombat.ResolveReady,
-				UseResolve: true,
-				ResolveBonus: 3,
-				Telegraph: target.Intent != nil && target.Intent.Interruptible,
+				ResolveReady:        player.ClassCombat.ResolveReady,
+				UseResolve:          true,
+				ResolveBonus:        3,
+				Telegraph:           target.Intent != nil && target.Intent.Interruptible,
 			})
 			target.MarkedDamage = attack.RemainingMarkedDamage
 			player.ClassCombat.ResolveReady = attack.ResolveReady
@@ -190,14 +190,14 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			for _, playerID := range targetIDs {
 				player := players[playerID]
 				mitigation := resolveIncomingDamage(IncomingDamageInput{
-					IntentDamage: intent.Damage,
-					AgilityReduction: player.Stats.Agility,
-					Ward: player.ClassCombat.Ward,
-					WardReflect: player.ClassCombat.WardReflect,
-					Guarding: player.Guarding,
-					GuardReduction: player.GuardReduction,
+					IntentDamage:          intent.Damage,
+					AgilityReduction:      player.Stats.Agility,
+					Ward:                  player.ClassCombat.Ward,
+					WardReflect:           player.ClassCombat.WardReflect,
+					Guarding:              player.Guarding,
+					GuardReduction:        player.GuardReduction,
 					DefaultGuardReduction: GuardDamageReduction,
-					GuardBonus: player.ClassCombat.GuardBonus,
+					GuardBonus:            player.ClassCombat.GuardBonus,
 				})
 				player.ClassCombat.Ward = mitigation.WardRemaining
 				player.ClassCombat.WardReflect = mitigation.WardReflectRemaining
@@ -316,17 +316,16 @@ func allSimulationPlayersDown(players map[string]*PlayerState) bool {
 	return true
 }
 
-
 // CombatSimulationBatchReport summarizes the outcome distribution for a batch.
 type CombatSimulationBatchReport struct {
-	Runs                  int     `json:"runs"`
-	Wins                  int     `json:"wins"`
-	Wipes                 int     `json:"wipes"`
-	WinRate               float64 `json:"winRate"`
-	MedianRounds          int     `json:"medianRounds"`
-	P90Rounds             int     `json:"p90Rounds"`
-	MedianDamageDealt     int     `json:"medianDamageDealt"`
-	MedianDamageReceived  int     `json:"medianDamageReceived"`
+	Runs                 int     `json:"runs"`
+	Wins                 int     `json:"wins"`
+	Wipes                int     `json:"wipes"`
+	WinRate              float64 `json:"winRate"`
+	MedianRounds         int     `json:"medianRounds"`
+	P90Rounds            int     `json:"p90Rounds"`
+	MedianDamageDealt    int     `json:"medianDamageDealt"`
+	MedianDamageReceived int     `json:"medianDamageReceived"`
 }
 
 // SummarizeCombatBatch reports robust distribution statistics without changing
@@ -365,7 +364,7 @@ func nearestRank(sortedValues []int, percentile float64) int {
 	if len(sortedValues) == 0 {
 		return 0
 	}
-	index := int(float64(len(sortedValues))*percentile + 0.999999) - 1
+	index := int(float64(len(sortedValues))*percentile+0.999999) - 1
 	if index < 0 {
 		index = 0
 	}
