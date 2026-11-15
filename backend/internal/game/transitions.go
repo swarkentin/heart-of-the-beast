@@ -110,7 +110,6 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		},
 	}
 
-
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
 	for _, id := range room.PlayerIDs {
 		var player *PlayerState
