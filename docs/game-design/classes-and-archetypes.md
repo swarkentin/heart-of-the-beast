@@ -79,7 +79,7 @@ The server-side handlers for the nine initial abilities and passives are impleme
 
 A stopped or weakened intent is resolved for the current round; surviving enemies still telegraph a fresh intent for the next round. This preserves the existing round cadence and makes control effects immediately readable. Renewal currently heals only; minor-effect cleansing will be added alongside the status-effect system rather than inventing an isolated status framework here.
 
-These effects are server-authoritative and registered by the catalog's stable effect IDs. The current frontend still presents the universal actions only; class selection and signature-action controls are separate UI work.
+These effects are server-authoritative and registered by the catalog's stable effect IDs. The player combat interface presents one catalog-mapped signature action alongside Strike, Defend, and Interrupt. Arcanist and Beastcaller choose a mode; enemy actions use the currently selected living enemy, while Renewal and Beastcaller Defend can target a living ally or default to self. The player still submits only one action per round, and legacy players without a class build retain the universal actions.
 
 ## Starting stats and equipment
 
