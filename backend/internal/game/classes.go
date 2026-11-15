@@ -29,6 +29,7 @@ type EquipmentSlot string
 
 const (
 	EquipmentWeapon    EquipmentSlot = "weapon"
+	EquipmentShield    EquipmentSlot = "shield"
 	EquipmentArmor     EquipmentSlot = "armor"
 	EquipmentAccessory EquipmentSlot = "accessory"
 )
@@ -122,7 +123,7 @@ var classPassives = []ClassPassiveDefinition{
 }
 
 var equipmentCatalog = []EquipmentDefinition{
-	{ID: "weapon.tower-shield", Name: "Tower Shield", Slot: EquipmentWeapon, Description: "A broad shield built to hold the line."},
+	{ID: "weapon.tower-shield", Name: "Tower Shield", Slot: EquipmentShield, Description: "A broad shield built to hold the line."},
 	{ID: "weapon.mace", Name: "One-handed Mace", Slot: EquipmentWeapon, Description: "A dependable defensive weapon."},
 	{ID: "armor.heavy", Name: "Heavy Armor", Slot: EquipmentArmor, Description: "Layered armor for absorbing punishment."},
 	{ID: "weapon.warhammer", Name: "Two-handed Hammer", Slot: EquipmentWeapon, Description: "A massive weapon for forceful retaliation."},
@@ -138,7 +139,7 @@ var equipmentCatalog = []EquipmentDefinition{
 	{ID: "accessory.spellbook", Name: "Spellbook", Slot: EquipmentAccessory, Description: "Notes on elemental forms and control."},
 	{ID: "armor.cloth-robes", Name: "Cloth Robes", Slot: EquipmentArmor, Description: "Light robes suited to spellcasting."},
 	{ID: "weapon.longbow", Name: "Longbow", Slot: EquipmentWeapon, Description: "A precise ranged weapon."},
-	{ID: "weapon.hunting-knife", Name: "Hunting Knife", Slot: EquipmentAccessory, Description: "A practical field knife."},
+	{ID: "weapon.hunting-knife", Name: "Hunting Knife", Slot: EquipmentWeapon, Description: "A practical field knife."},
 	{ID: "armor.reinforced-leather", Name: "Reinforced Leather", Slot: EquipmentArmor, Description: "Leather armor with added protection."},
 	{ID: "weapon.holy-staff", Name: "Holy Staff", Slot: EquipmentWeapon, Description: "A staff used to channel restorative magic."},
 	{ID: "accessory.healing-talisman", Name: "Healing Talisman", Slot: EquipmentAccessory, Description: "A focus for restorative rites."},
@@ -227,7 +228,7 @@ func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefin
 		if value.ID == "" || equipmentIDs[value.ID] {
 			return fmt.Errorf("duplicate or empty equipment ID %q", value.ID)
 		}
-		if value.Slot != EquipmentWeapon && value.Slot != EquipmentArmor && value.Slot != EquipmentAccessory {
+		if value.Slot != EquipmentWeapon && value.Slot != EquipmentShield && value.Slot != EquipmentArmor && value.Slot != EquipmentAccessory {
 			return fmt.Errorf("equipment %q has invalid slot %q", value.ID, value.Slot)
 		}
 		equipmentIDs[value.ID] = true
