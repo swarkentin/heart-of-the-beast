@@ -96,3 +96,11 @@ func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
 		t.Fatalf("unexpected damage distribution: %#v", summary)
 	}
 }
+
+func TestSimulateCombatRejectsUnknownMonsterBehavior(t *testing.T) {
+	snapshot := simulationFixture(t)
+	snapshot.Enemies[0].Behavior = "missing-monster"
+	if _, err := SimulateCombat(snapshot, 1, 10); err == nil {
+		t.Fatal("expected unknown monster behavior to be rejected")
+	}
+}
