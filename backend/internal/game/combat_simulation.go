@@ -255,7 +255,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 	}
 	if report.Won {
 		partyBonuses := simulationPartyBonuses(players)
-		for id, player := range players {
+		for _, player := range players {
 			if player.Health <= 0 {
 				continue
 			}
