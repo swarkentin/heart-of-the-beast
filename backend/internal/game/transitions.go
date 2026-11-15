@@ -91,6 +91,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 				}
 				run.CurrentRoomID = next.ID
 				run.Phase = PhaseCombat
+				startCombatRound(run, now)
 				return nil
 			}
 		}
