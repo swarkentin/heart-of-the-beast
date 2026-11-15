@@ -147,11 +147,11 @@ func experienceForNextLevel(level int) int {
 	case 1:
 		return 50
 	case 2:
-		return 125
+		return 100
 	case 3:
-		return 225
+		return 200
 	case 4:
-		return 350
+		return 325
 	default:
 		return 0
 	}
@@ -161,7 +161,7 @@ func grantEncounterExperience(room *Room, round int) {
 	run := room.Run
 	reward := 50
 	if run.CurrentRoomID == "warden" {
-		reward = 100
+		reward = 75
 	}
 	for _, playerID := range room.PlayerIDs {
 		player := run.Players[playerID]
