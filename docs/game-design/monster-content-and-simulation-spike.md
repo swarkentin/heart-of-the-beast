@@ -215,3 +215,12 @@ The first simulation runner lives in `backend/internal/game/combat_simulation.go
 Reports include victory/wipe outcome, rounds, player damage dealt/received, monster healing, down counts, executed ability kinds, remaining health, and resulting progression. `SimulateCombatBatch` runs caller-supplied seeds in order, and `SummarizeCombatBatch` reports win rate plus median and nearest-rank 90th-percentile rounds and damage.
 
 This is an intentionally narrow first harness, not yet a complete balance oracle. The baseline policy does not execute class signature abilities, talent/passive effects, consumables, room/run effects, or inter-floor choices; it also simulates one encounter rather than a full floor. Those are explicit follow-up extensions. Do not tune authored monster values from this first report alone. The next validation step is to add policy coverage and compare simulator outcomes against focused live-transition fixtures before collecting broad solo/co-op balance distributions.
+
+
+## Follow-up slice: talent and passive simulation parity
+
+The seeded runner now applies the existing talent modifier catalog and class passive definitions when resolving its baseline policy. Player attacks include talent attack bonuses, telegraph bonuses, and conditional passive attack bonuses; interrupts include talent and passive bonuses. Incoming damage includes talent and intent-specific passive reductions before Ward and Guard, while guard mitigation includes individual and party talent bonuses. Reflection, Resolve's heavy-guard trigger, Companion Instinct's end-of-round healing, and encounter-clear healing are also represented.
+
+The simulator continues to consume the shared pure damage, mitigation, and progression transitions. It does not duplicate talent values or passive trigger definitions: it reads the same catalogs and resolver functions as live combat. Added regression tests compare otherwise-identical snapshots with and without representative talent/passive builds.
+
+Signature abilities are not yet executed by the simulator. The next slice should add policy choices for those abilities by sharing deterministic effect application with live combat, rather than copying the current room/event handlers. Consumables, room/run effects, and inter-floor choices remain out of scope until those shared operation boundaries exist. Do not treat the simulator as a complete balance oracle yet.
