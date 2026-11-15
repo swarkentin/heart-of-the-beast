@@ -241,6 +241,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 				onClassGuardBlocked(player, intent, mitigation.Guarded, mitigation.GuardBlocked)
 				transition := resolveHealthDamage(player.Health, mitigation.Damage)
 				player.Health = transition.Health
+				player.ClassCombat.DamageTakenThisRound += transition.Applied
 				report.PlayerDamageReceived += transition.Applied
 				if player.Health == 0 {
 					report.PlayersDowned++
@@ -262,6 +263,8 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		}
 		report.PlayerHealing += applySimulationCompanionInstinct(players, playerIDs)
 		for _, player := range players {
+			player.ClassCombat.DamageTakenLastRound = player.ClassCombat.DamageTakenThisRound
+			player.ClassCombat.DamageTakenThisRound = 0
 			player.Guarding = false
 			player.ClassCombat.GuardBonus = 0
 		}
@@ -333,6 +336,7 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 	case "combat.guard":
 		return command, incoming > 0 && !player.Guarding
 	case "combat.counter":
+		command.TargetID = target.ID
 		return command, player.ClassCombat.DamageTakenLastRound > 0
 	case "combat.ward":
 		return command, incoming > 0 && player.ClassCombat.Ward == 0
