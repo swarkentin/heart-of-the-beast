@@ -15,12 +15,9 @@ var (
 )
 
 func startCombatRound(run *Run, now time.Time) {
-	number := 1
-	if run.CombatRound != nil {
-		number = run.CombatRound.Number + 1
-	}
+	run.CombatRoundNumber++
 	run.CombatRound = &CombatRound{
-		Number: number, StartedAt: now.UTC(),
+		Number: run.CombatRoundNumber, StartedAt: now.UTC(),
 		Deadline: now.UTC().Add(CombatActionWindow),
 		Actions: make(map[string]Command),
 	}
