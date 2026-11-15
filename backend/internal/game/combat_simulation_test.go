@@ -12,7 +12,7 @@ func simulationFixture(t *testing.T) CombatSimulationSnapshot {
 		t.Fatal(err)
 	}
 	return CombatSimulationSnapshot{
-		Players:          []PlayerState{{
+		Players: []PlayerState{{
 			ID: "hero", Health: 30, MaxHealth: 30, StrikeDamage: 8,
 			Level: 1, Stats: PlayerStats{Power: 2, Focus: 2, Agility: 1},
 		}},
