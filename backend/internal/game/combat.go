@@ -70,7 +70,10 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 	if _, exists := run.CombatRound.Actions[actorID]; exists {
 		return ErrRoundActionSubmitted
 	}
-	if command.Action != "attack" && command.Action != "defend" && command.Action != "interrupt" {
+	if command.Action != "attack" && command.Action != "defend" && command.Action != "interrupt" && command.Action != "ability" {
+		return ErrInvalidAction
+	}
+	if command.Action != "ability" && command.Mode != "" {
 		return ErrInvalidAction
 	}
 	if command.Action == "attack" || command.Action == "interrupt" {
@@ -83,6 +86,15 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 		}
 		if command.Action == "interrupt" && !hasInterruptibleIntent(current.Encounter, command.TargetID) {
 			return ErrInvalidTarget
+		}
+	}
+	if command.Action == "ability" {
+		current := run.Rooms[run.CurrentRoomID]
+		if current == nil || current.Encounter == nil || current.Encounter.Status != EncounterActive {
+			return ErrInvalidPhase
+		}
+		if err := validateClassAbilityCommand(player, current.Encounter, command, run.Players); err != nil {
+			return err
 		}
 	}
 	run.CombatRound.Actions[actorID] = command
@@ -145,6 +157,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 		if !submitted {
 			action = Command{Type: "combat", Action: "defend"}
 		}
+		if action.Action != "ability" {
+			player.ClassCombat.ArcaneCharges = 0
+		}
 		switch action.Action {
 		case "attack":
 			for i := range current.Encounter.Enemies {
@@ -152,7 +167,12 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if enemy.ID != action.TargetID || enemy.Health <= 0 {
 					continue
 				}
-				damage := player.StrikeDamage + player.Stats.Power + bonusesFor(player).AttackDamage
+				damage := player.StrikeDamage + player.Stats.Power + bonusesFor(player).AttackDamage + classPassiveEffects(player, enemy, nil).AttackDamage + enemy.MarkedDamage
+				if player.ClassCombat.ResolveReady {
+					damage += 3
+					player.ClassCombat.ResolveReady = false
+				}
+				enemy.MarkedDamage = 0
 				if enemy.Intent != nil && enemy.Intent.Interruptible {
 					damage += bonusesFor(player).AttackVsTelegraph
 				}
@@ -177,7 +197,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				enemy := &current.Encounter.Enemies[i]
 				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
 					label := enemy.Intent.Label
-					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage
+					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage + classPassiveEffects(player, enemy, enemy.Intent).InterruptDamage
 					if damage > 0 {
 						beforeHealth := enemy.Health
 						enemy.Health -= damage
@@ -194,6 +214,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 					}
 					break
 				}
+			}
+		case "ability":
+			if err := applyClassAbility(room, player, action, roundNumber); err != nil {
+				addCombatEvent(run, roundNumber, "class_ability_failed", adventurerLabel(room, playerID)+" could not use its class ability.")
 			}
 		case "defend":
 			player.Guarding = true
@@ -223,29 +247,49 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
 				continue
 			}
-			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction
+			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction - classPassiveEffects(player, enemy, &intent).DamageReduction
 			if damage < 0 {
 				damage = 0
 			}
+			wardReflect := 0
+			if player.ClassCombat.Ward > 0 {
+				absorbed := damage
+				if absorbed > player.ClassCombat.Ward {
+					absorbed = player.ClassCombat.Ward
+				}
+				damage -= absorbed
+				player.ClassCombat.Ward = 0
+				wardReflect = player.ClassCombat.WardReflect
+				player.ClassCombat.WardReflect = 0
+				if absorbed > 0 {
+					addCombatImpact(run, roundNumber, "runic_ward", "A Runic Ward absorbs "+itoa(absorbed)+" damage.", "block", playerID, "player", absorbed)
+				}
+			}
 			guarded := player.Guarding
+			guardBlocked := 0
 			if guarded {
 				reduction := player.GuardReduction
 				if reduction <= 0 {
 					reduction = GuardDamageReduction
 				}
-				reduction += bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
+				reduction += player.ClassCombat.GuardBonus + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
+				beforeGuard := damage
 				damage -= reduction
 				if damage < 0 {
 					damage = 0
 				}
+				guardBlocked = beforeGuard - damage
 				player.Guarding = false
+				player.ClassCombat.GuardBonus = 0
 			}
+			onClassGuardBlocked(player, intent, guarded, guardBlocked)
 			beforeHealth := player.Health
 			player.Health -= damage
 			if player.Health < 0 {
 				player.Health = 0
 			}
 			actualDamage := beforeHealth - player.Health
+			player.ClassCombat.DamageTakenThisRound += actualDamage
 			message := enemy.Name + " uses " + intent.Label + " on " + adventurerLabel(room, playerID) + " for " + itoa(actualDamage) + " damage."
 			if guarded {
 				message += " Guarded."
@@ -258,9 +302,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 			} else {
 				addCombatEvent(run, roundNumber, "enemy_attack", message)
 			}
-			if bonusesFor(player).ReflectDamage > 0 && enemy.Health > 0 {
+			reflectDamage := bonusesFor(player).ReflectDamage + wardReflect
+			if reflectDamage > 0 && enemy.Health > 0 {
 				beforeEnemyHealth := enemy.Health
-				enemy.Health -= bonusesFor(player).ReflectDamage
+				enemy.Health -= reflectDamage
 				if enemy.Health < 0 {
 					enemy.Health = 0
 				}
@@ -290,8 +335,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 		enemy.Intent = nil
 	}
 
+	applyCompanionInstinct(room, roundNumber)
 	for _, player := range run.Players {
 		player.Guarding = false
+		player.ClassCombat.GuardBonus = 0
 	}
 
 	if allEnemiesDefeated(current.Encounter) {
@@ -303,7 +350,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			heal := bonusesFor(player).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
+			heal := bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
 			if heal > 0 {
 				before := player.Health
 				player.Health += heal
@@ -338,6 +385,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 		return
 	}
 
+	for _, player := range run.Players {
+		player.ClassCombat.DamageTakenLastRound = player.ClassCombat.DamageTakenThisRound
+		player.ClassCombat.DamageTakenThisRound = 0
+	}
 	startCombatRound(room, now)
 }
 

@@ -61,6 +61,16 @@ type NavigationVote struct {
 	Votes     map[string]string `json:"votes"`
 }
 
+type ClassCombatState struct {
+	DamageTakenLastRound int  `json:"damageTakenLastRound,omitempty"`
+	DamageTakenThisRound int  `json:"damageTakenThisRound,omitempty"`
+	GuardBonus           int  `json:"guardBonus,omitempty"`
+	Ward                 int  `json:"ward,omitempty"`
+	WardReflect          int  `json:"wardReflect,omitempty"`
+	ResolveReady         bool `json:"resolveReady,omitempty"`
+	ArcaneCharges        int  `json:"arcaneCharges,omitempty"`
+}
+
 type PlayerState struct {
 	ID             string              `json:"id"`
 	Health         int                 `json:"health"`
@@ -70,6 +80,7 @@ type PlayerState struct {
 	Guarding       bool                `json:"guarding,omitempty"`
 	Archetype      string              `json:"archetype"`
 	ClassBuild     *ClassBuildSnapshot `json:"classBuild,omitempty"`
+	ClassCombat    ClassCombatState    `json:"classCombat,omitempty"`
 	Experience     int                 `json:"experience"`
 	Level          int                 `json:"level"`
 	TalentPoints   int                 `json:"talentPoints"`
@@ -128,13 +139,14 @@ type EnemyIntent struct {
 }
 
 type Enemy struct {
-	ID         string       `json:"id"`
-	Name       string       `json:"name"`
-	Behavior   string       `json:"behavior,omitempty"`
-	TurnsTaken int          `json:"turnsTaken"`
-	Health     int          `json:"health"`
-	MaxHealth  int          `json:"maxHealth"`
-	Intent     *EnemyIntent `json:"intent,omitempty"`
+	ID           string       `json:"id"`
+	Name         string       `json:"name"`
+	Behavior     string       `json:"behavior,omitempty"`
+	TurnsTaken   int          `json:"turnsTaken"`
+	Health       int          `json:"health"`
+	MaxHealth    int          `json:"maxHealth"`
+	MarkedDamage int          `json:"markedDamage,omitempty"`
+	Intent       *EnemyIntent `json:"intent,omitempty"`
 }
 
 type CombatEvent struct {
@@ -153,6 +165,7 @@ type Command struct {
 	ExitID   string `json:"exitId,omitempty"`
 	ChoiceID string `json:"choiceId,omitempty"`
 	Action   string `json:"action,omitempty"`
+	Mode     string `json:"mode,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
 }
 

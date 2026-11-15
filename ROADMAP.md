@@ -56,7 +56,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
-- [ ] Implement the extensible archetype/class system per `docs/game-design/classes-and-archetypes.md` and ADR 0021: central class catalog with stable IDs, nine initial class definitions, unique starting stats/equipment, one signature ability and passive per class, and server-authoritative selection/combat.
+- [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
+- [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
+- [ ] Migrate the lobby from archetype-only selection to the nine-class selection experience, including stats, equipment, ability, and passive previews.
+- [ ] Add class signature actions and target/mode controls to the player combat UI.
 - [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
 - [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
 - [ ] Snapshot class/build definition versions in active runs and test compatibility across reconnects and content updates.
