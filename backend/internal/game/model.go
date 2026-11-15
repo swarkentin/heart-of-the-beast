@@ -45,6 +45,7 @@ type Run struct {
 	Players       map[string]*PlayerState `json:"players"`
 	StartedAt     time.Time               `json:"startedAt"`
 	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
+	CombatRound   *CombatRound            `json:"combatRound,omitempty"`
 }
 
 type PlayerState struct {
@@ -85,4 +86,12 @@ type Command struct {
 	ExitID   string `json:"exitId,omitempty"`
 	Action   string `json:"action,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
+}
+
+
+type CombatRound struct {
+	Number    int                `json:"number"`
+	StartedAt time.Time          `json:"startedAt"`
+	Deadline  time.Time          `json:"deadline"`
+	Actions   map[string]Command `json:"actions"`
 }
