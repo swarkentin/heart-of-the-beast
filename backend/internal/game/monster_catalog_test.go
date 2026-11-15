@@ -35,3 +35,34 @@ func TestDefaultMonsterCatalogPreservesCurrentAbilityCadence(t *testing.T) {
 		}
 	}
 }
+
+func TestMonsterCatalogCreatesNamedEnemiesAndAppliesScaling(t *testing.T) {
+	tests := []struct {
+		name       string
+		monsterID  string
+		scaling    MonsterScaling
+		wantName   string
+		wantHealth int
+	}{
+		{"legacy guardian", "reliquary-guardian", MonsterScaling{HealthMultiplier: 1}, "Reliquary Guardian", 20},
+		{"solo guardian", "bonebound-guardian", MonsterScaling{HealthMultiplier: 0.75, RoundDown: true}, "Bonebound Guardian", 16},
+		{"solo crossing scout", "drowned-scout-crossing-solo", MonsterScaling{HealthMultiplier: 1}, "Drowned Scout", 11},
+		{"depth two boss solo", "warden", MonsterScaling{Depth: 2, PartySize: 1}, "Crypt Warden", 40},
+		{"depth three boss duo", "warden", MonsterScaling{Depth: 3, PartySize: 2}, "Crypt Warden", 62},
+		{"depth two miniboss solo", "depth-reliquary-brute", MonsterScaling{Depth: 2, PartySize: 1}, "Reliquary Brute", 31},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			enemy, err := defaultMonsterCatalog.NewEnemy("instance", test.monsterID, test.scaling)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if enemy.Name != test.wantName || enemy.Health != test.wantHealth || enemy.MaxHealth != test.wantHealth {
+				t.Fatalf("got name=%q health=%d max=%d, want name=%q health=%d", enemy.Name, enemy.Health, enemy.MaxHealth, test.wantName, test.wantHealth)
+			}
+			if enemy.DefinitionID != test.monsterID {
+				t.Fatalf("definition reference = %q, want %q", enemy.DefinitionID, test.monsterID)
+			}
+		})
+	}
+}
