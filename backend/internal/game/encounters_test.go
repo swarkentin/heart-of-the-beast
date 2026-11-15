@@ -13,37 +13,38 @@ func TestEncounterCatalogInstantiatesStableSlotsAndPartyVariants(t *testing.T) {
 		name       string
 		partySize  int
 		encounter  string
+		scaling    MonsterScaling
 		wantIDs    []string
 		wantHealth []int
 	}{
 		{
-			name: "co-op reliquary", partySize: 2, encounter: "catacombs-reliquary",
+			name: "co-op reliquary", partySize: 2, encounter: "catacombs-reliquary", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
 			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{20, 15},
 		},
 		{
-			name: "solo reliquary", partySize: 1, encounter: "catacombs-reliquary",
+			name: "solo reliquary", partySize: 1, encounter: "catacombs-reliquary", scaling: MonsterScaling{HealthMultiplier: 0.75, RoundDown: true, PartySize: 1},
 			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{15, 11},
 		},
 		{
-			name: "solo flooded crossing variant", partySize: 1, encounter: "catacombs-flooded-crossing",
+			name: "solo flooded crossing variant", partySize: 1, encounter: "catacombs-flooded-crossing", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 1},
 			wantIDs: []string{"scout"}, wantHealth: []int{11},
 		},
 		{
-			name: "co-op flooded crossing variant", partySize: 2, encounter: "catacombs-flooded-crossing",
+			name: "co-op flooded crossing variant", partySize: 2, encounter: "catacombs-flooded-crossing", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
 			wantIDs: []string{"scout"}, wantHealth: []int{14},
 		},
 		{
-			name: "solo boss variant", partySize: 1, encounter: "catacombs-warden-boss",
+			name: "solo boss variant", partySize: 1, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 1},
 			wantIDs: []string{"warden"}, wantHealth: []int{36},
 		},
 		{
-			name: "co-op boss variant", partySize: 2, encounter: "catacombs-warden-boss",
+			name: "co-op boss variant", partySize: 2, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
 			wantIDs: []string{"warden"}, wantHealth: []int{42},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			encounter, err := defaultEncounterCatalog.Instantiate(test.encounter, "test-", MonsterScaling{HealthMultiplier: map[bool]float64{true: 0.75, false: 1}[test.partySize == 1], RoundDown: test.partySize == 1, PartySize: test.partySize})
+			encounter, err := defaultEncounterCatalog.Instantiate(test.encounter, "test-", test.scaling)
 			if err != nil {
 				t.Fatal(err)
 			}
