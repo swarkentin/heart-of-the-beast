@@ -15,7 +15,7 @@ The frontend's /api/* requests are rewritten to the API service, so browser requ
 4. Deploy the Blueprint. Render creates the API and frontend services; the API applies database migrations before opening its listener.
 5. Open the frontend service URL and create a room. Confirm /readyz on the API returns HTTP 200.
 
-The API service is configured on Render's Starter plan so it does not spin down while players are using it. The static frontend is hosted on Render's CDN. Keep the API and Neon database in the same region where possible; Render's service region is selected when the service is first created and cannot later be changed in place.
+The API service uses Render's Free compute plan, and the static frontend is hosted on Render's CDN. This keeps the prototype at $0 in Render compute charges, but it is intentionally a testing setup rather than an always-on production configuration. A free web service spins down after 15 minutes without inbound traffic; the next request wakes it, typically taking about a minute. Render may also restart free instances at any time, so clients must tolerate temporary API unavailability and reconnect. Free services have 750 instance-hours per workspace per month, shared across free web services. Keep the API and Neon database in the same region where possible; Render's service region is selected when the service is first created and cannot later be changed in place.
 
 ## Ongoing operations
 
