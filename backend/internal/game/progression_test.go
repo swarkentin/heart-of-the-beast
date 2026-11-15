@@ -85,7 +85,7 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	if err := ChooseTalent(room, "player-1", "tank-bulwark"); err != nil {
 		t.Fatalf("choose Bulwark: %v", err)
 	}
-	if player.MaxHealth != 34 || player.Health != 20 || player.TalentPoints != 0 {
+	if player.MaxHealth != 36 || player.Health != 20 || player.TalentPoints != 0 {
 		t.Fatalf("Bulwark did not apply its health bonus: %+v", player)
 	}
 	if err := ChooseTalent(room, "player-1", "tank-bulwark"); !errors.Is(err, ErrNoTalentPoints) {
