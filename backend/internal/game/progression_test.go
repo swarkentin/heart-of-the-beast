@@ -63,7 +63,7 @@ func TestSelectArchetypeOnlyBeforeRun(t *testing.T) {
 		t.Fatalf("expected invalid archetype, got %v", err)
 	}
 	room.Run = &Run{}
-	if err := SelectArchetype(room, "player-1", "healer"); !errors.Is(err, ErrArchetypeLocked) {
+	if err := SelectArchetype(room, "player-1", "damage"); !errors.Is(err, ErrArchetypeLocked) {
 		t.Fatalf("expected locked archetype, got %v", err)
 	}
 }
@@ -76,7 +76,7 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	player.Health = 20
 	room.Run = &Run{Phase: PhaseExploring, Players: map[string]*PlayerState{"player-1": player}}
 
-	if err := ChooseTalent(room, "player-1", "healer-vitality"); !errors.Is(err, ErrInvalidTalent) {
+	if err := ChooseTalent(room, "player-1", "damage-heavy-hands"); !errors.Is(err, ErrInvalidTalent) {
 		t.Fatalf("expected archetype mismatch, got %v", err)
 	}
 	if err := ChooseTalent(room, "player-1", "tank-thorns"); !errors.Is(err, ErrTalentLocked) {
@@ -95,7 +95,7 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	player.Level = 3
 	player.TalentPoints = 1
 	if err := ChooseTalent(room, "player-1", "tank-thorns"); err != nil {
-		t.Fatalf("choose Rally after Bulwark: %v", err)
+		t.Fatalf("choose Thorns after Bulwark: %v", err)
 	}
 	if bonusesFor(player).ReflectDamage != 2 {
 		t.Fatalf("Thorns effect missing: %+v", bonusesFor(player))
