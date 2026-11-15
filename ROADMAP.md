@@ -58,6 +58,16 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Enemy intent telegraphs, coordinated actions, and encounter tuning by party size.
 - [ ] Reward and difficulty curves validated through playtesting.
 
+### Persistent character progression and personalization
+
+- [ ] Distinguish persistent character meta-progression from temporary, within-run roguelike progression.
+- [ ] Award character experience server-side for meaningful run accomplishments: dungeon completions, boss and mini-quest victories, discoveries, and special challenges.
+- [ ] Provide persistent character levels with cosmetic and expressive unlocks such as name customization, interface themes, music selections, portraits, titles, and visual effects.
+- [ ] Give guest characters a randomly assigned name initially; unlock player-selected naming at an early level.
+- [ ] Support a useful local guest progression path before account creation, with a clear path to link and preserve that identity later.
+- [ ] Keep character levels and unlocks cosmetic; never grant combat power or gameplay advantages through meta-progression.
+- [ ] Make accomplishment rewards idempotent, resistant to farming, and fair to eligible party members, including meaningful partial progress on unsuccessful runs.
+
 ## Phase 3 — Procedural dungeons and replayability
 
 - [ ] Add an optional, party-shared dungeon map that reveals rooms and connections as they are discovered, marks the party's current room, and distinguishes unexplored, visited, and cleared areas. Keep in-scene directional exits as the primary way to move; the map is for orientation and reviewing discovered routes.
@@ -83,9 +93,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 
 ## Phase 6 — Optional accounts
 
-- [ ] Guest-to-account identity linking without losing progress where feasible.
-- [ ] Achievements, titles, cosmetics, and run history.
-- [ ] Cosmetic-only account benefits; no pay-to-win progression.
+- [ ] Guest-to-account identity linking that preserves persistent character level, name, unlocks, and achievements.
+- [ ] Cross-device synchronization of character progression and personalization.
+- [ ] Achievements and run history, alongside the cosmetic unlock catalog introduced earlier.
+- [ ] Optional account benefits remain cosmetic and identity-focused; no pay-to-win progression.
 - [ ] Data export and deletion.
 
 ## Phase 7 — Self-hosting and community
