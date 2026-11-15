@@ -37,6 +37,10 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 	if err := migrations.Apply(t.Context(), db); err != nil {
 		t.Fatalf("apply embedded migrations: %v", err)
 	}
+	// A second application must be a no-op, matching overlapping Render startups.
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("reapply embedded migrations: %v", err)
+	}
 
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 	handler := NewHandlerWithClock(store.NewPostgres(db), func() time.Time { return now })
