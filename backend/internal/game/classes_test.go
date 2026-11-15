@@ -119,7 +119,6 @@ func TestStartRunSnapshotsSelectedClassBuild(t *testing.T) {
 	}
 }
 
-
 func TestClassAbilityOperationCatalogCoversEverySignatureAbility(t *testing.T) {
 	if err := validateClassAbilityOperationCatalog(classAbilities, defaultClassAbilityOperationCatalog); err != nil {
 		t.Fatalf("validate ability operations: %v", err)
@@ -140,4 +139,3 @@ func TestClassAbilityOperationCatalogCoversEverySignatureAbility(t *testing.T) {
 		t.Fatal("expected unsupported mode operation to fail validation")
 	}
 }
-
