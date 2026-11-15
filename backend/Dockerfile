@@ -4,6 +4,7 @@ WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
 COPY internal ./internal
+COPY migrations ./migrations
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 FROM gcr.io/distroless/static-debian12:nonroot
