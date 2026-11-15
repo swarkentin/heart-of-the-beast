@@ -48,6 +48,7 @@ type Run struct {
 	MaxDepth                int                     `json:"maxDepth,omitempty"`
 	MusicIntensity          int                     `json:"musicIntensity,omitempty"`
 	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`
+	InterFloorVote          *NavigationVote        `json:"interFloorVote,omitempty"`
 	Phase                   RunPhase                `json:"phase"`
 	CurrentRoomID     string                  `json:"currentRoomId"`
 	Rooms             map[string]*DungeonRoom `json:"rooms"`
