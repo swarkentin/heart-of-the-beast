@@ -294,7 +294,7 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
     const activate = () => {
       if (activated) return;
       activated = true;
-      void engine.enable(settings).then(() => engine.startScene(scene, phase === "combat"));
+      void engine.enable(settings).then(() => engine.startScene(scene, phase === "combat", depth));
     };
     window.addEventListener("pointerdown", activate, { once: true, capture: true });
     window.addEventListener("keydown", activate, { once: true, capture: true });
@@ -305,7 +305,7 @@ export function useGameAudio(scene: string, phase: string, playerHealth: number,
   }, [settings.enabled, scene, phase, depth]);
 
   useEffect(() => {
-    if (settings.enabled) engine.startScene(scene, phase === "combat");
+    if (settings.enabled) engine.startScene(scene, phase === "combat", depth);
   }, [scene, phase, settings.enabled, depth]);
 
   useEffect(() => {
