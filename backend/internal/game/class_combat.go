@@ -261,7 +261,9 @@ func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, comm
 		if command.Mode == "defend" {
 			if command.TargetID != "" {
 				target := players[command.TargetID]
-					if target == nil || target.Health <= 0 { return ErrInvalidAbility }
+					if target == nil || target.Health <= 0 {
+					return ErrInvalidAbility
+				}
 				}
 		} else if encounter == nil || !hasLivingEnemy(encounter, command.TargetID) {
 			return ErrInvalidAbility
@@ -298,7 +300,9 @@ func applyClassAbility(room *Room, player *PlayerState, command Command, round i
 		enemy = findLivingEnemy(room.Run.Rooms[room.Run.CurrentRoomID].Encounter, command.TargetID)
 	case "mode_target":
 		if command.Mode == "defend" {
-			if command.TargetID != "" { target = room.Run.Players[command.TargetID] }
+			if command.TargetID != "" {
+				target = room.Run.Players[command.TargetID]
+			}
 		} else {
 			enemy = findLivingEnemy(room.Run.Rooms[room.Run.CurrentRoomID].Encounter, command.TargetID)
 		}
@@ -422,4 +426,3 @@ func onClassGuardBlocked(player *PlayerState, intent EnemyIntent, guarded bool, 
 func (e classAbilityHandler) supportsMode(mode string) bool {
 	return len(e.modes) == 0 && mode == "" || contains(e.modes, mode)
 }
-
