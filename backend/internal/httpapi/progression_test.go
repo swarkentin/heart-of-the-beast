@@ -95,3 +95,69 @@ func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 		t.Fatalf("unexpected catalog size: %d archetypes, %d talents", len(catalog.Archetypes), len(catalog.Talents))
 	}
 }
+
+
+func TestRunClassCanBeChosenAndIsServerBuiltAtStart(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	created := httptest.NewRecorder()
+	handler.ServeHTTP(created, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create room: %d %s", created.Code, created.Body.String())
+	}
+	var response struct {
+		Room struct { ID string `json:"id"` } `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil { t.Fatal(err) }
+
+	choose := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/class", bytes.NewBufferString(`{"classId":"arcanist"}`))
+	choose.Header.Set("Authorization", "Bearer "+response.PlayerToken)
+	chosen := httptest.NewRecorder()
+	handler.ServeHTTP(chosen, choose)
+	if chosen.Code != http.StatusOK { t.Fatalf("choose class: %d %s", chosen.Code, chosen.Body.String()) }
+
+	start := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/start", nil)
+	start.Header.Set("Authorization", "Bearer "+response.PlayerToken)
+	started := httptest.NewRecorder()
+	handler.ServeHTTP(started, start)
+	if started.Code != http.StatusOK { t.Fatalf("start run: %d %s", started.Code, started.Body.String()) }
+
+	var snapshot struct {
+		Run struct {
+			Players map[string]struct {
+				ClassBuild struct {
+					ClassID string `json:"classId"`
+					MaxHealth int `json:"maxHealth"`
+				} `json:"classBuild"`
+				Stats struct { Focus int `json:"focus"` } `json:"stats"`
+			} `json:"players"`
+		} `json:"run"`
+	}
+	if err := json.Unmarshal(started.Body.Bytes(), &snapshot); err != nil { t.Fatal(err) }
+	player := snapshot.Run.Players
+	if len(player) != 1 { t.Fatalf("expected one player, got %#v", player) }
+	for _, state := range player {
+		if state.ClassBuild.ClassID != "arcanist" || state.ClassBuild.MaxHealth != 27 || state.Stats.Focus != 4 {
+			t.Fatalf("server did not apply selected class build: %+v", state)
+		}
+	}
+}
+
+func TestRunClassEndpointRejectsUnknownAndUnauthorizedClass(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	created := httptest.NewRecorder()
+	handler.ServeHTTP(created, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	var response struct {
+		Room struct { ID string `json:"id"` } `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil { t.Fatal(err) }
+
+	for _, classID := range []string{"unknown-class", "locked-future-class"} {
+		request := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/class", bytes.NewBufferString(`{"classId":"`+classID+`"}`))
+		request.Header.Set("Authorization", "Bearer "+response.PlayerToken)
+		result := httptest.NewRecorder()
+		handler.ServeHTTP(result, request)
+		if result.Code != http.StatusConflict { t.Fatalf("class %q should be rejected, got %d %s", classID, result.Code, result.Body.String()) }
+	}
+}
