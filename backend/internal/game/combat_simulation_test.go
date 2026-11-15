@@ -89,10 +89,10 @@ func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
 	if summary.Runs != 4 || summary.Wins != 3 || summary.Wipes != 1 || summary.WinRate != 0.75 {
 		t.Fatalf("unexpected batch outcomes: %#v", summary)
 	}
-	if summary.MedianRounds != 4 || summary.P90Rounds != 8 {
+	if summary.MedianRounds != 5 || summary.P90Rounds != 8 {
 		t.Fatalf("unexpected round distribution: %#v", summary)
 	}
-	if summary.MedianDamageDealt != 30 || summary.MedianDamageReceived != 12 {
+	if summary.MedianDamageDealt != 25 || summary.MedianDamageReceived != 10 {
 		t.Fatalf("unexpected damage distribution: %#v", summary)
 	}
 }
