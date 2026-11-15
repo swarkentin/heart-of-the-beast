@@ -341,7 +341,7 @@ func TestBulwarkShieldWallBlocksHeavyAttackAndEmpowersNextStrike(t *testing.T) {
 func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassJuggernaut)
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
-	enemy.Health, enemy.MaxHealth = 30, 30
+	enemy.Health, enemy.MaxHealth = 50, 50
 	enemy.Intent = &EnemyIntent{Kind: "strike", Label: "Strike", Damage: 12, TargetPlayerID: "player-1"}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
