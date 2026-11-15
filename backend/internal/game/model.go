@@ -9,6 +9,7 @@ const (
 	PhaseCombat    RunPhase = "combat"
 	PhaseExploring RunPhase = "exploring"
 	PhaseCompleted RunPhase = "completed"
+	PhaseFailed    RunPhase = "failed"
 )
 
 type EncounterStatus string
@@ -48,6 +49,7 @@ type Run struct {
 	CombatRoundNumber int                     `json:"combatRoundNumber"`
 	CombatRound       *CombatRound            `json:"combatRound,omitempty"`
 	NavigationVote    *NavigationVote         `json:"navigationVote,omitempty"`
+	LastCombatEvents  []CombatEvent           `json:"lastCombatEvents,omitempty"`
 }
 
 type NavigationVote struct {
@@ -60,6 +62,7 @@ type PlayerState struct {
 	ID        string `json:"id"`
 	Health    int    `json:"health"`
 	MaxHealth int    `json:"maxHealth"`
+	Guarding  bool   `json:"guarding,omitempty"`
 }
 
 type DungeonRoom struct {
@@ -82,11 +85,28 @@ type Encounter struct {
 	Enemies []Enemy         `json:"enemies"`
 }
 
+type EnemyIntent struct {
+	Kind           string `json:"kind"`
+	Label          string `json:"label"`
+	Damage         int    `json:"damage"`
+	Heal           int    `json:"heal,omitempty"`
+	TargetPlayerID string `json:"targetPlayerId,omitempty"`
+	TargetAll      bool   `json:"targetAll,omitempty"`
+}
+
 type Enemy struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Health    int    `json:"health"`
-	MaxHealth int    `json:"maxHealth"`
+	ID        string       `json:"id"`
+	Name      string       `json:"name"`
+	Behavior  string       `json:"behavior,omitempty"`
+	Health    int          `json:"health"`
+	MaxHealth int          `json:"maxHealth"`
+	Intent    *EnemyIntent `json:"intent,omitempty"`
+}
+
+type CombatEvent struct {
+	Round   int    `json:"round"`
+	Kind    string `json:"kind"`
+	Message string `json:"message"`
 }
 
 type Command struct {
