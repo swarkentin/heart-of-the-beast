@@ -163,6 +163,17 @@ func resolveCombatRound(room *Room, now time.Time) {
 				}
 				break
 			}
+		case "interrupt":
+			for i := range current.Encounter.Enemies {
+				enemy := &current.Encounter.Enemies[i]
+				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
+					label := enemy.Intent.Label
+					enemy.Intent = nil
+					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+enemy.Name+" Soul Drain!")
+					_ = label
+					break
+				}
+			}
 		case "defend":
 			player.Guarding = true
 			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to 6 damage from the next hit.")
