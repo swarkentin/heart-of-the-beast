@@ -39,6 +39,18 @@ Depth should change encounter pressure, composition, atmosphere, and musical int
 - Keep player health and run-long rewards between levels. The health-restoration-versus-perk choice is the baseline inter-floor decision; other rewards should come from optional exploration, minibosses, and special encounters rather than stacking free rewards at every boundary.
 - Difficulty tuning should be expressed as an encounter budget/director policy with tests, not scattered `if depth > N` adjustments throughout combat code.
 
+## Other run-variety beats
+
+Keep the first experiment selective so floors still fit the 3–5 minute target. Use a small rotating set of authored room events to make exploration and optional branches feel different:
+
+- **Shrines:** accept a trade-off such as health for a temporary blessing, a curse for a stronger perk, or a resource sacrifice for a party benefit.
+- **Treasure rooms:** offer a reward behind a small combat or navigation risk; avoid making every branch a guaranteed upgrade.
+- **Merchants or caches:** provide a limited, understandable way to spend run resources or exchange one kind of advantage for another. These can be represented as simple room events before building a full shop system.
+- **Shortcuts and risky routes:** let the party choose between a safer longer path and a more dangerous route with a better reward or earlier descent.
+- **Rescue and side objectives:** use compact optional objectives with a clear consequence, such as freeing a prisoner who provides a perk, supplies, or information.
+
+These are content templates, not a requirement to place every event type on every floor. The generator should choose a restrained mix, guarantee a viable main route, and avoid chaining too many decision rooms together. Every optional branch should communicate its risk/reward before the party commits where practical.
+
 ## Generation constraints
 
 1. **Reachability:** every generated room is reachable from the entrance; the descent is reachable and is the only way to advance.
