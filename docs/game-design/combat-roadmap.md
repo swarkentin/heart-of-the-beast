@@ -58,9 +58,9 @@ Next priority after the first intent/response playtest:
 
 ## Stage 3 — Add a few tactical verbs
 
-Add one action at a time and keep its purpose obvious:
+First increment: contextual Interrupt. Soul Drain is marked interruptible; selecting the Warden and choosing Interrupt cancels its damage and healing, but spends the player's action and deals no damage. It is available in solo and co-op.
 
-- Interrupt: spend the player's action to cancel an explicitly interruptible intent. It deals no damage, so the choice is a tradeoff. Solo players can use it too.
+Follow-on actions should be added one at a time and keep their purpose obvious:
 - Aid: restore a modest amount of health to one player, with a limited use or other clear cost. No dedicated healer role.
 - Consumable: use a small number of shared-understandable items such as a healing tonic or ward. Item use should compete with attacking/defending for the round.
 - Only add an action if it creates a decision that Strike and Defend cannot already express. Avoid adding mana, stamina, combo points, or cooldown grids by default.
