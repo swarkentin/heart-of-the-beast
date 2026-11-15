@@ -45,7 +45,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [ ] Party direction voting; solo decisions resolve immediately.
 - [ ] One complete dungeon path with basic encounters and a boss.
-- [ ] Timed tactical combat that works for one player and small groups.
+- [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).\n- [ ] Add enemy intent telegraphs and enemy turn resolution after party actions.\n- [ ] Expand combat actions beyond attack/defend (spells, abilities, items, and status effects).
 - [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
