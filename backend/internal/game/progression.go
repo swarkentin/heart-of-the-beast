@@ -127,9 +127,6 @@ func ChooseTalent(room *Room, playerID, talentID string) error {
 	maxHealthIncrease := bonusesFor(player).MaxHealth - oldMaxHealthBonus
 	if maxHealthIncrease > 0 {
 		player.MaxHealth += maxHealthIncrease
-		if player.Health > 0 {
-			player.Health += maxHealthIncrease
-		}
 	}
 	return nil
 }
@@ -182,17 +179,11 @@ func grantEncounterExperience(room *Room, round int) {
 			switch player.Level {
 			case 2:
 				player.MaxHealth += 4
-				if player.Health > 0 {
-					player.Health += 4
-				}
 				player.Stats.Power++
 			case 3:
 				player.Stats.Focus += 2
 			case 4:
 				player.MaxHealth += 4
-				if player.Health > 0 {
-					player.Health += 4
-				}
 				player.Stats.Agility++
 			case 5:
 				player.Stats.Power++
