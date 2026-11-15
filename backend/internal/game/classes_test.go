@@ -52,7 +52,7 @@ func TestSelectClassDerivesArchetypeAndBuildsServerOwnedStartingStats(t *testing
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := &Room{
 		PlayerIDs: []string{"player-1"},
-		Presence: map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
+		Presence:  map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
 	}
 	if err := SelectClass(room, "player-1", ClassArcanist); err != nil {
 		t.Fatalf("select class: %v", err)
@@ -102,10 +102,10 @@ func TestSelectClassRejectsUnknownLockedAndUnauthorizedSelection(t *testing.T) {
 func TestStartRunSnapshotsSelectedClassBuild(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := &Room{
-		PlayerIDs: []string{"player-1"},
-		PlayerClasses: map[string]string{"player-1": ClassBulwark},
+		PlayerIDs:        []string{"player-1"},
+		PlayerClasses:    map[string]string{"player-1": ClassBulwark},
 		PlayerArchetypes: map[string]string{"player-1": "tank"},
-		Presence: map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
+		Presence:         map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
 	}
 	if err := StartRun(room, "run-1", now); err != nil {
 		t.Fatalf("start run: %v", err)
