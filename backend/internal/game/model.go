@@ -45,7 +45,8 @@ type Run struct {
 	Players       map[string]*PlayerState `json:"players"`
 	StartedAt     time.Time               `json:"startedAt"`
 	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
-	CombatRound   *CombatRound            `json:"combatRound,omitempty"`
+	CombatRoundNumber int                     `json:"combatRoundNumber"`
+	CombatRound       *CombatRound            `json:"combatRound,omitempty"`
 }
 
 type PlayerState struct {
