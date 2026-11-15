@@ -84,6 +84,13 @@ func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 		Archetypes []struct {
 			ID string `json:"id"`
 		} `json:"archetypes"`
+		Classes []struct {
+			ID string `json:"id"`
+		} `json:"classes"`
+		ClassAvailability []struct {
+			ClassID string `json:"classId"`
+			InitiallyAvailable bool `json:"initiallyAvailable"`
+		} `json:"classAvailability"`
 		Talents []struct {
 			ID string `json:"id"`
 		} `json:"talents"`
@@ -91,8 +98,13 @@ func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &catalog); err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Archetypes) != 3 || len(catalog.Talents) != 12 {
-		t.Fatalf("unexpected catalog size: %d archetypes, %d talents", len(catalog.Archetypes), len(catalog.Talents))
+	if len(catalog.Archetypes) != 3 || len(catalog.Classes) != 9 || len(catalog.ClassAvailability) != 9 || len(catalog.Talents) != 12 {
+		t.Fatalf("unexpected catalog size: %d archetypes, %d classes, %d availability entries, %d talents", len(catalog.Archetypes), len(catalog.Classes), len(catalog.ClassAvailability), len(catalog.Talents))
+	}
+	for _, availability := range catalog.ClassAvailability {
+		if !availability.InitiallyAvailable {
+			t.Fatalf("launch class %q should initially be available", availability.ClassID)
+		}
 	}
 }
 
@@ -110,7 +122,7 @@ func TestRunClassCanBeChosenAndIsServerBuiltAtStart(t *testing.T) {
 	}
 	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil { t.Fatal(err) }
 
-	choose := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/class", bytes.NewBufferString(`{"classId":"arcanist"}`))
+	choose := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/class", bytes.NewBufferString(`{"classId":"arcanist","maxHealth":999,"stats":{"focus":999},"equipmentIds":["forged.item"]}`))
 	choose.Header.Set("Authorization", "Bearer "+response.PlayerToken)
 	chosen := httptest.NewRecorder()
 	handler.ServeHTTP(chosen, choose)
