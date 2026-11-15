@@ -10,7 +10,6 @@ const CombatActionWindow = 8 * time.Second
 
 var (
 	ErrRoundActionSubmitted = errors.New("an action has already been submitted for this round")
-	ErrRoundNotActive       = errors.New("there is no active combat round")
 	ErrStaleCombatRound     = errors.New("combat action belongs to an expired round")
 )
 
@@ -38,7 +37,7 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 		return ErrInvalidPhase
 	}
 	if run.CombatRound == nil {
-		return ErrRoundNotActive
+		startCombatRound(run, now)
 	}
 	if command.Round != run.CombatRound.Number {
 		return ErrStaleCombatRound
