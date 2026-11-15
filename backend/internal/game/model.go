@@ -147,6 +147,7 @@ type EnemyIntent struct {
 
 type Enemy struct {
 	ID           string       `json:"id"`
+	DefinitionID string       `json:"definitionId,omitempty"`
 	Name         string       `json:"name"`
 	Behavior     string       `json:"behavior,omitempty"`
 	TurnsTaken   int          `json:"turnsTaken"`
