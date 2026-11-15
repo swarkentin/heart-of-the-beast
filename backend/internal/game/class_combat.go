@@ -180,7 +180,6 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 	},
 }
 
-
 func validateRegisteredClassEffects() error {
 	for _, ability := range classAbilities {
 		if _, ok := classAbilityHandlers[ability.EffectID]; !ok {
