@@ -44,6 +44,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/start", h.startRun)
 	mux.HandleFunc("POST /rooms/{id}/return-to-lobby", h.returnToLobby)
 	mux.HandleFunc("POST /rooms/{id}/archetype", h.selectArchetype)
+	mux.HandleFunc("POST /rooms/{id}/class", h.selectClass)
 	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
 	mux.HandleFunc("GET /progression", progressionCatalog)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
@@ -378,9 +379,53 @@ type talentRequest struct {
 	TalentID string `json:"talentId"`
 }
 
+type classRequest struct {
+	ClassID string `json:"classId"`
+}
+
+// selectClass validates the stable content ID and availability on the server;
+// client-provided stats, equipment, and ability definitions are never accepted.
+func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
+	_, actor, ok := h.authorizedPlayer(w, r)
+	if !ok { return }
+	var request classRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "choose a valid class")
+		return
+	}
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil { writeError(w, http.StatusNotFound, "room not found"); return }
+		if _, active := room.PlayerTokenHashes[actor]; !active {
+			writeError(w, http.StatusUnauthorized, "player token is no longer active")
+			return
+		}
+		expected := room.Version
+		if err := game.SelectClass(room, actor, request.ClassID); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) { continue }
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the class choice")
+}
+
 func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"archetypes":      game.ArchetypeCatalog(),
+		"classes":          game.ClassCatalog(),
+		"classAbilities":   game.ClassAbilityCatalog(),
+		"classPassives":    game.ClassPassiveCatalog(),
+		"equipment":        game.EquipmentCatalog(),
+		"classAvailability": game.ClassAvailabilityCatalog(),
 		"talents":         game.TalentCatalog(),
 		"levelThresholds": []int{50, 100, 200, 325},
 	})
