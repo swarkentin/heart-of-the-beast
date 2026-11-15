@@ -62,19 +62,19 @@ type NavigationVote struct {
 }
 
 type PlayerState struct {
-	ID             string      `json:"id"`
-	Health         int         `json:"health"`
-	MaxHealth      int         `json:"maxHealth"`
-	StrikeDamage   int         `json:"strikeDamage"`
-	GuardReduction int         `json:"guardReduction"`
-	Guarding       bool        `json:"guarding,omitempty"`
-	Archetype      string      `json:"archetype"`
+	ID             string              `json:"id"`
+	Health         int                 `json:"health"`
+	MaxHealth      int                 `json:"maxHealth"`
+	StrikeDamage   int                 `json:"strikeDamage"`
+	GuardReduction int                 `json:"guardReduction"`
+	Guarding       bool                `json:"guarding,omitempty"`
+	Archetype      string              `json:"archetype"`
 	ClassBuild     *ClassBuildSnapshot `json:"classBuild,omitempty"`
-	Experience     int         `json:"experience"`
-	Level          int         `json:"level"`
-	TalentPoints   int         `json:"talentPoints"`
-	Talents        []string    `json:"talents"`
-	Stats          PlayerStats `json:"stats"`
+	Experience     int                 `json:"experience"`
+	Level          int                 `json:"level"`
+	TalentPoints   int                 `json:"talentPoints"`
+	Talents        []string            `json:"talents"`
+	Stats          PlayerStats         `json:"stats"`
 }
 
 type DungeonRoom struct {
