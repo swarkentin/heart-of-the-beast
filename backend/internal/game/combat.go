@@ -178,12 +178,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 					damage += bonusesFor(player).AttackVsTelegraph
 				}
 				damage += defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID)
-				beforeHealth := enemy.Health
-				enemy.Health -= damage
-				if enemy.Health < 0 {
-					enemy.Health = 0
-				}
-				actualDamage := beforeHealth - enemy.Health
+				transition := resolveHealthDamage(enemy.Health, damage)
+				enemy.Health = transition.Health
+				actualDamage := transition.Applied
 				addCombatImpact(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for "+itoa(actualDamage)+" damage.", "damage", enemy.ID, "enemy", actualDamage)
 				if enemy.Health == 0 {
 					enemy.Intent = nil
@@ -198,12 +195,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 					label := enemy.Intent.Label
 					damage := player.Stats.Focus + bonusesFor(player).InterruptDamage + classPassiveEffects(player, enemy, enemy.Intent).InterruptDamage
 					if damage > 0 {
-						beforeHealth := enemy.Health
-						enemy.Health -= damage
-						if enemy.Health < 0 {
-							enemy.Health = 0
-						}
-						actualDamage := beforeHealth - enemy.Health
+						transition := resolveHealthDamage(enemy.Health, damage)
+						enemy.Health = transition.Health
+						actualDamage := transition.Applied
 						addCombatImpact(run, roundNumber, "player_interrupt_damage", enemy.Name+" takes "+itoa(actualDamage)+" interrupt damage.", "damage", enemy.ID, "enemy", actualDamage)
 					}
 					enemy.Intent = nil
@@ -282,12 +276,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 				player.ClassCombat.GuardBonus = 0
 			}
 			onClassGuardBlocked(player, intent, guarded, guardBlocked)
-			beforeHealth := player.Health
-			player.Health -= damage
-			if player.Health < 0 {
-				player.Health = 0
-			}
-			actualDamage := beforeHealth - player.Health
+			transition := resolveHealthDamage(player.Health, damage)
+			player.Health = transition.Health
+			actualDamage := transition.Applied
 			player.ClassCombat.DamageTakenThisRound += actualDamage
 			message := enemy.Name + " uses " + intent.Label + " on " + adventurerLabel(room, playerID) + " for " + itoa(actualDamage) + " damage."
 			if guarded {
@@ -303,12 +294,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			reflectDamage := bonusesFor(player).ReflectDamage + wardReflect
 			if reflectDamage > 0 && enemy.Health > 0 {
-				beforeEnemyHealth := enemy.Health
-				enemy.Health -= reflectDamage
-				if enemy.Health < 0 {
-					enemy.Health = 0
-				}
-				reflected := beforeEnemyHealth - enemy.Health
+				transition := resolveHealthDamage(enemy.Health, reflectDamage)
+				enemy.Health = transition.Health
+				reflected := transition.Applied
 				if reflected > 0 {
 					addCombatImpact(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(reflected)+" reflected damage.", "damage", enemy.ID, "enemy", reflected)
 				}
@@ -322,13 +310,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 		}
 		if intent.Heal > 0 && enemy.Health > 0 {
-			before := enemy.Health
-			enemy.Health += intent.Heal
-			if enemy.Health > enemy.MaxHealth {
-				enemy.Health = enemy.MaxHealth
-			}
-			if enemy.Health > before {
-				addCombatImpact(run, roundNumber, "enemy_heal", enemy.Name+" drains life and restores "+itoa(enemy.Health-before)+" health.", "heal", enemy.ID, "enemy", enemy.Health-before)
+			transition := resolveHealthHealing(enemy.Health, enemy.MaxHealth, intent.Heal)
+			enemy.Health = transition.Health
+			if transition.Applied > 0 {
+				addCombatImpact(run, roundNumber, "enemy_heal", enemy.Name+" drains life and restores "+itoa(transition.Applied)+" health.", "heal", enemy.ID, "enemy", transition.Applied)
 			}
 		}
 		enemy.Intent = nil
@@ -351,12 +336,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			heal := bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
 			if heal > 0 {
-				before := player.Health
-				player.Health += heal
-				if player.Health > player.MaxHealth {
-					player.Health = player.MaxHealth
-				}
-				actualHeal := player.Health - before
+				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
+				player.Health = transition.Health
+				actualHeal := transition.Applied
 				if actualHeal > 0 {
 					addCombatImpact(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(actualHeal)+" health.", "heal", playerID, "player", actualHeal)
 				}
