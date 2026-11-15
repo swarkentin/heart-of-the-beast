@@ -20,7 +20,7 @@ type ApiEnemy = { id: string; name: string; health: number; maxHealth: number };
 type ApiExit = { id: string; destination: string; label: string };
 type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
 type ApiPlayer = { id: string; health: number; maxHealth: number };
-type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer> };
+type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };\ntype ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; combatRound?: ApiCombatRound };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -180,7 +180,7 @@ export default function App() {
   const playerMaxHp = player?.maxHealth ?? 30;
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
-  const gameOver = run?.phase === "completed";
+  const gameOver = run?.phase === "completed";\n  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);\n  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
@@ -285,7 +285,9 @@ export default function App() {
     try {
       const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/commands", session.playerToken, { method: "POST", body: JSON.stringify(command) });
       setSnapshot(next);
-      setMessage(command.type === "choose_exit" ? "You enter the next chamber." : command.action === "defend" ? "You steady yourself and recover." : "Your attack strikes true.");
+      if (command.type === "choose_exit") setMessage("You enter the next chamber.");
+      else if (next.run?.phase === "combat" && next.run.combatRound?.actions?.[session.playerId]) setMessage("Action locked in. Waiting for the rest of the party…");
+      else setMessage(command.action === "defend" ? "You steady yourself and recover." : "Your attack strikes true.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Command failed");
       try {
@@ -358,9 +360,9 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} />}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
+      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">ROUND <b>{run.combatRound?.number ?? "—"}</b></div></div>
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
+        ? <>{run.phase === "combat" ? <><div className="event-message">ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left" && (run.players[id]?.health ?? 0) > 0).length} ACTIONS SUBMITTED · {actionSubmitted ? "YOUR ACTION IS LOCKED" : "CHOOSE ONE ACTION"}</div><div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
