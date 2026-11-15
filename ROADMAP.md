@@ -65,6 +65,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Reward and difficulty curves validated through playtesting.
+- [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed, carry party state and run rewards between floors, and scale encounter pressure with depth. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
 
 ### Persistent character progression and personalization
 
@@ -80,7 +81,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 3 — Procedural dungeons and replayability
 
 - [ ] Add an optional, party-shared dungeon map that reveals rooms and connections as they are discovered, marks the party's current room, and distinguishes unexplored, visited, and cleared areas. Keep in-scene directional exits as the primary way to move; the map is for orientation and reviewing discovered routes.
-- [ ] Data-driven room graph and encounter director.
+- [ ] Data-driven room graph and encounter director, informed by the multi-level generation spike.
 - [ ] Traps, secrets, treasure rooms, merchants, puzzles, and alternate routes.
 - [ ] Reusable optional side-mission framework.
 - [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
