@@ -139,14 +139,14 @@ type EnemyIntent struct {
 }
 
 type Enemy struct {
-	ID         string       `json:"id"`
-	Name       string       `json:"name"`
-	Behavior   string       `json:"behavior,omitempty"`
-	TurnsTaken int          `json:"turnsTaken"`
-	Health     int          `json:"health"`
-	MaxHealth  int          `json:"maxHealth"`
-	MarkedDamage int        `json:"markedDamage,omitempty"`
-	Intent     *EnemyIntent `json:"intent,omitempty"`
+	ID           string       `json:"id"`
+	Name         string       `json:"name"`
+	Behavior     string       `json:"behavior,omitempty"`
+	TurnsTaken   int          `json:"turnsTaken"`
+	Health       int          `json:"health"`
+	MaxHealth    int          `json:"maxHealth"`
+	MarkedDamage int          `json:"markedDamage,omitempty"`
+	Intent       *EnemyIntent `json:"intent,omitempty"`
 }
 
 type CombatEvent struct {
