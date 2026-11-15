@@ -81,7 +81,7 @@ function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boo
   const boss = enemy.id === "warden";
   const scout = enemy.id === "scout";
   const guardian = enemy.id === "guardian";
-  return <g transform={\`translate(\${enemy.x} 0)\`} opacity={dead ? .18 : 1} onClick={onClick} className={onClick && !dead ? "enemy-sprite" : ""}>
+  return <g transform={`translate(${enemy.x} 0)`} opacity={dead ? .18 : 1} onClick={onClick} className={onClick && !dead ? "enemy-sprite" : ""}>
     {selected && !dead ? <ellipse cx="0" cy="448" rx={boss ? 112 : 82} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
     <ellipse cx="0" cy="454" rx={boss ? 82 : 62} ry="14" fill="#080a10" opacity=".8" />
     <g className="enemy-art" shapeRendering="crispEdges">
