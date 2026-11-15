@@ -3,7 +3,6 @@ package game
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 var ErrInvalidAbility = errors.New("class ability is not available or its target is invalid")
@@ -245,7 +244,7 @@ func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, comm
 		return ErrInvalidAbility
 	}
 	handler, ok := classAbilityHandlers[ability.EffectID]
-	if !ok || !contains(handler.modes, command.Mode) && len(handler.modes) > 0 {
+	if !ok || !handler.supportsMode(command.Mode) {
 		return ErrInvalidAbility
 	}
 	switch handler.target {
@@ -419,6 +418,3 @@ func (e classAbilityHandler) supportsMode(mode string) bool {
 	return len(e.modes) == 0 && mode == "" || contains(e.modes, mode)
 }
 
-func (e classAbilityHandler) String() string {
-	return strings.Join(e.modes, ",")
-}
