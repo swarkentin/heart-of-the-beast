@@ -11,7 +11,7 @@ var (
 	ErrTalentChosen     = errors.New("talent has already been chosen")
 )
 
-const DefaultArchetype = "tank"
+const DefaultArchetype = "damage"
 
 type ArchetypeDefinition struct {
 	ID          string `json:"id"`
@@ -46,20 +46,20 @@ type TalentBonuses struct {
 }
 
 var archetypeCatalog = []ArchetypeDefinition{
-	{ID: "support", Name: "Support", Description: "Disrupt enemies, create openings, and help the party stay ahead."},
-	{ID: "healer", Name: "Healer", Description: "Keep the party standing through recovery and protective magic."},
-	{ID: "tank", Name: "Tank", Description: "Absorb pressure, protect yourself, and punish enemies that strike you."},
+	{ID: "support", Name: "Support", Description: "Control enemy plans, create openings, and help the whole party."},
+	{ID: "damage", Name: "Damage", Description: "Exploit openings and specialize in taking dangerous enemies down quickly."},
+	{ID: "tank", Name: "Tank", Description: "Absorb pressure, hold enemy attention, and protect the party."},
 }
 
 var talentCatalog = []TalentDefinition{
-	{ID: "support-tactical-strike", Archetype: "support", Name: "Tactical Strike", Description: "Attacks deal 2 additional damage.", Tier: 1},
 	{ID: "support-disruption", Archetype: "support", Name: "Disruption", Description: "Interrupts deal 4 additional damage.", Tier: 1},
-	{ID: "support-expose-weakness", Archetype: "support", Name: "Expose Weakness", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "support-tactical-strike"},
-	{ID: "support-protective-ward", Archetype: "support", Name: "Protective Ward", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "support-disruption"},
-	{ID: "healer-vitality", Archetype: "healer", Name: "Vitality", Description: "+6 maximum health.", Tier: 1},
-	{ID: "healer-restoration", Archetype: "healer", Name: "Restoration", Description: "Recover 6 health after clearing an encounter.", Tier: 1},
-	{ID: "healer-renewal", Archetype: "healer", Name: "Renewal", Description: "Recover 4 additional health after clearing an encounter.", Tier: 2, Requires: "healer-restoration"},
-	{ID: "healer-sanctuary", Archetype: "healer", Name: "Sanctuary", Description: "Defend blocks 3 additional damage.", Tier: 2, Requires: "healer-vitality"},
+	{ID: "support-protective-ward", Archetype: "support", Name: "Protective Ward", Description: "Defend blocks 3 additional damage.", Tier: 1},
+	{ID: "support-expose-weakness", Archetype: "support", Name: "Expose Weakness", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "support-disruption"},
+	{ID: "support-rallying-cry", Archetype: "support", Name: "Rallying Cry", Description: "Recover 4 health after clearing an encounter.", Tier: 2, Requires: "support-protective-ward"},
+	{ID: "damage-heavy-hands", Archetype: "damage", Name: "Heavy Hands", Description: "Attacks deal 3 additional damage.", Tier: 1},
+	{ID: "damage-precision", Archetype: "damage", Name: "Precision", Description: "Attacks deal 2 additional damage.", Tier: 1},
+	{ID: "damage-opportunist", Archetype: "damage", Name: "Opportunist", Description: "Deal 4 extra damage to enemies with a telegraphed move.", Tier: 2, Requires: "damage-precision"},
+	{ID: "damage-counterstrike", Archetype: "damage", Name: "Counterstrike", Description: "Interrupts deal 4 additional damage.", Tier: 2, Requires: "damage-heavy-hands"},
 	{ID: "tank-bulwark", Archetype: "tank", Name: "Bulwark", Description: "+6 maximum health.", Tier: 1},
 	{ID: "tank-braced-stance", Archetype: "tank", Name: "Braced Stance", Description: "Defend blocks 3 additional damage.", Tier: 1},
 	{ID: "tank-thorns", Archetype: "tank", Name: "Thorns", Description: "Reflect 2 damage when struck.", Tier: 2, Requires: "tank-bulwark"},
@@ -193,22 +193,22 @@ func bonusesFor(player *PlayerState) TalentBonuses {
 	var bonuses TalentBonuses
 	for _, id := range player.Talents {
 		switch id {
-		case "support-tactical-strike":
-			bonuses.AttackDamage += 2
 		case "support-disruption":
 			bonuses.InterruptDamage += 4
-		case "support-expose-weakness":
-			bonuses.AttackVsTelegraph += 4
 		case "support-protective-ward":
 			bonuses.GuardReduction += 3
-		case "healer-vitality":
-			bonuses.MaxHealth += 6
-		case "healer-restoration":
-			bonuses.EncounterHeal += 6
-		case "healer-renewal":
+		case "support-expose-weakness":
+			bonuses.AttackVsTelegraph += 4
+		case "support-rallying-cry":
 			bonuses.EncounterHeal += 4
-		case "healer-sanctuary":
-			bonuses.GuardReduction += 3
+		case "damage-heavy-hands":
+			bonuses.AttackDamage += 3
+		case "damage-precision":
+			bonuses.AttackDamage += 2
+		case "damage-opportunist":
+			bonuses.AttackVsTelegraph += 4
+		case "damage-counterstrike":
+			bonuses.InterruptDamage += 4
 		case "tank-bulwark":
 			bonuses.MaxHealth += 6
 		case "tank-braced-stance":
