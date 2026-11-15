@@ -50,7 +50,7 @@ func SubmitNavigationVote(room *Room, actorID, exitID string, now time.Time) err
 	}
 
 	if run.NavigationVote == nil {
-		transitionToExit(run, exitID, now)
+		transitionToExit(room, exitID, now)
 		return nil
 	}
 	if !now.Before(run.NavigationVote.Deadline) {
@@ -143,7 +143,7 @@ func resolveNavigationVote(room *Room, now time.Time) {
 	// at all, every available exit is an equally valid timeout fallback.
 	winner := candidates[rand.IntN(len(candidates))]
 	run.NavigationVote = nil
-	transitionToExit(run, winner, now)
+	transitionToExit(room, winner, now)
 }
 
 func hasExit(room *DungeonRoom, exitID string) bool {
@@ -155,7 +155,8 @@ func hasExit(room *DungeonRoom, exitID string) bool {
 	return false
 }
 
-func transitionToExit(run *Run, exitID string, now time.Time) {
+func transitionToExit(room *Room, exitID string, now time.Time) {
+	run := room.Run
 	current := run.Rooms[run.CurrentRoomID]
 	for _, exit := range current.Exits {
 		if exit.ID != exitID {
@@ -168,7 +169,7 @@ func transitionToExit(run *Run, exitID string, now time.Time) {
 		run.CurrentRoomID = next.ID
 		run.Phase = PhaseCombat
 		run.NavigationVote = nil
-		startCombatRound(run, now)
+		startCombatRound(room, now)
 		return
 	}
 }

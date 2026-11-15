@@ -46,18 +46,19 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [ ] One complete dungeon path with basic encounters and a boss.
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
-- [ ] Add enemy intent telegraphs and enemy turn resolution after party actions.
-- [ ] Expand combat actions beyond attack/defend (spells, abilities, items, and status effects).
+- [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
+- [x] Add a contextual interrupt counter for the Crypt Warden Soul Drain; see ADR 0018 and `docs/game-design/combat-roadmap.md`.
+- [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then support and consumable actions.
 - [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
 
 ## Phase 2 — Core roguelike loop
 
-- [ ] Health, stats, damage, status effects, and progression.
+- [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
 - [ ] Gear, loot, inventory, spells, abilities, and consumables.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
-- [ ] Enemy intent telegraphs, coordinated actions, and encounter tuning by party size.
+- [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Reward and difficulty curves validated through playtesting.
 
 ### Persistent character progression and personalization
