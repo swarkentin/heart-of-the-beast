@@ -68,3 +68,21 @@
 /* Shared combat action deadline */
 .combat-timer{display:flex;flex:1 0 100%;flex-direction:column;gap:7px;min-width:0;padding:9px 12px 8px;background:#1b1a20;border:1px solid #665443}.combat-timer-heading{display:flex;align-items:center;gap:12px;min-width:0;color:#b8aa9a;font-size:11px;letter-spacing:.7px}.combat-timer-heading strong{color:#f0d2a8;font-size:11px;font-weight:500;letter-spacing:1px}.combat-timer-heading span{margin-left:auto;white-space:nowrap}.combat-timer-heading b{min-width:34px;color:#f4d5a5;font-size:22px;font-weight:400;text-align:right;font-variant-numeric:tabular-nums}.combat-timer-track{height:7px;overflow:hidden;background:#39333a;border:1px solid #51464a}.combat-timer-track i{display:block;height:100%;background:linear-gradient(90deg,#c99a61,#e5c18a);transition:width .1s linear}.combat-timer-urgent{border-color:#b96859;background:#26191b}.combat-timer-urgent .combat-timer-heading strong,.combat-timer-urgent .combat-timer-heading b{color:#ff9c83}.combat-timer-urgent .combat-timer-track i{background:#dc715f}.combat-timer-waiting{border-color:#756b5b}.combat-timer-waiting .combat-timer-heading strong{color:#b9d1b4}.combat-timer-waiting .combat-timer-track i{background:#91a98a}
 @media(max-width:700px){.combat-timer{gap:5px;padding:7px 8px}.combat-timer-heading{gap:6px;font-size:9px;letter-spacing:.2px}.combat-timer-heading strong{font-size:9px;letter-spacing:.3px}.combat-timer-heading b{min-width:27px;font-size:18px}.combat-timer-track{height:6px}}
+
+
+/* Keep the combat deadline secondary and in its own row above the actions. */
+.action-dock{flex-wrap:wrap}
+.combat-timer{flex:0 0 100%;width:100%;gap:4px;min-height:0;padding:4px 8px;background:transparent;border:0;border-bottom:1px solid #51463d;box-shadow:none}
+.combat-timer-heading{min-height:20px;gap:10px;font-size:10px;letter-spacing:.4px}
+.combat-timer-heading strong{font-size:10px;letter-spacing:.6px}
+.combat-timer-heading b{min-width:30px;font-size:16px}
+.combat-timer-track{height:4px;border:0;background:#39333a}
+.move-button{flex:1 1 130px}
+@media(max-width:700px){
+  .combat-timer{gap:3px;padding:3px 5px}
+  .combat-timer-heading{min-height:18px;gap:6px;font-size:8px}
+  .combat-timer-heading strong{font-size:8px;letter-spacing:.2px}
+  .combat-timer-heading b{min-width:24px;font-size:14px}
+  .combat-timer-track{height:3px}
+  .move-button{flex:1 1 calc(50% - 5px)}
+}
