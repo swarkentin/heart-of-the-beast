@@ -28,28 +28,23 @@ type ApiStats = { power: number; focus: number; agility: number };
 type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats };
 type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 const archetypes = [
-  { id: "vanguard", name: "Vanguard", description: "Hold the line with heavy strikes and dependable defense." },
-  { id: "rogue", name: "Rogue", description: "Exploit openings, avoid punishment, and strike precisely." },
-  { id: "arcanist", name: "Arcanist", description: "Turn focused magic into force and disruption." },
-  { id: "warden", name: "Warden", description: "Endure, restore, and protect through the longest fights." },
+  { id: "support", name: "Support", description: "Control enemy plans, create openings, and help the whole party." },
+  { id: "damage", name: "Damage", description: "Exploit openings and specialize in taking dangerous enemies down quickly." },
+  { id: "tank", name: "Tank", description: "Absorb pressure, hold enemy attention, and protect the party." },
 ];
 const talentChoices: TalentChoice[] = [
-  { id: "vanguard-bulwark", archetype: "vanguard", name: "Bulwark", description: "+4 maximum health; defend blocks 3 more damage.", tier: 1 },
-  { id: "vanguard-heavy-hands", archetype: "vanguard", name: "Heavy Hands", description: "Attacks deal 3 additional damage.", tier: 1 },
-  { id: "vanguard-rally", archetype: "vanguard", name: "Rally", description: "Recover 4 health after clearing an encounter.", tier: 2, requires: "vanguard-bulwark" },
-  { id: "vanguard-counterstrike", archetype: "vanguard", name: "Counterstrike", description: "Interrupts deal 4 damage.", tier: 2, requires: "vanguard-heavy-hands" },
-  { id: "rogue-precision", archetype: "rogue", name: "Precision", description: "Attacks deal 2 additional damage.", tier: 1 },
-  { id: "rogue-evasion", archetype: "rogue", name: "Evasion", description: "Take 2 less damage from enemy attacks.", tier: 1 },
-  { id: "rogue-opportunist", archetype: "rogue", name: "Opportunist", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "rogue-precision" },
-  { id: "rogue-shadowstep", archetype: "rogue", name: "Shadowstep", description: "Defend blocks 2 additional damage.", tier: 2, requires: "rogue-evasion" },
-  { id: "arcanist-embercraft", archetype: "arcanist", name: "Embercraft", description: "Attacks deal 4 additional damage.", tier: 1 },
-  { id: "arcanist-disruption", archetype: "arcanist", name: "Disruption", description: "Interrupts deal 4 damage.", tier: 1 },
-  { id: "arcanist-overcharge", archetype: "arcanist", name: "Overcharge", description: "Attacks deal 2 additional damage.", tier: 2, requires: "arcanist-embercraft" },
-  { id: "arcanist-aether-shield", archetype: "arcanist", name: "Aether Shield", description: "Defend blocks 3 additional damage.", tier: 2, requires: "arcanist-disruption" },
-  { id: "warden-vitality", archetype: "warden", name: "Vitality", description: "+6 maximum health.", tier: 1 },
-  { id: "warden-restoration", archetype: "warden", name: "Restoration", description: "Recover 6 health after clearing an encounter.", tier: 1 },
-  { id: "warden-warding", archetype: "warden", name: "Warding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "warden-vitality" },
-  { id: "warden-thorns", archetype: "warden", name: "Thorns", description: "Reflect 2 damage when struck.", tier: 2, requires: "warden-restoration" },
+  { id: "support-disruption", archetype: "support", name: "Disruption", description: "Interrupts deal 4 additional damage.", tier: 1 },
+  { id: "support-protective-ward", archetype: "support", name: "Protective Ward", description: "Defend blocks 3 additional damage.", tier: 1 },
+  { id: "support-expose-weakness", archetype: "support", name: "Expose Weakness", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "support-disruption" },
+  { id: "support-rallying-cry", archetype: "support", name: "Rallying Cry", description: "Recover 4 health after clearing an encounter.", tier: 2, requires: "support-protective-ward" },
+  { id: "damage-heavy-hands", archetype: "damage", name: "Heavy Hands", description: "Attacks deal 3 additional damage.", tier: 1 },
+  { id: "damage-precision", archetype: "damage", name: "Precision", description: "Attacks deal 2 additional damage.", tier: 1 },
+  { id: "damage-opportunist", archetype: "damage", name: "Opportunist", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "damage-precision" },
+  { id: "damage-counterstrike", archetype: "damage", name: "Counterstrike", description: "Interrupts deal 4 additional damage.", tier: 2, requires: "damage-heavy-hands" },
+  { id: "tank-bulwark", archetype: "tank", name: "Bulwark", description: "+6 maximum health.", tier: 1 },
+  { id: "tank-braced-stance", archetype: "tank", name: "Braced Stance", description: "Defend blocks 3 additional damage.", tier: 1 },
+  { id: "tank-thorns", archetype: "tank", name: "Thorns", description: "Reflect 2 damage when struck.", tier: 2, requires: "tank-bulwark" },
+  { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
 ];
 const levelThresholds = [0, 50, 100, 200, 325];
 function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Vanguard"; }
@@ -248,6 +243,8 @@ export default function App() {
   const [shareCopied, setShareCopied] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [clockNow, setClockNow] = useState(() => Date.now());
+  const [progressionOpen, setProgressionOpen] = useState(false);
+  const [selectedTalentId, setSelectedTalentId] = useState("");
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -284,6 +281,13 @@ export default function App() {
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
   const audio = useGameAudio(roomIdForView, run?.phase ?? "lobby", playerHp, enemies.map(enemy => ({ id: enemy.id, hp: enemy.hp })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+
+  useEffect(() => {
+    if (!spectator && run?.phase === "exploring" && (player?.talentPoints ?? 0) > 0) {
+      setProgressionOpen(true);
+      setSelectedTalentId("");
+    }
+  }, [run?.phase, player?.level, player?.talentPoints, spectator]);
 
   useEffect(() => {
     if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
@@ -372,12 +376,14 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-  async function chooseTalent(talentId: string) {
-    if (!session || busy || spectator) return;
+  async function acceptTalentChoice() {
+    if (!selectedTalentId || !session || busy || spectator) return;
     setBusy(true); setError("");
     try {
-      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/talents", session.playerToken, { method: "POST", body: JSON.stringify({ talentId }) });
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/talents", session.playerToken, { method: "POST", body: JSON.stringify({ talentId: selectedTalentId }) });
       setSnapshot(next);
+      setProgressionOpen(false);
+      setSelectedTalentId("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not choose talent");
     } finally { setBusy(false); }
@@ -500,16 +506,23 @@ export default function App() {
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
       <div className="player-hud"><div className="hero-token">{(player?.archetype || "vanguard").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
-      {!spectator && exploring && player && (player.talentPoints > 0 || (player.talents?.length ?? 0) > 0) ? <section className="talent-panel">
-        <div className="talent-panel-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · {player.talentPoints > 0 ? "TALENT POINT AVAILABLE" : "YOUR RUN BUILD"}</span><h2>Shape your path</h2><p>{archetypeName(player.archetype)} talents · {player.talentPoints > 0 ? player.talentPoints + " point" + (player.talentPoints === 1 ? "" : "s") + " to spend" : "No unspent points"}</p></div><div className="talent-point-count">{player.talentPoints}</div></div>
-        <div className="talent-grid">{talentChoices.filter(talent => talent.archetype === player.archetype).map(talent => {
-          const chosen = player.talents?.includes(talent.id);
-          const locked = player.level < talent.tier + 1 || Boolean(talent.requires && !player.talents?.includes(talent.requires));
-          return <button key={talent.id} className={"talent-choice" + (chosen ? " chosen" : "")} onClick={() => void chooseTalent(talent.id)} disabled={busy || player.talentPoints <= 0 || chosen || locked}><span>{talent.tier === 1 ? "TIER I" : "TIER II"}</span><strong>{talent.name}</strong><small>{talent.description}</small>{chosen ? <i>LEARNED</i> : locked ? <i>LOCKED</i> : player.talentPoints > 0 ? <i>CHOOSE TALENT</i> : <i>NEED POINT</i>}</button>;
-        })}</div>
-      </section> : null}
+      {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">
+        <section className="progression-modal" role="dialog" aria-modal="true" aria-labelledby="progression-title">
+          <div className="progression-modal-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · RUN PROGRESSION</span><h2 id="progression-title">Choose your next talent</h2><p>{archetypeName(player.archetype)} · {player.talentPoints} point{player.talentPoints === 1 ? "" : "s"} available. Browse both branches before committing.</p></div><button className="progression-close" onClick={() => setProgressionOpen(false)} aria-label="Close talent selection">×</button></div>
+          <div className="talent-tree">{[1,2].map(tier => <div className="talent-tier" key={tier}><div className="talent-tier-label">{tier === 1 ? "FOUNDATION" : "SPECIALIZATION"}</div><div className="talent-tier-nodes">{talentChoices.filter(talent => talent.archetype === player.archetype && talent.tier === tier).map(talent => {
+            const chosen = player.talents?.includes(talent.id);
+            const locked = player.level < talent.tier + 1 || Boolean(talent.requires && !player.talents?.includes(talent.requires));
+            const selected = selectedTalentId === talent.id;
+            return <button key={talent.id} className={"talent-node" + (chosen ? " chosen" : "") + (locked ? " locked" : "") + (selected ? " selected" : "")} onClick={() => !chosen && !locked && setSelectedTalentId(talent.id)} disabled={chosen || busy}>
+              <span>{chosen ? "LEARNED" : locked ? "LOCKED" : "TIER " + tier}</span><strong>{talent.name}</strong><small>{talent.description}</small>{talent.requires ? <i>Requires {talentChoices.find(item => item.id === talent.requires)?.name}</i> : <i>{tier === 1 ? "Available now" : "Unlocks at level 3"}</i>}
+            </button>;
+          })}</div></div>)}</div>
+          <div className="talent-inspector">{selectedTalentId ? <><strong>{talentChoices.find(talent => talent.id === selectedTalentId)?.name}</strong><span>{talentChoices.find(talent => talent.id === selectedTalentId)?.description}</span></> : <span>Select a talent to preview its effect. Your choice is not saved until you accept.</span>}</div>
+          <div className="progression-modal-actions"><button className="progression-secondary" onClick={() => { setProgressionOpen(false); setSelectedTalentId(""); }}>Decide later</button><button className="progression-accept" onClick={() => void acceptTalentChoice()} disabled={!selectedTalentId || busy}>{busy ? "SAVING…" : "ACCEPT TALENT"}</button></div>
+        </section>
+      </div> : null}
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className="action-target-hint">YOUR ACTIONS · STRIKE / INTERRUPT TARGET THE SELECTED ENEMY · DEFEND PROTECTS YOU</div><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
