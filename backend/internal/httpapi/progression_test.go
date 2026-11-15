@@ -28,7 +28,7 @@ func TestRunArchetypeCanBeChosenInLobbyAndIsUsedAtStart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	choose := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"arcanist"}`))
+	choose := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"support"}`))
 	choose.Header.Set("Authorization", "Bearer "+response.PlayerToken)
 	chosen := httptest.NewRecorder()
 	handler.ServeHTTP(chosen, choose)
@@ -60,12 +60,12 @@ func TestRunArchetypeCanBeChosenInLobbyAndIsUsedAtStart(t *testing.T) {
 		t.Fatalf("expected one run player, got %#v", player)
 	}
 	for _, state := range player {
-		if state.Archetype != "arcanist" || state.Level != 1 {
+		if state.Archetype != "support" || state.Level != 1 {
 			t.Fatalf("unexpected initial run progression: %+v", state)
 		}
 	}
 
-	locked := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"rogue"}`))
+	locked := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/archetype", bytes.NewBufferString(`{"archetype":"healer"}`))
 	locked.Header.Set("Authorization", "Bearer "+response.PlayerToken)
 	lockedResponse := httptest.NewRecorder()
 	handler.ServeHTTP(lockedResponse, locked)
@@ -74,7 +74,7 @@ func TestRunArchetypeCanBeChosenInLobbyAndIsUsedAtStart(t *testing.T) {
 	}
 }
 
-func TestProgressionCatalogIsPublicAndContainsFourArchetypes(t *testing.T) {
+func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 	response := httptest.NewRecorder()
 	NewHandler(store.NewMemory()).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/progression", nil))
 	if response.Code != http.StatusOK {
@@ -91,7 +91,7 @@ func TestProgressionCatalogIsPublicAndContainsFourArchetypes(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &catalog); err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Archetypes) != 4 || len(catalog.Talents) != 16 {
+	if len(catalog.Archetypes) != 3 || len(catalog.Talents) != 12 {
 		t.Fatalf("unexpected catalog size: %d archetypes, %d talents", len(catalog.Archetypes), len(catalog.Talents))
 	}
 }
