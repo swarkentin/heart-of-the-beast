@@ -92,6 +92,7 @@ type EnemyIntent struct {
 	Heal           int    `json:"heal,omitempty"`
 	TargetPlayerID string `json:"targetPlayerId,omitempty"`
 	TargetAll      bool   `json:"targetAll,omitempty"`
+	Interruptible  bool   `json:"interruptible,omitempty"`
 }
 
 type Enemy struct {
