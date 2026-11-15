@@ -44,6 +44,7 @@ type Run struct {
 	CurrentRoomID     string                  `json:"currentRoomId"`
 	Rooms             map[string]*DungeonRoom `json:"rooms"`
 	Players           map[string]*PlayerState `json:"players"`
+	Flags             map[string]bool         `json:"flags,omitempty"`
 	StartedAt         time.Time               `json:"startedAt"`
 	CompletedAt       *time.Time              `json:"completedAt,omitempty"`
 	CombatRoundNumber int                     `json:"combatRoundNumber"`
@@ -59,25 +60,47 @@ type NavigationVote struct {
 }
 
 type PlayerState struct {
-	ID        string `json:"id"`
-	Health    int    `json:"health"`
-	MaxHealth int    `json:"maxHealth"`
-	Guarding  bool   `json:"guarding,omitempty"`
+	ID             string `json:"id"`
+	Health         int    `json:"health"`
+	MaxHealth      int    `json:"maxHealth"`
+	StrikeDamage   int    `json:"strikeDamage"`
+	GuardReduction int    `json:"guardReduction"`
+	Guarding       bool   `json:"guarding,omitempty"`
 }
 
 type DungeonRoom struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name"`
+	Floor       string     `json:"floor"`
+	RoomType    string     `json:"roomType"`
 	Description string     `json:"description"`
 	Exits       []Exit     `json:"exits"`
 	Encounter   *Encounter `json:"encounter,omitempty"`
+	Event       *RoomEvent `json:"event,omitempty"`
 	Cleared     bool       `json:"cleared"`
+}
+
+type RoomEvent struct {
+	ID          string        `json:"id"`
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	Choices     []EventChoice `json:"choices"`
+	Resolved    bool          `json:"resolved"`
+	Result      string        `json:"result,omitempty"`
+}
+
+type EventChoice struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Effect      string `json:"effect"`
 }
 
 type Exit struct {
 	ID          string `json:"id"`
 	Destination string `json:"destination"`
 	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
 }
 
 type Encounter struct {
@@ -106,15 +129,20 @@ type Enemy struct {
 }
 
 type CombatEvent struct {
-	Round   int    `json:"round"`
-	Kind    string `json:"kind"`
-	Message string `json:"message"`
+	Round      int    `json:"round"`
+	Kind       string `json:"kind"`
+	Message    string `json:"message"`
+	Effect     string `json:"effect,omitempty"`
+	TargetID   string `json:"targetId,omitempty"`
+	TargetType string `json:"targetType,omitempty"`
+	Amount     int    `json:"amount,omitempty"`
 }
 
 type Command struct {
 	Type     string `json:"type"`
 	Round    int    `json:"round,omitempty"`
 	ExitID   string `json:"exitId,omitempty"`
+	ChoiceID string `json:"choiceId,omitempty"`
 	Action   string `json:"action,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
 }
