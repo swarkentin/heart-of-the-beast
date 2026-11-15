@@ -120,7 +120,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div></> : null}
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}
     <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
@@ -181,7 +181,8 @@ export default function App() {
   const playerMaxHp = player?.maxHealth ?? 30;
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
-  const gameOver = run?.phase === "completed";\n  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);\n  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
+  const gameOver = run?.phase === "completed";
+  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);\n  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
