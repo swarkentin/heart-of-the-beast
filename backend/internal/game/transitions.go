@@ -39,7 +39,10 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Name:        "The Silent Reliquary",
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
+				{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15},
+				{ID: "scout", Name: "Drowned Scout", Behavior: "scout", Health: 12, MaxHealth: 12},
+			}},
 		},
 		"flooded-crossing": {
 			ID:          "flooded-crossing",
@@ -54,6 +57,15 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Description: "The crypt warden waits before the sealed gate.",
 			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "warden", Name: "Crypt Warden", Behavior: "warden", Health: 30, MaxHealth: 30}}},
 		},
+	}
+
+	if len(room.PlayerIDs) == 1 {
+		// Solo parties still face both roles, but can remove each threat with one
+		// focused strike so the added encounter does not exhaust the run's health budget.
+		guardian := &rooms["reliquary"].Encounter.Enemies[0]
+		guardian.Health, guardian.MaxHealth = 10, 10
+		scout := &rooms["reliquary"].Encounter.Enemies[1]
+		scout.Health, scout.MaxHealth = 6, 6
 	}
 
 	players := make(map[string]*PlayerState, len(room.PlayerIDs))
