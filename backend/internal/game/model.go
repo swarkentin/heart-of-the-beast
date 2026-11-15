@@ -38,13 +38,22 @@ type PlayerPresence struct {
 }
 
 type Run struct {
-	ID            string                  `json:"id"`
-	Phase         RunPhase                `json:"phase"`
-	CurrentRoomID string                  `json:"currentRoomId"`
-	Rooms         map[string]*DungeonRoom `json:"rooms"`
-	Players       map[string]*PlayerState `json:"players"`
-	StartedAt     time.Time               `json:"startedAt"`
-	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
+	ID                string                  `json:"id"`
+	Phase             RunPhase                `json:"phase"`
+	CurrentRoomID     string                  `json:"currentRoomId"`
+	Rooms             map[string]*DungeonRoom `json:"rooms"`
+	Players           map[string]*PlayerState `json:"players"`
+	StartedAt         time.Time               `json:"startedAt"`
+	CompletedAt       *time.Time              `json:"completedAt,omitempty"`
+	CombatRoundNumber int                     `json:"combatRoundNumber"`
+	CombatRound       *CombatRound            `json:"combatRound,omitempty"`
+	NavigationVote    *NavigationVote         `json:"navigationVote,omitempty"`
+}
+
+type NavigationVote struct {
+	StartedAt time.Time         `json:"startedAt"`
+	Deadline  time.Time         `json:"deadline"`
+	Votes     map[string]string `json:"votes"`
 }
 
 type PlayerState struct {
@@ -82,7 +91,15 @@ type Enemy struct {
 
 type Command struct {
 	Type     string `json:"type"`
+	Round    int    `json:"round,omitempty"`
 	ExitID   string `json:"exitId,omitempty"`
 	Action   string `json:"action,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
+}
+
+type CombatRound struct {
+	Number    int                `json:"number"`
+	StartedAt time.Time          `json:"startedAt"`
+	Deadline  time.Time          `json:"deadline"`
+	Actions   map[string]Command `json:"actions"`
 }

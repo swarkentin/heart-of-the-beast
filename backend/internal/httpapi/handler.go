@@ -337,7 +337,33 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	room, err := h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+}
+
+func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room, error) {
+	now := h.now().UTC()
+	changed := game.AdvanceCombatRound(room, now)
+	if game.AdvanceNavigationVote(room, now) {
+		changed = true
+	}
+	if !changed {
+		return room, nil
+	}
+	expected := room.Version
+	room.Version++
+	room.UpdatedAt = h.now().UTC()
+	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			return h.rooms.Get(r.Context(), room.ID)
+		}
+		return nil, err
+	}
+	return room, nil
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -373,23 +399,42 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	var err error
+	room, err = h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
 	var command game.Command
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&command); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid command")
 		return
 	}
-	expected := room.Version
-	if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
-		writeError(w, http.StatusConflict, err.Error())
+	for attempt := 0; attempt < 4; attempt++ {
+		expected := room.Version
+		if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				room, err = h.rooms.Get(r.Context(), room.ID)
+				if err == nil {
+					room, err = h.advanceRoomIfDue(r, room)
+				}
+				if err == nil {
+					continue
+				}
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 		return
 	}
-	room.Version++
-	room.UpdatedAt = h.now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
-		writeStoreError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+	writeError(w, http.StatusConflict, "room is busy; retry the command")
 }
 
 func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
@@ -400,6 +445,11 @@ func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
 	}
 	if tokenHash(bearer(r)) != room.SpectatorTokenHash {
 		writeError(w, http.StatusUnauthorized, "invalid spectator token")
+		return
+	}
+	room, err = h.advanceRoomIfDue(r, room)
+	if err != nil {
+		writeStoreError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))

@@ -58,7 +58,7 @@ func TestRoomLifecycleAndReadOnlySpectator(t *testing.T) {
 		t.Fatalf("spectate: %d %s", spectateResponse.Code, spectateResponse.Body.String())
 	}
 
-	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
 	invalid.Header.Set("Authorization", "Bearer "+created.SpectatorToken)
 	invalidResponse := httptest.NewRecorder()
 	handler.ServeHTTP(invalidResponse, invalid)
@@ -123,7 +123,7 @@ func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 		t.Fatalf("guest snapshot: %d %s", guestSnapshot.Code, guestSnapshot.Body.String())
 	}
 
-	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
 	command.Header.Set("Authorization", "Bearer "+guest.PlayerToken)
 	acted := httptest.NewRecorder()
 	handler.ServeHTTP(acted, command)
@@ -292,5 +292,84 @@ func TestPublicRoomDerivesPresenceFromHeartbeatAge(t *testing.T) {
 	}
 	if snapshot.Presence["left"].Status != "left" {
 		t.Fatalf("expected left status, got %q", snapshot.Presence["left"].Status)
+	}
+}
+
+func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	handler := NewHandlerWithClock(store.NewMemory(), func() time.Time { return now })
+	request := func(method, path, token, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		return response
+	}
+
+	created := request(http.MethodPost, "/rooms", "", "")
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create room: %d %s", created.Code, created.Body.String())
+	}
+	var host struct {
+		Room struct {
+			ID   string `json:"id"`
+			Code string `json:"code"`
+		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &host); err != nil {
+		t.Fatal(err)
+	}
+
+	joined := request(http.MethodPost, "/rooms/join", "", `{"code":"`+host.Room.Code+`"}`)
+	if joined.Code != http.StatusCreated {
+		t.Fatalf("join: %d %s", joined.Code, joined.Body.String())
+	}
+	var guest struct {
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
+		t.Fatal(err)
+	}
+
+	started := request(http.MethodPost, "/rooms/"+host.Room.ID+"/start", host.PlayerToken, "")
+	if started.Code != http.StatusOK {
+		t.Fatalf("start: %d %s", started.Code, started.Body.String())
+	}
+
+	guestAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", guest.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
+	if guestAction.Code != http.StatusOK {
+		t.Fatalf("guest action: %d %s", guestAction.Code, guestAction.Body.String())
+	}
+	var pending struct {
+		Run struct {
+			Rooms map[string]struct {
+				Encounter struct {
+					Enemies []game.Enemy `json:"enemies"`
+				} `json:"encounter"`
+			} `json:"rooms"`
+		} `json:"run"`
+	}
+	if err := json.Unmarshal(guestAction.Body.Bytes(), &pending); err != nil {
+		t.Fatal(err)
+	}
+	if got := pending.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
+		t.Fatalf("guest action resolved before host action: enemy health=%d", got)
+	}
+
+	hostAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
+	if hostAction.Code != http.StatusOK {
+		t.Fatalf("host action: %d %s", hostAction.Code, hostAction.Body.String())
+	}
+	var resolved struct {
+		Run game.Run `json:"run"`
+	}
+	if err := json.Unmarshal(hostAction.Body.Bytes(), &resolved); err != nil {
+		t.Fatal(err)
+	}
+	if resolved.Run.Phase != game.PhaseExploring || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
+		t.Fatal("both party actions should resolve together and clear the encounter")
 	}
 }

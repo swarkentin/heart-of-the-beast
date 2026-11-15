@@ -20,7 +20,10 @@ type ApiEnemy = { id: string; name: string; health: number; maxHealth: number };
 type ApiExit = { id: string; destination: string; label: string };
 type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
 type ApiPlayer = { id: string; health: number; maxHealth: number };
-type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer> };
+type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
+type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
+type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
+type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -52,6 +55,7 @@ function readSpectatorAccess(): SpectatorAccess | null {
 
 function visualRoomId(id: string): RoomId {
   if (id === "reliquary") return "reliquary";
+  if (id === "flooded-crossing") return "flooded-crossing";
   if (id === "warden") return "warden-gate";
   return "watcher-hall";
 }
@@ -92,7 +96,7 @@ function EnemyFigure({ enemy, selected, onClick }: { enemy: Enemy; selected: boo
   </g>;
 }
 
-function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string }[]; onNavigate: (id: string) => void }) {
+function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteStatus }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string }[]; onNavigate: (id: string) => void; voteStatus?: VoteStatus }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
       <defs>
@@ -119,7 +123,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")+(voteStatus?.selectedExit===exit.id?" scene-exit-selected":"")} onClick={()=>onNavigate(exit.id)} disabled={Boolean(voteStatus && voteStatus.remainingSeconds <= 0)} aria-label={"Vote for "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "ENTER PATH"}</small>{voteStatus?.selectedExit===exit.id ? <i>YOUR VOTE</i> : null}</button>)}</div> : null}
     <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
@@ -127,7 +131,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
   </div>;
 }
 
-function CastView({ enemies, playerHp, playerMaxHp, room, exits }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; exits: { id: string; destination: RoomId; label: string }[] }) {
+function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; exits: { id: string; destination: RoomId; label: string }[]; voteStatus?: VoteStatus }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
       <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
@@ -142,7 +146,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits }: { enemies: En
       <path d="M550 315L365 270M550 315L735 270" stroke="#d6a66e" strokeDasharray="8 8" strokeWidth="3" opacity=".5"/>
     </svg>
     <div className="scene-vignette"/>
-    {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>AVAILABLE PATH</small></div>)}</div> : null}
+    {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "AVAILABLE PATH"}</small></div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
     <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {room.floor} · SOLO RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
@@ -164,6 +168,7 @@ export default function App() {
   const [message, setMessage] = useState("Create a room to begin your run.");
   const [shareCopied, setShareCopied] = useState(false);
   const [joinCode, setJoinCode] = useState("");
+  const [clockNow, setClockNow] = useState(() => Date.now());
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -181,9 +186,31 @@ export default function App() {
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
   const gameOver = run?.phase === "completed";
+  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);
+  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
+  const roundDeadline = run?.combatRound ? new Date(run.combatRound.deadline).getTime() : 0;
+  const remainingMs = run?.phase === "combat" && roundDeadline ? Math.max(0, roundDeadline - clockNow) : 0;
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  const roundTimePercent = run?.combatRound ? Math.max(0, Math.min(100, remainingMs / Math.max(1, roundDeadline - new Date(run.combatRound.startedAt).getTime()) * 100)) : 0;
+  const navigationVote = run?.navigationVote;
+  const navigationDeadline = navigationVote ? new Date(navigationVote.deadline).getTime() : 0;
+  const navigationRemainingMs = run?.phase === "exploring" && navigationDeadline ? Math.max(0, navigationDeadline - clockNow) : 0;
+  const navigationRemainingSeconds = Math.ceil(navigationRemainingMs / 1000);
+  const navigationTimePercent = navigationVote ? Math.max(0, Math.min(100, navigationRemainingMs / Math.max(1, navigationDeadline - new Date(navigationVote.startedAt).getTime()) * 100)) : 0;
+  const eligibleVoterIds = (snapshot?.playerIds ?? []).filter(id => snapshot?.presence?.[id]?.status !== "left" && (run?.players[id]?.health ?? 0) > 0);
+  const livingPlayerCount = eligibleVoterIds.length;
+  const voteCounts = exits.reduce((counts, exit) => { counts[exit.id] = eligibleVoterIds.filter(id => navigationVote?.votes?.[id] === exit.id).length; return counts; }, {} as Record<string, number>);
+  const voteStatus: VoteStatus | undefined = navigationVote ? { remainingSeconds: navigationRemainingSeconds, progressPercent: navigationTimePercent, submittedCount: eligibleVoterIds.filter(id => Boolean(navigationVote.votes[id])).length, eligibleCount: livingPlayerCount, voteCounts, selectedExit: session?.playerId ? navigationVote.votes[session.playerId] : undefined } : undefined;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
+
+  useEffect(() => {
+    if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
+    setClockNow(Date.now());
+    const timer = window.setInterval(() => setClockNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline, run?.navigationVote?.deadline]);
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -279,13 +306,17 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-  async function sendCommand(command: { type: string; action?: string; targetId?: string; exitId?: string }) {
+  async function sendCommand(command: { type: string; round?: number; action?: string; targetId?: string; exitId?: string }) {
     if (!session || busy) return;
     setBusy(true); setError("");
     try {
       const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/commands", session.playerToken, { method: "POST", body: JSON.stringify(command) });
       setSnapshot(next);
-      setMessage(command.type === "choose_exit" ? "You enter the next chamber." : command.action === "defend" ? "You steady yourself and recover." : "Your attack strikes true.");
+      if (command.type === "choose_exit" && next.run?.navigationVote?.votes?.[session.playerId]) setMessage("Path vote submitted. Waiting for the party…");
+      else if (command.type === "choose_exit" && next.run?.currentRoomId !== run?.currentRoomId) setMessage("The party enters the next chamber.");
+      else if (command.type === "choose_exit") setMessage("Path vote submitted.");
+      else if (next.run?.phase === "combat" && next.run.combatRound?.actions?.[session.playerId]) setMessage("Action locked in. Waiting for the rest of the party…");
+      else setMessage(command.action === "defend" ? "You steady yourself and recover." : "Your attack strikes true.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Command failed");
       try {
@@ -298,8 +329,8 @@ export default function App() {
   }
 
   function play(action: Action) {
-    if (action === "guard") void sendCommand({ type: "combat", action: "defend" });
-    else if (livingTarget) void sendCommand({ type: "combat", action: "attack", targetId: livingTarget.id });
+    if (action === "guard") void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "defend" });
+    else if (livingTarget) void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "attack", targetId: livingTarget.id });
   }
 
   function shareSpectatorLink() {
@@ -356,11 +387,11 @@ export default function App() {
     {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: 16, padding: "8px 24px" }}>{session?.spectatorToken ? <><a href={spectatorLink} target="_blank" rel="noreferrer" style={{ color: "#d8a76e" }}>OPEN SPECTATOR VIEW</a><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></> : null}<button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button></div>}
     <section className="play-area">
       {view === "player" && !spectator
-        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} />
-        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} />}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">STATE <b>{snapshot.version}</b></div></div>
+        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} />
+        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
+      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div><div className="round-indicator">ROUND <b>{run.combatRound?.number ?? "—"}</b></div></div>
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <div className="action-dock">{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div> : null}
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget && action.id === "strike"}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
         </>
         : null}
