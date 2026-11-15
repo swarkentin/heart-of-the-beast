@@ -70,6 +70,7 @@ type roomResponse struct {
 	Code          string                            `json:"code"`
 	OwnerPlayerID string                            `json:"ownerPlayerId"`
 	PlayerIDs     []string                          `json:"playerIds"`
+	PlayerClasses map[string]string                 `json:"playerClasses,omitempty"`
 	Presence      map[string]playerPresenceResponse `json:"presence"`
 	Run           *game.Run                         `json:"run,omitempty"`
 	Version       int64                             `json:"version"`
@@ -94,7 +95,7 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 	}
 	return roomResponse{
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs: room.PlayerIDs, Presence: presence, Run: room.Run,
+		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, Presence: presence, Run: room.Run,
 		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
