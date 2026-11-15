@@ -172,30 +172,28 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 	names := []string{"The Silted Cloister", "The Ashen Stair", "The Drowned Archive", "The Hollow Nave", "The Shattered Ossuary"}
 	routeName := names[rng.Intn(len(names))]
 	hasMiniboss := rng.Intn(100) < 48
-	leftEnemy := newCatalogEnemy(prefix+"left-guardian", "guardian", scaling)
-	rightEnemy := newCatalogEnemy(prefix+"right-scout", "scout", scaling)
+	leftEncounterID, rightEncounterID := "depth-left-guardian", "depth-right-scout"
 	if rng.Intn(2) == 0 {
-		leftEnemy, rightEnemy = rightEnemy, leftEnemy
-		leftEnemy.ID, rightEnemy.ID = prefix+"left-enemy", prefix+"right-enemy"
+		leftEncounterID, rightEncounterID = "depth-left-scout", "depth-right-guardian"
 	}
 	rooms := map[string]*DungeonRoom{
 		prefix + "entry": {
 			ID: prefix + "entry", Name: "The Lower Threshold", Floor: floor, RoomType: "encounter",
 			Description: "The air grows colder. Old warding marks pulse beneath the dust as the next descent stirs awake.",
 			Exits:       []Exit{{ID: "left", Destination: prefix + "left", Label: "The Broken Cloister", Description: "A guarded passage through collapsed stone."}, {ID: "right", Destination: prefix + "right", Label: "The Silted Stair", Description: "A narrow route where something moves below the water."}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{newCatalogEnemy(prefix+"threshold-guard", "sentinel", scaling)}},
+			Encounter:   newCatalogEncounter("depth-entry", prefix, scaling),
 		},
 		prefix + "left": {
 			ID: prefix + "left", Name: routeName, Floor: floor, RoomType: "encounter",
 			Description: "A formation of ancient defenders blocks the route. Their movements are deliberate and practiced.",
 			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{leftEnemy}},
+			Encounter:   newCatalogEncounter(leftEncounterID, prefix, scaling),
 		},
 		prefix + "right": {
 			ID: prefix + "right", Name: "The Silted Stair", Floor: floor, RoomType: "encounter",
 			Description: "Black water spills down the steps. A quick-moving crypt stalker waits in the dark.",
 			Exits:       []Exit{{ID: "forward", Destination: prefix + "shrine", Label: "The Echoing Shrine"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{rightEnemy}},
+			Encounter:   newCatalogEncounter(rightEncounterID, prefix, scaling),
 		},
 		prefix + "shrine": {
 			ID: prefix + "shrine", Name: "The Echoing Shrine", Floor: floor, RoomType: "event",
@@ -207,23 +205,18 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
 			Description: "The final defenders of this level stand between the party and the next descent.",
 			Exits:       []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy(prefix+"guard-a", "stonebound-guard", scaling),
-				newCatalogEnemy(prefix+"guard-b", "gravebound-scout", scaling),
-			}},
+			Encounter: newCatalogEncounter("depth-guard", prefix, scaling),
 		},
 		prefix + "boss": {
 			ID: prefix + "boss", Name: map[bool]string{true: "The Warden Below", false: "The Ossuary Champion"}[depth == MaximumDungeonDepth], Floor: floor, RoomType: "boss",
 			Description: "A vast chamber opens around an ancient guardian. The dungeon's deeper rhythm pounds through the walls.",
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy(prefix+"boss-enemy", map[bool]string{true: "warden", false: "ossuary-champion"}[depth == MaximumDungeonDepth], scaling),
-			}},
+			Encounter: newCatalogEncounter(map[bool]string{true: "depth-boss-warden", false: "depth-boss-ossuary"}[depth == MaximumDungeonDepth], prefix, scaling),
 		},
 	}
 	if hasMiniboss {
 		miniScaling := scaling
 		rooms[prefix+"shrine"].Exits = append(rooms[prefix+"shrine"].Exits, Exit{ID: "challenge", Destination: prefix + "miniboss", Label: "The Sealed Reliquary", Description: "A dangerous optional challenge with a run reward."})
-		rooms[prefix+"miniboss"] = &DungeonRoom{ID: prefix + "miniboss", Name: "The Sealed Reliquary", Floor: floor, RoomType: "miniboss", Description: "A hulking champion tears free from its stone bindings. Defeating it will strengthen the whole party.", Exits: []Exit{{ID: "rejoin", Destination: prefix + "boss", Label: "Return to the Descent"}}, Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{newCatalogEnemy(prefix+"miniboss-enemy", "depth-reliquary-brute", miniScaling)}}}
+		rooms[prefix+"miniboss"] = &DungeonRoom{ID: prefix + "miniboss", Name: "The Sealed Reliquary", Floor: floor, RoomType: "miniboss", Description: "A hulking champion tears free from its stone bindings. Defeating it will strengthen the whole party.", Exits: []Exit{{ID: "rejoin", Destination: prefix + "boss", Label: "Return to the Descent"}}, Encounter: newCatalogEncounter("depth-miniboss", prefix, miniScaling)}
 	}
 	return prefix + "entry", rooms
 }
