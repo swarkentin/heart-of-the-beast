@@ -143,7 +143,7 @@ func resolveNavigationVote(room *Room, now time.Time) {
 	// at all, every available exit is an equally valid timeout fallback.
 	winner := candidates[rand.IntN(len(candidates))]
 	run.NavigationVote = nil
-	transitionToExit(run, winner, now)
+	transitionToExit(room, winner, now)
 }
 
 func hasExit(room *DungeonRoom, exitID string) bool {
