@@ -269,7 +269,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 		for _, player := range run.Players {
 			if player == nil || player.Health <= 0 { continue }
 				heal := bonusesFor(player).EncounterHeal
-				if heal > 0 { before := player.Health; player.Health += heal; if player.Health > player.MaxHealth { player.Health = player.MaxHealth }; addCombatEvent(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(player.Health-before)+" health.") }
+				if heal > 0 {
+					before := player.Health
+					player.Health += heal
+					if player.Health > player.MaxHealth {
+						player.Health = player.MaxHealth
+					}
+					addCombatEvent(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(player.Health-before)+" health.")
+				}
 		}
 		run.CombatRound = nil
 		if run.CurrentRoomID == "warden" {
