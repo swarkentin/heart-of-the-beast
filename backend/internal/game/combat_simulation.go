@@ -320,7 +320,6 @@ func SimulateCombatBatch(snapshot CombatSimulationSnapshot, seeds []int64, maxRo
 	return reports, nil
 }
 
-
 func simulationClassAbilityCommand(player *PlayerState, players map[string]*PlayerState, enemies []Enemy, targetIndex int, playerID string) (Command, bool) {
 	if player == nil || player.ClassBuild == nil {
 		return Command{}, false
