@@ -1,0 +1,282 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+
+export type AudioSettings = {
+  enabled: boolean;
+  muted: boolean;
+  master: number;
+  music: number;
+  effects: number;
+};
+
+const SETTINGS_KEY = "heart-of-the-beast.audio-settings";
+const DEFAULT_SETTINGS: AudioSettings = { enabled: false, muted: false, master: 0.72, music: 0.48, effects: 0.72 };
+
+function readSettings(): AudioSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || "null") as Partial<AudioSettings> | null;
+    return stored ? { ...DEFAULT_SETTINGS, ...stored, enabled: false } : DEFAULT_SETTINGS;
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+class GameAudioEngine {
+  private context: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private music: GainNode | null = null;
+  private effects: GainNode | null = null;
+  private sceneNodes: AudioNode[] = [];
+  private musicTimer: number | null = null;
+  private noteIndex = 0;
+
+  async enable(settings: AudioSettings) {
+    if (!this.context) {
+      this.context = new AudioContext();
+      this.master = this.context.createGain();
+      this.music = this.context.createGain();
+      this.effects = this.context.createGain();
+      this.music.connect(this.master);
+      this.effects.connect(this.master);
+      this.master.connect(this.context.destination);
+    }
+    await this.context.resume();
+    this.setVolumes(settings);
+  }
+
+  setVolumes(settings: AudioSettings) {
+    if (!this.context || !this.master || !this.music || !this.effects) return;
+    const now = this.context.currentTime;
+    this.master.gain.setTargetAtTime(settings.muted ? 0 : settings.master, now, 0.04);
+    this.music.gain.setTargetAtTime(settings.music, now, 0.04);
+    this.effects.gain.setTargetAtTime(settings.effects, now, 0.025);
+  }
+
+  startScene(room: string, combat: boolean) {
+    if (!this.context || !this.music || !this.effects) return;
+    this.stopScene();
+    const context = this.context;
+    const flooded = room === "flooded-crossing";
+    const gate = room === "warden-gate";
+    const root = gate ? 38.89 : flooded ? 55 : 73.42;
+    const padFilter = context.createBiquadFilter();
+    padFilter.type = "lowpass";
+    padFilter.frequency.value = flooded ? 190 : gate ? 260 : 330;
+    padFilter.Q.value = 0.7;
+    padFilter.connect(this.music);
+    this.sceneNodes.push(padFilter);
+
+    [root, root * 1.5, root * 2].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = index === 0 ? "triangle" : "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.detune.value = index === 1 ? -4 : index === 2 ? 5 : 0;
+      gain.gain.value = index === 0 ? 0.18 : index === 1 ? 0.11 : 0.045;
+      oscillator.connect(gain);
+      gain.connect(padFilter);
+      oscillator.start();
+      this.sceneNodes.push(oscillator, gain);
+    });
+
+    // A soft, filtered noise bed gives the room a little air without becoming static.
+    const ambience = context.createBufferSource();
+    const noise = context.createBuffer(1, context.sampleRate * 3, context.sampleRate);
+    const channel = noise.getChannelData(0);
+    for (let i = 0; i < channel.length; i += 1) channel[i] = (Math.random() * 2 - 1) * 0.22;
+    ambience.buffer = noise;
+    ambience.loop = true;
+    const ambienceFilter = context.createBiquadFilter();
+    ambienceFilter.type = "lowpass";
+    ambienceFilter.frequency.value = flooded ? 420 : 700;
+    const ambienceGain = context.createGain();
+    ambienceGain.gain.value = flooded ? 0.13 : 0.075;
+    ambience.connect(ambienceFilter);
+    ambienceFilter.connect(ambienceGain);
+    ambienceGain.connect(this.music);
+    ambience.start();
+    this.sceneNodes.push(ambience, ambienceFilter, ambienceGain);
+
+    this.noteIndex = 0;
+    const motif = flooded ? [220, 261.63, 293.66, 261.63, 196, 220] : gate ? [155.56, 185, 207.65, 185, 138.59, 155.56] : [293.66, 349.23, 392, 349.23, 261.63, 293.66];
+    const playMusicNote = () => {
+      if (!this.context || !this.music) return;
+      const note = motif[this.noteIndex % motif.length];
+      this.noteIndex += 1;
+      this.tone(note, 1.7, "sine", 0.035, this.music, -8);
+      if (combat && this.noteIndex % 2 === 0) this.tone(root * 2, 0.22, "triangle", 0.09, this.music, -3);
+    };
+    this.musicTimer = window.setInterval(playMusicNote, combat ? 2100 : 3100);
+    playMusicNote();
+    if (combat) this.tone(root, 0.65, "triangle", 0.12, this.music, -12);
+  }
+
+  stopScene() {
+    if (this.musicTimer !== null) window.clearInterval(this.musicTimer);
+    this.musicTimer = null;
+    for (const node of this.sceneNodes) {
+      try {
+        if (node instanceof OscillatorNode || node instanceof AudioBufferSourceNode) node.stop();
+        node.disconnect();
+      } catch { /* A node may already have stopped. */ }
+    }
+    this.sceneNodes = [];
+  }
+
+  effect(name: "impact" | "block" | "magic" | "defeat" | "door" | "encounter" | "victory" | "failure") {
+    if (!this.context || !this.effects) return;
+    const context = this.context;
+    if (name === "impact") {
+      this.noiseBurst(0.16, 1250, 0.18);
+      this.tone(78, 0.19, "triangle", 0.26, this.effects, -5);
+      this.tone(540, 0.055, "square", 0.045, this.effects, -18);
+    } else if (name === "block") {
+      this.noiseBurst(0.12, 850, 0.12);
+      this.tone(185, 0.14, "triangle", 0.18, this.effects, -10);
+      this.tone(740, 0.07, "sine", 0.08, this.effects, -12);
+    } else if (name === "magic") {
+      this.sweep(310, 920, 0.34, "sine", 0.16);
+      this.noiseBurst(0.24, 2400, 0.07);
+    } else if (name === "defeat") {
+      this.noiseBurst(0.28, 520, 0.2);
+      this.sweep(180, 48, 0.42, "sawtooth", 0.18);
+    } else if (name === "door") {
+      this.noiseBurst(0.38, 480, 0.11);
+      this.sweep(110, 54, 0.45, "triangle", 0.13);
+    } else if (name === "encounter") {
+      this.tone(110, 0.5, "triangle", 0.18, this.effects, -8);
+      this.tone(164.81, 0.65, "sine", 0.1, this.effects, -12);
+    } else if (name === "victory") {
+      [293.66, 369.99, 440].forEach((frequency, index) => this.tone(frequency, 0.8, "sine", 0.12, this.effects, -5 + index * 2, index * 0.08));
+    } else if (name === "failure") {
+      this.sweep(220, 55, 0.9, "triangle", 0.17);
+    }
+  }
+
+  private tone(frequency: number, duration: number, type: OscillatorType, volume: number, destination: AudioNode, cents = 0, delay = 0) {
+    if (!this.context) return;
+    const context = this.context;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime + delay;
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    oscillator.detune.value = cents;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.03);
+  }
+
+  private sweep(from: number, to: number, duration: number, type: OscillatorType, volume: number) {
+    if (!this.context || !this.effects) return;
+    const context = this.context;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const now = context.currentTime;
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(from, now);
+    oscillator.frequency.exponentialRampToValueAtTime(to, now + duration);
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(gain);
+    gain.connect(this.effects);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.03);
+  }
+
+  private noiseBurst(duration: number, cutoff: number, volume: number) {
+    if (!this.context || !this.effects) return;
+    const context = this.context;
+    const source = context.createBufferSource();
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i += 1) samples[i] = (Math.random() * 2 - 1) * (1 - i / samples.length);
+    source.buffer = buffer;
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = cutoff;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(volume, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.effects);
+    source.start();
+    source.stop(context.currentTime + duration + 0.02);
+  }
+}
+
+const engine = new GameAudioEngine();
+
+export function useGameAudio(scene: string, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], version: number) {
+  const [settings, setSettings] = useState<AudioSettings>(readSettings);
+  const previous = useRef<{ scene: string; phase: string; playerHealth: number; enemies: Record<string, number>; version: number } | null>(null);
+
+  const enable = useCallback(async () => {
+    const next = { ...settings, enabled: true, muted: false };
+    await engine.enable(next);
+    setSettings(next);
+    engine.startScene(scene, phase === "combat");
+  }, [settings, scene, phase]);
+
+  const updateSettings = useCallback((patch: Partial<AudioSettings>) => {
+    setSettings(current => {
+      const next = { ...current, ...patch };
+      window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...next, enabled: false }));
+      engine.setVolumes(next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, enabled: false }));
+    engine.setVolumes(settings);
+  }, [settings]);
+
+  useEffect(() => {
+    if (settings.enabled) engine.startScene(scene, phase === "combat");
+  }, [scene, phase, settings.enabled]);
+
+  useEffect(() => {
+    const before = previous.current;
+    const enemies = Object.fromEntries(enemyHealths.map(enemy => [enemy.id, enemy.hp]));
+    if (settings.enabled && before && version !== before.version) {
+      if (scene !== before.scene) engine.effect("door");
+      else if (phase === "combat" && before.phase !== "combat") engine.effect("encounter");
+      else if (phase === "completed" && before.phase !== "completed") engine.effect("victory");
+      else if (phase === "failed" && before.phase !== "failed") engine.effect("failure");
+      else if (playerHealth < before.playerHealth) engine.effect("impact");
+      else if (enemyHealths.some(enemy => enemy.hp < (before.enemies[enemy.id] ?? enemy.hp))) {
+        const defeated = enemyHealths.some(enemy => enemy.hp <= 0 && (before.enemies[enemy.id] ?? 0) > 0);
+        engine.effect(defeated ? "defeat" : "impact");
+      }
+    }
+    previous.current = { scene, phase, playerHealth, enemies, version };
+  }, [scene, phase, playerHealth, enemyHealths, version, settings.enabled]);
+
+  return { settings, enable, updateSettings };
+}
+
+export function AudioControls({ settings, onEnable, onChange }: {
+  settings: AudioSettings;
+  onEnable: () => void;
+  onChange: (patch: Partial<AudioSettings>) => void;
+}) {
+  if (!settings.enabled) return <button className="audio-enable" onClick={onEnable}>♫ ENABLE SOUND</button>;
+  return <details className="audio-controls">
+    <summary aria-label="Audio settings">♫ SOUND</summary>
+    <div className="audio-panel">
+      <div className="audio-panel-heading"><strong>THE SOUND OF THE CATACOMBS</strong><button onClick={() => onChange({ muted: !settings.muted })}>{settings.muted ? "UNMUTE" : "MUTE"}</button></div>
+      {([
+        ["master", "MASTER"],
+        ["music", "MUSIC"],
+        ["effects", "EFFECTS"],
+      ] as const).map(([key, label]) => <label key={key}><span>{label}</span><input type="range" min="0" max="1" step="0.01" value={settings[key]} onChange={event => onChange({ [key]: Number(event.target.value) })} /></label>)}
+      <small>Original synthesized audio · adjust to taste</small>
+    </div>
+  </details>;
+}
