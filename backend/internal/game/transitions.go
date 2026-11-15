@@ -82,8 +82,6 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return ErrNotPlayer
 	}
 
-	run := room.Run
-
 	switch command.Type {
 	case "combat":
 		return SubmitCombatAction(room, actorID, command, now)
