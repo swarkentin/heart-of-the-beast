@@ -153,8 +153,12 @@ func resolveCombatRound(room *Room, now time.Time) {
 					continue
 				}
 				damage := player.StrikeDamage + player.Stats.Power + bonusesFor(player).AttackDamage
-				if enemy.Intent != nil && enemy.Intent.Interruptible { damage += bonusesFor(player).AttackVsTelegraph }
-				if run.CurrentRoomID == "warden" && run.Flags["warden_weakness"] { damage += 2 }
+				if enemy.Intent != nil && enemy.Intent.Interruptible {
+					damage += bonusesFor(player).AttackVsTelegraph
+				}
+				if run.CurrentRoomID == "warden" && run.Flags["warden_weakness"] {
+					damage += 2
+				}
 				beforeHealth := enemy.Health
 				enemy.Health -= damage
 				if enemy.Health < 0 {
@@ -177,20 +181,26 @@ func resolveCombatRound(room *Room, now time.Time) {
 					if damage > 0 {
 						beforeHealth := enemy.Health
 						enemy.Health -= damage
-						if enemy.Health < 0 { enemy.Health = 0 }
+						if enemy.Health < 0 {
+							enemy.Health = 0
+						}
 						actualDamage := beforeHealth - enemy.Health
 						addCombatImpact(run, roundNumber, "player_interrupt_damage", enemy.Name+" takes "+itoa(actualDamage)+" interrupt damage.", "damage", enemy.ID, "enemy", actualDamage)
 					}
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+label+" from "+enemy.Name+"!")
-					if enemy.Health == 0 { addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.") }
+					if enemy.Health == 0 {
+						addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.")
+					}
 					break
 				}
 			}
 		case "defend":
 			player.Guarding = true
 			guard := player.GuardReduction + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
-			if guard <= 0 { guard = GuardDamageReduction }
+			if guard <= 0 {
+				guard = GuardDamageReduction
+			}
 			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to "+itoa(guard)+" damage from the next hit.")
 		}
 	}
@@ -214,11 +224,15 @@ func resolveCombatRound(room *Room, now time.Time) {
 				continue
 			}
 			damage := intent.Damage - player.Stats.Agility - bonusesFor(player).DamageReduction
-			if damage < 0 { damage = 0 }
+			if damage < 0 {
+				damage = 0
+			}
 			guarded := player.Guarding
 			if guarded {
 				reduction := player.GuardReduction
-				if reduction <= 0 { reduction = GuardDamageReduction }
+				if reduction <= 0 {
+					reduction = GuardDamageReduction
+				}
 				reduction += bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
 				damage -= reduction
 				if damage < 0 {
@@ -241,14 +255,21 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			if actualDamage > 0 {
 				addCombatImpact(run, roundNumber, "enemy_attack", message, "damage", playerID, "player", actualDamage)
-			} else { addCombatEvent(run, roundNumber, "enemy_attack", message) }
+			} else {
+				addCombatEvent(run, roundNumber, "enemy_attack", message)
+			}
 			if bonusesFor(player).ReflectDamage > 0 && enemy.Health > 0 {
 				beforeEnemyHealth := enemy.Health
 				enemy.Health -= bonusesFor(player).ReflectDamage
 				if enemy.Health < 0 { enemy.Health = 0 }
 				reflected := beforeEnemyHealth - enemy.Health
-				if reflected > 0 { addCombatImpact(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(reflected)+" reflected damage.", "damage", enemy.ID, "enemy", reflected) }
-				if enemy.Health == 0 { enemy.Intent = nil; addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.") }
+				if reflected > 0 {
+					addCombatImpact(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(reflected)+" reflected damage.", "damage", enemy.ID, "enemy", reflected)
+				}
+				if enemy.Health == 0 {
+					enemy.Intent = nil
+					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.")
+				}
 			}
 			if player.Health == 0 {
 				addCombatEvent(run, roundNumber, "player_down", adventurerLabel(room, playerID)+" is down!")
@@ -277,14 +298,20 @@ func resolveCombatRound(room *Room, now time.Time) {
 		current.Cleared = true
 		grantEncounterExperience(room, roundNumber)
 		for playerID, player := range run.Players {
-			if player == nil || player.Health <= 0 { continue }
+			if player == nil || player.Health <= 0 {
+				continue
+			}
 			heal := bonusesFor(player).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
 			if heal > 0 {
 				before := player.Health
 				player.Health += heal
-				if player.Health > player.MaxHealth { player.Health = player.MaxHealth }
+				if player.Health > player.MaxHealth {
+					player.Health = player.MaxHealth
+				}
 				actualHeal := player.Health - before
-				if actualHeal > 0 { addCombatImpact(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(actualHeal)+" health.", "heal", playerID, "player", actualHeal) }
+				if actualHeal > 0 {
+					addCombatImpact(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(actualHeal)+" health.", "heal", playerID, "player", actualHeal)
+				}
 			}
 		}
 		run.CombatRound = nil
