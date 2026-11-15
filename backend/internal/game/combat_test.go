@@ -79,6 +79,9 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 	if got := room.Run.Players["player-2"].Health; got != 30 {
 		t.Fatalf("targeted player should block the 4 damage strike, health=%d", got)
 	}
+	if next := room.Run.Rooms["entry"].Encounter.Enemies[0].Intent; next == nil || next.TargetPlayerID != "player-1" {
+		t.Fatalf("the next single-target intent should rotate to the first player, got %+v", next)
+	}
 }
 
 func TestWardenSoulSweepTelegraphsPartyWideDamage(t *testing.T) {
@@ -121,5 +124,30 @@ func TestPartyDefeatEndsTheRun(t *testing.T) {
 	}
 	if room.Run.Phase != PhaseFailed || room.Run.CompletedAt == nil {
 		t.Fatalf("the run should end when every player is down, phase=%s", room.Run.Phase)
+	}
+}
+
+func TestPartyWideIntentAppliesGuardIndependently(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartRun(room, "run-sweep", now); err != nil {
+		t.Fatal(err)
+	}
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health = 20
+	enemy.Intent = &EnemyIntent{Kind: "soul_sweep", Label: "Soul sweep", Damage: 3, TargetAll: true}
+
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if got := room.Run.Players["player-1"].Health; got != 30 {
+		t.Fatalf("guard should block the party-wide hit for player one, health=%d", got)
+	}
+	if got := room.Run.Players["player-2"].Health; got != 27 {
+		t.Fatalf("unguarded player two should take the party-wide hit, health=%d", got)
 	}
 }
