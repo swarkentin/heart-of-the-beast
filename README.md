@@ -66,7 +66,7 @@ The backend listens on port 8080 by default; set `PORT` to override it. See [bac
 
 ## Production deployment
 
-The Render Blueprint defines the static frontend and Go API. Configure a Neon project and provide its pooled TLS connection string as the Render API service's DATABASE_URL secret during the initial Blueprint sync. Migrations run automatically before the API starts. See [Render + Neon deployment](docs/deployment/render-neon.md) and [ADR 0025](docs/decisions/0025-render-neon-deployment.md).
+The Render Blueprint defines the static frontend and Go API on Render's free tiers. Configure a free Neon project and provide its pooled TLS connection string as the Render API service's DATABASE_URL secret during the initial Blueprint sync. Migrations run automatically before the API starts. The API sleeps after 15 minutes without traffic and may take about a minute to wake, which is acceptable for the testing phase. See [Render + Neon deployment](docs/deployment/render-neon.md) and [ADR 0025](docs/decisions/0025-render-neon-deployment.md).
 
 ## Start here
 
