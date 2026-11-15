@@ -37,7 +37,7 @@ function deathPost(style, img, i, n, A, size) {
 // Top/left/right contact means the art is cut off by its cell. Bottom contact is fine: feet and trailing tentacles rest on the floor anchor.
 export const touchesEdge = (img) => { const { w, h, d } = img; for (let x = 0; x < w; x++) if (d[x * 4 + 3]) return true; for (let y = 0; y < h; y++) if (d[y * w * 4 + 3] || d[(y * w + w - 1) * 4 + 3]) return true; return false; };
 
-function renderAnim(theme, cr, anim, n, size, s) {
+export function renderAnim(theme, cr, anim, n, size, s) {
   const out = [], shadow = theme.shadow, light = theme.light;
   for (let i = 0; i < n; i++) {
     const kind = anim === "attack" ? cr.attack : anim === "special" ? cr.special : null;

@@ -15,7 +15,7 @@
     "db:reset": "node scripts/dev.mjs reset",
     "build": "npm run build --workspace @heart-of-the-beast/frontend",
     "preview": "npm run preview --workspace @heart-of-the-beast/frontend",
-    "art:build": "node scripts/pixel-art/build.mjs",
+    "art:build": "node scripts/pixel-art/build.mjs && node scripts/pixel-art/build-interface.mjs",
     "art:verify": "node scripts/pixel-art/verify.mjs",
     "art:gallery": "node scripts/pixel-art/gallery.mjs"
   }
