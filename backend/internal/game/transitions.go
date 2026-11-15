@@ -39,7 +39,10 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			Name:        "The Silent Reliquary",
 			Description: "Dust-covered alcoves conceal a guardian among the old offerings.",
 			Exits:       []Exit{{ID: "east", Destination: "warden", Label: "The Warden's Gate"}},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
+                {ID: "guardian", Name: "Reliquary Guardian", Behavior: "guardian", Health: 15, MaxHealth: 15},
+                {ID: "reliquary-scout", Name: "Drowned Scout", Behavior: "scout", Health: 12, MaxHealth: 12},
+            }},
 		},
 		"flooded-crossing": {
 			ID:          "flooded-crossing",

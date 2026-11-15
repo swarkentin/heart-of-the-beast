@@ -44,9 +44,16 @@ The numbers are starting values, not balance promises.
 
 ## Stage 2 — Encounter composition and party scaling
 
-Next priority after the first intent/response playtest:
+In progress. The first complementary two-enemy encounter is implemented in the Silent Reliquary:
 
-- Introduce small multi-enemy encounters (start with two enemies, then three where useful).
+- Reliquary Guardian (slow, heavy wind-up) paired with a Drowned Scout (quick, lighter strike).
+- Players can focus fire to remove one intent while the other enemy still acts; each enemy's intent remains independently visible.
+- The Watcher's Hall and Drowned Crossing remain single-enemy encounters, preserving a gentler opening and a lower-pressure branch.
+- Automated tests cover simultaneous telegraphs and confirm that defeating one enemy cancels only that enemy's intent.
+
+Next increments:
+
+- Introduce three-enemy encounters only where the presentation can keep all intents readable.
 - Give enemies complementary jobs:
   - Bruiser: slow, high-damage single-target wind-up.
   - Skirmisher: low-damage quick strike that changes targets.
