@@ -97,6 +97,79 @@ func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
 	}
 }
 
+
+func TestSimulateCombatAppliesTalentAndPassiveAttackBonuses(t *testing.T) {
+	base := simulationFixture(t)
+	base.Enemies[0].Health = 100
+	base.Enemies[0].MaxHealth = 100
+
+	talentBuild := base
+	talentBuild.Players = append([]PlayerState(nil), base.Players...)
+	talentBuild.Players[0].Talents = []string{"damage-heavy-hands"}
+
+	passiveBuild := base
+	passiveBuild.Players = append([]PlayerState(nil), base.Players...)
+	passiveBuild.Players[0].Health = 10
+	passiveBuild.Players[0].ClassBuild = &ClassBuildSnapshot{PassiveID: "passive.bloodied-strength"}
+
+	baseReport, err := SimulateCombat(base, 7, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	talentReport, err := SimulateCombat(talentBuild, 7, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	passiveReport, err := SimulateCombat(passiveBuild, 7, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := talentReport.PlayerDamageDealt - baseReport.PlayerDamageDealt; got != 3 {
+		t.Fatalf("damage-heavy-hands should add 3 attack damage, got delta %d", got)
+	}
+	if got := passiveReport.PlayerDamageDealt - baseReport.PlayerDamageDealt; got != 3 {
+		t.Fatalf("bloodied-strength should add 3 attack damage below half health, got delta %d", got)
+	}
+}
+
+func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
+	base := simulationFixture(t)
+	base.Players[0].Health = 30
+	base.Players[0].MaxHealth = 30
+	base.Enemies[0].Behavior = "soul-drainer"
+	base.Enemies[0].Health = 100
+	base.Enemies[0].MaxHealth = 100
+
+	talentBuild := base
+	talentBuild.Players = append([]PlayerState(nil), base.Players...)
+	talentBuild.Players[0].Talents = []string{"tank-unyielding"}
+
+	passiveBuild := base
+	passiveBuild.Players = append([]PlayerState(nil), base.Players...)
+	passiveBuild.Players[0].ClassBuild = &ClassBuildSnapshot{PassiveID: "passive.arcane-resistance"}
+
+	baseReport, err := SimulateCombat(base, 11, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	talentReport, err := SimulateCombat(talentBuild, 11, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	passiveReport, err := SimulateCombat(passiveBuild, 11, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := baseReport.PlayerDamageReceived - talentReport.PlayerDamageReceived; got != 0 {
+		t.Fatalf("tank-unyielding only affects guarding and should not reduce unguarded damage, got %d", got)
+	}
+	if passiveReport.PlayerDamageReceived >= baseReport.PlayerDamageReceived {
+		t.Fatalf("arcane resistance should reduce soul-drain damage: base=%d passive=%d", baseReport.PlayerDamageReceived, passiveReport.PlayerDamageReceived)
+	}
+}
+
 func TestSimulateCombatRejectsUnknownMonsterBehavior(t *testing.T) {
 	snapshot := simulationFixture(t)
 	snapshot.Enemies[0].Behavior = "missing-monster"
