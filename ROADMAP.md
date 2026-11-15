@@ -5,7 +5,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Product goals
 
 - A complete run is enjoyable solo or with friends; multiplayer adds social possibilities rather than fixing a broken solo experience.
-- Typical session target: 20–40 minutes. Dungeon levels target roughly 5–8 minutes.
+- Typical session target: 20–40 minutes. Dungeon levels target roughly 3–5 minutes.
 - Illustrated, high-definition pixel-art scenes with directional exploration.
 - Small parties, initially 1–4 players, with no mandatory class composition.
 - No account or third-party service required to play. Optional accounts may later support identity, achievements, and cosmetics.
