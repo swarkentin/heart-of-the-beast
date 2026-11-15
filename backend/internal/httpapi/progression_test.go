@@ -182,10 +182,14 @@ func TestRunClassEndpointRejectsUnknownAndUnauthorizedClass(t *testing.T) {
 	created := httptest.NewRecorder()
 	handler.ServeHTTP(created, httptest.NewRequest(http.MethodPost, "/rooms", nil))
 	var response struct {
-		Room struct { ID string `json:"id"` } `json:"room"`
+		Room struct {
+			ID string `json:"id"`
+		} `json:"room"`
 		PlayerToken string `json:"playerToken"`
 	}
-	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil { t.Fatal(err) }
+	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
 
 	for _, classID := range []string{"unknown-class", "locked-future-class"} {
 		request := httptest.NewRequest(http.MethodPost, "/rooms/"+response.Room.ID+"/class", bytes.NewBufferString(`{"classId":"`+classID+`"}`))

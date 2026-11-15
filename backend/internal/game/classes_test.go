@@ -73,7 +73,7 @@ func TestSelectClassRejectsUnknownLockedAndUnauthorizedSelection(t *testing.T) {
 	now := time.Now().UTC()
 	room := &Room{
 		PlayerIDs: []string{"player-1"},
-		Presence: map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
+		Presence:  map[string]PlayerPresence{"player-1": {LastSeenAt: now}},
 	}
 	if err := SelectClass(room, "player-1", "not-a-class"); !errors.Is(err, ErrInvalidClass) {
 		t.Fatalf("expected unknown class rejection, got %v", err)
