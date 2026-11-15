@@ -59,7 +59,7 @@ function xpProgress(player: ApiPlayer) {
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
-type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
+type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -287,11 +287,11 @@ export default function App() {
   }, [run?.phase, player?.level, player?.talentPoints, spectator]);
 
   useEffect(() => {
-    if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote)) return;
+    if (!(run?.phase === "combat" && run.combatRound) && !(run?.phase === "exploring" && run.navigationVote) && !(run?.phase === "intermission" && run.interFloorVote)) return;
     setClockNow(Date.now());
     const timer = window.setInterval(() => setClockNow(Date.now()), 100);
     return () => window.clearInterval(timer);
-  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline, run?.navigationVote?.deadline]);
+  }, [run?.phase, run?.combatRound?.number, run?.combatRound?.deadline, run?.navigationVote?.deadline, run?.interFloorVote?.deadline]);
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -528,10 +528,11 @@ export default function App() {
       {run.phase === "intermission" ? <section className="room-event-panel" aria-live="polite">
         <div className="room-event-heading"><span>FLOOR {run.depth} CLEARED · DESCENT {run.depth + 1} OF {run.maxDepth}</span><h2>Choose how to prepare</h2></div>
         <p>The party has a moment before descending. Recover now, or carry a small permanent advantage deeper into the catacombs.</p>
+        <p>{run.interFloorVote ? "Party vote · " + Object.keys(run.interFloorVote.votes || {}).length + "/" + livingPlayerCount + " submitted · " + Math.max(0, Math.ceil((new Date(run.interFloorVote.deadline).getTime() - clockNow) / 1000)) + "s remaining" : "Choose how the whole party prepares for the next floor."}</p>
         {!spectator && view === "player" ? <div className="room-event-choices">
-          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "restore" })} disabled={busy}><strong>Restore health</strong><small>Every living adventurer recovers up to 10 health.</small></button>
-          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "perk" })} disabled={busy}><strong>Take a run perk</strong><small>Every adventurer gains +1 Strike damage and +1 Guard for the rest of the run.</small></button>
-        </div> : <div className="room-event-result">THE PARTY IS CHOOSING ITS DESCENT</div>}
+          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "restore" })} disabled={busy}><strong>{run.interFloorVote?.votes?.[playerId || ""] === "restore" ? "✓ Restore health · YOUR VOTE" : "Restore health"}</strong><small>Every living adventurer recovers up to 10 health. {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "restore").length} votes.</small></button>
+          <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "perk" })} disabled={busy}><strong>{run.interFloorVote?.votes?.[playerId || ""] === "perk" ? "✓ Take a run perk · YOUR VOTE" : "Take a run perk"}</strong><small>Every adventurer gains +1 Strike damage and +1 Guard for the rest of the run. {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length} votes.</small></button>
+        </div> : <div className="room-event-result">THE PARTY IS CHOOSING ITS DESCENT · RESTORE {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "restore").length} · PERK {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length}</div>}
       </section> : null}
       <div className="player-hud"><div className="hero-token">{(player?.archetype || "damage").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
       {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">
