@@ -182,7 +182,8 @@ export default function App() {
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
   const gameOver = run?.phase === "completed";
-  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);\n  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
+  const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);
+  const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
