@@ -9,7 +9,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /readyz
-    maxShutdownDelaySeconds: 30
+    # maxShutdownDelaySeconds: 30 # Not supported on free tier
     autoDeployTrigger: checksPass
     envVars:
       - key: DATABASE_URL
