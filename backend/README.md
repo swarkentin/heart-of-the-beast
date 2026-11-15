@@ -6,11 +6,10 @@ The Go backend is the authoritative game service. It is an independently buildab
 
 For the full local stack, install Docker Desktop, Node.js 22+, and Go 1.25+, then follow the root [local development guide](../README.md#local-development). The root scripts start PostgreSQL, apply pending migrations, and launch the backend and frontend together.
 
-To run only the backend manually, start PostgreSQL with Docker Compose and apply migrations from the repository root:
+To run only the backend manually, start PostgreSQL with Docker Compose. The backend applies pending migrations automatically before it starts accepting requests:
 
 ~~~sh
 docker compose up -d --wait postgres
-docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U heart -d heart_of_the_beast < backend/migrations/0001_create_rooms.sql
 ~~~
 
 Then start the service:
@@ -20,7 +19,7 @@ cd backend
 DATABASE_URL="postgres://heart:heart@localhost:5432/heart_of_the_beast?sslmode=disable" go run ./cmd/server
 ~~~
 
-The service listens on port 8080 by default; set PORT to override it. GET /healthz checks process liveness. The server requires a reachable PostgreSQL database before it starts accepting requests.
+The service listens on port 8080 by default; set PORT to override it. GET /healthz checks process liveness; GET /readyz checks database readiness. The server requires a reachable PostgreSQL database and successfully applied migrations before it starts accepting requests. Migration files are embedded in the binary, serialized across instances with a PostgreSQL advisory lock, and each migration is recorded transactionally in schema_migrations.
 
 ## Initial room API
 
@@ -49,7 +48,7 @@ go test -race ./...
 go build ./cmd/server
 ~~~
 
-Build the container from the repository root:
+Build the container from the repository root (the image includes the embedded SQL migrations):
 
 ~~~sh
 docker build -f backend/Dockerfile -t heart-of-the-beast-backend ./backend
@@ -57,4 +56,4 @@ docker build -f backend/Dockerfile -t heart-of-the-beast-backend ./backend
 
 ## Architecture boundary
 
-Domain transitions are deterministic and independent of HTTP and storage. The repository interface has in-memory and PostgreSQL implementations; PostgreSQL is the runtime store. SQL migrations are versioned in migrations/ and the local development tooling tracks applied filenames in schema_migrations. Keep future WebSocket, party coordination, and spectator streaming adapters outside the domain package.
+Domain transitions are deterministic and independent of HTTP and storage. The repository interface has in-memory and PostgreSQL implementations; PostgreSQL is the runtime store. SQL migrations are versioned in migrations/ and the backend applies them at startup; local development tooling uses the same schema_migrations ledger. Keep future WebSocket, party coordination, and spectator streaming adapters outside the domain package.
