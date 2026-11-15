@@ -23,13 +23,48 @@ type ApiEnemy = { id: string; name: string; behavior?: string; turnsTaken: numbe
 type ApiCombatEvent = { round: number; kind: string; message: string };
 type ApiExit = { id: string; destination: string; label: string };
 type ApiDungeonRoom = { id: string; name: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; cleared: boolean };
-type ApiPlayer = { id: string; health: number; maxHealth: number };
+
+type ApiStats = { power: number; focus: number; agility: number };
+type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats };
+type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
+const archetypes = [
+  { id: "vanguard", name: "Vanguard", description: "Hold the line with heavy strikes and dependable defense." },
+  { id: "rogue", name: "Rogue", description: "Exploit openings, avoid punishment, and strike precisely." },
+  { id: "arcanist", name: "Arcanist", description: "Turn focused magic into force and disruption." },
+  { id: "warden", name: "Warden", description: "Endure, restore, and protect through the longest fights." },
+];
+const talentChoices: TalentChoice[] = [
+  { id: "vanguard-bulwark", archetype: "vanguard", name: "Bulwark", description: "+4 maximum health; defend blocks 3 more damage.", tier: 1 },
+  { id: "vanguard-heavy-hands", archetype: "vanguard", name: "Heavy Hands", description: "Attacks deal 3 additional damage.", tier: 1 },
+  { id: "vanguard-rally", archetype: "vanguard", name: "Rally", description: "Recover 4 health after clearing an encounter.", tier: 2, requires: "vanguard-bulwark" },
+  { id: "vanguard-counterstrike", archetype: "vanguard", name: "Counterstrike", description: "Interrupts deal 4 damage.", tier: 2, requires: "vanguard-heavy-hands" },
+  { id: "rogue-precision", archetype: "rogue", name: "Precision", description: "Attacks deal 2 additional damage.", tier: 1 },
+  { id: "rogue-evasion", archetype: "rogue", name: "Evasion", description: "Take 2 less damage from enemy attacks.", tier: 1 },
+  { id: "rogue-opportunist", archetype: "rogue", name: "Opportunist", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "rogue-precision" },
+  { id: "rogue-shadowstep", archetype: "rogue", name: "Shadowstep", description: "Defend blocks 2 additional damage.", tier: 2, requires: "rogue-evasion" },
+  { id: "arcanist-embercraft", archetype: "arcanist", name: "Embercraft", description: "Attacks deal 4 additional damage.", tier: 1 },
+  { id: "arcanist-disruption", archetype: "arcanist", name: "Disruption", description: "Interrupts deal 4 damage.", tier: 1 },
+  { id: "arcanist-overcharge", archetype: "arcanist", name: "Overcharge", description: "Attacks deal 2 additional damage.", tier: 2, requires: "arcanist-embercraft" },
+  { id: "arcanist-aether-shield", archetype: "arcanist", name: "Aether Shield", description: "Defend blocks 3 additional damage.", tier: 2, requires: "arcanist-disruption" },
+  { id: "warden-vitality", archetype: "warden", name: "Vitality", description: "+6 maximum health.", tier: 1 },
+  { id: "warden-restoration", archetype: "warden", name: "Restoration", description: "Recover 6 health after clearing an encounter.", tier: 1 },
+  { id: "warden-warding", archetype: "warden", name: "Warding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "warden-vitality" },
+  { id: "warden-thorns", archetype: "warden", name: "Thorns", description: "Reflect 2 damage when struck.", tier: 2, requires: "warden-restoration" },
+];
+const levelThresholds = [0, 50, 100, 200, 325];
+function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Vanguard"; }
+function xpProgress(player: ApiPlayer) {
+  const current = levelThresholds[player.level - 1] ?? 325;
+  const next = levelThresholds[player.level] ?? current;
+  return { current: Math.max(0, player.experience - current), needed: Math.max(0, next - current), percent: next > current ? Math.min(100, Math.max(0, (player.experience - current) / (next - current) * 100)) : 100 };
+}
+
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed" | "failed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
-type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
+type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 type SpectatorAccess = { roomId: string; token: string };
 const SESSION_KEY = "heart-of-the-beast.player-session";
@@ -325,6 +360,29 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
+
+  async function selectArchetype(archetype: string) {
+    if (!session || busy || run) return;
+    setBusy(true); setError("");
+    try {
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/archetype", session.playerToken, { method: "POST", body: JSON.stringify({ archetype }) });
+      setSnapshot(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not select archetype");
+    } finally { setBusy(false); }
+  }
+
+  async function chooseTalent(talentId: string) {
+    if (!session || busy || spectator) return;
+    setBusy(true); setError("");
+    try {
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/talents", session.playerToken, { method: "POST", body: JSON.stringify({ talentId }) });
+      setSnapshot(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not choose talent");
+    } finally { setBusy(false); }
+  }
+
   async function startRun() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
@@ -416,7 +474,12 @@ export default function App() {
         <p style={{ color: "#c7b9a8" }}>Share this code with friends. Up to four players can join before the host starts the run.</p>
         <div style={{ padding: 18, margin: "20px 0", background: "#0f1118", border: "1px solid #625246", fontSize: 30, letterSpacing: ".28em", textAlign: "center" }}>{snapshot.code}</div>
         <h2 style={{ fontSize: 18 }}>Adventurers ({snapshot.playerIds.filter(id => snapshot.presence?.[id]?.status !== "left").length}/4)</h2>
-        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        <ul style={{ lineHeight: 2, color: "#d8c8b7" }}>{snapshot.playerIds.map((id, index) => <li key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1} · {archetypeName(snapshot.playerArchetypes?.[id])} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"} {session?.playerId === id ? "· YOU" : ""}</li>)}</ul>
+        <div className="archetype-picker">
+          <div className="progression-eyebrow">CHOOSE YOUR RUN ARCHETYPE</div>
+          <p>Every archetype can finish the dungeon alone. Your talents will shape it as you level.</p>
+          <div className="archetype-grid">{archetypes.map(item => <button key={item.id} className={"archetype-choice" + ((snapshot.playerArchetypes?.[session?.playerId || ""] || "vanguard") === item.id ? " selected" : "")} onClick={() => void selectArchetype(item.id)} disabled={busy || !session}><strong>{item.name}</strong><span>{item.description}</span></button>)}</div>
+        </div>
         {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
         <button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button>
         {error ? <p role="alert" style={{ color: "#f08f7e" }}>{error}</p> : null}
@@ -436,7 +499,15 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
-      <div className="player-hud"><div className="hero-token">V</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV 01</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div></div></div>
+      <div className="player-hud"><div className="hero-token">{(player?.archetype || "vanguard").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
+      {!spectator && exploring && player && player.talentPoints > 0 ? <section className="talent-panel">
+        <div className="talent-panel-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · TALENT POINT AVAILABLE</span><h2>Shape your path</h2><p>{archetypeName(player.archetype)} talents · {player.talentPoints} point{player.talentPoints === 1 ? "" : "s"} to spend</p></div><div className="talent-point-count">{player.talentPoints}</div></div>
+        <div className="talent-grid">{talentChoices.filter(talent => talent.archetype === player.archetype).map(talent => {
+          const chosen = player.talents?.includes(talent.id);
+          const locked = player.level < talent.tier + 1 || Boolean(talent.requires && !player.talents?.includes(talent.requires));
+          return <button key={talent.id} className={"talent-choice" + (chosen ? " chosen" : "")} onClick={() => void chooseTalent(talent.id)} disabled={busy || chosen || locked}><span>{talent.tier === 1 ? "TIER I" : "TIER II"}</span><strong>{talent.name}</strong><small>{talent.description}</small>{chosen ? <i>LEARNED</i> : locked ? <i>LOCKED</i> : <i>CHOOSE TALENT</i>}</button>;
+        })}</div>
+      </section> : null}
       {view === "player" && !spectator
         ? <>{run.phase === "combat" ? <><div className="action-dock"><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => { window.localStorage.removeItem(SESSION_KEY); setSession(null); setSnapshot(null); setMessage("Create another run."); }} >START ANOTHER RUN <span>↗</span></button></div> : null}
