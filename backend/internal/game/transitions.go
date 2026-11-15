@@ -27,11 +27,11 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		"entry": {
 			ID: "entry", Name: "The Watcher's Hall", Floor: "01", RoomType: "encounter",
 			Description: "A dead watchfire gutters beneath a ceiling of carved stone. Something stirs in the ash.",
-			Exits:       []Exit{
+			Exits: []Exit{
 				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary", Description: "Harder fight; claim a sigil that empowers your attacks."},
 				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing", Description: "Safer fight; search the waterlogged cache for healing."},
 			},
-			Encounter:   &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Behavior: "sentinel", Health: 10, MaxHealth: 10}}},
+			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{{ID: "sentinel", Name: "Restless Sentinel", Behavior: "sentinel", Health: 10, MaxHealth: 10}}},
 		},
 		"reliquary": {
 			ID: "reliquary", Name: "The Silent Reliquary", Floor: "02", RoomType: "encounter",
