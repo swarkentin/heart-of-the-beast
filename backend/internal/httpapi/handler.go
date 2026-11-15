@@ -405,18 +405,31 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid command")
 		return
 	}
-	expected := room.Version
-	if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
-		writeError(w, http.StatusConflict, err.Error())
+	for attempt := 0; attempt < 4; attempt++ {
+		expected := room.Version
+		if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				room, err = h.rooms.Get(r.Context(), room.ID)
+				if err == nil {
+					room, err = h.advanceRoomIfDue(r, room)
+				}
+				if err == nil {
+					continue
+				}
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 		return
 	}
-	room.Version++
-	room.UpdatedAt = h.now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
-		writeStoreError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+	writeError(w, http.StatusConflict, "room is busy; retry the command")
 }
 
 func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
