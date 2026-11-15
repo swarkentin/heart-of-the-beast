@@ -70,11 +70,11 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-    for i := 0; i < 2; i++ {
-        if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 4, Action: "attack", TargetID: "reliquary-scout"}, now); err != nil {
-            t.Fatal(err)
-        }
-    }
+	for i := 0; i < 2; i++ {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: i + 4, Action: "attack", TargetID: "reliquary-scout"}, now); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "east"}, now); err != nil {
 		t.Fatal(err)
 	}
