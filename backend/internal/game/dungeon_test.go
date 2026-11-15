@@ -174,3 +174,57 @@ func TestInterFloorVoteResolvesAtDeadline(t *testing.T) {
 		t.Fatal("the submitted recovery vote should win when the other player times out")
 	}
 }
+
+func TestGeneratedFloorEnemiesReferenceCatalogDefinitions(t *testing.T) {
+	_, rooms := generateDungeonFloor(20261115, 3, 1)
+	for roomID, room := range rooms {
+		if room.Encounter == nil {
+			continue
+		}
+		for _, enemy := range room.Encounter.Enemies {
+			definition, err := defaultMonsterCatalog.Monster(enemy.DefinitionID)
+			if err != nil {
+				t.Fatalf("room %s enemy %s has no catalog definition: %v", roomID, enemy.ID, err)
+			}
+			if enemy.Name != definition.Name || enemy.Behavior != definition.BehaviorID {
+				t.Fatalf("room %s enemy %s does not match definition %s: %+v", roomID, enemy.ID, definition.ID, enemy)
+			}
+		}
+	}
+}
+
+func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	solo := newTestRoom()
+	if err := StartRun(solo, "catalog-solo", now); err != nil {
+		t.Fatal(err)
+	}
+	entryEnemy := solo.Run.Rooms["entry"].Encounter.Enemies[0]
+	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 10 || entryEnemy.DefinitionID == "" {
+		t.Fatalf("initial enemy = %+v, want sentinel health 10 and catalog reference", entryEnemy)
+	}
+	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 15 {
+		t.Fatalf("solo reliquary guardian health = %d, want 15", got)
+	}
+	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 16 {
+		t.Fatalf("solo bonebound guardian health = %d, want 16", got)
+	}
+	if got := solo.Run.Rooms["flooded-crossing"].Encounter.Enemies[0].Health; got != 11 {
+		t.Fatalf("solo crossing scout health = %d, want 11", got)
+	}
+	if got := solo.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 36 {
+		t.Fatalf("solo warden health = %d, want 36", got)
+	}
+
+	coop := newTestRoom()
+	coop.PlayerIDs = []string{"player-1", "player-2"}
+	if err := StartRun(coop, "catalog-coop", now); err != nil {
+		t.Fatal(err)
+	}
+	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
+		t.Fatalf("co-op reliquary guardian health = %d, want 20", got)
+	}
+	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 42 {
+		t.Fatalf("co-op warden health = %d, want 42", got)
+	}
+}
