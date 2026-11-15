@@ -47,7 +47,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] One complete dungeon path with basic encounters and a boss.
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
-- [ ] Expand combat actions beyond attack/defend (interrupts, support actions, spells, abilities, and consumables).
+- [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then a small set of interrupt/support/consumable actions.
 - [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
@@ -57,7 +57,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
 - [ ] Gear, loot, inventory, spells, abilities, and consumables.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
-- [ ] Multi-enemy encounters, coordinated actions, and encounter tuning by party size.
+- [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Reward and difficulty curves validated through playtesting.
 
 ### Persistent character progression and personalization
