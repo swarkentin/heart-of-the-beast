@@ -83,8 +83,6 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 	}
 }
 
-
-
 func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
@@ -135,7 +133,6 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
 	}
 }
-
 
 func TestCombatRejectsActionFromExpiredRound(t *testing.T) {
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
