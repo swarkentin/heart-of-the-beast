@@ -148,7 +148,7 @@
 .archetype-choice span{color:#b8aa9a;font-size:10px;line-height:1.45}
 .archetype-choice:disabled{opacity:.65;cursor:wait}
 .player-hud .hero-vitals{width:clamp(190px,24vw,290px)}
-.xp-track{height:4px;margin-top:6px;overflow:hidden;background:#38343a}
+.xp-label{display:flex;justify-content:space-between;margin-top:6px;color:#9f9284;font-size:8px;letter-spacing:.8px}.xp-label b{color:#c9a4d8;font-weight:500}.xp-track{height:4px;margin-top:3px;overflow:hidden;background:#38343a}
 .xp-track i{display:block;height:100%;background:linear-gradient(90deg,#8b75a8,#c9a4d8);transition:width .25s}
 .run-stats{display:flex;gap:12px;padding-left:14px;border-left:1px solid #494047;color:#a99b8f;font-size:9px;letter-spacing:.5px}
 .run-stats span{display:flex;flex-direction:column;gap:3px}
