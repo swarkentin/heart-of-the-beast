@@ -22,7 +22,7 @@ type ApiDungeonRoom = { id: string; name: string; description: string; exits: Ap
 type ApiPlayer = { id: string; health: number; maxHealth: number };
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
-type VoteStatus = { remainingSeconds: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
+type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "completed"; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
@@ -123,7 +123,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small></div> : null}{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")+(voteStatus?.selectedExit===exit.id?" scene-exit-selected":"")} onClick={()=>onNavigate(exit.id)} aria-label={"Vote for "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "ENTER PATH"}</small>{voteStatus?.selectedExit===exit.id ? <i>YOUR VOTE</i> : null}</button>)}</div> : null}
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")+(voteStatus?.selectedExit===exit.id?" scene-exit-selected":"")} onClick={()=>onNavigate(exit.id)} aria-label={"Vote for "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>{voteStatus ? (voteStatus.voteCounts[exit.id] || 0)+" VOTES" : "ENTER PATH"}</small>{voteStatus?.selectedExit===exit.id ? <i>YOUR VOTE</i> : null}</button>)}</div> : null}
     <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
@@ -200,7 +200,7 @@ export default function App() {
   const eligibleVoterIds = (snapshot?.playerIds ?? []).filter(id => snapshot?.presence?.[id]?.status !== "left" && (run?.players[id]?.health ?? 0) > 0);
   const livingPlayerCount = eligibleVoterIds.length;
   const voteCounts = exits.reduce((counts, exit) => { counts[exit.id] = eligibleVoterIds.filter(id => navigationVote?.votes?.[id] === exit.id).length; return counts; }, {} as Record<string, number>);
-  const voteStatus: VoteStatus | undefined = navigationVote ? { remainingSeconds: navigationRemainingSeconds, submittedCount: eligibleVoterIds.filter(id => Boolean(navigationVote.votes[id])).length, eligibleCount: livingPlayerCount, voteCounts, selectedExit: session?.playerId ? navigationVote.votes[session.playerId] : undefined } : undefined;
+  const voteStatus: VoteStatus | undefined = navigationVote ? { remainingSeconds: navigationRemainingSeconds, progressPercent: navigationTimePercent, submittedCount: eligibleVoterIds.filter(id => Boolean(navigationVote.votes[id])).length, eligibleCount: livingPlayerCount, voteCounts, selectedExit: session?.playerId ? navigationVote.votes[session.playerId] : undefined } : undefined;
   const exploring = run?.phase === "exploring";
   const availableExits = exploring ? exits.map(exit => ({ ...exit, destination: visualRoomId(exit.destination) })) : [];
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
