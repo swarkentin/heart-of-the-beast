@@ -2,7 +2,6 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -80,22 +79,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	case "combat":
 		return SubmitCombatAction(room, actorID, command, now)
 	case "choose_exit":
-		if run.Phase != PhaseExploring || !current.Cleared {
-			return ErrInvalidPhase
-		}
-		for _, exit := range current.Exits {
-			if exit.ID == command.ExitID {
-				next, ok := run.Rooms[exit.Destination]
-				if !ok {
-					return fmt.Errorf("dungeon destination %q is missing", exit.Destination)
-				}
-				run.CurrentRoomID = next.ID
-				run.Phase = PhaseCombat
-				startCombatRound(run, now)
-				return nil
-			}
-		}
-		return ErrInvalidExit
+		return SubmitNavigationVote(room, actorID, command.ExitID, now)
 	default:
 		return ErrInvalidAction
 	}
