@@ -97,7 +97,6 @@ func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
 	}
 }
 
-
 func TestSimulateCombatAppliesTalentAndPassiveAttackBonuses(t *testing.T) {
 	base := simulationFixture(t)
 	base.Enemies[0].Health = 100
