@@ -135,3 +135,85 @@
 .audio-panel small{display:block;margin-top:12px;padding-top:9px;border-top:1px solid #393139;color:#9f9284;font-size:9px;line-height:1.5}
 @media(max-width:700px){.audio-enable,.audio-controls>summary{padding:7px 6px;font-size:8px;letter-spacing:.2px}.audio-panel{right:-48px;width:250px}}
 @media(max-width:380px){.audio-enable,.audio-controls>summary{font-size:7px;padding:6px 4px}.audio-panel{right:-30px}}
+
+
+/* Run-only archetypes, XP, and talent choices */
+.archetype-picker{margin:24px 0;padding:18px;background:#10131b;border:1px solid #625246}
+.progression-eyebrow{display:block;color:#d9ad73;font-size:10px;letter-spacing:1.4px;font-weight:500}
+.archetype-picker>p{margin:8px 0 14px;color:#b8aa9a;font-size:12px;line-height:1.5}
+.archetype-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.archetype-choice{display:flex;flex-direction:column;gap:7px;min-height:90px;padding:12px;text-align:left;background:#1a1c25;border:1px solid #51463d;color:#eee3d5;cursor:pointer}
+.archetype-choice:hover,.archetype-choice.selected{border-color:#d9ad73;background:#2a241f}
+.archetype-choice strong{color:#f0d2a8;font:16px "Marcellus",serif}
+.archetype-choice span{color:#b8aa9a;font-size:10px;line-height:1.45}
+.archetype-choice:disabled{opacity:.65;cursor:wait}
+.player-hud .hero-vitals{width:clamp(190px,24vw,290px)}
+.xp-label{display:flex;justify-content:space-between;margin-top:6px;color:#9f9284;font-size:8px;letter-spacing:.8px}.xp-label b{color:#c9a4d8;font-weight:500}.xp-track{height:4px;margin-top:3px;overflow:hidden;background:#38343a}
+.xp-track i{display:block;height:100%;background:linear-gradient(90deg,#8b75a8,#c9a4d8);transition:width .25s}
+.run-stats{display:flex;gap:12px;padding-left:14px;border-left:1px solid #494047;color:#a99b8f;font-size:9px;letter-spacing:.5px}
+.run-stats span{display:flex;flex-direction:column;gap:3px}
+.run-stats b{color:#e9c18c;font-size:13px;font-weight:500}
+.talent-panel{position:relative;z-index:3;width:min(850px,100%);max-height:36vh;overflow:auto;margin:10px auto 0;padding:14px 16px;background:#10131bf5;border:1px solid #a17c56;box-shadow:0 8px 28px #0009}
+.talent-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.talent-panel-heading h2{margin:4px 0;color:#f0d2a8;font:20px "Marcellus",serif}
+.talent-panel-heading p{margin:0;color:#b8aa9a;font-size:10px}
+.talent-point-count{display:grid;place-items:center;width:38px;height:38px;border:1px solid #d9ad73;background:#2a241f;color:#f2d3a0;font:20px "Marcellus",serif}
+.talent-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.talent-choice{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-height:90px;padding:10px;text-align:left;background:#1b1d25;border:1px solid #51463d;color:#eee3d5;cursor:pointer}
+.talent-choice:hover:not(:disabled){border-color:#d9ad73;background:#2a241f}
+.talent-choice>span{color:#b79b78;font-size:8px;letter-spacing:1px}
+.talent-choice strong{color:#f0d2a8;font:15px "Marcellus",serif}
+.talent-choice small{color:#b8aa9a;font-size:9px;line-height:1.4}
+.talent-choice i{margin-top:auto;color:#d9ad73;font-size:8px;font-style:normal;letter-spacing:1px}
+.talent-choice.chosen{border-color:#819a7d;background:#1b2723}
+.talent-choice.chosen i{color:#a9c59e}
+.talent-choice:disabled:not(.chosen){opacity:.45;cursor:not-allowed}
+@media(max-width:700px){
+ .archetype-picker{margin:18px 0;padding:12px}
+ .archetype-grid{gap:6px}
+ .archetype-choice{min-height:82px;padding:9px}
+ .archetype-choice strong{font-size:13px}
+ .archetype-choice span{font-size:9px}
+ .player-hud .hero-vitals{width:clamp(130px,42vw,200px)}
+ .run-stats{gap:7px;padding-left:8px;font-size:8px}
+ .run-stats b{font-size:11px}
+ .talent-panel{max-height:34vh;margin-top:6px;padding:10px}
+ .talent-panel-heading h2{font-size:16px}
+ .talent-grid{gap:5px}
+ .talent-choice{min-height:82px;padding:8px}
+ .talent-choice strong{font-size:12px}
+ .talent-choice small{font-size:8px}
+}
+
+
+/* Progression is a deliberate, reversible choice over the room view */
+.progression-backdrop{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;background:#07080dcc;backdrop-filter:blur(5px)}
+.progression-modal{width:min(780px,100%);max-height:min(88vh,820px);overflow:auto;padding:22px;background:#141720;border:1px solid #a17c56;box-shadow:0 22px 80px #000c;color:#eee3d5}
+.progression-modal-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.progression-modal-heading h2{margin:5px 0;color:#f0d2a8;font:25px "Marcellus",serif}
+.progression-modal-heading p{margin:0;color:#b8aa9a;font-size:12px;line-height:1.5}
+.progression-close{width:34px;height:34px;background:#252833;border:1px solid #51463d;color:#eee3d5;font-size:23px;cursor:pointer}
+.talent-tree{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0}
+.talent-tier{position:relative}
+.talent-tier-label{margin-bottom:10px;color:#d9ad73;font-size:9px;letter-spacing:1.5px}
+.talent-tier-nodes{display:grid;gap:10px}
+.talent-node{position:relative;display:flex;min-height:126px;flex-direction:column;align-items:flex-start;gap:7px;padding:13px;text-align:left;background:#20232d;border:1px solid #645342;color:#eee3d5;cursor:pointer}
+.talent-node:before{content:"";position:absolute;top:50%;left:-10px;width:9px;border-top:1px solid #80674e}
+.talent-tier:first-child .talent-node:before{display:none}
+.talent-node>span{color:#cba778;font-size:8px;letter-spacing:1px}
+.talent-node strong{color:#f0d2a8;font:17px "Marcellus",serif}
+.talent-node small{color:#c4b6a6;font-size:10px;line-height:1.45}
+.talent-node i{margin-top:auto;color:#9d8e7f;font-size:9px;font-style:normal}
+.talent-node:hover:not(:disabled),.talent-node.selected{border-color:#e1b878;background:#30291f}
+.talent-node.chosen{border-color:#819a7d;background:#1b2723}
+.talent-node.chosen>span{color:#a9c59e}
+.talent-node.locked{opacity:.55;cursor:default}
+.talent-inspector{min-height:48px;padding:12px 14px;background:#0d1017;border-left:2px solid #b48b5e;color:#c4b6a6;font-size:11px;line-height:1.5}
+.talent-inspector strong{display:block;margin-bottom:3px;color:#f0d2a8}
+.progression-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.progression-secondary,.progression-accept{padding:11px 16px;border:1px solid #6b5948;font-size:10px;letter-spacing:1px;cursor:pointer}
+.progression-secondary{background:#20232d;color:#d5c7b8}
+.progression-accept{background:#8b623c;border-color:#d2a36e;color:#fff1dc}
+.progression-accept:disabled{opacity:.4;cursor:not-allowed}
+.action-target-hint{flex:1 0 100%;color:#c4b6a6;font-size:9px;letter-spacing:.8px;text-align:center}
+@media(max-width:700px){.progression-backdrop{padding:8px}.progression-modal{padding:14px}.progression-modal-heading h2{font-size:19px}.talent-tree{gap:9px;margin:14px 0}.talent-node{min-height:145px;padding:9px}.talent-node strong{font-size:13px}.talent-node small{font-size:9px}.progression-modal-actions button{flex:1;padding:10px 7px}.action-target-hint{font-size:8px}}
