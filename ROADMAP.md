@@ -49,14 +49,29 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
 - [x] Add a contextual interrupt counter for the Crypt Warden Soul Drain; see ADR 0018 and `docs/game-design/combat-roadmap.md`.
 - [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then support and consumable actions.
-- [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).\n- [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
+- [ ] Basic music, ambience, and gameplay sound effects with independent volume controls.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts.
+
+## Phase 1.5 — Make the first dungeon an adventure
+
+The first priority is a run that is interesting to explore before we add more combat verbs or balance complexity.
+
+- [x] Replace the four-room demonstration route with a longer authored Catacombs graph: an opening encounter, two alternative approaches, exploration event, multi-enemy encounter, optional rescue branch, treasure choice, gate encounter, and boss.
+- [x] Add server-authoritative room events with consequential party-wide rewards: learn the Warden's weakness, rescue the archivist for recovery, or choose a damage or defense relic.
+- [x] Show event choices and their results in the player and spectator presentations; prevent leaving an unresolved event room.
+- [ ] Give each room a distinct scene composition and art treatment; current scene filters are placeholders, not finished room art.
+- [ ] Make the rescued archivist's knowledge alter the Warden encounter beyond a general damage bonus (for example, expose a phase or disable a mechanic).
+- [ ] Add a second authored route variation with different room order, side mission, and reward placement.
+- [ ] Playtest the complete run for pacing, resource pressure, and meaningful reasons to explore optional rooms.
+
+The current graph is an authored vertical slice, not the final procedural dungeon director. The immediate test is whether a 7–8 room journey through a nine-node graph creates curiosity, trade-offs, and a satisfying payoff.
 
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
-- [ ] Gear, loot, inventory, spells, abilities, and consumables.
+- [x] First within-run reward choices: Emberheart increases party Strike damage; Stoneward increases party guard mitigation.
+- [ ] Expand run rewards into gear, loot, inventory, spells, abilities, and consumables.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Reward and difficulty curves validated through playtesting.
@@ -109,9 +124,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Deployment guides for multiple hosting providers.
 - [ ] Backup/restore, health checks, contribution guide, and release process.
 
-## Initial content candidate: The Forgotten Catacombs
+## Initial content: The Forgotten Catacombs
 
-A provisional first dungeon: 8–12 connected rooms, 3–4 enemy types, one optional side mission, one treasure room, one boss, and a peaceful village intermission. The Crypt Warden is a sample boss concept with guard-breaking, soul-drain interruption, minion summons, and an enrage phase. Validate scope and fun before committing to all content.
+The first authored adventure is documented in [forgotten-catacombs.md](docs/game-design/forgotten-catacombs.md). It currently has nine room nodes (some are optional or alternate routes), two meaningful exploration/reward events, an optional rescue, four encounter spaces along a complete route (one of two alternate approaches), and the Crypt Warden finale. The peaceful village intermission, distinct room art, and deeper boss consequences remain future work.
 
 ## Design backlog
 
