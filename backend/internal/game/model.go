@@ -90,7 +90,6 @@ type Command struct {
 	TargetID string `json:"targetId,omitempty"`
 }
 
-
 type CombatRound struct {
 	Number    int                `json:"number"`
 	StartedAt time.Time          `json:"startedAt"`
