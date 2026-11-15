@@ -261,7 +261,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if bonusesFor(player).ReflectDamage > 0 && enemy.Health > 0 {
 				beforeEnemyHealth := enemy.Health
 				enemy.Health -= bonusesFor(player).ReflectDamage
-				if enemy.Health < 0 { enemy.Health = 0 }
+				if enemy.Health < 0 {
+					enemy.Health = 0
+				}
 				reflected := beforeEnemyHealth - enemy.Health
 				if reflected > 0 {
 					addCombatImpact(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(reflected)+" reflected damage.", "damage", enemy.ID, "enemy", reflected)
