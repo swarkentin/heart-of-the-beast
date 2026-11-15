@@ -23,8 +23,8 @@ func StartRun(room *Room, runID string, now time.Time) error {
 		return errors.New("room requires a player and run id")
 	}
 
-	partyScaling := MonsterScaling{HealthMultiplier: 1}
-	soloScaling := MonsterScaling{HealthMultiplier: 0.75, RoundDown: true}
+	partyScaling := MonsterScaling{HealthMultiplier: 1, PartySize: len(room.PlayerIDs)}
+	soloScaling := MonsterScaling{HealthMultiplier: 0.75, RoundDown: true, PartySize: len(room.PlayerIDs)}
 	encounterScaling := partyScaling
 	if len(room.PlayerIDs) == 1 {
 		encounterScaling = soloScaling
@@ -37,24 +37,19 @@ func StartRun(room *Room, runID string, now time.Time) error {
 				{ID: "north", Destination: "reliquary", Label: "The Silent Reliquary", Description: "Harder fight; claim a sigil that empowers your attacks."},
 				{ID: "south", Destination: "flooded-crossing", Label: "The Drowned Crossing", Description: "Safer fight; search the waterlogged cache for healing."},
 			},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{newCatalogEnemy("sentinel", "restless-sentinel", partyScaling)}},
+			Encounter: newCatalogEncounter("catacombs-entry", "", partyScaling),
 		},
 		"reliquary": {
 			ID: "reliquary", Name: "The Silent Reliquary", Floor: "02", RoomType: "encounter",
 			Description: "Two rows of stone kings watch over a cracked sarcophagus. A guardian rises as a drowned scout slips from the dark.",
 			Exits:       []Exit{{ID: "east", Destination: "archive", Label: "The Archive of Names"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy("guardian", "reliquary-guardian", encounterScaling),
-				newCatalogEnemy("scout", "drowned-scout", encounterScaling),
-			}},
+			Encounter:   newCatalogEncounter("catacombs-reliquary", "", encounterScaling),
 		},
 		"flooded-crossing": {
 			ID: "flooded-crossing", Name: "The Drowned Crossing", Floor: "02", RoomType: "encounter",
 			Description: "A half-submerged causeway crosses black water. Pale hands grasp at the stones below.",
 			Exits:       []Exit{{ID: "east", Destination: "archive", Label: "The Archive of Names"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy("scout", map[bool]string{true: "drowned-scout-crossing-solo", false: "drowned-scout-light"}[len(room.PlayerIDs) == 1], partyScaling),
-			}},
+			Encounter:   newCatalogEncounter("catacombs-flooded-crossing", "", partyScaling),
 		},
 		"archive": {
 			ID: "archive", Name: "The Archive of Names", Floor: "03", RoomType: "event",
@@ -69,10 +64,7 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			ID: "bone-gallery", Name: "The Gallery of Bones", Floor: "04", RoomType: "encounter",
 			Description: "Pillars of fused bone frame a ceremonial dais. The gallery's guardians attack anything that disturbs the dead.",
 			Exits:       []Exit{{ID: "west", Destination: "captive-cell", Label: "The Prisoner's Cell"}, {ID: "east", Destination: "reliquary-vault", Label: "The Reliquary Vault"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy("gallery-guardian", "bonebound-guardian", encounterScaling),
-				newCatalogEnemy("gallery-scout", "crypt-skirmisher", encounterScaling),
-			}},
+			Encounter:   newCatalogEncounter("catacombs-bone-gallery", "", encounterScaling),
 		},
 		"captive-cell": {
 			ID: "captive-cell", Name: "The Prisoner's Cell", Floor: "04", RoomType: "event",
@@ -96,17 +88,12 @@ func StartRun(room *Room, runID string, now time.Time) error {
 			ID: "warden-gate", Name: "The Warden's Gate", Floor: "06", RoomType: "encounter",
 			Description: "The gate's chains tighten as two sentries step from their alcoves. The sanctum lies beyond them.",
 			Exits:       []Exit{{ID: "north", Destination: "warden", Label: "The Warden's Sanctum"}},
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy("gate-guardian", "gatekeeper", encounterScaling),
-				newCatalogEnemy("gate-scout", "gravebound-sentry", encounterScaling),
-			}},
+			Encounter:   newCatalogEncounter("catacombs-warden-gate", "", encounterScaling),
 		},
 		"warden": {
 			ID: "warden", Name: "The Warden's Sanctum", Floor: "07", RoomType: "boss",
 			Description: "A vast chamber opens around a throne of black iron. The Crypt Warden rises, dragging its chains across the stone.",
-			Encounter: &Encounter{Status: EncounterActive, Enemies: []Enemy{
-				newCatalogEnemy("warden", map[bool]string{true: "crypt-warden-solo", false: "crypt-warden"}[len(room.PlayerIDs) == 1], partyScaling),
-			}},
+			Encounter:   newCatalogEncounter("catacombs-warden-boss", "", partyScaling),
 		},
 	}
 

@@ -70,7 +70,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation.
 - [ ] Extract monster/ability/modifier/encounter definitions into a versioned content catalog and build a deterministic simulation harness using the live combat rules. See `docs/game-design/monster-content-and-simulation-spike.md`.
   - [x] Move authored monster names, base health, behavior mappings, and existing depth/party/solo health scaling into catalog-backed enemy definitions.
-  - [ ] Extract reusable encounter compositions/budgets and modifier/effect definitions.
+  - [x] Extract reusable encounter compositions, party-size variants, and provisional relative difficulty budgets into a validated encounter catalog.
+  - [ ] Extract modifier/effect definitions.
   - [ ] Isolate deterministic combat transitions and add simulation scenarios/reports.
 - [ ] Reward and difficulty curves validated through playtesting.
 - [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed; carry party state and run rewards between floors; add a health-restoration-versus-perk choice between floors, occasional seeded minibosses with meaningful rewards, and a soundtrack that evolves with depth and encounter intensity; scale encounter pressure with depth and party size. Target 3–5 minutes per level. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.

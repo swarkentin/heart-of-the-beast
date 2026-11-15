@@ -179,3 +179,29 @@ func TestCombatRejectsActionFromExpiredRound(t *testing.T) {
 		t.Fatalf("expected late command to advance to round 2, got %d", room.Run.CombatRound.Number)
 	}
 }
+
+func TestStartRunEncountersReferenceCatalogDefinitionsAndPreserveComposition(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	if err := StartRun(room, "encounter-catalog", now); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]struct {
+		definition string
+		budget     int
+		enemies    int
+	}{
+		"entry":            {"catacombs-entry", 1, 1},
+		"reliquary":        {"catacombs-reliquary", 5, 2},
+		"flooded-crossing": {"catacombs-flooded-crossing", 2, 1},
+		"bone-gallery":     {"catacombs-bone-gallery", 5, 2},
+		"warden-gate":      {"catacombs-warden-gate", 5, 2},
+		"warden":           {"catacombs-warden-boss", 8, 1},
+	}
+	for roomID, expected := range want {
+		encounter := room.Run.Rooms[roomID].Encounter
+		if encounter.DefinitionID != expected.definition || encounter.Budget != expected.budget || len(encounter.Enemies) != expected.enemies {
+			t.Errorf("%s encounter = %+v, want definition=%s budget=%d enemies=%d", roomID, encounter, expected.definition, expected.budget, expected.enemies)
+		}
+	}
+}
