@@ -5,27 +5,27 @@ import "fmt"
 type ClassPassiveTrigger string
 
 const (
-	ClassPassiveTriggerNone                 ClassPassiveTrigger = "none"
-	ClassPassiveTriggerLowHealthAttack      ClassPassiveTrigger = "low_health_attack"
-	ClassPassiveTriggerIntentKind           ClassPassiveTrigger = "intent_kind"
-	ClassPassiveTriggerWoundedTargetAttack  ClassPassiveTrigger = "wounded_target_attack"
-	ClassPassiveTriggerElementalCharge      ClassPassiveTrigger = "elemental_charge"
-	ClassPassiveTriggerUnactedTargetAttack  ClassPassiveTrigger = "unacted_target_attack"
-	ClassPassiveTriggerEncounterClear       ClassPassiveTrigger = "encounter_clear"
-	ClassPassiveTriggerInterrupt            ClassPassiveTrigger = "interrupt"
-	ClassPassiveTriggerCompanionInstinct    ClassPassiveTrigger = "companion_instinct"
-	ClassPassiveTriggerHeavyGuard            ClassPassiveTrigger = "heavy_guard"
+	ClassPassiveTriggerNone                ClassPassiveTrigger = "none"
+	ClassPassiveTriggerLowHealthAttack     ClassPassiveTrigger = "low_health_attack"
+	ClassPassiveTriggerIntentKind          ClassPassiveTrigger = "intent_kind"
+	ClassPassiveTriggerWoundedTargetAttack ClassPassiveTrigger = "wounded_target_attack"
+	ClassPassiveTriggerElementalCharge     ClassPassiveTrigger = "elemental_charge"
+	ClassPassiveTriggerUnactedTargetAttack ClassPassiveTrigger = "unacted_target_attack"
+	ClassPassiveTriggerEncounterClear      ClassPassiveTrigger = "encounter_clear"
+	ClassPassiveTriggerInterrupt           ClassPassiveTrigger = "interrupt"
+	ClassPassiveTriggerCompanionInstinct   ClassPassiveTrigger = "companion_instinct"
+	ClassPassiveTriggerHeavyGuard          ClassPassiveTrigger = "heavy_guard"
 )
 
 type ClassPassiveBonus string
 
 const (
-	ClassPassiveBonusNone              ClassPassiveBonus = "none"
-	ClassPassiveBonusAttackDamage      ClassPassiveBonus = "attack_damage"
-	ClassPassiveBonusDamageReduction   ClassPassiveBonus = "damage_reduction"
-	ClassPassiveBonusElementalDamage   ClassPassiveBonus = "elemental_damage"
-	ClassPassiveBonusEncounterHeal     ClassPassiveBonus = "encounter_heal"
-	ClassPassiveBonusInterruptDamage   ClassPassiveBonus = "interrupt_damage"
+	ClassPassiveBonusNone            ClassPassiveBonus = "none"
+	ClassPassiveBonusAttackDamage    ClassPassiveBonus = "attack_damage"
+	ClassPassiveBonusDamageReduction ClassPassiveBonus = "damage_reduction"
+	ClassPassiveBonusElementalDamage ClassPassiveBonus = "elemental_damage"
+	ClassPassiveBonusEncounterHeal   ClassPassiveBonus = "encounter_heal"
+	ClassPassiveBonusInterruptDamage ClassPassiveBonus = "interrupt_damage"
 )
 
 type ClassPassiveEffectDefinition struct {
