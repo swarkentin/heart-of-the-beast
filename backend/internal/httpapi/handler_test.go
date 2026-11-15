@@ -58,7 +58,7 @@ func TestRoomLifecycleAndReadOnlySpectator(t *testing.T) {
 		t.Fatalf("spectate: %d %s", spectateResponse.Code, spectateResponse.Body.String())
 	}
 
-	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
 	invalid.Header.Set("Authorization", "Bearer "+created.SpectatorToken)
 	invalidResponse := httptest.NewRecorder()
 	handler.ServeHTTP(invalidResponse, invalid)
@@ -123,7 +123,7 @@ func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 		t.Fatalf("guest snapshot: %d %s", guestSnapshot.Code, guestSnapshot.Body.String())
 	}
 
-	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
 	command.Header.Set("Authorization", "Bearer "+guest.PlayerToken)
 	acted := httptest.NewRecorder()
 	handler.ServeHTTP(acted, command)
@@ -341,7 +341,7 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 		t.Fatalf("start: %d %s", started.Code, started.Body.String())
 	}
 
-	guestAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", guest.PlayerToken, `{"type":"combat","action":"attack","targetId":"sentinel"}`)
+	guestAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", guest.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
 	if guestAction.Code != http.StatusOK {
 		t.Fatalf("guest action: %d %s", guestAction.Code, guestAction.Body.String())
 	}
@@ -361,7 +361,7 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 		t.Fatalf("guest action resolved before host action: enemy health=%d", got)
 	}
 
-	hostAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"combat","action":"attack","targetId":"sentinel"}`)
+	hostAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
 	if hostAction.Code != http.StatusOK {
 		t.Fatalf("host action: %d %s", hostAction.Code, hostAction.Body.String())
 	}
