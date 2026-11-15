@@ -14,6 +14,7 @@ A single enemy creates a narrow decision: attack it or respond to its one telegr
 - Generate and display one independent intent per living enemy. Each intent keeps its own target and resolves independently after player actions.
 - Defeating one enemy cancels only that enemy's intent; surviving enemies still resolve their announced moves.
 - Keep the opening Watcher's Hall and Drowned Crossing encounters single-enemy for pacing and variety.
+- For a solo party, reduce the Reliquary Guardian to 10 health and the Scout to 6 health; parties of two to four retain 15 and 12 health. This keeps the multi-threat choice while avoiding an outsized health tax on the rest of a solo run.
 - Do not add three-enemy encounters until the interface can keep every intent legible. Tune encounter pressure at party sizes one, two, and four before broadening the pattern.
 
 ## Consequences
