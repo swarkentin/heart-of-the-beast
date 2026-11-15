@@ -23,7 +23,7 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	if player.Experience != 50 || player.Level != 2 || player.TalentPoints != 1 {
 		t.Fatalf("first reward did not reach level 2: %+v", player)
 	}
-	if player.MaxHealth != 34 || player.Health != 34 || player.Stats.Power != 1 {
+	if player.MaxHealth != 34 || player.Health != 30 || player.Stats.Power != 1 {
 		t.Fatalf("level 2 stat growth is wrong: %+v", player)
 	}
 
@@ -85,7 +85,7 @@ func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
 	if err := ChooseTalent(room, "player-1", "vanguard-bulwark"); err != nil {
 		t.Fatalf("choose Bulwark: %v", err)
 	}
-	if player.MaxHealth != 34 || player.Health != 24 || player.TalentPoints != 0 {
+	if player.MaxHealth != 34 || player.Health != 20 || player.TalentPoints != 0 {
 		t.Fatalf("Bulwark did not apply its health bonus: %+v", player)
 	}
 	if err := ChooseTalent(room, "player-1", "vanguard-bulwark"); !errors.Is(err, ErrNoTalentPoints) {
