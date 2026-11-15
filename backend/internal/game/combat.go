@@ -364,13 +364,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 		}
 		run.CombatRound = nil
 		if current.RoomType == "miniboss" {
-			run.Flags["miniboss-"+current.ID] = true
-			for _, member := range run.Players {
-				if member != nil {
-					member.StrikeDamage++
-				}
+			if reward, ok := defaultRunRewardCatalog.Reward("encounter.miniboss"); ok {
+				applyRunReward(room, reward, roundNumber, "miniboss-"+current.ID)
 			}
-			addCombatEvent(run, roundNumber, "miniboss_reward", "The reliquary brute falls. Every adventurer gains +1 Strike damage for the rest of the run.")
 		}
 		if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth {
 			run.Phase = PhaseIntermission
@@ -514,39 +510,19 @@ func hasLivingEnemy(encounter *Encounter, enemyID string) bool {
 }
 
 func applyEncounterReward(room *Room, current *DungeonRoom, roundNumber int) {
-	run := room.Run
-	if run.Flags == nil {
-		run.Flags = make(map[string]bool)
-	}
+	rewardID := ""
 	switch current.ID {
 	case "reliquary":
-		if run.Flags["reliquary_sigil"] {
-			return
-		}
-		run.Flags["reliquary_sigil"] = true
-		for _, player := range run.Players {
-			if player.Health > 0 {
-				player.StrikeDamage++
-			}
-		}
-		addCombatEvent(run, roundNumber, "room_reward", "The Reliquary Guardian's sigil empowers every living adventurer's Strike.")
+		rewardID = "room.reliquary"
 	case "flooded-crossing":
-		if run.Flags["crossing_cache"] {
-			return
-		}
-		run.Flags["crossing_cache"] = true
-		for playerID, player := range run.Players {
-			if player.Health > 0 {
-				before := player.Health
-				player.Health += 8
-				if player.Health > player.MaxHealth {
-					player.Health = player.MaxHealth
-				}
-				if player.Health > before {
-					addCombatImpact(run, roundNumber, "player_heal", adventurerLabel(room, playerID)+" recovers "+itoa(player.Health-before)+" health from the flooded cache.", "heal", playerID, "player", player.Health-before)
-				}
-			}
-		}
-		addCombatEvent(run, roundNumber, "room_reward", "The party finds healing draughts in the flooded cache.")
+		rewardID = "room.flooded_cache"
 	}
+	if rewardID == "" {
+		return
+	}
+	definition, ok := defaultRunRewardCatalog.Reward(rewardID)
+	if !ok {
+		return
+	}
+	applyRunReward(room, definition, roundNumber, "")
 }
