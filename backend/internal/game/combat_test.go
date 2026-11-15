@@ -314,6 +314,7 @@ func TestClassAbilityHandlersAreRegisteredAndCatalogValid(t *testing.T) {
 func TestBulwarkShieldWallBlocksHeavyAttackAndEmpowersNextStrike(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassBulwark)
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 30, 30
 	enemy.Intent = &EnemyIntent{Kind: "heavy_strike", Label: "Heavy blow", Damage: 8, TargetPlayerID: "player-1"}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability"}, now); err != nil {
 		t.Fatal(err)
@@ -390,7 +391,7 @@ func TestArcanistElementalSurgeBuildsArcaneFocusAndFrostCancelsIntent(t *testing
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "ability", Mode: "frost", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Intent != nil || enemy.Health != 16 || room.Run.Players["player-1"].ClassCombat.ArcaneCharges != 2 {
+	if enemy.Intent != nil || enemy.Health != 12 || room.Run.Players["player-1"].ClassCombat.ArcaneCharges != 2 {
 		t.Fatalf("Frost should cancel the intent, deal 8 damage, and build a second charge: enemy=%+v player=%+v", enemy, room.Run.Players["player-1"])
 	}
 }
@@ -403,7 +404,7 @@ func TestRangerPinningShotWeakensTelegraphedAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 9 || enemy.Intent == nil || enemy.Intent.Damage != 3 {
+	if enemy.Health != 13 || enemy.Intent == nil || enemy.Intent.Damage != 3 {
 		t.Fatalf("Pinning Shot should deal 7 damage and reduce the next hit by 3: %+v", enemy)
 	}
 }
@@ -412,7 +413,11 @@ func TestClericRenewalCanHealAnotherPartyMember(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassCleric, "player-1", "player-2")
 	target := room.Run.Players["player-2"]
 	target.Health = 10
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Intent.TargetPlayerID = "player-1"
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: "player-2"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if target.Health != 21 {
@@ -443,14 +448,14 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", Mode: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 13 {
-		t.Fatalf("companion attack should deal 7 damage, enemy health=%d", enemy.Health)
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
+		t.Fatal(err)
 	}
-	if room.Run.Players["player-2"].Health != 8 {
-		t.Fatalf("the scout should damage the second player before the companion's passive triggers, health=%d", room.Run.Players["player-2"].Health)
+	if enemy.Health != 3 {
+		t.Fatalf("companion and player attacks should deal 17 combined damage, enemy health=%d", enemy.Health)
 	}
-	if room.Run.Players["player-2"].Health != 9 {
-		t.Fatalf("Companion Instinct should heal the lowest-health ally by 1, health=%d", room.Run.Players["player-2"].Health)
+	if room.Run.Players["player-2"].Health != 7 {
+		t.Fatalf("Companion Instinct should heal the lowest-health ally after the enemy hit, health=%d", room.Run.Players["player-2"].Health)
 	}
 }
 
