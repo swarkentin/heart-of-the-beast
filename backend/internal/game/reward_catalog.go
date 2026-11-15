@@ -17,26 +17,26 @@ const (
 type RunRewardTarget string
 
 const (
-	RunRewardParticipants  RunRewardTarget = "participants"
-	RunRewardLiving        RunRewardTarget = "living"
-	RunRewardActiveLiving  RunRewardTarget = "active_living"
-	RunRewardAllMembers    RunRewardTarget = "all_members"
+	RunRewardParticipants RunRewardTarget = "participants"
+	RunRewardLiving       RunRewardTarget = "living"
+	RunRewardActiveLiving RunRewardTarget = "active_living"
+	RunRewardAllMembers   RunRewardTarget = "all_members"
 )
 
 type RunRewardOperation struct {
-	Kind        RunRewardKind   `json:"kind"`
-	Target      RunRewardTarget `json:"target"`
-	Amount      int             `json:"amount"`
-	ImpactKind  string          `json:"impactKind,omitempty"`
-	ImpactText  string          `json:"impactText,omitempty"`
+	Kind       RunRewardKind   `json:"kind"`
+	Target     RunRewardTarget `json:"target"`
+	Amount     int             `json:"amount"`
+	ImpactKind string          `json:"impactKind,omitempty"`
+	ImpactText string          `json:"impactText,omitempty"`
 }
 
 type RunRewardDefinition struct {
-	ID          string               `json:"id"`
-	FlagID      string               `json:"flagId,omitempty"`
-	EventKind   string               `json:"eventKind,omitempty"`
-	EventText   string               `json:"eventText,omitempty"`
-	Operations  []RunRewardOperation `json:"operations"`
+	ID         string               `json:"id"`
+	FlagID     string               `json:"flagId,omitempty"`
+	EventKind  string               `json:"eventKind,omitempty"`
+	EventText  string               `json:"eventText,omitempty"`
+	Operations []RunRewardOperation `json:"operations"`
 }
 
 type RunRewardCatalog struct {
