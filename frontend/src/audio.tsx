@@ -103,8 +103,12 @@ class GameAudioEngine {
       if (!this.context || !this.music) return;
       const note = motif[this.noteIndex % motif.length];
       this.noteIndex += 1;
-      this.tone(note, 1.7, "sine", 0.035, this.music, -8);
-      if (combat && this.noteIndex % 2 === 0) this.tone(root * 2, 0.22, "triangle", 0.09, this.music, -3);
+      this.tone(note, combat ? 1.45 : 1.7, combat ? "triangle" : "sine", combat ? 0.065 : 0.035, this.music, -8);
+      if (combat) {
+        // A warmer, more audible pulse gives combat forward motion without losing the low drone.
+        this.tone(root * 2, 0.34, "triangle", 0.14, this.music, -3);
+        if (this.noteIndex % 2 === 0) this.tone(root * 3, 0.2, "sine", 0.075, this.music, 4, 0.12);
+      }
     };
     this.musicTimer = window.setInterval(playMusicNote, combat ? 2100 : 3100);
     playMusicNote();
@@ -127,9 +131,10 @@ class GameAudioEngine {
     if (!this.context || !this.effects) return;
     const effects = this.effects;
     if (name === "impact") {
-      this.noiseBurst(0.16, 1250, 0.18);
-      this.tone(78, 0.19, "triangle", 0.26, effects, -5);
-      this.tone(540, 0.055, "square", 0.045, effects, -18);
+      this.noiseBurst(0.12, 900, 0.2);
+      this.crunch(0.105, 0.22);
+      this.tone(68, 0.2, "sawtooth", 0.24, effects, -5);
+      this.tone(145, 0.075, "triangle", 0.11, effects, -12);
     } else if (name === "block") {
       this.noiseBurst(0.12, 850, 0.12);
       this.tone(185, 0.14, "triangle", 0.18, effects, -10);
@@ -186,6 +191,42 @@ class GameAudioEngine {
     gain.connect(this.effects);
     oscillator.start(now);
     oscillator.stop(now + duration + 0.03);
+  }
+
+  private crunch(duration: number, volume: number) {
+    if (!this.context || !this.effects) return;
+    const context = this.context;
+    const source = context.createBufferSource();
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i += 1) {
+      const decay = Math.pow(1 - i / samples.length, 2.4);
+      // A short, noisy scrape gives the hit a gritty edge instead of a rounded synth "bloop".
+      samples[i] = (Math.random() * 2 - 1) * decay;
+    }
+    source.buffer = buffer;
+    const band = context.createBiquadFilter();
+    band.type = "bandpass";
+    band.frequency.setValueAtTime(1850, context.currentTime);
+    band.frequency.exponentialRampToValueAtTime(780, context.currentTime + duration);
+    band.Q.value = 0.72;
+    const shaper = context.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < curve.length; i += 1) {
+      const x = (i * 2) / (curve.length - 1) - 1;
+      curve[i] = Math.tanh(x * 3.8);
+    }
+    shaper.curve = curve;
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(volume, context.currentTime + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
+    source.connect(band);
+    band.connect(shaper);
+    shaper.connect(gain);
+    gain.connect(this.effects);
+    source.start();
+    source.stop(context.currentTime + duration + 0.02);
   }
 
   private noiseBurst(duration: number, cutoff: number, volume: number) {
