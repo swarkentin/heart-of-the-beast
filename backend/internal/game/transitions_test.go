@@ -188,15 +188,15 @@ func TestStartRunEncountersReferenceCatalogDefinitionsAndPreserveComposition(t *
 	}
 	want := map[string]struct {
 		definition string
-		budget int
-		enemies int
+		budget     int
+		enemies    int
 	}{
-		"entry": {"catacombs-entry", 1, 1},
-		"reliquary": {"catacombs-reliquary", 5, 2},
+		"entry":            {"catacombs-entry", 1, 1},
+		"reliquary":        {"catacombs-reliquary", 5, 2},
 		"flooded-crossing": {"catacombs-flooded-crossing", 2, 1},
-		"bone-gallery": {"catacombs-bone-gallery", 5, 2},
-		"warden-gate": {"catacombs-warden-gate", 5, 2},
-		"warden": {"catacombs-warden-boss", 8, 1},
+		"bone-gallery":     {"catacombs-bone-gallery", 5, 2},
+		"warden-gate":      {"catacombs-warden-gate", 5, 2},
+		"warden":           {"catacombs-warden-boss", 8, 1},
 	}
 	for roomID, expected := range want {
 		encounter := room.Run.Rooms[roomID].Encounter
