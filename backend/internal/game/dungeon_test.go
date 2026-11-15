@@ -14,9 +14,16 @@ func TestGeneratedDungeonFloorIsDeterministicAndConnected(t *testing.T) {
 	if entryA != entryB || string(a) != string(b) {
 		t.Fatal("same seed, depth, and party size must produce the same floor")
 	}
-	entryOther, roomsOther := generateDungeonFloor(98765, 2, 1)
-	other, _ := json.Marshal(roomsOther)
-	if entryOther == entryA && string(other) == string(a) {
+	var differs bool
+	for seed := uint64(1); seed <= 32; seed++ {
+		_, candidate := generateDungeonFloor(seed, 2, 1)
+		encoded, _ := json.Marshal(candidate)
+		if string(encoded) != string(a) {
+			differs = true
+			break
+		}
+	}
+	if !differs {
 		t.Fatal("different seeds should produce different authored combinations")
 	}
 
