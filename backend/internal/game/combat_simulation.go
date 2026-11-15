@@ -80,6 +80,9 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		if enemies[i].Behavior == "" {
 			return CombatSimulationReport{}, fmt.Errorf("enemy %q has no catalog behavior", enemies[i].ID)
 		}
+		if _, err := defaultMonsterCatalog.Monster(enemies[i].Behavior); err != nil {
+			return CombatSimulationReport{}, fmt.Errorf("enemy %q: %w", enemies[i].ID, err)
+		}
 	}
 	if len(enemies) == 0 {
 		return CombatSimulationReport{}, fmt.Errorf("simulation requires at least one enemy")
