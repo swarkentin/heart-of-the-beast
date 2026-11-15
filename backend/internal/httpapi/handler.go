@@ -388,7 +388,9 @@ type classRequest struct {
 // client-provided stats, equipment, and ability definitions are never accepted.
 func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 	_, actor, ok := h.authorizedPlayer(w, r)
-	if !ok { return }
+	if !ok {
+		return
+	}
 	var request classRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
 		writeError(w, http.StatusBadRequest, "choose a valid class")
@@ -396,7 +398,10 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 	}
 	for attempt := 0; attempt < 4; attempt++ {
 		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
-		if err != nil { writeError(w, http.StatusNotFound, "room not found"); return }
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room not found")
+			return
+		}
 		if _, active := room.PlayerTokenHashes[actor]; !active {
 			writeError(w, http.StatusUnauthorized, "player token is no longer active")
 			return
@@ -409,7 +414,9 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
 		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
-			if errors.Is(err, store.ErrConflict) { continue }
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
 			writeStoreError(w, err)
 			return
 		}
@@ -421,14 +428,14 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 
 func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"archetypes":      game.ArchetypeCatalog(),
-		"classes":          game.ClassCatalog(),
-		"classAbilities":   game.ClassAbilityCatalog(),
-		"classPassives":    game.ClassPassiveCatalog(),
-		"equipment":        game.EquipmentCatalog(),
+		"archetypes":        game.ArchetypeCatalog(),
+		"classes":           game.ClassCatalog(),
+		"classAbilities":    game.ClassAbilityCatalog(),
+		"classPassives":     game.ClassPassiveCatalog(),
+		"equipment":         game.EquipmentCatalog(),
 		"classAvailability": game.ClassAvailabilityCatalog(),
-		"talents":         game.TalentCatalog(),
-		"levelThresholds": []int{50, 100, 200, 325},
+		"talents":           game.TalentCatalog(),
+		"levelThresholds":   []int{50, 100, 200, 325},
 	})
 }
 
