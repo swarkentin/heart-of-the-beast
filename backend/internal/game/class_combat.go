@@ -352,6 +352,7 @@ func dealClassAbilityDamage(room *Room, player *PlayerState, enemy *Enemy, round
 	if enemy == nil || enemy.Health <= 0 {
 		return
 	}
+	damage += classPassiveEffects(player, enemy, nil).AttackDamage
 	if damage < 0 {
 		damage = 0
 	}
