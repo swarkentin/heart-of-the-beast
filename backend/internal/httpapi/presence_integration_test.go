@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
+	"github.com/swarkentin/heart-of-the-beast/backend/migrations"
 )
 
 // TestPostgresPlayerPresenceLifecycle exercises the public HTTP contract against
@@ -35,18 +34,12 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 		t.Fatalf("connect to integration database: %v", err)
 	}
 
-	migration, err := os.ReadFile(filepath.Join("..", "..", "migrations", "0001_create_rooms.sql"))
-	if err != nil {
-		t.Fatal(err)
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
 	}
-	for _, statement := range strings.Split(string(migration), ";") {
-		statement = strings.TrimSpace(statement)
-		if statement == "" {
-			continue
-		}
-		if _, err := db.Exec(statement); err != nil {
-			t.Fatalf("apply room schema: %v", err)
-		}
+	// A second application must be a no-op, matching overlapping Render startups.
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("reapply embedded migrations: %v", err)
 	}
 
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)

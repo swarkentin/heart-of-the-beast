@@ -25,7 +25,7 @@ The frontend is an npm workspace. The backend is a separate Go module with its o
 
 ## Project status
 
-The Go backend owns the initial persisted room/run lifecycle, including player-authorized commands and a separately authorized read-only spectator snapshot. The browser UI is not connected to that API yet; that is the next integration milestone.
+The Go backend owns the persisted room/run lifecycle, including player-authorized commands and a separately authorized read-only spectator snapshot. The browser client uses the API for authoritative room state.
 
 ## Local development
 
@@ -63,6 +63,10 @@ go build ./cmd/server
 ```
 
 The backend listens on port 8080 by default; set `PORT` to override it. See [backend development notes](backend/README.md) for API details and container commands.
+
+## Production deployment
+
+The Render Blueprint defines the static frontend and Go API. Configure a Neon project and provide its pooled TLS connection string as the Render API service's DATABASE_URL secret during the initial Blueprint sync. Migrations run automatically before the API starts. See [Render + Neon deployment](docs/deployment/render-neon.md) and [ADR 0025](docs/decisions/0025-render-neon-deployment.md).
 
 ## Start here
 
