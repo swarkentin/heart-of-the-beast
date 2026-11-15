@@ -393,8 +393,8 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
-}
 
+}
 
 func (h *Handler) returnToLobby(w http.ResponseWriter, r *http.Request) {
 	for attempt := 0; attempt < 4; attempt++ {
