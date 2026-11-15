@@ -118,3 +118,24 @@ func TestStartRunSnapshotsSelectedClassBuild(t *testing.T) {
 		t.Fatalf("class stats/archetype were not applied: %+v", player)
 	}
 }
+
+func TestClassAbilityOperationCatalogCoversEverySignatureAbility(t *testing.T) {
+	if err := validateClassAbilityOperationCatalog(classAbilities, defaultClassAbilityOperationCatalog); err != nil {
+		t.Fatalf("validate ability operations: %v", err)
+	}
+	broken := append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
+	broken[0].Operations = nil
+	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
+		t.Fatal("expected empty operation list to fail validation")
+	}
+	broken = append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
+	broken[0].TargetPolicy = "arbitrary"
+	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
+		t.Fatal("expected invalid target policy to fail validation")
+	}
+	broken = append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
+	broken[4].Operations = append(broken[4].Operations, ClassAbilityOperation{Kind: ClassAbilityOpModeChoice, Mode: "lightning"})
+	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
+		t.Fatal("expected unsupported mode operation to fail validation")
+	}
+}
