@@ -47,7 +47,7 @@ const talentChoices: TalentChoice[] = [
   { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
 ];
 const levelThresholds = [0, 50, 100, 200, 325];
-function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Vanguard"; }
+function archetypeName(id?: string) { return archetypes.find(item => item.id === id)?.name || "Damage"; }
 function xpProgress(player: ApiPlayer) {
   const current = levelThresholds[player.level - 1] ?? 325;
   const next = levelThresholds[player.level] ?? current;
@@ -484,7 +484,7 @@ export default function App() {
         <div className="archetype-picker">
           <div className="progression-eyebrow">CHOOSE YOUR RUN ARCHETYPE</div>
           <p>Every archetype can finish the dungeon alone. Your talents will shape it as you level.</p>
-          <div className="archetype-grid">{archetypes.map(item => <button key={item.id} className={"archetype-choice" + ((snapshot.playerArchetypes?.[session?.playerId || ""] || "vanguard") === item.id ? " selected" : "")} onClick={() => void selectArchetype(item.id)} disabled={busy || !session}><strong>{item.name}</strong><span>{item.description}</span></button>)}</div>
+          <div className="archetype-grid">{archetypes.map(item => <button key={item.id} className={"archetype-choice" + ((snapshot.playerArchetypes?.[session?.playerId || ""] || "damage") === item.id ? " selected" : "")} onClick={() => void selectArchetype(item.id)} disabled={busy || !session}><strong>{item.name}</strong><span>{item.description}</span></button>)}</div>
         </div>
         {isHost ? <button className="turn-button" onClick={() => void startRun()} disabled={busy}>{busy ? "STARTING…" : "START RUN"} <span>↗</span></button> : <p role="status" style={{ color: "#d8a76e" }}>Waiting for the host to start…</p>}
         <button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button>
@@ -505,7 +505,7 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} room={room} exits={availableExits} voteStatus={voteStatus} />}
-      <div className="player-hud"><div className="hero-token">{(player?.archetype || "vanguard").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
+      <div className="player-hud"><div className="hero-token">{(player?.archetype || "damage").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
       {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">
         <section className="progression-modal" role="dialog" aria-modal="true" aria-labelledby="progression-title">
           <div className="progression-modal-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · RUN PROGRESSION</span><h2 id="progression-title">Choose your next talent</h2><p>{archetypeName(player.archetype)} · {player.talentPoints} point{player.talentPoints === 1 ? "" : "s"} available. Browse both branches before committing.</p></div><button className="progression-close" onClick={() => setProgressionOpen(false)} aria-label="Close talent selection">×</button></div>
