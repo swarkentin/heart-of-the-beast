@@ -205,12 +205,12 @@ func generateDungeonFloor(seed uint64, depth, partySize int) (string, map[string
 			ID: prefix + "guard", Name: "The Guarded Descent", Floor: floor, RoomType: "encounter",
 			Description: "The final defenders of this level stand between the party and the next descent.",
 			Exits:       []Exit{{ID: "down", Destination: prefix + "boss", Label: "The Floor Guardian"}},
-			Encounter: newCatalogEncounter("depth-guard", prefix, scaling),
+			Encounter:   newCatalogEncounter("depth-guard", prefix, scaling),
 		},
 		prefix + "boss": {
 			ID: prefix + "boss", Name: map[bool]string{true: "The Warden Below", false: "The Ossuary Champion"}[depth == MaximumDungeonDepth], Floor: floor, RoomType: "boss",
 			Description: "A vast chamber opens around an ancient guardian. The dungeon's deeper rhythm pounds through the walls.",
-			Encounter: newCatalogEncounter(map[bool]string{true: "depth-boss-warden", false: "depth-boss-ossuary"}[depth == MaximumDungeonDepth], prefix, scaling),
+			Encounter:   newCatalogEncounter(map[bool]string{true: "depth-boss-warden", false: "depth-boss-ossuary"}[depth == MaximumDungeonDepth], prefix, scaling),
 		},
 	}
 	if hasMiniboss {
