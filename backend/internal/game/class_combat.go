@@ -186,7 +186,7 @@ func validateRegisteredClassEffects() error {
 			return fmt.Errorf("ability %q has no handler for effect %q", ability.ID, ability.EffectID)
 		}
 	}
-	return ValidateClassPassiveEffectCatalog(classPassives, defaultClassPassiveEffectCatalog)
+	if err := validateClassAbilityOperationCatalog(classAbilities, defaultClassAbilityOperationCatalog); err != nil { return err }; return ValidateClassPassiveEffectCatalog(classPassives, defaultClassPassiveEffectCatalog)
 }
 
 func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, command Command, players map[string]*PlayerState) error {
