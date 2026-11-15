@@ -19,24 +19,24 @@ const (
 // Turn cadence is one-indexed: a zero remainder means turns divisible by
 // EveryTurns; a non-zero remainder matches that exact modulo.
 type AbilityDefinition struct {
-	ID             string
-	Label          string
-	Kind           string
-	Damage         int
-	Heal           int
-	TargetAll      bool
-	Interruptible  bool
-	EveryTurns     int
-	TurnRemainder  int
+	ID               string
+	Label            string
+	Kind             string
+	Damage           int
+	Heal             int
+	TargetAll        bool
+	Interruptible    bool
+	EveryTurns       int
+	TurnRemainder    int
 	ExceptEveryTurns int
 }
 
 type MonsterDefinition struct {
-	ID          string
-	Name        string
-	Role        MonsterRole
-	BaseHealth  int
-	AbilityIDs  []string
+	ID         string
+	Name       string
+	Role       MonsterRole
+	BaseHealth int
+	AbilityIDs []string
 }
 
 type MonsterCatalog struct {
