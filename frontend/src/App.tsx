@@ -119,7 +119,7 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate }: { en
         <path d="M-120 620l15-60 45-20 60 20 15 60zM120 620l-15-60-45-20-60 20-15 60z" fill="#8d735d"/>
       </g>
     </svg>
-    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div> : null}
+    {exits.length > 0 ? <div className="scene-exits" aria-label="Available paths">{exits.map((exit,index)=><button key={exit.id} className={"scene-exit scene-exit-"+(exits.length===1?"center":index===0?"left":"right")} onClick={()=>onNavigate(exit.id)} aria-label={"Enter "+exit.label}><span className="exit-chevron">{exits.length===1?"↑":index===0?"↖":"↗"}</span><strong>{exit.label}</strong><small>ENTER PATH</small></button>)}</div></> : null}
     <div className="scene-vignette"/>
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> {room.floor}</div>
     <div className="enemy-intents">{enemies.filter(e=>e.hp>0).map(e=><button key={e.id} className={"intent "+(target===e.id?"intent-active":"")} onClick={()=>onTarget(e.id)}><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b></button>)}</div>
