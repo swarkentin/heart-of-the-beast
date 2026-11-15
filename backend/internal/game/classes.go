@@ -275,7 +275,10 @@ func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefin
 }
 
 func ValidateCatalog() error {
-	return ValidateClassCatalog(archetypeCatalog, classCatalog, classAbilities, classPassives, equipmentCatalog, classAvailabilityCatalog)
+	if err := ValidateClassCatalog(archetypeCatalog, classCatalog, classAbilities, classPassives, equipmentCatalog, classAvailabilityCatalog); err != nil {
+		return err
+	}
+	return validateRegisteredClassEffects()
 }
 
 func ClassAvailableToPlayer(classID string, unlockedClassIDs []string) bool {
