@@ -54,34 +54,57 @@ func TestRunRejectsInvalidTransitionsAndActors(t *testing.T) {
 }
 
 func TestBossDefeatCompletesRun(t *testing.T) {
-	now := time.Now().UTC()
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
 	if err := StartRun(room, "run-1", now); err != nil {
 		t.Fatal(err)
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
-		t.Fatal(err)
+	clearEncounter := func() {
+		for room.Run.Phase == PhaseCombat {
+			current := room.Run.Rooms[room.Run.CurrentRoomID]
+			for _, enemy := range current.Encounter.Enemies {
+				if enemy.Health <= 0 {
+					continue
+				}
+				room.Run.Players["player-1"].Health = 100
+				if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "attack", TargetID: enemy.ID}, now); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil {
-		t.Fatal(err)
-	}
-	for _, target := range []string{"guardian", "scout"} {
-		round := room.Run.CombatRound.Number
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: round, Action: "attack", TargetID: target}, now); err != nil {
+	chooseExit := func(id string) {
+		if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: id}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "east"}, now); err != nil {
-		t.Fatal(err)
-	}
-	for attempts := 0; attempts < 6 && room.Run.Phase == PhaseCombat; attempts++ {
-		round := room.Run.CombatRound.Number
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: round, Action: "attack", TargetID: "warden"}, now); err != nil {
+	chooseEvent := func(id string) {
+		if err := ApplyCommand(room, "player-1", Command{Type: "choose_event", ChoiceID: id}, now); err != nil {
 			t.Fatal(err)
 		}
 	}
+
+	clearEncounter()
+	chooseExit("north")
+	clearEncounter()
+	chooseExit("east")
+	chooseEvent("study")
+	chooseExit("north")
+	clearEncounter()
+	chooseExit("west")
+	chooseEvent("rescue")
+	chooseExit("east")
+	chooseEvent("ember")
+	chooseExit("north")
+	clearEncounter()
+	chooseExit("north")
+	clearEncounter()
+
 	if room.Run.Phase != PhaseCompleted || room.Run.CompletedAt == nil {
 		t.Fatal("defeating the boss should complete the run")
+	}
+	if !room.Run.Flags["warden_weakness"] || !room.Run.Flags["archivist_rescued"] || !room.Run.Flags["emberheart"] {
+		t.Fatalf("expected exploration, side mission, and relic rewards to persist: %#v", room.Run.Flags)
 	}
 }
 
