@@ -106,9 +106,9 @@
 .intent{flex-wrap:wrap;cursor:default}
 .intent b{margin-left:auto}
 .intent small{width:100%;margin-left:16px;color:#c7a985;font-size:9px;letter-spacing:.7px}
-.combat-log{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;width:100%;max-height:58px;overflow:auto;padding:5px 10px;background:#10131bdc;border:1px solid #51463d;color:#d7c6b1;font-size:10px;line-height:1.35}
+.combat-log{position:absolute;z-index:2;left:18px;bottom:118px;display:block;width:max-content;max-width:min(44%,520px);overflow:hidden;padding:5px 9px;background:#10131bdc;border:1px solid #51463d;color:#d7c6b1;font-size:10px;line-height:1.25;white-space:nowrap;text-overflow:ellipsis;pointer-events:none}
 .combat-log span::before{content:"› ";color:#d8a76e}
-@media(max-width:700px){.enemy-intents{top:8px;right:8px;max-width:58%;gap:4px}.intent{gap:5px;padding:6px 7px;font-size:9px}.intent b{font-size:9px}.intent small{font-size:8px;margin-left:12px}.combat-log{max-height:48px;font-size:9px;padding:4px 7px}}
+@media(max-width:700px){.enemy-intents{top:8px;right:8px;max-width:58%;gap:4px}.intent{gap:5px;padding:6px 7px;font-size:9px}.intent b{font-size:9px}.intent small{font-size:8px;margin-left:12px}.combat-log{left:8px;bottom:116px;max-width:48%;font-size:9px;padding:4px 7px}}
 
 .intent{cursor:pointer}
 .cast-scene .intent{cursor:default}
