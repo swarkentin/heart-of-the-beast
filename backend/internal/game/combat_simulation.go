@@ -354,10 +354,10 @@ func SummarizeCombatBatch(reports []CombatSimulationReport) CombatSimulationBatc
 	sort.Ints(rounds)
 	sort.Ints(dealt)
 	sort.Ints(received)
-	summary.MedianRounds = nearestRank(rounds, 0.50)
+	summary.MedianRounds = median(rounds)
 	summary.P90Rounds = nearestRank(rounds, 0.90)
-	summary.MedianDamageDealt = nearestRank(dealt, 0.50)
-	summary.MedianDamageReceived = nearestRank(received, 0.50)
+	summary.MedianDamageDealt = median(dealt)
+	summary.MedianDamageReceived = median(received)
 	return summary
 }
 
@@ -373,4 +373,15 @@ func nearestRank(sortedValues []int, percentile float64) int {
 		index = len(sortedValues) - 1
 	}
 	return sortedValues[index]
+}
+
+func median(sortedValues []int) int {
+	if len(sortedValues) == 0 {
+		return 0
+	}
+	middle := len(sortedValues) / 2
+	if len(sortedValues)%2 == 1 {
+		return sortedValues[middle]
+	}
+	return (sortedValues[middle-1] + sortedValues[middle]) / 2
 }
