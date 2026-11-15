@@ -48,6 +48,7 @@ In progress. The first complementary two-enemy encounter is implemented in the S
 
 - Reliquary Guardian (slow, heavy wind-up) paired with a Drowned Scout (quick, lighter strike).
 - Players can focus fire to remove one intent while the other enemy still acts; each enemy's intent remains independently visible.
+- Solo tuning reduces the pair to 10 Guardian health and 6 Scout health so each threat can be removed with one focused Strike; parties retain 15 and 12 health respectively.
 - The Watcher's Hall and Drowned Crossing remain single-enemy encounters, preserving a gentler opening and a lower-pressure branch.
 - Automated tests cover simultaneous telegraphs and confirm that defeating one enemy cancels only that enemy's intent.
 
