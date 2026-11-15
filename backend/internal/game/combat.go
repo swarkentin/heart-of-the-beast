@@ -232,7 +232,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 			addCombatEvent(run, roundNumber, "enemy_attack", message)
 			if bonusesFor(player).ReflectDamage > 0 && enemy.Health > 0 {
 				enemy.Health -= bonusesFor(player).ReflectDamage
-				if enemy.Health < 0 { enemy.Health = 0 }
+				if enemy.Health < 0 {
+					enemy.Health = 0
+				}
 				addCombatEvent(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(bonusesFor(player).ReflectDamage)+" reflected damage.")
 				if enemy.Health == 0 {
 					enemy.Intent = nil
