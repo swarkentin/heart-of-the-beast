@@ -72,7 +72,7 @@ function analyse(samples) {
   const spectrum = bands.map(b => b / total);
   const centroid = spectrum.reduce((a, p, i) => a + p * i, 0);
   let hash = 2166136261;
-  for (let i = 0; i < samples.length; i += 97) hash = Math.imul(hash ^ Math.round(samples[i] * 1e5), 16777619) >>> 0;
+  for (let i = 0; i < samples.length; i += 97) hash = Math.imul(hash ^ Math.round(samples[i] * 1e3), 16777619) >>> 0;
   // Rhythmic activity: coefficient of variation of 25 ms RMS windows after the fade-in. Busier, more percussive music varies more.
   const win25 = Math.floor(RATE * 0.025); const levels = [];
   for (let at = RATE; at + win25 <= samples.length; at += win25) { let e = 0; for (let i = 0; i < win25; i++) e += samples[at + i] ** 2; levels.push(Math.sqrt(e / win25)); }

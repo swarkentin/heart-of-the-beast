@@ -36,6 +36,8 @@ function applyVolumes(settings: AudioSettings) {
 }
 
 /** Per-theme hit/block/heal/spell flavour. Thread-agnostic hook point for combat visuals to trigger sounds directly. */
+export type { EffectKind, ThemeId };
+
 export function playEffect(kind: EffectKind, theme: ThemeId) {
   engine.playEffect(kind, theme);
 }
@@ -102,11 +104,8 @@ export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number,
       else {
         const freshEvents = events.filter((_, index) => !before.events.includes(eventKeys[index]));
         const kinds = new Set(freshEvents.map(event => event.kind));
-        if (kinds.has("player_attack") || kinds.has("enemy_attack")) engine.playEffect("impact", theme);
-        if (kinds.has("player_defend")) engine.playEffect("block", theme);
-        if (kinds.has("player_interrupt")) engine.playEffect("magic", theme);
-        if (kinds.has("enemy_heal")) engine.playEffect("heal", theme);
-        if (kinds.has("enemy_defeated")) engine.playEffect("defeat", theme);
+        // Hits, blocks, spells, heals and defeats are played by the combat stage (monsters/EnemyStage) at the moment
+        // their visuals land, so they are not triggered here. This hook keeps the encounter-level sounds.
         // Run-ending stingers belong to the music engine (they play as part of the victory/defeat cue); only the encounter-clear chime is an effect.
         if (kinds.has("victory")) engine.playEffect("victory", theme);
         if (freshEvents.length === 0 && phase === "combat" && before.phase !== "combat") engine.playEffect("encounter", theme);

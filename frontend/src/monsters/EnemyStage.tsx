@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { playEffect, type EffectKind, type ThemeId } from "../audio";
+import { isThemeId } from "../music/cue";
 import { elementFor, type Element } from "../fx/elements";
 import { FxLayer } from "../fx/FxLayer";
 import { DURATIONS, type FxInstance, type FxKind } from "../fx/render";
@@ -89,6 +91,14 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
     return id;
   }, []);
 
+  /** Plays a themed sound effect at the moment its visual lands. The theme is the art theme of the enemy involved (or the first enemy). */
+  const sfx = useCallback((kind: EffectKind, enemyId?: string) => {
+    const enemies = latest.current.enemies;
+    const sprite = (enemies.find((item) => item.id === enemyId) ?? enemies[0])?.sprite;
+    const theme = sprite?.split("/")[0];
+    playEffect(kind, (isThemeId(theme) ? theme : "catacombs") as ThemeId);
+  }, []);
+
   const handleCue = useCallback((cue: Cue) => {
     const { view: v } = latest.current;
     const party = PARTY_POINT[v];
@@ -97,6 +107,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
         const c = centerOf(cue.enemyId);
         push(cue.enemyId, cue);
         const el = elementFor(c.theme, cue.via.replace(/_/g, " "), undefined);
+        sfx(el === "physical" ? "impact" : "magic", cue.enemyId);
         if (cue.via === "thorns") spawn("spark", "physical", c.x, c.y);
         else if (el === "physical") spawn("slash", "physical", c.x, c.y);
         else if (el === "shock") spawn("zap", el, party.x, party.y - 60, c.x, c.y);
@@ -112,27 +123,32 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
       case "defeat":
         dead.current!.add(cue.enemyId);
         push(cue.enemyId, cue);
+        sfx("defeat", cue.enemyId);
         break;
       case "drain": {
         const c = centerOf(cue.enemyId);
         spawn("drain", "arcane", party.x, party.y - 60, c.x, c.y);
         spawn("heal", "acid", c.x, c.y);
+        sfx("magic", cue.enemyId);
         break;
       }
       case "freeze": {
         const c = centerOf(cue.enemyId);
         spawn("shards", "frost", c.x, c.y);
+        sfx("magic", cue.enemyId);
         break;
       }
       case "playerHeal":
         spawn("heal", "acid", party.x, party.y - 40);
+        sfx("heal");
         popup(party.x, party.y - 90, "+" + cue.amount, "#9be84a");
         break;
       case "playerBlock":
         spawn("shield", "physical", party.x, party.y - 40);
+        sfx("block");
         break;
     }
-  }, [centerOf, popup, push, spawn]);
+  }, [centerOf, popup, push, sfx, spawn]);
 
   /** An enemy's move reached its impact frame (or, with reduced motion, its moment): show what it did to the party. */
   const handleImpact = useCallback((id: number) => {
@@ -152,6 +168,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
       spawn("cross", "physical", c.x, c.y);
       return;
     }
+    sfx(cue.damage === 0 && cue.blocked > 0 ? "block" : el === "physical" ? "impact" : "magic", cue.enemyId);
     if (cue.damage > 0 || cue.blocked === 0) {
       if (cue.partyWide) spawn("wave", el, target.x, target.y);
       else if (/summon/.test(move ?? "")) spawn("summon", el, c.x, floorY);
@@ -171,7 +188,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
       if (v === "player") spawn("screenHit", "fire", 550, 310);
       popup(target.x + (counter % 3) * 40 - 40, target.y - 10, "-" + cue.damage, "#ff7a6a");
     }
-  }, [centerOf, floorY, popup, spawn]);
+  }, [centerOf, floorY, popup, sfx, spawn]);
 
   // Turn each new batch of combat events into a timeline and play it.
   useEffect(() => {

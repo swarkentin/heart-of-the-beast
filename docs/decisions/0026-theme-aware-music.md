@@ -31,5 +31,7 @@ These checks cannot judge musicality. The tunes, instrument choices and mix need
 ## Consequences
 
 - Adding a theme or boss means adding a profile entry; the tests fail if one is missing.
-- Rooms learn their theme from the server (`themeId`, owned by the themed-floors work). Until that ships, music falls back to the enemy sprite theme, then Catacombs.
+- Rooms learn their theme from the server: `room.themeId` is the primary signal, then `run.themeId`. Runs from before themed floors fall back to the enemy sprite theme, then Catacombs.
+- Combat sounds are played by the combat stage (`monsters/EnemyStage`) through `playEffect(kind, theme)` at the moment each visual lands (hit, enemy impact, block, heal, spell, defeat), using the enemy's art theme. They go through the effects bus, so the effects slider and mute apply. `useGameAudio` keeps only the encounter-level sounds (door, encounter start, victory chime).
+- Unit test files are excluded from `tsc -b` (`tsconfig.app.json`) because they import Node built-ins.
 - Synthesised audio remains the only source; no third-party audio is used.
