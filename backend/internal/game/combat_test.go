@@ -126,7 +126,7 @@ func TestDefeatingEnemyCancelsItsTelegraphedIntent(t *testing.T) {
 			break
 		}
 	}
-	if dealt == nil || dealt.TargetID != "sentinel" || dealt.Amount != 10 {
+	if dealt == nil || dealt.TargetID != "sentinel" || dealt.Amount != PlayerStrikeDamage {
 		t.Fatalf("expected structured damage dealt feedback for the sentinel, got %+v", dealt)
 	}
 	for _, event := range room.Run.LastCombatEvents {
