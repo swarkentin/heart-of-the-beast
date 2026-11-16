@@ -506,3 +506,36 @@ body,button,input,select,textarea{font-family:"DM Mono",monospace;font-size:14px
 
 
 @media (max-width: 700px) { .class-action-panel { grid-column: 1 / -1; } }
+
+
+/* A recorded room decision should not push the combat controls off a phone screen. */
+@media (max-width: 700px) {
+  .room-event-resolved {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    z-index: 8;
+    width: min(620px, calc(100% - 16px));
+    max-height: min(30%, 150px);
+    overflow: auto;
+    margin: 0;
+    padding: 6px 8px;
+    transform: translateX(-50%);
+    background: #171820f5;
+    box-shadow: 0 5px 18px #000b;
+  }
+  .room-event-resolved .room-event-heading h2 {
+    margin: 2px 0 3px;
+    font-size: 11px;
+  }
+  .room-event-resolved > p {
+    margin: 0 0 4px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  .room-event-resolved .room-event-result {
+    padding: 4px 6px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+}
