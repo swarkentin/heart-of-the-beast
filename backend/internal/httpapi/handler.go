@@ -579,6 +579,7 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 		"classAvailability": game.ClassAvailabilityCatalog(),
 		"talents":           game.TalentCatalog(),
 		"levelThresholds":   []int{50, 100, 200, 325},
+		"profileRewards":    game.ProfileRewardCatalog(),
 	})
 }
 
