@@ -31,13 +31,13 @@ type BalanceScenarioReport struct {
 }
 
 type BalanceTuning struct {
-	BlockAmount int     `json:"blockAmount"`
+	BlockAmount           int     `json:"blockAmount"`
 	EnemyHealthMultiplier float64 `json:"enemyHealthMultiplier"`
-	PlayerDamage int     `json:"playerDamage"`
+	PlayerDamage          int     `json:"playerDamage"`
 }
 
 type BalanceReport struct {
-	Tuning    BalanceTuning          `json:"tuning"`
+	Tuning    BalanceTuning           `json:"tuning"`
 	Version   int                     `json:"version"`
 	SeedCount int                     `json:"seedCount"`
 	FirstSeed int64                   `json:"firstSeed"`
@@ -78,9 +78,15 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 	if len(classes) == 0 {
 		return BalanceReport{}, fmt.Errorf("class catalog is empty")
 	}
-	if tuning.BlockAmount == 0 { tuning.BlockAmount = GuardDamageReduction }
-	if tuning.EnemyHealthMultiplier <= 0 { tuning.EnemyHealthMultiplier = 1 }
-	if tuning.PlayerDamage == 0 { tuning.PlayerDamage = 10 }
+	if tuning.BlockAmount == 0 {
+		tuning.BlockAmount = GuardDamageReduction
+	}
+	if tuning.EnemyHealthMultiplier <= 0 {
+		tuning.EnemyHealthMultiplier = 1
+	}
+	if tuning.PlayerDamage == 0 {
+		tuning.PlayerDamage = 10
+	}
 	report := BalanceReport{
 		Tuning: tuning,
 		Version:   BalanceReportVersion,
@@ -92,9 +98,13 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 	for _, encounterID := range balanceEncounterIDs {
 		for _, class := range classes {
 			players, classIDs, err := balancePlayers([]ClassDefinition{class})
-			if err != nil { return BalanceReport{}, err }
+			if err != nil {
+				return BalanceReport{}, err
+			}
 			applyBalanceTuning(players, nil, tuning)
-			if err := appendBalanceScenario(&report, encounterID, 1, players, classIDs, seedCount, firstSeed, tuning); err != nil { return BalanceReport{}, err }
+			if err := appendBalanceScenario(&report, encounterID, 1, players, classIDs, seedCount, firstSeed, tuning); err != nil {
+				return BalanceReport{}, err
+			}
 		}
 		for _, partySize := range []int{2, 4} {
 			partyClasses := make([]ClassDefinition, partySize)
@@ -104,7 +114,9 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 			players, classIDs, err := balancePlayers(partyClasses)
 			if err != nil { return BalanceReport{}, err }
 			applyBalanceTuning(players, nil, tuning)
-			if err := appendBalanceScenario(&report, encounterID, partySize, players, classIDs, seedCount, firstSeed, tuning); err != nil { return BalanceReport{}, err }
+			if err := appendBalanceScenario(&report, encounterID, partySize, players, classIDs, seedCount, firstSeed, tuning); err != nil {
+				return BalanceReport{}, err
+			}
 		}
 	}
 	sort.Slice(report.Scenarios, func(i, j int) bool {
@@ -138,10 +150,19 @@ func balancePlayers(definitions []ClassDefinition) ([]PlayerState, []string, err
 	return players, classIDs, nil
 }
 
-
 func applyBalanceTuning(players []PlayerState, enemies []Enemy, tuning BalanceTuning) {
-	for i := range players { players[i].GuardReduction = tuning.BlockAmount; players[i].StrikeDamage = tuning.PlayerDamage }
-	for i := range enemies { scaled := int(float64(enemies[i].MaxHealth)*tuning.EnemyHealthMultiplier + 0.5); if scaled < 1 { scaled = 1 }; enemies[i].MaxHealth = scaled; enemies[i].Health = scaled }
+	for i := range players {
+		players[i].GuardReduction = tuning.BlockAmount
+		players[i].StrikeDamage = tuning.PlayerDamage
+	}
+	for i := range enemies {
+		scaled := int(float64(enemies[i].MaxHealth)*tuning.EnemyHealthMultiplier + 0.5)
+		if scaled < 1 {
+			scaled = 1
+		}
+		enemies[i].MaxHealth = scaled
+		enemies[i].Health = scaled
+	}
 }
 
 func appendBalanceScenario(report *BalanceReport, encounterID string, partySize int, players []PlayerState, classIDs []string, seedCount int, firstSeed int64, tuning BalanceTuning) error {
@@ -151,7 +172,9 @@ func appendBalanceScenario(report *BalanceReport, encounterID string, partySize 
 	}
 	applyBalanceTuning(players, encounter.Enemies, tuning)
 	maxHealth := 0
-	for _, player := range players { maxHealth += player.MaxHealth }
+	for _, player := range players {
+		maxHealth += player.MaxHealth
+	}
 	snapshot := CombatSimulationSnapshot{Players: players, Enemies: encounter.Enemies, ExperienceReward: EncounterExperienceReward}
 	seeds := make([]int64, seedCount)
 	for i := range seeds {
@@ -160,7 +183,9 @@ func appendBalanceScenario(report *BalanceReport, encounterID string, partySize 
 	for _, randomPolicy := range []bool{false, true} {
 		snapshot.RandomPolicy = randomPolicy
 		runs, err := SimulateCombatBatch(snapshot, seeds, 100)
-		if err != nil { return fmt.Errorf("scenario %s: %w", encounterID, err) }
+		if err != nil {
+			return fmt.Errorf("scenario %s: %w", encounterID, err)
+		}
 		summary := SummarizeCombatBatch(runs)
 		appendBalanceScenarioResult(report, encounterID, partySize, players, classIDs, encounter.Budget, maxHealth, runs, summary, randomPolicy)
 	}
@@ -188,7 +213,9 @@ func appendBalanceScenarioResult(report *BalanceReport, encounterID string, part
 	sort.Ints(healing)
 	sort.Ints(downed)
 	policyID := "tactical"
-	if randomPolicy { policyID = "random" }
+	if randomPolicy {
+		policyID = "random"
+	}
 	id := fmt.Sprintf("%s/party-%d/%s/%s", encounterID, partySize, joinClassIDs(classIDs), policyID)
 	wipeRate := float64(summary.Wipes) / float64(summary.Runs)
 	report.Scenarios = append(report.Scenarios, BalanceScenarioReport{
