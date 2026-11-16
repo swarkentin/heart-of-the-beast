@@ -192,7 +192,7 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 	}
 	defer tx.Rollback()
 
-	key := profileID + ":" + runID + ":" + playerID
+	key := profileID + ":" + runID
 	result, err := tx.ExecContext(ctx, `
 		INSERT INTO player_profile_run_awards (award_key, profile_id, run_id, player_id, xp, class_id, awarded_at)
 		VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), $7)
