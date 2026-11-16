@@ -38,7 +38,7 @@ npm run dev:up
 
 Open [http://localhost:5173](http://localhost:5173). The backend health endpoint is [http://localhost:8080/healthz](http://localhost:8080/healthz); PostgreSQL is available on `localhost:5432`.
 
-The first start creates the PostgreSQL container and volume, waits for the database to become healthy, applies pending SQL migrations, and starts the Go backend and Vite frontend in the background.
+`dev:up` runs six numbered steps and prints what it is doing at each one: prerequisite checks (Docker engine, Go, Node, `npm install` done, ports 8080/5173 free), PostgreSQL, migrations, a backend `go build`, then the backend and Vite frontend, whose startup output is streamed live while the script waits for their health checks. The first start creates the PostgreSQL container and volume, and the first backend build downloads and compiles Go dependencies, which can take a few minutes; a progress line is printed every 5 seconds while that runs. If a service exits during startup, the script stops immediately and prints that service's log output instead of waiting for a timeout. Add `--verbose` (`npm run dev:up -- --verbose`) to also show the Go compiler's package-by-package output.
 
 | Command | Purpose |
 | --- | --- |
@@ -49,7 +49,7 @@ The first start creates the PostgreSQL container and volume, waits for the datab
 | `npm run db:reset` | Stop the stack and recreate the local database (asks before deleting data) |
 | `npm run build` | Build the frontend |
 
-Application logs and process state are written under `.dev/` (ignored by Git). If startup fails, inspect `.dev/logs/backend.err.log` and `.dev/logs/frontend.err.log`.
+Application logs, the built backend binary and process state are written under `.dev/` (ignored by Git). Service logs are reset on every start; if startup fails the script prints the relevant log tail, and the full files are `.dev/logs/backend.{out,err}.log` and `.dev/logs/frontend.{out,err}.log`.
 
 The default local database is `heart` / `heart` on port 5432. The orchestration commands intentionally use this local Compose database; do not change them to point at production. `db:reset` permanently deletes the local database volume.
 
