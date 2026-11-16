@@ -116,6 +116,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := StartRun(room, "run-coop", now); err != nil {
 		t.Fatal(err)
 	}
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 2 * PlayerStrikeDamage
 
 	first := Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}
 	if err := ApplyCommand(room, "player-1", first, now); err != nil {
