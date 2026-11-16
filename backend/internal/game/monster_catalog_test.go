@@ -48,7 +48,7 @@ func TestMonsterCatalogCreatesNamedEnemiesAndAppliesScaling(t *testing.T) {
 		{"solo guardian", "bonebound-guardian", MonsterScaling{HealthMultiplier: 0.75, RoundDown: true}, "Bonebound Guardian", 16},
 		{"solo crossing scout", "drowned-scout-crossing-solo", MonsterScaling{HealthMultiplier: 1}, "Drowned Scout", 11},
 		{"depth two boss solo", "warden", MonsterScaling{Depth: 2, PartySize: 1}, "Crypt Warden", 40},
-		{"depth three boss duo", "warden", MonsterScaling{Depth: 3, PartySize: 2}, "Crypt Warden", 62},
+		{"depth three boss duo", "warden", MonsterScaling{Depth: 3, PartySize: 2}, "Crypt Warden", 80},
 		{"depth two miniboss solo", "depth-reliquary-brute", MonsterScaling{Depth: 2, PartySize: 1}, "Reliquary Brute", 31},
 	}
 	for _, test := range tests {

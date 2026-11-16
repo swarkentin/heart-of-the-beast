@@ -136,3 +136,11 @@ func TestBuildEnemyIntentPreservesLegacyBehaviorFallback(t *testing.T) {
 		t.Fatalf("legacy behavior fallback changed: %+v", got)
 	}
 }
+
+func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
+	players := []string{"player-1", "player-2", "player-3", "player-4"}
+	got := buildEnemyIntent(&Enemy{Behavior: "guardian"}, 1, 0, players)
+	if got.Damage != 24 {
+		t.Fatalf("four-player guardian heavy intent damage = %d, want 24", got.Damage)
+	}
+}
