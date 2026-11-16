@@ -20,24 +20,38 @@ func main() {
 	flag.Parse()
 
 	report, err := game.GenerateBalanceReport(*seeds, *firstSeed)
-	if err != nil { fatal(err) }
+	if err != nil {
+		fatal(err)
+	}
 	var comparison *game.BalanceComparison
 	if *baselinePath != "" {
 		data, err := os.ReadFile(*baselinePath)
-		if err != nil { fatal(fmt.Errorf("read baseline: %w", err)) }
+		if err != nil {
+			fatal(fmt.Errorf("read baseline: %w", err))
+		}
 		var baseline game.BalanceReport
-		if err := json.Unmarshal(data, &baseline); err != nil { fatal(fmt.Errorf("decode baseline: %w", err)) }
+		if err := json.Unmarshal(data, &baseline); err != nil {
+			fatal(fmt.Errorf("decode baseline: %w", err))
+		}
 		value := game.CompareBalanceReports(baseline, report)
 		comparison = &value
 	}
 
 	encoded, err := json.MarshalIndent(report, "", "  ")
-	if err != nil { fatal(err) }
-	if err := os.WriteFile(*jsonPath, append(encoded, '\n'), 0644); err != nil { fatal(err) }
+	if err != nil {
+		fatal(err)
+	}
+	if err := os.WriteFile(*jsonPath, append(encoded, '\n'), 0644); err != nil {
+		fatal(err)
+	}
 	markdown := renderMarkdown(report, comparison)
-	if err := os.WriteFile(*markdownPath, []byte(markdown), 0644); err != nil { fatal(err) }
+	if err := os.WriteFile(*markdownPath, []byte(markdown), 0644); err != nil {
+		fatal(err)
+	}
 	fmt.Print(markdown)
-	if *failOnRegression && comparison != nil && comparison.Regressions > 0 { os.Exit(2) }
+	if *failOnRegression && comparison != nil && comparison.Regressions > 0 {
+		os.Exit(2)
+	}
 }
 
 func renderMarkdown(report game.BalanceReport, comparison *game.BalanceComparison) string {
