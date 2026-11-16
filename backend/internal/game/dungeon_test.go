@@ -57,7 +57,7 @@ func TestGeneratedDungeonFloorIsDeterministicAndConnected(t *testing.T) {
 func TestInterFloorChoicePreservesRunAndGeneratesNextFloor(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
-	if err := StartMultiLevelRun(room, "multi-floor-run", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "multi-floor-run", "", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run
@@ -87,7 +87,7 @@ func TestInterFloorPerkIsPartyWideAndInvalidChoicesDoNotAdvance(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
 	room.PlayerIDs = []string{"player-1", "player-2"}
-	if err := StartMultiLevelRun(room, "multi-floor-perk", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "multi-floor-perk", "", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run
@@ -119,7 +119,7 @@ func TestInterFloorPerkIsPartyWideAndInvalidChoicesDoNotAdvance(t *testing.T) {
 func TestFloorBossesOpenIntermissionUntilFinalDepth(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
-	if err := StartMultiLevelRun(room, "multi-floor-bosses", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "multi-floor-bosses", "", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run
@@ -157,7 +157,7 @@ func TestInterFloorVoteResolvesAtDeadline(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
 	room.PlayerIDs = []string{"player-1", "player-2"}
-	if err := StartMultiLevelRun(room, "multi-floor-timeout", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "multi-floor-timeout", "", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run

@@ -125,13 +125,15 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 - [ ] Reusable optional side-mission framework.
 - [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
 - [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
-- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the nine remaining themes floor templates so their encounters can appear in runs; add a dedicated miniboss sprite.
-- [ ] Run modifiers and varied dungeon themes.
+- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; add a dedicated miniboss sprite. (All eleven themes are now playable; see ADR 0028.)
+- [x] Dungeon expeditions (ADR 0028): all eleven themes playable with a lobby dungeon picker; 4–6 generated floors per dungeon from seven layouts with hinted exits; level-wide floor debuffs and perks that grow with depth; gold from encounters; a camp between floors with three mini-games and a shop; dungeon bosses with enrage, summon, barrier and cataclysm mechanics; discovery and vault rooms whose choices are trade-offs or gambles.
+- [ ] Tune the expedition by play: gold income and shop prices, modifier strength, boss thresholds, floor length against the 3–5 minute target, and the difficulty of floors 4–6. Give floor guardians (not only dungeon bosses) a mechanic each.
+- [ ] Grow the camp: co-operative or head-to-head mini-games, consumables that are used as combat actions, and theme-flavoured modifiers, shopkeepers and camp backdrops.
 
 ## Phase 4 — Open-world intermissions
 
 - [ ] Safe hub between dungeon levels.
-- [ ] Rest, shop, repair, upgrade, and resupply activities.
+- [ ] Repair, upgrade, and resupply activities beyond the camp rest and shop of ADR 0028.
 - [ ] NPCs, ambience, music, and environmental storytelling.
 - [ ] Safe join checkpoint and party ready-up flow.
 
@@ -139,7 +141,7 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 
 - [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
 - [x] Pixel-art room backdrops (first-person and cinematic; entry, corridor, event, boss, vault) for all eleven themes, registered in Go so a missing background fails CI (ADR 0025)
-- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi; a lobby theme picker; encounter tables for the nine non-playable themes.
+- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi. (Lobby theme picker and content for all themes shipped with ADR 0028.)
 - [ ] More enemy families, bosses, side missions, items, and abilities.
 - [ ] Cinematic spectator camera movement, animation, audio, accessibility, and localization polish.
 - [ ] Content authoring conventions and validation tools.

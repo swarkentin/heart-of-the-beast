@@ -114,7 +114,7 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 			if target == nil {
 				target = player
 			}
-			amount := 7 + player.Stats.Focus
+			amount := floorRulesFor(room.Run).healing(7 + player.Stats.Focus)
 			transition := resolveHealthHealing(target.Health, target.MaxHealth, amount)
 			target.Health = transition.Health
 			actual := transition.Applied

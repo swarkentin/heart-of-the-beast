@@ -71,8 +71,8 @@ func TestEveryPlayableRoomHasABackdrop(t *testing.T) {
 	}
 	for _, theme := range PlayableDungeonThemes() {
 		for seed := uint64(1); seed <= 40; seed++ {
-			for depth := 1; depth <= MaximumDungeonDepth; depth++ {
-				_, rooms := generateFloorForTheme(theme.ID, seed, depth, 2)
+			for depth := 1; depth <= MaximumExpeditionDepth; depth++ {
+				_, rooms := generateExpeditionFloor(theme.ID, seed, depth, MaximumExpeditionDepth, 2, nil)
 				for _, room := range rooms {
 					check(theme.ID, room)
 				}

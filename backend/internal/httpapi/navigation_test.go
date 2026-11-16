@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -57,20 +58,28 @@ func TestNavigationVoteDeadlineAdvancesThroughSnapshotPolling(t *testing.T) {
 	if started.Code != http.StatusOK {
 		t.Fatalf("start run: %d %s", started.Code, started.Body.String())
 	}
-	for round := 1; round <= 2; round++ {
-		for _, player := range []struct {
-			token string
-		}{{host.PlayerToken}, {guest.PlayerToken}} {
-			body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": "sentinel"})
-			response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", player.token, string(body))
+	entry := entryRoom(t, started.Body.Bytes())
+	cleared := false
+	for round := 1; round <= 8 && !cleared; round++ {
+		for _, token := range []string{host.PlayerToken, guest.PlayerToken} {
+			response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", token, attackEntryEnemy(t, started.Body.Bytes(), round))
 			if response.Code != http.StatusOK {
 				t.Fatalf("combat action: %d %s", response.Code, response.Body.String())
 			}
+			cleared = strings.Contains(response.Body.String(), `"phase":"exploring"`)
 		}
 	}
-	voted := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"choose_exit","exitId":"north"}`)
+	if !cleared {
+		t.Fatal("the entry fight should be won within eight rounds of two strikes")
+	}
+	chosen := entry.Exits[1]
+	vote, _ := json.Marshal(map[string]string{"type": "choose_exit", "exitId": chosen.ID})
+	voted := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, string(vote))
 	if voted.Code != http.StatusOK {
 		t.Fatalf("submit path vote: %d %s", voted.Code, voted.Body.String())
+	}
+	if !strings.Contains(voted.Body.String(), `"currentRoomId":"d1-entry"`) {
+		t.Fatal("one vote of two must not move the party before the deadline")
 	}
 
 	now = now.Add(game.NavigationVoteWindow)
@@ -88,7 +97,7 @@ func TestNavigationVoteDeadlineAdvancesThroughSnapshotPolling(t *testing.T) {
 	if err := json.Unmarshal(snapshot.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Run.Phase != game.PhaseCombat || result.Run.CurrentRoomID != "reliquary" || result.Run.NavigationVote != nil {
+	if result.Run.CurrentRoomID != chosen.Destination || result.Run.NavigationVote != nil {
 		t.Fatalf("deadline should resolve the submitted vote and transition rooms: %+v", result.Run)
 	}
 }

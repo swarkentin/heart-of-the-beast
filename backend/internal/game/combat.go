@@ -36,13 +36,27 @@ func startCombatRound(room *Room, now time.Time) {
 	}
 	players := eligibleCombatPlayers(room)
 	for enemyIndex := range current.Encounter.Enemies {
+		if enemy := &current.Encounter.Enemies[enemyIndex]; enemy.Health > 0 {
+			enemy.TurnsTaken++
+		}
+	}
+	applyBossMechanics(room, current, run.CombatRoundNumber)
+	rules := floorRulesFor(run)
+	for enemyIndex := range current.Encounter.Enemies {
 		enemy := &current.Encounter.Enemies[enemyIndex]
 		if enemy.Health <= 0 {
 			enemy.Intent = nil
 			continue
 		}
-		enemy.TurnsTaken++
-		enemy.Intent = buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players)
+		intent := bossIntentOverride(enemy, buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players), len(players))
+		if intent.Damage > 0 {
+			// Floor modifiers and enrage are part of the telegraph, so what the party sees is what will land.
+			intent.Damage += rules.EnemyDamage + enemy.DamageBonus
+			if intent.Damage < 1 {
+				intent.Damage = 1
+			}
+		}
+		enemy.Intent = intent
 	}
 }
 
@@ -173,7 +187,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 					continue
 				}
 				attack := resolveAttackDamage(AttackDamageInput{
-					BaseDamage:          player.StrikeDamage + player.Stats.Power,
+					BaseDamage:          strikeBaseDamage(run, player),
 					BonusDamage:         bonusesFor(player).AttackDamage + classPassiveEffects(player, enemy, nil).AttackDamage,
 					MarkedDamage:        enemy.MarkedDamage,
 					IncludeMarkedDamage: true,
@@ -185,7 +199,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 					TelegraphBonus:      bonusesFor(player).AttackVsTelegraph,
 					StrikeBonus:         defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID),
 				})
-				damage := attack.Damage
+				damage := absorbWithBarrier(run, enemy, attack.Damage, roundNumber)
 				enemy.MarkedDamage = attack.RemainingMarkedDamage
 				player.ClassCombat.ResolveReady = attack.ResolveReady
 				transition := resolveHealthDamage(enemy.Health, damage)
@@ -224,7 +238,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 		case "defend":
 			player.Guarding = true
-			guard := player.GuardReduction + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction
+			guard := player.GuardReduction + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction + floorRulesFor(run).PlayerGuard
 			if guard <= 0 {
 				guard = GuardDamageReduction
 			}
@@ -269,7 +283,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				DefaultGuardReduction: GuardDamageReduction,
 				GuardBonus:            player.ClassCombat.GuardBonus,
 				TalentGuardReduction:  bonusesFor(player).GuardReduction,
-				PartyGuardReduction:   partyBonusesFor(room).PartyGuardReduction,
+				PartyGuardReduction:   partyBonusesFor(room).PartyGuardReduction + floorRulesFor(run).PlayerGuard,
 			})
 			damage := mitigation.Damage
 			wardReflect := mitigation.WardReflect
@@ -337,11 +351,19 @@ func resolveCombatRound(room *Room, now time.Time) {
 		applyEncounterReward(room, current, roundNumber)
 		current.Cleared = true
 		grantEncounterExperience(room, roundNumber)
-		for playerID, player := range run.Players {
+		grantEncounterGold(room, current, roundNumber)
+		rules := floorRulesFor(run)
+		healed := make([]string, 0, len(run.Players))
+		for playerID := range run.Players {
+			healed = append(healed, playerID)
+		}
+		sort.Strings(healed)
+		for _, playerID := range healed {
+			player := run.Players[playerID]
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			heal := bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal
+			heal := rules.healing(bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal + rules.EncounterHeal)
 			if heal > 0 {
 				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
 				player.Health = transition.Health
@@ -353,11 +375,17 @@ func resolveCombatRound(room *Room, now time.Time) {
 		}
 		run.CombatRound = nil
 		if current.RoomType == "miniboss" {
-			if reward, ok := defaultRunRewardCatalog.Reward("encounter.miniboss"); ok {
+			rewardID := "encounter.miniboss"
+			if run.Generator >= ExpeditionGenerator {
+				rewardID = "encounter.champion"
+			}
+			if reward, ok := defaultRunRewardCatalog.Reward(rewardID); ok {
 				applyRunReward(room, reward, roundNumber, "miniboss-"+current.ID)
 			}
 		}
-		if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth {
+		if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth && run.Generator >= ExpeditionGenerator {
+			openCamp(room, roundNumber, now)
+		} else if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth {
 			run.Phase = PhaseIntermission
 			run.PendingInterFloorChoice = true
 			run.NavigationVote = nil
@@ -377,6 +405,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 
 	if len(eligibleCombatPlayers(room)) == 0 {
 		run.CombatRound = nil
+		run.Camp = nil
 		run.Phase = PhaseFailed
 		completed := now.UTC()
 		run.CompletedAt = &completed
@@ -496,4 +525,14 @@ func applyEncounterReward(room *Room, current *DungeonRoom, roundNumber int) {
 		return
 	}
 	applyRunReward(room, definition, roundNumber, "")
+}
+
+// strikeBaseDamage is a player's Strike before talents, passives and marks: the stat, the run's permanent
+// bonuses, and the floor's modifier. A Strike always deals at least 1.
+func strikeBaseDamage(run *Run, player *PlayerState) int {
+	damage := player.StrikeDamage + player.Stats.Power + floorRulesFor(run).PlayerStrike
+	if damage < 1 {
+		damage = 1
+	}
+	return damage
 }

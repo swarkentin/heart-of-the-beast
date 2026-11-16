@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
@@ -57,7 +58,7 @@ func startThemedRun(t *testing.T, body string) (*httptest.ResponseRecorder, them
 
 func TestStartRunWithoutBodyDefaultsToCatacombs(t *testing.T) {
 	response, started := startThemedRun(t, "")
-	if response.Code != http.StatusOK || started.Room.Run == nil || started.Room.Run.ThemeID != "catacombs" || started.Room.Run.CurrentRoomID != "entry" {
+	if response.Code != http.StatusOK || started.Room.Run == nil || started.Room.Run.ThemeID != "catacombs" || started.Room.Run.CurrentRoomID != "d1-entry" {
 		t.Fatalf("default start: %d %s", response.Code, response.Body.String())
 	}
 }
@@ -73,8 +74,28 @@ func TestStartRunCanChooseAPlayableTheme(t *testing.T) {
 	}
 }
 
-func TestStartRunRejectsUnknownUnplayableAndMalformedThemes(t *testing.T) {
-	for name, body := range map[string]string{"unknown": `{"themeId":"atlantis"}`, "unplayable": `{"themeId":"sunken"}`, "malformed": `{"themeId":`} {
+func TestStartRunCanLetTheServerChooseATheme(t *testing.T) {
+	response, started := startThemedRun(t, `{"themeId":"random"}`)
+	if response.Code != http.StatusOK || started.Room.Run == nil {
+		t.Fatalf("random start: %d %s", response.Code, response.Body.String())
+	}
+	run := started.Room.Run
+	if run.ThemeID == "" || run.ThemeID == "random" || run.Rooms["d1-entry"].ThemeID != run.ThemeID {
+		t.Fatalf("random run snapshot: %+v", run)
+	}
+}
+
+func TestEveryListedThemeStarts(t *testing.T) {
+	for _, theme := range game.PlayableDungeonThemes() {
+		response, started := startThemedRun(t, `{"themeId":"`+theme.ID+`"}`)
+		if response.Code != http.StatusOK || started.Room.Run == nil || started.Room.Run.ThemeID != theme.ID {
+			t.Errorf("%s start: %d", theme.ID, response.Code)
+		}
+	}
+}
+
+func TestStartRunRejectsUnknownAndMalformedThemes(t *testing.T) {
+	for name, body := range map[string]string{"unknown": `{"themeId":"atlantis"}`, "malformed": `{"themeId":`} {
 		response, _ := startThemedRun(t, body)
 		if response.Code != http.StatusBadRequest {
 			t.Errorf("%s: status %d, want 400 (%s)", name, response.Code, response.Body.String())
@@ -91,6 +112,7 @@ func TestThemesEndpointListsPlayableThemes(t *testing.T) {
 	}
 	var body struct {
 		DefaultThemeID string `json:"defaultThemeId"`
+		RandomThemeID  string `json:"randomThemeId"`
 		Themes         []struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
@@ -106,7 +128,7 @@ func TestThemesEndpointListsPlayableThemes(t *testing.T) {
 			t.Errorf("theme %q has no name", theme.ID)
 		}
 	}
-	if body.DefaultThemeID != "catacombs" || strings.Join(ids, ",") != "catacombs,scifi" {
+	if body.DefaultThemeID != "catacombs" || body.RandomThemeID != "random" || strings.Join(ids, ",") != "catacombs,scifi,mobster,sunken,clockwork,carnival,jungle,dreamscape,arctic,ghosttown,wasteland" {
 		t.Fatalf("themes = %v default=%q", ids, body.DefaultThemeID)
 	}
 }

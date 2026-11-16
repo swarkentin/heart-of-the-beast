@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -12,6 +13,10 @@ import (
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
 	Seed               int64          `json:"seed"`
+	ThemeID            string         `json:"themeId"`
+	Floors             int            `json:"floors"`
+	GoldEarned         int            `json:"goldEarned"`
+	ItemsBought        int            `json:"itemsBought"`
 	PartyClasses       []string       `json:"partyClasses"`
 	PartySize          int            `json:"partySize"`
 	Outcome            string         `json:"outcome"`
@@ -32,6 +37,7 @@ type RunSimulationReport struct {
 // RunSimulationBatchReport summarizes a reproducible collection of full runs.
 type RunSimulationBatchReport struct {
 	Policy          string                `json:"policy"`
+	ThemeID         string                `json:"themeId"`
 	SeedCount       int                   `json:"seedCount"`
 	FirstSeed       int64                 `json:"firstSeed"`
 	LastSeed        int64                 `json:"lastSeed"`
@@ -49,12 +55,16 @@ type RunSimulationBatchReport struct {
 	Runs            []RunSimulationReport `json:"runs"`
 }
 
-const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, and inter-floor choices; this is a deliberately unskilled baseline, not human play"
+const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
-// SimulateRun runs one seeded multi-floor dungeon with the supplied class
-// composition. A fresh aggregate is created for every run and all game
-// transitions are performed through StartMultiLevelRun and ApplyCommand.
+// SimulateRun runs one seeded expedition through Forgotten Catacombs with the supplied class composition.
 func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationReport, error) {
+	return SimulateRunInTheme(seed, DefaultDungeonThemeID, classIDs, maxSteps)
+}
+
+// SimulateRunInTheme runs one seeded expedition in a dungeon theme (or RandomDungeonThemeID). A fresh aggregate
+// is created for every run and every game transition goes through the same commands as live play.
+func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps int) (RunSimulationReport, error) {
 	if len(classIDs) < 1 || len(classIDs) > 4 {
 		return RunSimulationReport{}, fmt.Errorf("party must contain between 1 and 4 characters")
 	}
@@ -85,15 +95,14 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 		room.PlayerIDs[i] = playerID
 		room.PlayerClasses[playerID] = classID
 	}
-	if err := StartMultiLevelRun(room, runID, now); err != nil {
-		return RunSimulationReport{}, fmt.Errorf("start simulated run: %w", err)
-	}
 	// The supplied seed is the canonical generation seed. The run ID remains
 	// stable and unique within this in-memory aggregate.
-	room.Run.Seed = uint64(seed)
+	if err := startExpeditionWithSeed(room, runID, themeID, uint64(seed), now); err != nil {
+		return RunSimulationReport{}, fmt.Errorf("start simulated run: %w", err)
+	}
 
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
-	steps := 0
+	steps, itemsBought := 0, 0
 	for room.Run.Phase != PhaseCompleted && room.Run.Phase != PhaseFailed && steps < maxSteps {
 		steps++
 		switch room.Run.Phase {
@@ -154,20 +163,23 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 			}
 		case PhaseIntermission:
 			eligible := eligibleCombatPlayers(room)
-			if len(eligible) == 0 {
+			if len(eligible) == 0 || room.Run.Camp == nil {
 				room.Run.Phase = PhaseFailed
 				continue
-			}
-			choice := "restore"
-			if rng.Intn(2) == 1 {
-				choice = "perk"
 			}
 			for _, playerID := range eligible {
 				if room.Run.Phase != PhaseIntermission {
 					break
 				}
-				if err := ApplyCommand(room, playerID, Command{Type: "choose_inter_floor", ChoiceID: choice}, now); err != nil {
-					return RunSimulationReport{}, fmt.Errorf("seed %d inter-floor choice: %w", seed, err)
+				command, ok := randomCampCommand(room, playerID, rng)
+				if !ok {
+					continue
+				}
+				if err := ApplyCommand(room, playerID, command, now); err != nil {
+					return RunSimulationReport{}, fmt.Errorf("seed %d camp command %+v: %w", seed, command, err)
+				}
+				if command.Type == "buy" {
+					itemsBought++
 				}
 			}
 		default:
@@ -179,7 +191,8 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 	}
 
 	report := RunSimulationReport{
-		Seed: seed, PartyClasses: append([]string(nil), classIDs...), PartySize: len(classIDs),
+		Seed: seed, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
+		PartyClasses: append([]string(nil), classIDs...), PartySize: len(classIDs),
 		Completed: room.Run.Phase == PhaseCompleted, Wiped: room.Run.Phase == PhaseFailed,
 		ReachedDepth: room.Run.Depth, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
 		Levels: make(map[string]int), Steps: steps,
@@ -196,6 +209,14 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 		report.RemainingHealth += player.Health
 		report.RemainingMaxHealth += player.MaxHealth
 		report.Levels[player.ID] = player.Level
+		report.GoldEarned += player.Gold
+		for _, itemID := range player.Items {
+			for _, item := range shopCatalog {
+				if item.ID == itemID {
+					report.GoldEarned += item.Price
+				}
+			}
+		}
 		if player.Health <= 0 {
 			report.PlayersDownAtEnd++
 		}
@@ -209,6 +230,59 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 		}
 	}
 	return report, nil
+}
+
+// randomCampCommand chooses one legal camp move for a player: a mini-game move while the game is on, and at the
+// shop either a purchase they can afford or readying up.
+func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bool) {
+	camp := room.Run.Camp
+	if camp.Stage == CampStageGame {
+		play := camp.Game.Players[playerID]
+		if play == nil || play.Done {
+			return Command{}, false
+		}
+		switch camp.Game.Kind {
+		case MinigameDice:
+			if len(play.Rolls) == 0 || rng.Intn(2) == 0 {
+				return Command{Type: "minigame", Action: "roll"}, true
+			}
+		case MinigameChests:
+			var shut []int
+			for index, chest := range play.Chests {
+				if chest < 0 {
+					shut = append(shut, index)
+				}
+			}
+			if len(shut) == ChestCount || rng.Intn(2) == 0 {
+				return Command{Type: "minigame", Action: "open", ChoiceID: fmt.Sprint(shut[rng.Intn(len(shut))])}, true
+			}
+		case MinigameEcho:
+			answer := make([]string, len(play.Sequence))
+			for i := range answer {
+				answer[i] = EchoRunes[rng.Intn(len(EchoRunes))]
+			}
+			return Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, true
+		}
+		return Command{Type: "minigame", Action: "bank"}, true
+	}
+	if camp.Ready[playerID] {
+		return Command{}, false
+	}
+	player := room.Run.Players[playerID]
+	var affordable []ShopItem
+	for _, offer := range camp.Offers {
+		useless := (offer.Kind == ShopHeal || offer.Kind == ShopFullHeal) && player.Health >= player.MaxHealth ||
+			offer.Kind == ShopWard && player.ClassCombat.Ward >= offer.Amount ||
+			offer.Kind == ShopRevive && fallenAlly(room, playerID) == "" ||
+			offer.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) < 0
+		if offer.Price <= player.Gold && !useless && (offer.Repeatable || !contains(camp.Purchases[playerID], offer.ID)) {
+			affordable = append(affordable, offer)
+		}
+	}
+	if choice := rng.Intn(len(affordable) + 1); choice < len(affordable) {
+		return Command{Type: "buy", ChoiceID: affordable[choice].ID}, true
+	}
+	return Command{Type: "ready"}, true
 }
 
 func randomCombatCommands(room *Room, playerID string, round int) []Command {
@@ -292,13 +366,19 @@ func randomCombatCommands(room *Room, playerID string, round int) []Command {
 	return commands
 }
 
-// SimulateRunBatch repeats the same party composition across consecutive seeds.
+// SimulateRunBatch repeats the same party composition across consecutive seeds in Forgotten Catacombs.
 func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxSteps int) (RunSimulationBatchReport, error) {
+	return SimulateRunBatchInTheme(seedCount, firstSeed, DefaultDungeonThemeID, classIDs, maxSteps)
+}
+
+// SimulateRunBatchInTheme repeats the same party composition across consecutive seeds in one dungeon theme, or
+// in a seeded mix of themes for RandomDungeonThemeID.
+func SimulateRunBatchInTheme(seedCount int, firstSeed int64, themeID string, classIDs []string, maxSteps int) (RunSimulationBatchReport, error) {
 	if seedCount <= 0 {
 		return RunSimulationBatchReport{}, fmt.Errorf("seed count must be positive")
 	}
 	report := RunSimulationBatchReport{
-		Policy: RandomRunPolicyDescription, SeedCount: seedCount, FirstSeed: firstSeed,
+		Policy: RandomRunPolicyDescription, ThemeID: themeID, SeedCount: seedCount, FirstSeed: firstSeed,
 		LastSeed: firstSeed + int64(seedCount) - 1, PartyClasses: append([]string(nil), classIDs...),
 		DepthReachRates: make(map[int]float64),
 		Runs:            make([]RunSimulationReport, 0, seedCount),
@@ -307,7 +387,7 @@ func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxStep
 	rooms := make([]int, 0, seedCount)
 	rounds := make([]int, 0, seedCount)
 	for i := 0; i < seedCount; i++ {
-		run, err := SimulateRun(firstSeed+int64(i), classIDs, maxSteps)
+		run, err := SimulateRunInTheme(firstSeed+int64(i), themeID, classIDs, maxSteps)
 		if err != nil {
 			return RunSimulationBatchReport{}, err
 		}
@@ -327,7 +407,7 @@ func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxStep
 	}
 	report.CompletionRate = float64(report.Completed) / float64(seedCount)
 	report.WipeRate = float64(report.Wiped) / float64(seedCount)
-	for depth := 1; depth <= MaximumDungeonDepth; depth++ {
+	for depth := 1; depth <= MaximumExpeditionDepth; depth++ {
 		reached := 0
 		for _, run := range report.Runs {
 			if run.ReachedDepth >= depth {

@@ -225,23 +225,22 @@ func TestDungeonThemeCatalogRejectsInconsistentContent(t *testing.T) {
 	})
 }
 
-// A theme is playable exactly when the floor generator has a template for it.
-func TestPlayableThemesMatchFloorTemplates(t *testing.T) {
-	playable := 0
+// A theme is playable exactly when it has expedition content, and every theme with art is now playable.
+func TestPlayableThemesMatchExpeditionContent(t *testing.T) {
 	for _, id := range defaultDungeonThemeCatalog.IDs() {
 		theme, err := defaultDungeonThemeCatalog.Theme(id)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = defaultFloorTemplateCatalog.Template(id)
+		_, err = defaultExpeditionThemeCatalog.Theme(id)
 		if theme.Playable != (err == nil) {
-			t.Errorf("theme %q playable=%v but has template=%v", id, theme.Playable, err == nil)
+			t.Errorf("theme %q playable=%v but has expedition content=%v", id, theme.Playable, err == nil)
 		}
-		if theme.Playable {
-			playable++
+		if !theme.Playable {
+			t.Errorf("theme %q has art, monsters and bosses but cannot be played", id)
 		}
 	}
-	if playable < 2 {
-		t.Errorf("expected at least Catacombs and Sci-Fi to be playable, got %d", playable)
+	if got := len(PlayableDungeonThemes()); got != 11 {
+		t.Errorf("playable themes = %d, want all 11", got)
 	}
 }

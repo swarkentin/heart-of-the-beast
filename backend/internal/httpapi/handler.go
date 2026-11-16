@@ -362,6 +362,9 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	if game.AdvanceInterFloorChoice(room, now) {
 		changed = true
 	}
+	if game.AdvanceCamp(room, now) {
+		changed = true
+	}
 	if !changed {
 		return room, nil
 	}
@@ -530,14 +533,15 @@ type themeResponse struct {
 	Tagline string `json:"tagline"`
 }
 
-// playableThemes lists the dungeon themes a host can choose when starting a run, default first.
+// playableThemes lists the dungeon themes a host can choose when starting a run, default first. randomThemeId is
+// the value to send to let the server pick one.
 func playableThemes(w http.ResponseWriter, _ *http.Request) {
 	themes := game.PlayableDungeonThemes()
 	response := make([]themeResponse, 0, len(themes))
 	for _, theme := range themes {
 		response = append(response, themeResponse{ID: theme.ID, Name: theme.Name, Tagline: theme.Tagline})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"defaultThemeId": game.DefaultDungeonThemeID, "themes": response})
+	writeJSON(w, http.StatusOK, map[string]any{"defaultThemeId": game.DefaultDungeonThemeID, "randomThemeId": game.RandomDungeonThemeID, "themes": response})
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -549,7 +553,7 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "only the room host can start the run")
 		return
 	}
-	// The body is optional: an empty body starts the default theme.
+	// The body is optional: an empty body starts the default theme, and "random" lets the run seed choose.
 	var request struct {
 		ThemeID string `json:"themeId"`
 	}

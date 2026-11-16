@@ -16,8 +16,7 @@ type DungeonThemeDefinition struct {
 	Tagline string
 	// Art is the pixel-art theme. Use the generated art.Theme* variables; a theme without art does not compile.
 	Art art.ThemeID
-	// Playable themes have a FloorTemplate and can be chosen when starting a run. The others have monsters,
-	// bosses and encounters in the catalog but no room graphs yet.
+	// Playable themes have expedition content (see ExpeditionThemeCatalog) and can be chosen when starting a run.
 	Playable bool
 }
 
@@ -33,15 +32,15 @@ func newDungeonThemeCatalog() DungeonThemeCatalog {
 	definitions := []DungeonThemeDefinition{
 		{ID: "catacombs", Name: "Forgotten Catacombs", Tagline: "Ancient ruins, undead, and forgotten horrors", Art: art.ThemeCatacombs, Playable: true},
 		{ID: "scifi", Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI", Art: art.ThemeScifi, Playable: true},
-		{ID: "mobster", Name: "1930s Mobster Underworld", Tagline: "Crime, corruption and organized chaos", Art: art.ThemeMobster},
-		{ID: "sunken", Name: "Sunken Kingdom", Tagline: "Lost cities and aquatic horrors", Art: art.ThemeSunken},
-		{ID: "clockwork", Name: "Clockwork Empire", Tagline: "Machines, precision and steam power", Art: art.ThemeClockwork},
-		{ID: "carnival", Name: "Haunted Carnival", Tagline: "A twisted show where nightmares perform", Art: art.ThemeCarnival},
-		{ID: "jungle", Name: "Alien Jungle", Tagline: "Bioluminescent predators and strange organic life", Art: art.ThemeJungle},
-		{ID: "dreamscape", Name: "Dreamscapes", Tagline: "Surreal creatures whose shapes obey no rules", Art: art.ThemeDreamscape},
-		{ID: "arctic", Name: "Arctic Station", Tagline: "Frozen experiments, ice creatures and abandoned technology", Art: art.ThemeArctic},
-		{ID: "ghosttown", Name: "Ghost Town", Tagline: "Western frontier atmosphere, revenants and cursed settlements", Art: art.ThemeGhosttown},
-		{ID: "wasteland", Name: "Post-Apocalyptic Settlement", Tagline: "Scavengers, improvised machines and mutated wildlife", Art: art.ThemeWasteland},
+		{ID: "mobster", Name: "1930s Mobster Underworld", Tagline: "Crime, corruption and organized chaos", Art: art.ThemeMobster, Playable: true},
+		{ID: "sunken", Name: "Sunken Kingdom", Tagline: "Lost cities and aquatic horrors", Art: art.ThemeSunken, Playable: true},
+		{ID: "clockwork", Name: "Clockwork Empire", Tagline: "Machines, precision and steam power", Art: art.ThemeClockwork, Playable: true},
+		{ID: "carnival", Name: "Haunted Carnival", Tagline: "A twisted show where nightmares perform", Art: art.ThemeCarnival, Playable: true},
+		{ID: "jungle", Name: "Alien Jungle", Tagline: "Bioluminescent predators and strange organic life", Art: art.ThemeJungle, Playable: true},
+		{ID: "dreamscape", Name: "Dreamscapes", Tagline: "Surreal creatures whose shapes obey no rules", Art: art.ThemeDreamscape, Playable: true},
+		{ID: "arctic", Name: "Arctic Station", Tagline: "Frozen experiments, ice creatures and abandoned technology", Art: art.ThemeArctic, Playable: true},
+		{ID: "ghosttown", Name: "Ghost Town", Tagline: "Western frontier atmosphere, revenants and cursed settlements", Art: art.ThemeGhosttown, Playable: true},
+		{ID: "wasteland", Name: "Post-Apocalyptic Settlement", Tagline: "Scavengers, improvised machines and mutated wildlife", Art: art.ThemeWasteland, Playable: true},
 	}
 	themes := make(map[string]DungeonThemeDefinition, len(definitions))
 	order := make([]string, 0, len(definitions))
