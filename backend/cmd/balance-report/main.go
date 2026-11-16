@@ -10,11 +10,6 @@ import (
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 )
 
-type output struct {
-	Report     game.BalanceReport     `json:"report"`
-	Comparison *game.BalanceComparison `json:"comparison,omitempty"`
-}
-
 func main() {
 	seeds := flag.Int("seeds", 30, "number of deterministic seeds per scenario")
 	firstSeed := flag.Int64("first-seed", 1, "first deterministic seed")
@@ -26,7 +21,6 @@ func main() {
 
 	report, err := game.GenerateBalanceReport(*seeds, *firstSeed)
 	if err != nil { fatal(err) }
-	result := output{Report: report}
 	var comparison *game.BalanceComparison
 	if *baselinePath != "" {
 		data, err := os.ReadFile(*baselinePath)
@@ -35,10 +29,9 @@ func main() {
 		if err := json.Unmarshal(data, &baseline); err != nil { fatal(fmt.Errorf("decode baseline: %w", err)) }
 		value := game.CompareBalanceReports(baseline, report)
 		comparison = &value
-		result.Comparison = comparison
 	}
 
-	encoded, err := json.MarshalIndent(result, "", "  ")
+	encoded, err := json.MarshalIndent(report, "", "  ")
 	if err != nil { fatal(err) }
 	if err := os.WriteFile(*jsonPath, append(encoded, '\n'), 0644); err != nil { fatal(err) }
 	markdown := renderMarkdown(report, comparison)
