@@ -19,11 +19,13 @@ func TestSoloRunLifecycle(t *testing.T) {
 	if room.Run.Phase != PhaseCombat || room.Run.CurrentRoomID != "entry" {
 		t.Fatalf("unexpected initial run state: %#v", room.Run)
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
-		t.Fatal(err)
+	for round := 1; round <= 3; round++ {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: round, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if room.Run.Phase != PhaseExploring || !room.Run.Rooms["entry"].Cleared {
-		t.Fatal("defeating the sentinel should unlock exploration")
+		t.Fatal("defeating the sentinel should unlock exploration after sustained combat")
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); err != nil {
 		t.Fatal(err)
@@ -120,7 +122,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", first, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 23 {
 		t.Fatalf("first player's action resolved before the party submitted: health=%d", got)
 	}
 	if err := ApplyCommand(room, "player-1", first, now); !errors.Is(err, ErrRoundActionSubmitted) {
@@ -129,11 +131,11 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if room.Run.Phase != PhaseExploring || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
-		t.Fatal("both submitted attacks should resolve together and clear the encounter")
+	if room.Run.Phase != PhaseCombat || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 11 {
+		t.Fatal("both submitted attacks should resolve together without instantly clearing the tougher encounter")
 	}
-	if room.Run.CombatRound != nil {
-		t.Fatal("a cleared encounter should not retain an active combat round")
+	if room.Run.CombatRound == nil || room.Run.CombatRound.Number != 2 {
+		t.Fatal("a surviving enemy should begin the next combat round")
 	}
 }
 
@@ -152,10 +154,10 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
 		t.Fatal("round should resolve when its deadline is reached")
 	}
-	if got := room.Run.Players["player-2"].Health; got != 20 {
-		t.Fatalf("missing action should default to guard and block the telegraphed hit, health=%d", got)
+	if got := room.Run.Players["player-2"].Health; got != 16 {
+		t.Fatalf("missing action should default to guard and mitigate one point of the telegraphed hit, health=%d", got)
 	}
-	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 14 {
 		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
 	}
 }
@@ -203,5 +205,19 @@ func TestStartRunEncountersReferenceCatalogDefinitionsAndPreserveComposition(t *
 		if encounter.DefinitionID != expected.definition || encounter.Budget != expected.budget || len(encounter.Enemies) != expected.enemies {
 			t.Errorf("%s encounter = %+v, want definition=%s budget=%d enemies=%d", roomID, encounter, expected.definition, expected.budget, expected.enemies)
 		}
+	}
+}
+
+func TestNewRunPlayersUseLiveCombatTuning(t *testing.T) {
+	players, err := newRunPlayers(newTestRoom())
+	if err != nil {
+		t.Fatal(err)
+	}
+	player := players["player-1"]
+	if player.StrikeDamage != PlayerStrikeDamage {
+		t.Fatalf("strike damage = %d, want live value %d", player.StrikeDamage, PlayerStrikeDamage)
+	}
+	if player.GuardReduction != GuardDamageReduction {
+		t.Fatalf("guard reduction = %d, want live value %d", player.GuardReduction, GuardDamageReduction)
 	}
 }
