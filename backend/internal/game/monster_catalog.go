@@ -60,6 +60,9 @@ func defineMonster(sprite art.SpriteID, definition MonsterDefinition) MonsterDef
 }
 
 // MonsterScaling holds the explicit inputs used to derive an enemy's health.
+const LiveEnemyHealthMultiplier = 1.75
+
+// MonsterScaling holds the explicit inputs used to derive an enemy's health.
 type MonsterScaling struct {
 	Depth            int
 	PartySize        int
