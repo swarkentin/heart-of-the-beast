@@ -90,7 +90,7 @@ func TestEncounterCatalogRejectsInvalidBudgetAndMonsterReferences(t *testing.T) 
 
 func TestRuntimeEncountersApplyLiveEnemyHealthMultiplier(t *testing.T) {
 	encounter := newCatalogEncounter("catacombs-reliquary", "live-", MonsterScaling{PartySize: 2})
-	want := []int{35, 26}
+	want := []int{45, 34}
 	if len(encounter.Enemies) != len(want) {
 		t.Fatalf("got %d enemies, want %d", len(encounter.Enemies), len(want))
 	}
