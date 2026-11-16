@@ -149,9 +149,11 @@ func CompareBalanceReports(baseline, current BalanceReport) BalanceComparison {
 	for _, scenario := range baseline.Scenarios { previous[scenario.ID] = scenario }
 	for _, now := range current.Scenarios {
 		before, ok := previous[now.ID]
-		if !ok { comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "info", Metric: "coverage", Message: "New scenario; establish its baseline before tuning."}); continue }
-		deltaWin := now.Summary.WinRate - before.Summary.WinRate
-		if deltaWin <= -0.10 {
+		if !ok {
+			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "info", Metric: "coverage", Message: "New scenario; establish its baseline before tuning."})
+		} else {
+			deltaWin := now.Summary.WinRate - before.Summary.WinRate
+			if deltaWin <= -0.10 {
 			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "regression", Metric: "winRate", Delta: deltaWin, Message: "Win rate dropped by at least 10 percentage points; inspect encounter pressure, class actions, and mitigation."})
 			comparison.Regressions++
 		}
@@ -161,6 +163,7 @@ func CompareBalanceReports(baseline, current BalanceReport) BalanceComparison {
 		}
 		if before.Summary.P90Rounds > 0 && float64(now.Summary.P90Rounds) >= float64(before.Summary.P90Rounds)*1.30 {
 			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "warning", Metric: "p90Rounds", Delta: float64(now.Summary.P90Rounds-before.Summary.P90Rounds), Message: "90th-percentile encounter length grew by at least 30%; inspect damage throughput and enemy healing."})
+		}
 		}
 		if now.Summary.WinRate >= 0.99 && now.WipeRate == 0 {
 			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "suggestion", Metric: "winRate", Message: "Baseline policy wins almost every run; consider whether this encounter offers enough pressure or meaningful decisions."})
