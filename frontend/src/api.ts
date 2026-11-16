@@ -46,8 +46,10 @@ export async function apiRequest<T>(path: string, token?: string, init: RequestI
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", "Bearer " + token);
-  const profileCredential = guestProfileCredential();
-  if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
+  if (path === "/rooms" || path === "/rooms/join") {
+    const profileCredential = guestProfileCredential();
+    if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
+  }
   const response = await fetch("/api" + path, { ...init, headers });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Request failed (" + response.status + ")");
