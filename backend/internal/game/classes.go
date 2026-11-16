@@ -106,7 +106,7 @@ var classAbilities = []ClassAbilityDefinition{
 	{ID: "ability.elemental-surge", Name: "Elemental Surge", Description: "Choose fire damage or frost control.", EffectID: "combat.elemental"},
 	{ID: "ability.pinning-shot", Name: "Pinning Shot", Description: "Damage an enemy and weaken or delay its next action.", EffectID: "combat.disrupt"},
 	{ID: "ability.renewal", Name: "Renewal", Description: "Restore health and remove a minor negative effect.", EffectID: "combat.heal"},
-	{ID: "ability.commanding-strike", Name: "Commanding Strike", Description: "Weaken an enemy and empower the next party attack.", EffectID: "combat.command"},
+	{ID: "ability.commanding-strike", Name: "Commanding Strike", Description: "Weaken an enemy and empower the next attack against it.", EffectID: "combat.command"},
 	{ID: "ability.companion-command", Name: "Companion Command", Description: "Direct a companion to attack, defend, or disrupt.", EffectID: "combat.companion"},
 }
 
