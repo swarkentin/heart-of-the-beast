@@ -464,6 +464,25 @@ func TestTacticianCommandingStrikeMarksTargetForNextPartyAttack(t *testing.T) {
 	}
 }
 
+func TestTacticianCommandingStrikeCanBeUsedSolo(t *testing.T) {
+	room, now := newClassCombatTestRoom(t, ClassTactician, "player-1")
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 30, 30
+
+	player := room.Run.Players["player-1"]
+	command, ok := simulationClassAbilityCommand(player, room.Run.Players, []Enemy{*enemy}, 0, player.ID)
+	if !ok {
+		t.Fatal("Commanding Strike should be available to a solo Tactician")
+	}
+	command.Type, command.Round = "combat", 1
+	if err := ApplyCommand(room, player.ID, command, now); err != nil {
+		t.Fatal(err)
+	}
+	if enemy.Health >= 30 || enemy.MarkedDamage != 3 {
+		t.Fatalf("solo Commanding Strike should damage and mark its target: %+v", enemy)
+	}
+}
+
 func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassBeastcaller, "player-1", "player-2")
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
