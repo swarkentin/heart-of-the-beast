@@ -41,7 +41,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          run_id="$(gh run list --workflow balance.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          run_id="$(gh run list --workflow balance.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)"
           if [ -n "$run_id" ]; then
             gh run download "$run_id" --name balance-baseline --dir backend/balance-baseline
             echo "BALANCE_BASELINE=balance-baseline/balance-report.json" >> "$GITHUB_ENV"
