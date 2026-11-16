@@ -23,6 +23,9 @@ const ARCHETYPES: { id: string; name: string; icon: IconId; blurb: string }[] = 
   { id: "support", name: "Support", icon: "support", blurb: "Lift the party" },
 ];
 const MAX_PARTY = 4;
+// Injected at build time by Vite; empty for local development.
+declare const __APP_COMMIT__: string;
+const DEPLOY_COMMIT = typeof __APP_COMMIT__ === "string" ? __APP_COMMIT__ : "";
 
 const heroArt = (classId?: string) => (classId && HERO_ART.has(classId) ? classId : "empty");
 const vars = (values: Record<string, string | number>) => values as unknown as CSSProperties;
@@ -79,7 +82,19 @@ export function ConnectingScreen({ message }: { message: string }) {
 }
 
 export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel, profile, classes = [] }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[] }) {
-  return <GameShell status={profileLevel ? "ADVENTURER RANK " + profileLevel : "PREPARING PROFILE"}>
+  const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
+  const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
+  return <GameShell status={profileLevel ? "ADVENTURER RANK " + profileLevel : "PREPARING PROFILE"} tools={
+    <details className="px-info-menu">
+      <summary className="px-button px-button-small">MENU</summary>
+      <div className="px-panel px-info-panel">
+        <strong>ABOUT THIS BUILD</strong>
+        <span>Version: {versionLabel}</span>
+        {commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">VIEW GITHUB COMMIT</a> : null}
+        <a href="https://github.com/swarkentin/heart-of-the-beast/issues/new" target="_blank" rel="noreferrer">REPORT AN ISSUE</a>
+      </div>
+    </details>
+  }>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
       <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
@@ -105,6 +120,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       {error ? <p className="px-error" role="alert">{error}</p> : null}
     </section>
     {profile ? <ProfileSummary profile={profile} classes={classes} /> : null}
+    <footer className="px-build-footer">{commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">BUILD {versionLabel}</a> : <span>DEVELOPMENT BUILD</span>}</footer>
   </GameShell>;
 }
 
