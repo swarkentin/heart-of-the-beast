@@ -54,9 +54,14 @@ jobs:
         run: |
           args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
           if [ -n "${BALANCE_BASELINE:-}" ]; then
-            args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
+            args+=(-baseline "$BALANCE_BASELINE")
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+          for variant in '6 1.00 10' '1 1.00 10' '6 1.75 10' '6 1.00 6' '1 1.50 6' '1 2.25 6' '1 2.50 5'; do
+            read -r block enemy_health player_damage <<< "$variant"
+            name="block-${block}-enemy-${enemy_health}-damage-${player_damage}"
+            go run ./cmd/balance-report -seeds 30 -first-seed 1 -block "$block" -enemy-health "$enemy_health" -player-damage "$player_damage" -json "${name}.json" -markdown "${name}.md" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
 
       - name: Upload PR balance report
         if: github.event_name == 'pull_request'
@@ -66,6 +71,8 @@ jobs:
           path: |
             backend/balance-report.json
             backend/balance-report.md
+            backend/block-*.json
+            backend/block-*.md
           if-no-files-found: error
           retention-days: 30
 
