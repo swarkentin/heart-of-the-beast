@@ -383,8 +383,8 @@ func resolveCombatRound(room *Room, now time.Time) {
 				applyRunReward(room, reward, roundNumber, "miniboss-"+current.ID)
 			}
 		}
-		if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth && run.Generator >= ExpeditionGenerator {
-			openCamp(room, roundNumber, now)
+		if isBossRoom(current) && run.Generator >= ExpeditionGenerator {
+			finishExpeditionFloor(room, current, roundNumber, now)
 		} else if isBossRoom(current) && run.MaxDepth > 0 && run.Depth < run.MaxDepth {
 			run.Phase = PhaseIntermission
 			run.PendingInterFloorChoice = true
@@ -409,7 +409,12 @@ func resolveCombatRound(room *Room, now time.Time) {
 		run.Phase = PhaseFailed
 		completed := now.UTC()
 		run.CompletedAt = &completed
-		addCombatEvent(run, roundNumber, "defeat", "The party has fallen. The run is over.")
+		if run.Generator >= ExpeditionGenerator {
+			run.Rank = ExpeditionRank(run.FloorsCleared)
+			addCombatEvent(run, roundNumber, "defeat", fmt.Sprintf("The party has fallen in dungeon %d, on floor %d. %d floors cleared: %s.", dungeonNumber(run), run.Depth, run.FloorsCleared, run.Rank))
+		} else {
+			addCombatEvent(run, roundNumber, "defeat", "The party has fallen. The run is over.")
+		}
 		return
 	}
 

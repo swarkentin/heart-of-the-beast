@@ -162,6 +162,10 @@ func transitionToExit(room *Room, exitID string, now time.Time) {
 		if exit.ID != exitID {
 			continue
 		}
+		if exit.Destination == DescendDestination && run.Generator >= ExpeditionGenerator {
+			descendExpedition(room, now)
+			return
+		}
 		next := run.Rooms[exit.Destination]
 		if next == nil {
 			return

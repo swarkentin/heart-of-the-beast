@@ -59,10 +59,32 @@ func defeatCurrentEncounter(t *testing.T, room *Room) {
 func clearFloorBoss(t *testing.T, room *Room) {
 	t.Helper()
 	run := room.Run
-	run.CurrentRoomID = fmt.Sprintf("d%d-boss", run.Depth)
+	run.CurrentRoomID = bossRoomID(run)
 	run.Phase = PhaseCombat
 	startCombatRound(room, expeditionNow)
 	defeatCurrentEncounter(t, room)
+}
+
+func bossRoomID(run *Run) string {
+	id := fmt.Sprintf("d%d-boss", run.Depth)
+	if dungeonNumber(run) > 1 {
+		id = fmt.Sprintf("x%d-%s", dungeonNumber(run), id)
+	}
+	return id
+}
+
+// clearToCamp puts the party on the dungeon's midpoint floor and defeats its guardian, which opens a camp.
+func clearToCamp(t *testing.T, room *Room) {
+	t.Helper()
+	run := room.Run
+	boss := *run.Rooms[bossRoomID(run)]
+	run.Depth = run.MaxDepth / 2
+	boss.ID = bossRoomID(run)
+	run.Rooms[boss.ID] = &boss
+	clearFloorBoss(t, room)
+	if run.Camp == nil || len(run.Camp.Choices) != 0 {
+		t.Fatalf("the midpoint of a %d-floor dungeon (floor %d) should open a camp without a crossroads: %+v", run.MaxDepth, run.Depth, run.Camp)
+	}
 }
 
 // finishCamp settles every mini-game and readies everyone, taking the party to the next floor.
@@ -79,6 +101,16 @@ func finishCamp(t *testing.T, room *Room) {
 		}
 		if err := ApplyCommand(room, playerID, command, expeditionNow); err != nil {
 			t.Fatalf("mini-game: %v", err)
+		}
+	}
+	if run.Camp != nil && run.Camp.Stage == CampStageCrossroads {
+		for _, playerID := range eligibleCombatPlayers(room) {
+			if run.Camp.Stage != CampStageCrossroads {
+				break
+			}
+			if err := ApplyCommand(room, playerID, Command{Type: "choose_dungeon", ChoiceID: run.Camp.Choices[1].ThemeID}, expeditionNow); err != nil {
+				t.Fatalf("crossroads: %v", err)
+			}
 		}
 	}
 	if run.Camp == nil || run.Camp.Stage != CampStageShop {
@@ -474,56 +506,263 @@ func TestEncountersPayGoldToPresentAdventurersOnly(t *testing.T) {
 	}
 }
 
-// A whole dungeon: every floor's guardian opens a camp, the camp leads to the next floor with the modifiers it
-// showed, and the dungeon boss on the last floor ends the run.
-func TestExpeditionDescendsThroughCampsToTheDungeonBoss(t *testing.T) {
+// The loop: floors lead straight down except at the dungeon's midpoint, where the party camps. The dungeon boss
+// opens a camp with a crossroads, the party votes for one of two other dungeons with their own modifiers, and the
+// expedition goes on there. Nothing ends it but the party falling.
+func TestExpeditionLoopsThroughDungeonsUntilThePartyFalls(t *testing.T) {
 	for _, players := range []int{1, 3} {
 		room := startExpedition(t, players, "ghosttown", "full-descent")
 		run := room.Run
-		for depth := 1; depth <= run.MaxDepth; depth++ {
-			if run.Depth != depth || run.Rooms[fmt.Sprintf("d%d-entry", depth)] == nil {
-				t.Fatalf("expected to be on floor %d, depth=%d", depth, run.Depth)
+		floors := 0
+		for dungeon := 1; dungeon <= 3; dungeon++ {
+			themeID, maxDepth := run.ThemeID, run.MaxDepth
+			if dungeonNumber(run) != dungeon || maxDepth < MinimumExpeditionDepth || maxDepth > MaximumExpeditionDepth {
+				t.Fatalf("dungeon %d: number=%d floors=%d", dungeon, run.Dungeon, maxDepth)
 			}
-			boss := run.Rooms[fmt.Sprintf("d%d-boss", depth)].Encounter.Enemies[0]
-			if (depth == run.MaxDepth) != boss.hasMechanic(BossMechanicEnrage) {
-				t.Fatalf("floor %d of %d: boss mechanics %v", depth, run.MaxDepth, boss.Mechanics)
+			camps := 0
+			for depth := 1; depth <= maxDepth; depth++ {
+				boss := run.Rooms[bossRoomID(run)]
+				if run.Depth != depth || boss == nil || boss.ThemeID != themeID {
+					t.Fatalf("dungeon %d: expected floor %d of %s, depth=%d boss=%v", dungeon, depth, themeID, run.Depth, boss)
+				}
+				if (depth == maxDepth) != boss.Encounter.Enemies[0].hasMechanic(BossMechanicEnrage) {
+					t.Fatalf("floor %d of %d: boss mechanics %v", depth, maxDepth, boss.Encounter.Enemies[0].Mechanics)
+				}
+				clearFloorBoss(t, room)
+				floors++
+				if run.FloorsCleared != floors || run.Phase == PhaseCompleted {
+					t.Fatalf("floors cleared %d, want %d (phase %s)", run.FloorsCleared, floors, run.Phase)
+				}
+				if depth == maxDepth {
+					break
+				}
+				want, _ := json.Marshal(nextFloorModifiers(run, depth+1))
+				if depth != maxDepth/2 {
+					// An ordinary floor: no camp, just the way down.
+					if !hasEvent(run, "floor_restoration") && run.Players["player-1"].Health < run.Players["player-1"].MaxHealth {
+						t.Fatal("clearing a floor should let the party catch its breath")
+					}
+					if run.Phase != PhaseExploring || run.Camp != nil || len(boss.Exits) != 1 || boss.Exits[0].Destination != DescendDestination {
+						t.Fatalf("floor %d of %d should open the way down: phase=%s camp=%v exits=%v", depth, maxDepth, run.Phase, run.Camp, boss.Exits)
+					}
+					for _, playerID := range eligibleCombatPlayers(room) {
+						if run.Depth != depth {
+							break
+						}
+						if err := ApplyCommand(room, playerID, Command{Type: "choose_exit", ExitID: "descend"}, expeditionNow); err != nil {
+							t.Fatal(err)
+						}
+					}
+				} else {
+					camps++
+					camp := run.Camp
+					if run.Phase != PhaseIntermission || camp == nil || camp.Stage != CampStageGame || camp.NextDepth != depth+1 || len(camp.Choices) != 0 || len(run.FloorModifiers) != 0 {
+						t.Fatalf("the midpoint should be a camp: phase=%s camp=%+v", run.Phase, camp)
+					}
+					if (camp.Deadline == nil) != (players == 1) {
+						t.Fatalf("camp deadline for %d players: %v", players, camp.Deadline)
+					}
+					if got, _ := json.Marshal(camp.NextModifiers); string(got) != string(want) {
+						t.Fatalf("camp shows %s, want %s", got, want)
+					}
+					if err := ApplyCommand(room, "player-1", Command{Type: "choose_inter_floor", ChoiceID: "perk"}, expeditionNow); !errors.Is(err, ErrInvalidPhase) {
+						t.Fatalf("the old restore-or-perk choice must not apply to expeditions: %v", err)
+					}
+					finishCamp(t, room)
+				}
+				if run.Phase != PhaseCombat || run.Camp != nil || run.Depth != depth+1 || run.CombatRound == nil {
+					t.Fatalf("expected floor %d: phase=%s depth=%d", depth+1, run.Phase, run.Depth)
+				}
+				if got, _ := json.Marshal(run.FloorModifiers); string(got) != string(want) {
+					t.Fatalf("floor %d modifiers %s, want %s", depth+1, got, want)
+				}
 			}
-			clearFloorBoss(t, room)
-			if depth == run.MaxDepth {
-				break
+			if camps != 1 {
+				t.Fatalf("a %d-floor dungeon had %d midpoint camps, want 1", maxDepth, camps)
 			}
+
+			// The dungeon boss is down: camp, then the crossroads.
 			camp := run.Camp
-			if run.Phase != PhaseIntermission || camp == nil || camp.Stage != CampStageGame || camp.NextDepth != depth+1 || run.PendingInterFloorChoice || len(run.FloorModifiers) != 0 {
-				t.Fatalf("floor %d should end at camp: phase=%s camp=%+v", depth, run.Phase, camp)
+			if run.DungeonsCleared != dungeon || run.Phase != PhaseIntermission || camp == nil || camp.Stage != CampStageGame || !hasEvent(run, "dungeon_cleared") {
+				t.Fatalf("dungeon %d should end at a camp: phase=%s cleared=%d camp=%+v", dungeon, run.Phase, run.DungeonsCleared, camp)
 			}
-			if (camp.Deadline == nil) != (players == 1) {
-				t.Fatalf("camp deadline for %d players: %v", players, camp.Deadline)
+			if len(camp.Choices) != DungeonChoiceCount || camp.Choices[0].ThemeID == camp.Choices[1].ThemeID {
+				t.Fatalf("the crossroads should offer two different dungeons: %+v", camp.Choices)
 			}
-			want, _ := json.Marshal(rollFloorModifiers(run.Seed, depth+1))
-			if got, _ := json.Marshal(camp.NextModifiers); string(got) != string(want) {
-				t.Fatalf("camp shows %s, want %s", got, want)
+			for _, choice := range camp.Choices {
+				debuffs, perks := 0, 0
+				for _, modifier := range choice.Modifiers {
+					if modifier.Kind == FloorModifierDebuff {
+						debuffs++
+					} else {
+						perks++
+					}
+					definition, _ := defaultFloorModifierCatalog.Modifier(modifier.ID)
+					for _, other := range choice.Modifiers {
+						if other.ID == definition.Opposes {
+							t.Fatalf("choice %s carries %s and its opposite", choice.ThemeID, modifier.ID)
+						}
+					}
+				}
+				wantDebuffs := dungeon
+				if wantDebuffs > 2 {
+					wantDebuffs = 2
+				}
+				if choice.ThemeID == themeID || choice.Name == "" || debuffs != wantDebuffs || perks != 1 || choice.Floors < MinimumExpeditionDepth || choice.Floors > MaximumExpeditionDepth {
+					t.Fatalf("after dungeon %d of %s, choice %+v", dungeon, themeID, choice)
+				}
 			}
-			if err := ApplyCommand(room, "player-1", Command{Type: "choose_inter_floor", ChoiceID: "perk"}, expeditionNow); !errors.Is(err, ErrInvalidPhase) {
-				t.Fatalf("the old restore-or-perk choice must not apply to expeditions: %v", err)
+			chosen := camp.Choices[1]
+			if err := ApplyCommand(room, "player-1", Command{Type: "choose_dungeon", ChoiceID: chosen.ThemeID}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
+				t.Fatalf("voting before the mini-game is over: %v", err)
 			}
-			finishCamp(t, room)
-			if run.Phase != PhaseCombat || run.Camp != nil || run.Depth != depth+1 || run.CombatRound == nil {
-				t.Fatalf("camp should lead to floor %d: phase=%s depth=%d", depth+1, run.Phase, run.Depth)
+			finishCamp(t, room) // votes for Choices[1]
+			if dungeonNumber(run) != dungeon+1 || run.ThemeID != chosen.ThemeID || run.Depth != 1 || run.MaxDepth != chosen.Floors || run.Phase != PhaseCombat {
+				t.Fatalf("expected dungeon %d in %s: number=%d theme=%s depth=%d", dungeon+1, chosen.ThemeID, run.Dungeon, run.ThemeID, run.Depth)
 			}
-			if got, _ := json.Marshal(run.FloorModifiers); string(got) != string(want) {
-				t.Fatalf("floor %d modifiers %s, want %s", depth+1, got, want)
+			wantModifiers, _ := json.Marshal(chosen.Modifiers)
+			if got, _ := json.Marshal(run.DungeonModifiers); string(got) != string(wantModifiers) {
+				t.Fatalf("dungeon modifiers %s, want %s", got, wantModifiers)
+			}
+			if got, _ := json.Marshal(run.FloorModifiers); string(got) != string(wantModifiers) {
+				t.Fatalf("the first floor carries the dungeon's modifiers: %s, want %s", got, wantModifiers)
+			}
+			prefix := fmt.Sprintf("x%d-d1-", dungeon+1)
+			for id, dungeonRoom := range run.Rooms {
+				if !strings.HasPrefix(id, prefix) || dungeonRoom.ID != id || dungeonRoom.ThemeID != chosen.ThemeID {
+					t.Fatalf("room %q should belong to the new dungeon only", id)
+				}
+				for _, exit := range dungeonRoom.Exits {
+					if run.Rooms[exit.Destination] == nil {
+						t.Fatalf("exit %+v of %q leads nowhere", exit, id)
+					}
+				}
+			}
+			if run.CurrentRoomID != prefix+"entry" || RoomBackdropKind(run.Rooms[run.CurrentRoomID]) != art.RoomKindEntry {
+				t.Fatalf("current room %q", run.CurrentRoomID)
 			}
 		}
-		if run.Phase != PhaseCompleted || run.CompletedAt == nil {
-			t.Fatalf("the dungeon boss should complete the run, phase=%s", run.Phase)
+
+		// Later dungeons are harder floor for floor, and every later floor keeps the dungeon's modifiers.
+		_, plain := generateExpeditionFloor(run.ThemeID, dungeonSeed(run.Seed, 4), 1, run.MaxDepth, players, run.FloorModifiers)
+		plainHealth := plain["d1-entry"].Encounter.Enemies[0].MaxHealth
+		if got := run.Rooms[run.CurrentRoomID].Encounter.Enemies[0].MaxHealth; got <= plainHealth {
+			t.Fatalf("dungeon 4 entry enemy health %d should exceed a first dungeon's %d", got, plainHealth)
 		}
-		victory := false
-		for _, event := range run.LastCombatEvents {
-			victory = victory || event.Kind == "victory" && strings.Contains(event.Message, "ghost town")
+		for _, modifier := range run.DungeonModifiers {
+			found := false
+			for _, active := range nextFloorModifiers(run, 2) {
+				found = found || active.ID == modifier.ID
+			}
+			if !found {
+				t.Fatalf("floor 2 lost dungeon modifier %s", modifier.ID)
+			}
 		}
-		if !victory {
-			t.Fatal("expected the theme's victory message")
+
+		// The expedition ends only when the party falls, and the distance earns a rank.
+		for _, player := range run.Players {
+			player.Health = 1
 		}
+		for i := range run.Rooms[run.CurrentRoomID].Encounter.Enemies {
+			run.Rooms[run.CurrentRoomID].Encounter.Enemies[i].Health = 9999
+		}
+		for round := 0; round < 30 && run.Phase == PhaseCombat; round++ {
+			bossRound(t, room, Command{Action: "attack", TargetID: run.Rooms[run.CurrentRoomID].Encounter.Enemies[0].ID})
+		}
+		if run.Phase != PhaseFailed || run.Rank != ExpeditionRank(floors) || run.Rank == "Wanderer" || run.FloorsCleared != floors {
+			t.Fatalf("the fall should end the expedition with a rank: phase=%s rank=%q floors=%d", run.Phase, run.Rank, run.FloorsCleared)
+		}
+	}
+}
+
+func TestExpeditionRanksRiseWithDistance(t *testing.T) {
+	previous := ""
+	titles := map[string]bool{}
+	for floors := 0; floors <= 30; floors++ {
+		rank := ExpeditionRank(floors)
+		if rank == "" {
+			t.Fatalf("no rank for %d floors", floors)
+		}
+		if rank != previous && titles[rank] {
+			t.Fatalf("rank %q comes back at %d floors", rank, floors)
+		}
+		titles[rank], previous = true, rank
+	}
+	if ExpeditionRank(0) != "Wanderer" || ExpeditionRank(1) == "Wanderer" || ExpeditionRank(30) != "Heart of the Beast" || len(titles) != len(expeditionRanks) {
+		t.Fatalf("unexpected rank ladder: %v", titles)
+	}
+}
+
+func TestCampsOnlyAtTheMidpointAndAfterTheDungeonBoss(t *testing.T) {
+	want := map[int][]int{4: {2, 4}, 5: {2, 5}, 6: {3, 6}}
+	for maxDepth, floors := range want {
+		var got []int
+		for depth := 1; depth <= maxDepth; depth++ {
+			if campAfterFloor(depth, maxDepth) {
+				got = append(got, depth)
+			}
+		}
+		if fmt.Sprint(got) != fmt.Sprint(floors) {
+			t.Errorf("a %d-floor dungeon camps after floors %v, want %v", maxDepth, got, floors)
+		}
+	}
+}
+
+func TestCrossroadsVoteIsMajorityWithSeededTiesAndADeadline(t *testing.T) {
+	atCrossroads := func(runID string) *Room {
+		room := startExpedition(t, 3, "sunken", runID)
+		run := room.Run
+		boss := *run.Rooms["d1-boss"]
+		run.Depth = run.MaxDepth
+		boss.ID = bossRoomID(run)
+		run.Rooms[boss.ID] = &boss
+		clearFloorBoss(t, room)
+		for _, play := range run.Camp.Game.Players {
+			play.Done = true
+		}
+		if !AdvanceCamp(room, expeditionNow) || run.Camp.Stage != CampStageCrossroads || !run.Camp.Deadline.Equal(expeditionNow.Add(CampCrossroadsWindow)) {
+			t.Fatalf("expected the crossroads: %+v", run.Camp)
+		}
+		return room
+	}
+	vote := func(room *Room, playerID, themeID string) error {
+		return ApplyCommand(room, playerID, Command{Type: "choose_dungeon", ChoiceID: themeID}, expeditionNow)
+	}
+
+	room := atCrossroads("crossroads")
+	camp := room.Run.Camp
+	first, second := camp.Choices[0].ThemeID, camp.Choices[1].ThemeID
+	if err := vote(room, "player-1", "sunken"); !errors.Is(err, ErrInvalidCampAction) {
+		t.Fatalf("voting for a dungeon that is not offered: %v", err)
+	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "ready"}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
+		t.Fatalf("readying up at the crossroads: %v", err)
+	}
+	for playerID, themeID := range map[string]string{"player-1": first, "player-2": second, "player-3": second} {
+		if camp.Stage != CampStageCrossroads {
+			t.Fatal("the vote closed before everyone had voted")
+		}
+		if err := vote(room, playerID, themeID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if camp.Stage != CampStageShop || camp.NextThemeID != second || camp.NextDepth != 1 || len(camp.NextModifiers) != len(camp.Choices[1].Modifiers) {
+		t.Fatalf("two votes of three should win: %+v", camp)
+	}
+
+	// One vote at the deadline wins; no votes at all leaves it to the seed, which must be stable.
+	room = atCrossroads("crossroads")
+	if err := vote(room, "player-2", first); err != nil {
+		t.Fatal(err)
+	}
+	if !AdvanceCamp(room, expeditionNow.Add(CampCrossroadsWindow)) || room.Run.Camp.NextThemeID != first {
+		t.Fatalf("the only vote should win at the deadline: %+v", room.Run.Camp)
+	}
+	silent, again := atCrossroads("crossroads"), atCrossroads("crossroads")
+	AdvanceCamp(silent, expeditionNow.Add(CampCrossroadsWindow))
+	AdvanceCamp(again, expeditionNow.Add(CampCrossroadsWindow))
+	if silent.Run.Camp.NextThemeID == "" || silent.Run.Camp.NextThemeID != again.Run.Camp.NextThemeID {
+		t.Fatalf("an unvoted crossroads must resolve the same way every time: %q %q", silent.Run.Camp.NextThemeID, again.Run.Camp.NextThemeID)
 	}
 }
 
@@ -532,7 +771,7 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 	run := room.Run
 	run.Players["player-1"].Health = 10
 	run.Players["player-2"].Health = 0
-	clearFloorBoss(t, room)
+	clearToCamp(t, room)
 	if got := run.Players["player-1"].Health; got != 10+run.Players["player-1"].MaxHealth*CampRestPercent/100 {
 		t.Fatalf("camp rest left player-1 at %d", got)
 	}
@@ -545,7 +784,7 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 
 	room = startExpedition(t, 2, "jungle", "camp-run")
 	run = room.Run
-	clearFloorBoss(t, room)
+	clearToCamp(t, room)
 	deadline := *run.Camp.Deadline
 	if !deadline.Equal(expeditionNow.Add(CampGameWindow)) || AdvanceCamp(room, deadline.Add(-time.Second)) {
 		t.Fatal("the camp must wait for its deadline")
@@ -563,7 +802,7 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "ready"}, deadline); err != nil || run.Phase != PhaseIntermission {
 		t.Fatalf("one of two ready should wait: err=%v phase=%s", err, run.Phase)
 	}
-	if !AdvanceCamp(room, shopDeadline) || run.Phase != PhaseCombat || run.Depth != 2 {
+	if !AdvanceCamp(room, shopDeadline) || run.Phase != PhaseCombat || run.Depth != run.MaxDepth/2+1 {
 		t.Fatalf("the shop deadline should start the descent: phase=%s depth=%d", run.Phase, run.Depth)
 	}
 	if err := ApplyCommand(room, "player-2", Command{Type: "ready"}, shopDeadline); !errors.Is(err, ErrInvalidPhase) {
@@ -575,7 +814,7 @@ func campWithGame(t *testing.T, kind string, players int) *Room {
 	t.Helper()
 	for i := 0; i < 200; i++ {
 		room := startExpedition(t, players, "carnival", fmt.Sprintf("game-%s-%d", kind, i))
-		clearFloorBoss(t, room)
+		clearToCamp(t, room)
 		if room.Run.Camp.Game.Kind == kind {
 			return room
 		}
@@ -588,7 +827,7 @@ func TestBoneDiceIsPushYourLuck(t *testing.T) {
 	bust, banked, full := false, false, false
 	for i := 0; i < 400 && !(bust && banked && full); i++ {
 		room := startExpedition(t, 1, "carnival", fmt.Sprintf("dice-%d", i))
-		clearFloorBoss(t, room)
+		clearToCamp(t, room)
 		run := room.Run
 		if run.Camp.Game.Kind != MinigameDice {
 			continue
@@ -615,7 +854,7 @@ func TestBoneDiceIsPushYourLuck(t *testing.T) {
 				if play.Gold != MinigameConsolationGold || !play.Done {
 					t.Fatalf("a one should bust the pot: %+v", play)
 				}
-			} else if last < 2 || last > 6 || play.Pot+play.Gold != pot+2*last {
+			} else if last < 2 || last > 6 || play.Pot+play.Gold != pot+run.Camp.Game.stake(2*last) {
 				t.Fatalf("roll %d moved the pot from %d to %d", last, pot, play.Pot+play.Gold)
 			} else if len(play.Rolls) == DiceMaxRolls {
 				full = play.Done
@@ -647,7 +886,8 @@ func TestMimicsRowHidesOneMimicAmongThreePurses(t *testing.T) {
 			}
 			total += purse
 		}
-		if len(contents) != ChestCount || mimics != 1 || total != 32 {
+		purses := game.stake(6) + game.stake(10) + game.stake(16)
+		if len(contents) != ChestCount || mimics != 1 || total != purses {
 			t.Fatalf("chests %v", contents)
 		}
 		encoded, _ := json.Marshal(play)
@@ -664,8 +904,8 @@ func TestMimicsRowHidesOneMimicAmongThreePurses(t *testing.T) {
 					}
 				}
 			}
-			if !play.Done || play.Gold != 32 || run.Players[playerID].Gold != gold+32 {
-				t.Fatalf("clearing the row should pay 32: %+v", play)
+			if !play.Done || play.Gold != purses || run.Players[playerID].Gold != gold+purses {
+				t.Fatalf("clearing the row should pay %d: %+v", purses, play)
 			}
 			continue
 		}
@@ -701,8 +941,9 @@ func TestRuneEchoPaysForEveryRuneInOrder(t *testing.T) {
 	room := campWithGame(t, MinigameEcho, 2)
 	run := room.Run
 	perfect, partial := run.Camp.Game.Players["player-1"], run.Camp.Game.Players["player-2"]
-	if len(perfect.Sequence) != 4 || len(partial.Sequence) != 4 {
-		t.Fatalf("floor 1 sequences should have 4 runes: %v %v", perfect.Sequence, partial.Sequence)
+	game := run.Camp.Game
+	if want := 4 + game.Depth/2; len(perfect.Sequence) != want || len(partial.Sequence) != want {
+		t.Fatalf("sequences should have %d runes: %v %v", want, perfect.Sequence, partial.Sequence)
 	}
 	purse := run.Players["player-1"].Gold
 	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: "sun,moon"}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
@@ -714,7 +955,7 @@ func TestRuneEchoPaysForEveryRuneInOrder(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(perfect.Sequence, ",")}, expeditionNow); err != nil {
 		t.Fatal(err)
 	}
-	if perfect.Gold != 3*4+8 || run.Players["player-1"].Gold != purse+perfect.Gold {
+	if perfect.Gold != game.stake(3*len(perfect.Sequence))+game.stake(8) || run.Players["player-1"].Gold != purse+perfect.Gold {
 		t.Fatalf("a perfect echo paid %d", perfect.Gold)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(perfect.Sequence, ",")}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
@@ -725,15 +966,16 @@ func TestRuneEchoPaysForEveryRuneInOrder(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, expeditionNow); err != nil {
 		t.Fatal(err)
 	}
-	if partial.Gold != 6 || run.Players["player-2"].Gold != purse+6 {
-		t.Fatalf("two runes in order should pay 6, paid %d", partial.Gold)
+	purse = run.Players["player-2"].Gold - partial.Gold
+	if partial.Gold != game.stake(6) || partial.Gold == 0 {
+		t.Fatalf("two runes in order should pay %d, paid %d", game.stake(6), partial.Gold)
 	}
 }
 
 func openTestShop(t *testing.T, players int, runID string) *Room {
 	t.Helper()
 	room := startExpedition(t, players, "wasteland", runID)
-	clearFloorBoss(t, room)
+	clearToCamp(t, room)
 	for _, play := range room.Run.Camp.Game.Players {
 		play.Done = true
 	}
@@ -808,7 +1050,7 @@ func TestShopSellsBoonsForGold(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if run.Depth != 2 || len(run.FloorModifiers) != 1 || run.FloorModifiers[0].ID != "fortune" {
+	if run.Depth != run.MaxDepth/2+1 || len(run.FloorModifiers) != 1 || run.FloorModifiers[0].ID != "fortune" {
 		t.Fatalf("the cleansed floor should carry only its perk: %+v", run.FloorModifiers)
 	}
 	if buyer.StrikeDamage != PlayerStrikeDamage+1 || buyer.ClassCombat.Ward != 8 {
@@ -820,10 +1062,7 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 	room := startExpedition(t, 2, "arctic", "shelf-run")
 	run := room.Run
 	run.Players["player-2"].Health = 0
-	run.Depth = 3
-	run.Rooms["d3-boss"] = run.Rooms["d1-boss"]
-	run.Rooms["d3-boss"].ID = "d3-boss"
-	clearFloorBoss(t, room)
+	clearToCamp(t, room)
 	for _, play := range run.Camp.Game.Players {
 		play.Done = true
 	}
@@ -843,15 +1082,15 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 		}
 		want := item.Price
 		if item.Kind == ShopStrike || item.Kind == ShopGuard || item.Kind == ShopMaxHealth {
-			want += 6
+			want += 3 * (run.Depth - 1)
 		}
 		if offer.Price != want {
-			t.Errorf("%s costs %d on floor 3, want %d", item.ID, offer.Price, want)
+			t.Errorf("%s costs %d on floor %d, want %d", item.ID, offer.Price, run.Depth, want)
 		}
 	}
 
 	calm := startExpedition(t, 1, "arctic", "shelf-run")
-	clearFloorBoss(t, calm)
+	clearToCamp(t, calm)
 	for _, play := range calm.Run.Camp.Game.Players {
 		play.Done = true
 	}
@@ -954,8 +1193,8 @@ func TestDungeonBossEnragesAndSummonsOnce(t *testing.T) {
 	}
 	encounter.Enemies[1].Health = 1
 	bossRound(t, room, Command{Action: "attack", TargetID: encounter.Enemies[1].ID})
-	if run.Phase != PhaseCompleted {
-		t.Fatalf("phase %s, want completed", run.Phase)
+	if run.Phase != PhaseIntermission || run.DungeonsCleared != 1 || run.Camp == nil || len(run.Camp.Choices) != DungeonChoiceCount {
+		t.Fatalf("the dungeon boss should lead to the camp and its crossroads: phase=%s camp=%+v", run.Phase, run.Camp)
 	}
 }
 

@@ -279,3 +279,5 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-rune-sun { color: #f3d38c; } .rn-rune-moon { color: #b9c4ff; } .rn-rune-star { color: #ff9ad5; } .rn-rune-wave { color: #7fe0d0; }
 .rn-tile-lit.rn-rune-sun, .rn-tile-lit.rn-rune-moon, .rn-tile-lit.rn-rune-star, .rn-tile-lit.rn-rune-wave { color: var(--pit); }
 .rn-pot { color: var(--gold); font: 400 10px/1.6 var(--display); }
+.rn-dungeon small { display: block; }
+.rn-result { display: grid; gap: 4px; padding: 6px 8px; background: var(--pit); box-shadow: 0 0 0 2px var(--edge); }

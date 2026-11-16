@@ -11,18 +11,24 @@ import (
 
 // The camp is the respite between two floors of an expedition. It has two stages:
 //
-//	game  every adventurer plays the same short mini-game for gold, each at their own pace;
-//	shop  every adventurer spends their own gold, sees what the next floor holds, and readies up.
+//	game        every adventurer plays the same short mini-game for gold, each at their own pace;
+//	crossroads  after a dungeon boss only: the party votes between two dungeons, each with its own modifiers;
+//	shop        every adventurer spends their own gold, sees what the next floor holds, and readies up.
+//
+// The party camps twice per dungeon: halfway down, and after its boss. Other floors lead straight on.
 //
 // A party of one moves on when it is ready. A larger party is time-boxed, so nobody can stall the run: when a
 // stage's deadline passes, unfinished mini-games are settled and the party moves on.
 
 const (
-	CampStageGame = "game"
-	CampStageShop = "shop"
+	CampStageGame       = "game"
+	CampStageCrossroads = "crossroads"
+	CampStageShop       = "shop"
 
 	CampGameWindow = 45 * time.Second
 	CampShopWindow = 60 * time.Second
+	// CampCrossroadsWindow is how long a party has to vote for its next dungeon.
+	CampCrossroadsWindow = 30 * time.Second
 	// CampRestPercent is the share of maximum health every living adventurer recovers on reaching camp.
 	CampRestPercent = 20
 )
@@ -45,7 +51,13 @@ type Camp struct {
 	Ready     map[string]bool     `json:"ready,omitempty"`
 	// NextDepth and NextModifiers describe the floor the party is about to enter.
 	NextDepth     int                   `json:"nextDepth"`
+	NextMaxDepth  int                   `json:"nextMaxDepth"`
 	NextModifiers []ActiveFloorModifier `json:"nextModifiers,omitempty"`
+	// Between dungeons: the two dungeons on offer, the votes cast, and, once decided, the winner.
+	Choices              []DungeonChoice       `json:"choices,omitempty"`
+	Votes                map[string]string     `json:"votes,omitempty"`
+	NextThemeID          string                `json:"nextThemeId,omitempty"`
+	NextDungeonModifiers []ActiveFloorModifier `json:"nextDungeonModifiers,omitempty"`
 }
 
 // openCamp ends a floor: the party rests, learns what the next floor holds, and starts the camp mini-game.
@@ -54,7 +66,10 @@ func openCamp(room *Room, round int, now time.Time) {
 	run.Phase = PhaseIntermission
 	run.NavigationVote = nil
 	run.CombatRound = nil
-	addCombatEvent(run, round, "floor_cleared", fmt.Sprintf("Floor %d of %d is cleared. The party makes camp.", run.Depth, run.MaxDepth))
+	between := run.Depth >= run.MaxDepth
+	if !between {
+		addCombatEvent(run, round, "floor_cleared", fmt.Sprintf("Floor %d of %d is cleared. Halfway down, the party makes camp.", run.Depth, run.MaxDepth))
+	}
 	for _, playerID := range eligibleCombatPlayers(room) {
 		player := run.Players[playerID]
 		rest := floorRulesFor(run).healing((player.MaxHealth*CampRestPercent + 99) / 100)
@@ -67,11 +82,19 @@ func openCamp(room *Room, round int, now time.Time) {
 	// The camp is outside the floor: its modifiers no longer apply, and the next floor's are already known.
 	run.FloorModifiers = nil
 	camp := &Camp{
-		Stage: CampStageGame, StartedAt: now.UTC(), NextDepth: run.Depth + 1,
-		NextModifiers: rollFloorModifiers(run.Seed, run.Depth+1),
-		Purchases:     make(map[string][]string), Ready: make(map[string]bool),
+		Stage: CampStageGame, StartedAt: now.UTC(), NextDepth: run.Depth + 1, NextMaxDepth: run.MaxDepth,
+		Purchases: make(map[string][]string), Ready: make(map[string]bool),
 	}
-	camp.Game = newMinigame(run.Seed, run.Depth, eligibleCombatPlayers(room))
+	if between {
+		// The next floor is the first of whichever dungeon the party votes for at the crossroads.
+		camp.NextDepth = 1
+		camp.Choices = rollDungeonChoices(run.Seed, run.Theme(), dungeonNumber(run)+1)
+		camp.NextMaxDepth = camp.Choices[0].Floors
+		camp.Votes = make(map[string]string)
+	} else {
+		camp.NextModifiers = nextFloorModifiers(run, run.Depth+1)
+	}
+	camp.Game = newMinigame(dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth+dungeonExtraDepth(run), eligibleCombatPlayers(room))
 	run.Camp = camp
 	setCampDeadline(room, CampGameWindow, now)
 }
@@ -115,6 +138,24 @@ func AdvanceCamp(room *Room, now time.Time) bool {
 				settleMinigame(room, playerID, play, "Time ran out.")
 			}
 		}
+		if len(camp.Choices) > 0 {
+			camp.Stage = CampStageCrossroads
+			setCampDeadline(room, CampCrossroadsWindow, now)
+			return true
+		}
+		openShop(room, now)
+		return true
+	case CampStageCrossroads:
+		cast := 0
+		for _, playerID := range eligible {
+			if camp.Votes[playerID] != "" {
+				cast++
+			}
+		}
+		if cast < len(eligible) && !expired {
+			return false
+		}
+		chooseDungeon(room, eligible)
 		openShop(room, now)
 		return true
 	case CampStageShop:
@@ -131,7 +172,31 @@ func AdvanceCamp(room *Room, now time.Time) bool {
 	return false
 }
 
-// applyCampCommand handles the three camp commands: "minigame", "buy" and "ready".
+// chooseDungeon settles the crossroads vote: the dungeon with the most votes wins, the run seed breaks a tie, and
+// if nobody voted the seed chooses.
+func chooseDungeon(room *Room, eligible []string) {
+	run := room.Run
+	camp := run.Camp
+	tally := make(map[string]int, len(camp.Choices))
+	for _, playerID := range eligible {
+		tally[camp.Votes[playerID]]++
+	}
+	order := []int{0, 1}
+	if mixSeed(run.Seed, uint64(dungeonNumber(run)), 0x71e)%2 == 1 {
+		order = []int{1, 0}
+	}
+	winner := camp.Choices[order[0]]
+	if tally[camp.Choices[order[1]].ThemeID] > tally[winner.ThemeID] {
+		winner = camp.Choices[order[1]]
+	}
+	camp.NextThemeID = winner.ThemeID
+	camp.NextDungeonModifiers = winner.Modifiers
+	camp.NextModifiers = append([]ActiveFloorModifier(nil), winner.Modifiers...)
+	camp.NextMaxDepth = winner.Floors
+	addCombatEvent(run, 0, "dungeon_chosen", "The party chooses "+winner.Name+".")
+}
+
+// applyCampCommand handles the camp commands: "minigame", "choose_dungeon", "buy" and "ready".
 func applyCampCommand(room *Room, actorID string, command Command, now time.Time) error {
 	run := room.Run
 	if run == nil || run.Phase != PhaseIntermission || run.Camp == nil {
@@ -161,6 +226,18 @@ func applyCampCommand(room *Room, actorID string, command Command, now time.Time
 		if err := playMinigame(room, actorID, play, command); err != nil {
 			return err
 		}
+	case "choose_dungeon":
+		if camp.Stage != CampStageCrossroads {
+			return ErrInvalidCampAction
+		}
+		offered := false
+		for _, choice := range camp.Choices {
+			offered = offered || choice.ThemeID == command.ChoiceID
+		}
+		if !offered {
+			return ErrInvalidCampAction
+		}
+		camp.Votes[actorID] = command.ChoiceID
 	case "buy":
 		if camp.Stage != CampStageShop {
 			return ErrInvalidCampAction
@@ -410,7 +487,7 @@ func openShop(room *Room, now time.Time) {
 	run := room.Run
 	camp := run.Camp
 	camp.Stage = CampStageShop
-	rng := rand.New(rand.NewSource(int64(mixSeed(run.Seed, uint64(run.Depth), 0x5409))))
+	rng := rand.New(rand.NewSource(int64(mixSeed(dungeonSeed(run.Seed, dungeonNumber(run)), uint64(run.Depth), 0x5409))))
 	var shelf []ShopItem
 	for _, item := range shopCatalog[1:] {
 		if item.Kind != ShopRevive && item.Kind != ShopCleanse {
@@ -427,7 +504,7 @@ func openShop(room *Room, now time.Time) {
 	// Permanent boons cost a little more on every floor, so early gold is worth the most.
 	for i := range offers {
 		if kind := offers[i].Kind; kind == ShopStrike || kind == ShopGuard || kind == ShopMaxHealth {
-			offers[i].Price += 3 * (run.Depth - 1)
+			offers[i].Price += 3 * (run.Depth + dungeonExtraDepth(run) - 1)
 		}
 	}
 	camp.Offers = offers

@@ -60,7 +60,7 @@ func TestSimulateRunBatchSummarizesDepthReachProbability(t *testing.T) {
 		t.Fatalf("outcomes do not account for every run: %+v", report)
 	}
 	for depth, rate := range report.DepthReachRates {
-		if depth < InitialDungeonDepth || depth > MaximumExpeditionDepth || rate < 0 || rate > 1 {
+		if depth < InitialDungeonDepth || depth > SimulationDepthLimit || rate < 0 || rate > 1 {
 			t.Fatalf("invalid depth reach rate %d: %f", depth, rate)
 		}
 	}

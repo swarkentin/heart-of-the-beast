@@ -117,7 +117,7 @@ func applyBossMechanics(room *Room, current *DungeonRoom, round int) {
 		}
 		if enemy.hasMechanic(BossMechanicSummon) && enemy.SummonsLeft > 0 && enemy.Health*100 <= enemy.MaxHealth*BossSummonHealthPercent {
 			enemy.SummonsLeft--
-			scaling := MonsterScaling{Depth: run.Depth, PartySize: len(room.PlayerIDs)}
+			scaling := MonsterScaling{Depth: run.Depth + dungeonExtraDepth(run), PartySize: len(room.PlayerIDs)}
 			add, err := defaultMonsterCatalog.NewEnemy(fmt.Sprintf("%s-add-%d", enemy.ID, len(encounter.Enemies)), enemy.SummonMonsterID, scaling)
 			if err != nil {
 				continue

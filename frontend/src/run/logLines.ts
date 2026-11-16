@@ -6,7 +6,7 @@ export type LogTone = "hit" | "hurt" | "heal" | "block" | "auto" | "good" | "bad
 /** `text` is the server's wording; it is relabelled when shown, so names stay right if the class catalog loads late. */
 export type LogLine = { key: string; tone: LogTone; text: string };
 
-const GOOD = new Set(["enemy_defeated", "victory", "level_up", "floor_cleared", "player_interrupt", "experience", "room_reward", "miniboss_reward", "gold", "shop"]);
+const GOOD = new Set(["enemy_defeated", "victory", "level_up", "floor_cleared", "player_interrupt", "experience", "room_reward", "miniboss_reward", "gold", "shop", "dungeon_cleared", "dungeon_chosen"]);
 const BAD = new Set(["player_down", "defeat", "class_ability_failed", "boss_enrage", "boss_summon", "boss_barrier"]);
 export const LOG_LIMIT = 80;
 

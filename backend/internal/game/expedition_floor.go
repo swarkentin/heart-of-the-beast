@@ -223,7 +223,10 @@ var exitHints = map[string]string{
 // generateExpeditionFloor builds one floor of an expedition. The theme, seed, depth, final depth, party size and
 // modifiers fully determine it. Room IDs are "d<depth>-entry", "d<depth>-m<layer><index>", "d<depth>-guard" and
 // "d<depth>-boss".
-func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier) (string, map[string]*DungeonRoom) {
+//
+// extraDepth, if given, is added to the depth enemies are scaled for: later dungeons of an expedition are harder
+// than their floor number alone says.
+func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
 	theme, err := defaultExpeditionThemeCatalog.Theme(themeID)
 	if err != nil {
 		panic(err.Error())
@@ -232,6 +235,9 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 	prefix := fmt.Sprintf("d%d-", depth)
 	floor := fmt.Sprintf("%02d", depth)
 	scaling := MonsterScaling{Depth: depth, PartySize: partySize}
+	for _, extra := range extraDepth {
+		scaling.Depth += extra
+	}
 	healthPct := sumFloorModifiers(modifiers).EnemyHealthPct
 	final := depth >= maxDepth
 

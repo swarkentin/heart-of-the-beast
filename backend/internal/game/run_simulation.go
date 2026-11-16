@@ -17,6 +17,8 @@ type RunSimulationReport struct {
 	Floors             int            `json:"floors"`
 	GoldEarned         int            `json:"goldEarned"`
 	ItemsBought        int            `json:"itemsBought"`
+	DungeonsCleared    int            `json:"dungeonsCleared"`
+	Rank               string         `json:"rank"`
 	PartyClasses       []string       `json:"partyClasses"`
 	PartySize          int            `json:"partySize"`
 	Outcome            string         `json:"outcome"`
@@ -193,8 +195,11 @@ func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps 
 	report := RunSimulationReport{
 		Seed: seed, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
 		PartyClasses: append([]string(nil), classIDs...), PartySize: len(classIDs),
-		Completed: room.Run.Phase == PhaseCompleted, Wiped: room.Run.Phase == PhaseFailed,
-		ReachedDepth: room.Run.Depth, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
+		// An expedition never ends in victory. "Completed" means the first dungeon's boss was beaten, and the
+		// depth reached counts floors across every dungeon of the expedition.
+		Completed: room.Run.DungeonsCleared > 0, Wiped: room.Run.Phase == PhaseFailed,
+		DungeonsCleared: room.Run.DungeonsCleared, Rank: ExpeditionRank(room.Run.FloorsCleared),
+		ReachedDepth: room.Run.FloorsCleared + 1, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
 		Levels: make(map[string]int), Steps: steps,
 	}
 	switch {
@@ -264,6 +269,12 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 			return Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, true
 		}
 		return Command{Type: "minigame", Action: "bank"}, true
+	}
+	if camp.Stage == CampStageCrossroads {
+		if camp.Votes[playerID] != "" {
+			return Command{}, false
+		}
+		return Command{Type: "choose_dungeon", ChoiceID: camp.Choices[rng.Intn(len(camp.Choices))].ThemeID}, true
 	}
 	if camp.Ready[playerID] {
 		return Command{}, false
@@ -366,6 +377,9 @@ func randomCombatCommands(room *Room, playerID string, round int) []Command {
 	return commands
 }
 
+// SimulationDepthLimit is the deepest total floor (across dungeons) a batch report gives a reach rate for.
+const SimulationDepthLimit = 2 * MaximumExpeditionDepth
+
 // SimulateRunBatch repeats the same party composition across consecutive seeds in Forgotten Catacombs.
 func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxSteps int) (RunSimulationBatchReport, error) {
 	return SimulateRunBatchInTheme(seedCount, firstSeed, DefaultDungeonThemeID, classIDs, maxSteps)
@@ -407,7 +421,7 @@ func SimulateRunBatchInTheme(seedCount int, firstSeed int64, themeID string, cla
 	}
 	report.CompletionRate = float64(report.Completed) / float64(seedCount)
 	report.WipeRate = float64(report.Wiped) / float64(seedCount)
-	for depth := 1; depth <= MaximumExpeditionDepth; depth++ {
+	for depth := 1; depth <= SimulationDepthLimit; depth++ {
 		reached := 0
 		for _, run := range report.Runs {
 			if run.ReachedDepth >= depth {

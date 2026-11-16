@@ -32,9 +32,9 @@ func main() {
 	}
 	fmt.Printf("# Random full-run simulation\n\n")
 	fmt.Printf("- Policy: %s\n- Runs: %d (seeds %d–%d)\n- Theme: %s\n- Party: %s\n", report.Policy, report.SeedCount, report.FirstSeed, report.LastSeed, report.ThemeID, strings.Join(report.PartyClasses, ", "))
-	fmt.Printf("- Completion rate: %.1f%% (%d/%d)\n- Wipe rate: %.1f%% (%d/%d)\n- Median depth reached: %d; P90: %d\n- Median rooms visited: %d; median combat rounds: %d\n\n", report.CompletionRate*100, report.Completed, report.SeedCount, report.WipeRate*100, report.Wiped, report.SeedCount, report.MedianDepth, report.P90Depth, report.MedianRooms, report.MedianRounds)
-	fmt.Printf("| Depth reached | Probability |\n|---:|---:|\n")
-	for depth := 1; depth <= game.MaximumExpeditionDepth; depth++ {
+	fmt.Printf("- First dungeon cleared: %.1f%% (%d/%d)\n- Wipe rate: %.1f%% (%d/%d)\n- Median depth reached: %d; P90: %d\n- Median rooms visited: %d; median combat rounds: %d\n\n", report.CompletionRate*100, report.Completed, report.SeedCount, report.WipeRate*100, report.Wiped, report.SeedCount, report.MedianDepth, report.P90Depth, report.MedianRooms, report.MedianRounds)
+	fmt.Printf("| Floors reached (all dungeons) | Probability |\n|---:|---:|\n")
+	for depth := 1; depth <= game.SimulationDepthLimit; depth++ {
 		fmt.Printf("| %d+ | %.1f%% |\n", depth, report.DepthReachRates[depth]*100)
 	}
 	fmt.Printf("\n> This is an intentionally unskilled random baseline, not a model of human play or optimal strategy. Use it to compare future decision policies; do not tune balance from this baseline alone.\n")

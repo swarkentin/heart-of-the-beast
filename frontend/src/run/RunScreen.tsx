@@ -4,7 +4,7 @@ import { getSignatureAbility, partySupportCommand, signatureCommand, type Signat
 import { GameShell, Icon, type IconId, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
 import { backdropRef, themeTitle } from "../scenes";
-import { Camp, FloorStatus } from "./Camp";
+import { Camp, ExpeditionResult, FloorStatus } from "./Camp";
 import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { archetypeName, buildParty, partyLabels, seatParty } from "./party";
@@ -202,6 +202,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
     command = <div className="rn-context">
       <p className="px-eyebrow">{run.phase === "completed" ? "RUN COMPLETE" : "RUN OVER"}</p>
       <h2>{run.phase === "completed" ? "The dungeon is cleared" : "The party has fallen"}</h2>
+      {run.generator ? <ExpeditionResult run={run} /> : null}
       <p className="px-copy">{spectator ? "The host can take the party back to the lobby." : isHost ? "Take the party back to the lobby to choose classes and go again." : "Waiting for the host to return the party to the lobby."}</p>
       {!spectator && isHost ? <div className="rn-choices"><button className="px-button px-button-primary" onClick={onReturnToLobby} disabled={busy}>{busy ? "RETURNING…" : "RETURN TO LOBBY"}</button></div> : null}
     </div>;
@@ -232,9 +233,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
   } else if (camp) {
     const campSeconds = camp.deadline ? Math.max(0, Math.ceil((new Date(camp.deadline).getTime() - now) / 1000)) : 0;
     const campTotal = camp.deadline ? Math.max(1, Math.round((new Date(camp.deadline).getTime() - new Date(camp.startedAt).getTime()) / 1000)) : 0;
-    const campDone = eligible.filter(member => camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.ready?.[member.id]).length;
+    const campDone = eligible.filter(member => camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.stage === "crossroads" ? camp.votes?.[member.id] : camp.ready?.[member.id]).length;
     command = <Camp camp={camp} run={run} selfId={selfId} acting={acting && Boolean(self?.alive)} spectator={spectator} busy={busy} onCommand={onCommand}
-      timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "game" ? "CAMP GAME" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "game" ? "DONE" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
+      timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "game" ? "CAMP GAME" : camp.stage === "crossroads" ? "DUNGEON VOTE" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "game" ? "DONE" : camp.stage === "crossroads" ? "IN" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
   } else if (run.phase === "intermission") {
     const mine = descentVote?.votes?.[selfId];
     command = <div className="rn-context">
@@ -275,7 +276,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}
-    center={<div className="rn-location"><b>{room.name}</b><span>{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
+    center={<div className="rn-location"><b>{room.name}</b><span>{(run.dungeon ?? 1) > 1 ? "DUNGEON " + run.dungeon + " · " : ""}{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
     tools={<>
       {audioControls}
       {!spectator ? <button type="button" className="px-button px-button-small rn-view-switch" onClick={() => setView(view === "player" ? "cast" : "player")} aria-pressed={view === "cast"}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}
