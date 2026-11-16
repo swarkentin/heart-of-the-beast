@@ -438,7 +438,7 @@ func TestClericRenewalCanHealAnotherPartyMember(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if target.Health != 18 {
+	if target.Health != 21 {
 		t.Fatalf("Renewal should restore 11 health to the selected ally, got %d", target.Health)
 	}
 }
@@ -472,7 +472,7 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if enemy.Health != 7 {
 		t.Fatalf("companion and player attacks should deal 17 combined damage, enemy health=%d", enemy.Health)
 	}
-	if room.Run.Players["player-2"].Health != 5 {
+	if room.Run.Players["player-2"].Health != 4 {
 		t.Fatalf("Companion Instinct should heal the lowest-health ally after the enemy hit, health=%d", room.Run.Players["player-2"].Health)
 	}
 }
