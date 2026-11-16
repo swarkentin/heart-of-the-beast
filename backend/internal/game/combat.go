@@ -13,7 +13,7 @@ const (
 	GuardDamageReduction           = 4
 	LiveEnemyHealthMultiplier      = 1.35
 	PartyEnemyHealthMultiplierStep = 0.4
-	PartyEnemyDamageMultiplierStep = 0.35
+	PartyEnemyDamageMultiplierStep = 0.65
 )
 
 var (
