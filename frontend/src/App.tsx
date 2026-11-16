@@ -302,7 +302,7 @@ export default function App() {
     let active = true;
     const heartbeat = async () => {
       try {
-        const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/heartbeat", session.playerToken, { method: "POST", body: JSON.stringify({ themeId: new URLSearchParams(window.location.search).get("theme") || undefined }) }); // ?theme=scifi picks the dungeon theme until the lobby has a picker
+        const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/heartbeat", session.playerToken, { method: "POST" });
         if (active) setSnapshot(current => !current || next.version >= current.version ? next : current);
       } catch {
         // Snapshot polling continues during a temporary disconnect; the server
@@ -375,9 +375,13 @@ export default function App() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
     try {
-      const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, { method: "POST" });
+      const themeId = new URLSearchParams(window.location.search).get("theme");
+      const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, {
+        method: "POST",
+        body: themeId ? JSON.stringify({ themeId }) : undefined,
+      });
       setSnapshot(started);
-      setMessage("The party has entered the catacombs.");
+      setMessage(themeId ? "The party has entered the " + themeTitle(started.run?.themeId) + "." : "The party has entered the catacombs.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the run");
     } finally { setBusy(false); }
