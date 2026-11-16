@@ -1497,3 +1497,16 @@ func TestPermanentStrikeUpgradesAreCappedAndWhetstonesScaleWithDepth(t *testing.
 		}
 	}
 }
+
+
+func TestGoldScalingTapersOffInLongExpeditions(t *testing.T) {
+	if got, want := EncounterGold(5, 100), EncounterGold(5, 8); got != want {
+		t.Fatalf("encounter gold should stop scaling after depth 8: got %d, want %d", got, want)
+	}
+	if got, want := (&Minigame{Depth: 100}).stake(100), (&Minigame{Depth: 9}).stake(100); got != want {
+		t.Fatalf("mini-game gold should stop scaling after depth 9: got %d, want %d", got, want)
+	}
+	if got := (&Minigame{Depth: 9}).stake(100); got != 164 {
+		t.Fatalf("depth 9 mini-game multiplier = %d, want 164", got)
+	}
+}
