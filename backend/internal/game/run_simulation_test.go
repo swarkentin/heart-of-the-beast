@@ -159,7 +159,6 @@ func TestSimulateRunRejectsUnknownPolicy(t *testing.T) {
 	}
 }
 
-
 func TestTacticalShopInvestsInPermanentStrikeWhenAffordable(t *testing.T) {
 	room := openTestShop(t, 1, "tactical-strike-shop")
 	player := room.Run.Players["player-1"]
