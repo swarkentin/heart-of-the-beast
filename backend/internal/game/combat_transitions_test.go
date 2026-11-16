@@ -65,12 +65,11 @@ func TestResolveIncomingDamage(t *testing.T) {
 		want  IncomingDamageTransition
 	}{
 		{
-			name: "agility talent and passive reductions apply before ward",
+			name: "talent and passive reductions apply before ward, without treating agility as armor",
 			input: IncomingDamageInput{
-				IntentDamage: 12, AgilityReduction: 2, TalentReduction: 1,
-				PassiveReduction: 1, Ward: 3, WardReflect: 2,
+				IntentDamage: 12, TalentReduction: 1, PassiveReduction: 1, Ward: 3, WardReflect: 2,
 			},
-			want: IncomingDamageTransition{Damage: 5, Blocked: 7, WardAbsorbed: 3, WardRemaining: 0, WardReflect: 2},
+			want: IncomingDamageTransition{Damage: 7, Blocked: 5, WardAbsorbed: 3, WardRemaining: 0, WardReflect: 2},
 		},
 		{
 			name: "ward absorbs before guard and guard consumes one hit",
@@ -90,8 +89,18 @@ func TestResolveIncomingDamage(t *testing.T) {
 		},
 		{
 			name:  "ward is consumed even when prior mitigation reduces damage to zero",
-			input: IncomingDamageInput{IntentDamage: 2, AgilityReduction: 4, Ward: 5, WardReflect: 3},
+			input: IncomingDamageInput{IntentDamage: 2, Ward: 5, WardReflect: 3},
 			want:  IncomingDamageTransition{Damage: 0, Blocked: 2, WardRemaining: 0, WardReflect: 3},
+		},
+		{
+			name: "guard blocks only its configured amount from an 8-damage hit",
+			input: IncomingDamageInput{IntentDamage: 8, Guarding: true, GuardReduction: 4},
+			want: IncomingDamageTransition{Damage: 4, Blocked: 4, GuardBlocked: 4, Guarded: true, Guarding: false},
+		},
+		{
+			name: "guard fully blocks a hit smaller than its configured amount",
+			input: IncomingDamageInput{IntentDamage: 3, Guarding: true, GuardReduction: 4},
+			want: IncomingDamageTransition{Damage: 0, Blocked: 3, GuardBlocked: 3, Guarded: true, Guarding: false},
 		},
 		{
 			name:  "unguarded player retains guard bonus",
