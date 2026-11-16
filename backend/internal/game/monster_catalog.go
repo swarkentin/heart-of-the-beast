@@ -64,6 +64,13 @@ const LiveEnemyHealthMultiplier = 1.75
 const LiveEnemyHealthMultiplierPartyStep = 0.5
 const LiveEnemyDamageMultiplier = 1.25
 
+func enemyDamageMultiplierForParty(partySize int) float64 {
+	if partySize < 1 {
+		partySize = 1
+	}
+	return LiveEnemyDamageMultiplier + float64(partySize-1)*0.1
+}
+
 func enemyHealthMultiplierForParty(base float64, partySize int) float64 {
 	if partySize < 1 {
 		partySize = 1
