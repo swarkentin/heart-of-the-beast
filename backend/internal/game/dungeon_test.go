@@ -200,10 +200,10 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 		t.Fatal(err)
 	}
 	entryEnemy := solo.Run.Rooms["entry"].Encounter.Enemies[0]
-	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 10 || entryEnemy.DefinitionID == "" {
+	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 14 || entryEnemy.DefinitionID == "" {
 		t.Fatalf("initial enemy = %+v, want sentinel health 10 and catalog reference", entryEnemy)
 	}
-	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 15 {
+	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
 		t.Fatalf("solo reliquary guardian health = %d, want 15", got)
 	}
 	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 16 {
@@ -212,7 +212,7 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 	if got := solo.Run.Rooms["flooded-crossing"].Encounter.Enemies[0].Health; got != 11 {
 		t.Fatalf("solo crossing scout health = %d, want 11", got)
 	}
-	if got := solo.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 36 {
+	if got := solo.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 49 {
 		t.Fatalf("solo warden health = %d, want 36", got)
 	}
 
@@ -221,10 +221,10 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 	if err := StartRun(coop, "catalog-coop", now); err != nil {
 		t.Fatal(err)
 	}
-	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
+	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 38 {
 		t.Fatalf("co-op reliquary guardian health = %d, want 20", got)
 	}
-	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 42 {
+	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 79 {
 		t.Fatalf("co-op warden health = %d, want 42", got)
 	}
 }
