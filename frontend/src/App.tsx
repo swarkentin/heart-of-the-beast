@@ -116,11 +116,11 @@ export default function App() {
   }, [run?.id, run?.phase, spectator]);
 
   useEffect(() => {
-    if (!snapshot || classCatalog) return;
+    if (classCatalog) return;
     let active = true;
     void apiRequest<LobbyCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
     return () => { active = false; };
-  }, [snapshot?.id, classCatalog]);
+  }, [classCatalog]);
 
   useEffect(() => {
     if (!session || spectator) return;
@@ -241,7 +241,7 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} />;
+    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} profile={profile} classes={classCatalog?.classes ?? []} />;
   }
 
   if (!snapshot) {
@@ -249,7 +249,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
   return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} talents={talentChoices} busy={busy} error={error} isHost={isHost}
