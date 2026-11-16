@@ -85,10 +85,10 @@ func TestInscriptionBonusAppliesOnlyAgainstTheWarden(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "attack", TargetID: "warden"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 26 {
-		t.Fatalf("the Warden should lose 12 Strike damage, then recover 2 from Soul Drain, health=%d", got)
+	if got := room.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 43 {
+		t.Fatalf("the Warden should lose 8 Strike damage, then recover 2 from Soul Drain, health=%d", got)
 	}
-	if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Message != "Adventurer 1 hits Crypt Warden for 12 damage." {
+	if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Message != "Adventurer 1 hits Crypt Warden for 8 damage." {
 		t.Fatalf("the inscription should add two Strike damage against the Warden, events=%+v", room.Run.LastCombatEvents)
 	}
 	var bossHeal *CombatEvent
@@ -146,7 +146,7 @@ func TestOpeningRoutesTradeDamageForRecovery(t *testing.T) {
 		reliquary.Run.Rooms["reliquary"].Encounter.Enemies[i].Health = 0
 	}
 	resolveCombatRound(reliquary, now)
-	if got := reliquary.Run.Players["player-1"].StrikeDamage; got != 11 {
+	if got := reliquary.Run.Players["player-1"].StrikeDamage; got != 7 {
 		t.Fatalf("the harder Reliquary route should reward +1 Strike damage, got %d", got)
 	}
 	if !reliquary.Run.Flags["reliquary_sigil"] {
