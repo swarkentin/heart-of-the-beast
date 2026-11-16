@@ -12,7 +12,7 @@ The full-run simulator already executes camp and reward transitions, but its tac
 - Whetstones cost `30 + 8 × (depth - 1) + 4 × (depth - 1)²` gold, using expedition-wide depth. Other permanent shop boons retain their gentler linear price increase.
 - Encounter gold uses `4 + 2 × encounter budget + min(depth, 8)`, before floor gold modifiers.
 - Mini-game payouts gain 8% per depth after the first, capped at a 64% bonus. This preserves a modest depth reward without allowing the camp mini-game to inflate indefinitely.
-- The tactical full-run policy buys an affordable Whetstone before optional healing when the player is below the permanent Strike cap. This deliberately tests an aggressive, damage-focused purchasing strategy rather than relying on random shop behavior.
+- The tactical full-run policy buys affordable emergency healing or revival first, then invests in a Whetstone when stable and below the permanent Strike cap. This deliberately tests an aggressive, damage-focused purchasing strategy rather than relying on random shop behavior.
 - Full-run reports include each player's ending Strike damage and count actual gold spent at the dynamic shop price.
 
 ## Validation intent
