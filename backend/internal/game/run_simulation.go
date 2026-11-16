@@ -29,7 +29,7 @@ type RunSimulationReport struct {
 	EncountersCleared  int                            `json:"encountersCleared"`
 	CombatRounds       int                            `json:"combatRounds"`
 	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
-	StrikeDamageAtEnd  map[string]int                `json:"strikeDamageAtEnd"`
+	StrikeDamageAtEnd map[string]int                 `json:"strikeDamageAtEnd"`
 	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
 	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
 	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
@@ -420,6 +420,7 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 	for _, offer := range camp.Offers {
 		useless := (offer.Kind == ShopHeal || offer.Kind == ShopFullHeal) && player.Health >= player.MaxHealth ||
 			offer.Kind == ShopWard && player.ClassCombat.Ward >= offer.Amount ||
+			offer.Kind == ShopStrike && player.StrikeDamage >= PlayerStrikeDamage+MaxPermanentStrikeBonus ||
 			offer.Kind == ShopRevive && fallenAlly(room, playerID) == "" ||
 			offer.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) < 0
 		if offer.Price <= player.Gold && !useless && (offer.Repeatable || !contains(camp.Purchases[playerID], offer.ID)) {
