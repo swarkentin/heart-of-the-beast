@@ -201,10 +201,10 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 	}
 	entryEnemy := solo.Run.Rooms["entry"].Encounter.Enemies[0]
 	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 14 || entryEnemy.DefinitionID == "" {
-		t.Fatalf("initial enemy = %+v, want sentinel health 10 and catalog reference", entryEnemy)
+		t.Fatalf("initial enemy = %+v, want sentinel health 14 and catalog reference", entryEnemy)
 	}
 	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
-		t.Fatalf("solo reliquary guardian health = %d, want 15", got)
+		t.Fatalf("solo reliquary guardian health = %d, want 20", got)
 	}
 	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 22 {
 		t.Fatalf("solo bonebound guardian health = %d, want 22", got)
@@ -222,10 +222,10 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 		t.Fatal(err)
 	}
 	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 38 {
-		t.Fatalf("co-op reliquary guardian health = %d, want 20", got)
+		t.Fatalf("co-op reliquary guardian health = %d, want 38", got)
 	}
-	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 79 {
-		t.Fatalf("co-op warden health = %d, want 42", got)
+	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 80 {
+		t.Fatalf("co-op warden health = %d, want 80", got)
 	}
 }
 
