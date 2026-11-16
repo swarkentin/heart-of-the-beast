@@ -7,7 +7,7 @@
 
 Heart of the Beast needs meaningful reasons to return between dungeon runs. Players should be able to build a long-term identity, make progress across the full class roster, and earn visible rewards without requiring an account.
 
-ADR 0016 already defines persistent character identity, character levels, lifetime records, and cosmetic personalization. ADR 0021 defines the extensible class catalog and content-access unlocks. This decision clarifies the relationship between those systems and adds profile-wide class mastery and a persistent, battle-pass-style milestone reward track.
+ADR 0016 already defines persistent character identity, character levels, lifetime records, and cosmetic personalization. ADR 0021 defines the extensible class catalog and content-access unlocks. This decision clarifies the relationship between those systems and adds profile-wide class mastery and a persistent milestone reward track.
 
 The progression system must complement the roguelike run loop without turning accumulated playtime into combat power. It must also survive character retirement and eventually migrate cleanly into an optional account.
 
