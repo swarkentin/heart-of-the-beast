@@ -22,7 +22,7 @@ func main() {
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero when regression thresholds are crossed")
 	flag.Parse()
 
-	report, err := game.GenerateBalanceReportWithTuning(*seeds, *firstSeed, game.BalanceTuning{BlockAmount:*block, EnemyHealthMultiplier:*enemyHealth, PlayerDamage:*playerDamage})
+	report, err := game.GenerateBalanceReportWithTuning(*seeds, *firstSeed, game.BalanceTuning{BlockAmount: *block, EnemyHealthMultiplier: *enemyHealth, PlayerDamage: *playerDamage})
 	if err != nil {
 		fatal(err)
 	}
