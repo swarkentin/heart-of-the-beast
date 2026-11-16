@@ -527,20 +527,28 @@ func openShop(room *Room, now time.Time) {
 	// Permanent boons become progressively more expensive. Whetstones use a quadratic curve because
 	// permanent damage compounds across every later fight; linear pricing let gold income keep pace.
 	depth := run.Depth + dungeonExtraDepth(run)
+	for i := range offers {
+		offers[i].Price = shopItemPriceAtDepth(offers[i], depth)
+	}
+	camp.Offers = offers
+	setCampDeadline(room, CampShopWindow, now)
+}
+
+// shopItemPriceAtDepth keeps defensive boons on a gentle linear curve, but prices permanent Strike
+// upgrades quadratically because their value compounds across every later encounter.
+func shopItemPriceAtDepth(item ShopItem, depth int) int {
 	steps := depth - 1
 	if steps < 0 {
 		steps = 0
 	}
-	for i := range offers {
-		switch offers[i].Kind {
-		case ShopStrike:
-			offers[i].Price += 8*steps + 4*steps*steps
-		case ShopGuard, ShopMaxHealth:
-			offers[i].Price += 3 * steps
-		}
+	switch item.Kind {
+	case ShopStrike:
+		return item.Price + 8*steps + 4*steps*steps
+	case ShopGuard, ShopMaxHealth:
+		return item.Price + 3*steps
+	default:
+		return item.Price
 	}
-	camp.Offers = offers
-	setCampDeadline(room, CampShopWindow, now)
 }
 
 func firstDebuff(modifiers []ActiveFloorModifier) int {
