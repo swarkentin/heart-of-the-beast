@@ -349,9 +349,17 @@ func (game *Minigame) rng(playerIndex, step int) *rand.Rand {
 	return rand.New(rand.NewSource(int64(mixSeed(game.Seed, uint64(game.Depth)<<16|uint64(playerIndex)<<8|uint64(step), 0x6a3e))))
 }
 
-// stake scales a mini-game's gold with depth, so camps stay worth the time as prices and danger rise.
+// stake gives mini-games a modest depth bonus without letting their payouts inflate in lockstep with
+// permanent upgrades. The bonus tops out after the early expedition.
 func (game *Minigame) stake(gold int) int {
-	return gold * (3 + game.Depth) / 4
+	depthBonus := game.Depth - 1
+	if depthBonus < 0 {
+		depthBonus = 0
+	}
+	if depthBonus > 8 {
+		depthBonus = 8
+	}
+	return gold * (100 + 8*depthBonus) / 100
 }
 
 // chestContents is what the four chests of one player hold: three purses and a mimic (0), in a seeded order.
@@ -471,7 +479,7 @@ type ShopItem struct {
 var shopCatalog = []ShopItem{
 	{ID: "healing-draught", Name: "Healing Draught", Kind: ShopHeal, Amount: 12, Price: 12, Repeatable: true, Description: "Recover 12 health now."},
 	{ID: "camp-feast", Name: "Camp Feast", Kind: ShopFullHeal, Price: 30, Description: "Recover all of your health now."},
-	{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30, Description: "+1 Strike damage for the rest of the run."},
+	{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30, Description: "+1 Strike damage for the rest of the run (up to +4 from permanent upgrades)."},
 	{ID: "bracers", Name: "Banded Bracers", Kind: ShopGuard, Amount: 1, Price: 24, Description: "Defend blocks 1 more damage for the rest of the run."},
 	{ID: "heartstone", Name: "Heartstone", Kind: ShopMaxHealth, Amount: 5, Price: 26, Description: "+5 maximum health, and recover 5 health."},
 	{ID: "ward-charm", Name: "Ward Charm", Kind: ShopWard, Amount: 8, Price: 14, Description: "A ward that absorbs the next 8 damage you would take."},
@@ -516,14 +524,35 @@ func openShop(room *Room, now time.Time) {
 			offers = append(offers, item)
 		}
 	}
-	// Permanent boons cost a little more on every floor, so early gold is worth the most.
+	// Permanent boons become progressively more expensive. Whetstones use a quadratic curve because
+	// permanent damage compounds across every later fight; linear pricing let gold income keep pace.
+	depth := run.Depth + dungeonExtraDepth(run)
 	for i := range offers {
-		if kind := offers[i].Kind; kind == ShopStrike || kind == ShopGuard || kind == ShopMaxHealth {
-			offers[i].Price += 3 * (run.Depth + dungeonExtraDepth(run) - 1)
-		}
+		offers[i].Price = shopItemPriceAtDepth(offers[i], depth)
 	}
 	camp.Offers = offers
 	setCampDeadline(room, CampShopWindow, now)
+}
+
+// shopItemPriceAtDepth keeps defensive boons on a gentle linear curve, but prices permanent Strike
+// upgrades quadratically because their value compounds across every later encounter.
+func shopItemPriceAtDepth(item ShopItem, depth int) int {
+	steps := depth - 1
+	if steps < 0 {
+		steps = 0
+	}
+	// Keep the endless-run price representable even at extreme expedition depths.
+	if steps > 1000 {
+		steps = 1000
+	}
+	switch item.Kind {
+	case ShopStrike:
+		return item.Price + 8*steps + 4*steps*steps
+	case ShopGuard, ShopMaxHealth:
+		return item.Price + 3*steps
+	default:
+		return item.Price
+	}
 }
 
 func firstDebuff(modifiers []ActiveFloorModifier) int {
@@ -579,7 +608,10 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 		addCombatImpact(run, 0, "shop_heal", label+" recovers "+itoa(transition.Applied)+" health from a "+item.Name+".", "heal", buyerID, "player", transition.Applied)
 		message = ""
 	case ShopStrike:
-		buyer.StrikeDamage += item.Amount
+		if buyer.StrikeDamage >= PlayerStrikeDamage+MaxPermanentStrikeBonus {
+			return ErrItemUnavailable
+		}
+		applyPermanentStrikeBonus(buyer, item.Amount)
 	case ShopGuard:
 		buyer.GuardReduction += item.Amount
 	case ShopMaxHealth:

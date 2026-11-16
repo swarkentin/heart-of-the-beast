@@ -1082,8 +1082,15 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 			continue
 		}
 		want := item.Price
-		if item.Kind == ShopStrike || item.Kind == ShopGuard || item.Kind == ShopMaxHealth {
-			want += 3 * (run.Depth - 1)
+		steps := run.Depth + dungeonExtraDepth(run) - 1
+		if steps < 0 {
+			steps = 0
+		}
+		switch item.Kind {
+		case ShopStrike:
+			want += 8*steps + 4*steps*steps
+		case ShopGuard, ShopMaxHealth:
+			want += 3 * steps
 		}
 		if offer.Price != want {
 			t.Errorf("%s costs %d on floor %d, want %d", item.ID, offer.Price, run.Depth, want)
@@ -1453,5 +1460,51 @@ func TestShopStillWorksAfterTheCampIsSavedAndReloaded(t *testing.T) {
 	}
 	if !room.Run.Camp.Ready["player-1"] || len(room.Run.Camp.Purchases["player-1"]) != 1 {
 		t.Fatalf("purchase or ready was lost: %+v", room.Run.Camp)
+	}
+}
+
+func TestPermanentStrikeUpgradesAreCappedAndWhetstonesScaleWithDepth(t *testing.T) {
+	room := openTestShop(t, 1, "strike-cap-run")
+	player := room.Run.Players["player-1"]
+	player.Gold = 10000
+	room.Run.Camp.Offers = []ShopItem{{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30}}
+	for bonus := 0; bonus < MaxPermanentStrikeBonus; bonus++ {
+		room.Run.Camp.Purchases["player-1"] = nil
+		if err := buyShopItem(room, "player-1", "whetstone"); err != nil {
+			t.Fatalf("buy upgrade %d: %v", bonus+1, err)
+		}
+	}
+	if got, want := player.StrikeDamage, PlayerStrikeDamage+MaxPermanentStrikeBonus; got != want {
+		t.Fatalf("Strike damage = %d, want cap %d", got, want)
+	}
+	room.Run.Camp.Purchases["player-1"] = nil
+	if err := buyShopItem(room, "player-1", "whetstone"); !errors.Is(err, ErrItemUnavailable) {
+		t.Fatalf("buying beyond the permanent Strike cap: %v", err)
+	}
+
+	depths := []int{1, 2, 4, 8}
+	prices := make([]int, 0, len(depths))
+	for _, depth := range depths {
+		prices = append(prices, shopItemPriceAtDepth(ShopItem{Kind: ShopStrike, Price: 30}, depth))
+	}
+	if prices[0] != 30 || prices[1] != 42 {
+		t.Fatalf("unexpected early Whetstone prices: %v", prices)
+	}
+	for i := 1; i < len(prices); i++ {
+		if prices[i] <= prices[i-1] {
+			t.Fatalf("Whetstone prices should rise with depth: %v", prices)
+		}
+	}
+}
+
+func TestGoldScalingTapersOffInLongExpeditions(t *testing.T) {
+	if got, want := EncounterGold(5, 100), EncounterGold(5, 8); got != want {
+		t.Fatalf("encounter gold should stop scaling after depth 8: got %d, want %d", got, want)
+	}
+	if got, want := (&Minigame{Depth: 100}).stake(100), (&Minigame{Depth: 9}).stake(100); got != want {
+		t.Fatalf("mini-game gold should stop scaling after depth 9: got %d, want %d", got, want)
+	}
+	if got := (&Minigame{Depth: 9}).stake(100); got != 164 {
+		t.Fatalf("depth 9 mini-game multiplier = %d, want 164", got)
 	}
 }

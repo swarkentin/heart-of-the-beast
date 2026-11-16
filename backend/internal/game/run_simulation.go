@@ -29,6 +29,7 @@ type RunSimulationReport struct {
 	EncountersCleared  int                            `json:"encountersCleared"`
 	CombatRounds       int                            `json:"combatRounds"`
 	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
+	StrikeDamageAtEnd  map[string]int                 `json:"strikeDamageAtEnd"`
 	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
 	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
 	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
@@ -76,7 +77,7 @@ type RunSimulationBatchReport struct {
 
 const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
-const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and healing purchases when hurt; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
+const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and invests in affordable permanent Strike upgrades up to the run cap, then buys healing or revival when needed; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
 
 // RunPolicy names how a full-run simulation makes decisions.
 type RunPolicy string
@@ -150,7 +151,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	}
 
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
-	steps, itemsBought := 0, 0
+	steps, itemsBought, goldSpent := 0, 0, 0
 	combatMetrics := make(map[string]PlayerCombatMetrics, len(classIDs))
 	netPartyHealthLoss := 0
 	for room.Run.Phase != PhaseCompleted && room.Run.Phase != PhaseFailed && steps < maxSteps {
@@ -262,6 +263,12 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				}
 				if command.Type == "buy" {
 					itemsBought++
+					for _, offer := range room.Run.Camp.Offers {
+						if offer.ID == command.ChoiceID {
+							goldSpent += offer.Price
+							break
+						}
+					}
 				}
 			}
 		default:
@@ -280,7 +287,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		Completed: room.Run.DungeonsCleared > 0, Wiped: room.Run.Phase == PhaseFailed,
 		DungeonsCleared: room.Run.DungeonsCleared, Rank: ExpeditionRank(room.Run.FloorsCleared),
 		ReachedDepth: room.Run.FloorsCleared + 1, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
-		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics,
+		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics, StrikeDamageAtEnd: make(map[string]int),
 		NetPartyHealthLoss: netPartyHealthLoss,
 	}
 	switch {
@@ -298,18 +305,13 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		report.RemainingHealth += player.Health
 		report.RemainingMaxHealth += player.MaxHealth
 		report.Levels[player.ID] = player.Level
+		report.StrikeDamageAtEnd[player.ID] = player.StrikeDamage
 		report.GoldEarned += player.Gold
-		for _, itemID := range player.Items {
-			for _, item := range shopCatalog {
-				if item.ID == itemID {
-					report.GoldEarned += item.Price
-				}
-			}
-		}
 		if player.Health <= 0 {
 			report.PlayersDownAtEnd++
 		}
 	}
+	report.GoldEarned += goldSpent
 	if report.RemainingMaxHealth > 0 {
 		report.RemainingHealthPct = report.RemainingHealth * 100 / report.RemainingMaxHealth
 	}
@@ -418,6 +420,7 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 	for _, offer := range camp.Offers {
 		useless := (offer.Kind == ShopHeal || offer.Kind == ShopFullHeal) && player.Health >= player.MaxHealth ||
 			offer.Kind == ShopWard && player.ClassCombat.Ward >= offer.Amount ||
+			offer.Kind == ShopStrike && player.StrikeDamage >= PlayerStrikeDamage+MaxPermanentStrikeBonus ||
 			offer.Kind == ShopRevive && fallenAlly(room, playerID) == "" ||
 			offer.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) < 0
 		if offer.Price <= player.Gold && !useless && (offer.Repeatable || !contains(camp.Purchases[playerID], offer.ID)) {

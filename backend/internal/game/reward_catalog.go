@@ -50,10 +50,10 @@ func newRunRewardCatalog() RunRewardCatalog {
 	definitions := []RunRewardDefinition{
 		{ID: "encounter.regular_xp", Operations: []RunRewardOperation{{Kind: RunRewardExperience, Target: RunRewardParticipants, Amount: EncounterExperienceReward}}},
 		{ID: "encounter.boss_xp", Operations: []RunRewardOperation{{Kind: RunRewardExperience, Target: RunRewardParticipants, Amount: BossExperienceReward}}},
-		{ID: "room.reliquary", FlagID: "reliquary_sigil", EventKind: "room_reward", EventText: "The Reliquary Guardian's sigil empowers every living adventurer's Strike.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardLiving, Amount: 1}}},
+		{ID: "room.reliquary", FlagID: "reliquary_sigil", EventKind: "room_reward", EventText: "The Reliquary Guardian's sigil empowers every living adventurer's Strike, up to the permanent upgrade cap.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardLiving, Amount: 1}}},
 		{ID: "room.flooded_cache", FlagID: "crossing_cache", EventKind: "room_reward", EventText: "The party finds healing draughts in the flooded cache.", Operations: []RunRewardOperation{{Kind: RunRewardHeal, Target: RunRewardLiving, Amount: 8, ImpactKind: "player_heal", ImpactText: "%s recovers %d health from the flooded cache."}}},
-		{ID: "encounter.miniboss", EventKind: "miniboss_reward", EventText: "The reliquary brute falls. Every adventurer gains +1 Strike damage for the rest of the run.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardAllMembers, Amount: 1}}},
-		{ID: "encounter.champion", EventKind: "miniboss_reward", EventText: "The champion falls. Every adventurer gains +1 Strike damage for the rest of the run.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardAllMembers, Amount: 1}}},
+		{ID: "encounter.miniboss", EventKind: "miniboss_reward", EventText: "The reliquary brute falls. Every adventurer gains +1 Strike damage for the rest of the run, up to the permanent upgrade cap.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardAllMembers, Amount: 1}}},
+		{ID: "encounter.champion", EventKind: "miniboss_reward", EventText: "The champion falls. Every adventurer gains +1 Strike damage for the rest of the run, up to the permanent upgrade cap.", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardAllMembers, Amount: 1}}},
 		{ID: "floor.restore", EventKind: "floor_restoration", Operations: []RunRewardOperation{{Kind: RunRewardHeal, Target: RunRewardActiveLiving, Amount: 10, ImpactKind: "floor_restoration", ImpactText: "%s recovers %d health before descending."}}},
 		{ID: "floor.perk", Operations: []RunRewardOperation{{Kind: RunRewardStrike, Target: RunRewardAllMembers, Amount: 1}, {Kind: RunRewardGuard, Target: RunRewardAllMembers, Amount: 1}}},
 	}
@@ -140,7 +140,7 @@ func applyRunReward(room *Room, definition RunRewardDefinition, round int, flagI
 					addCombatImpact(run, round, operation.ImpactKind, fmt.Sprintf(operation.ImpactText, adventurerLabel(room, playerID), actual), "heal", playerID, "player", actual)
 				}
 			case RunRewardStrike:
-				member.StrikeDamage += operation.Amount
+				applyPermanentStrikeBonus(member, operation.Amount)
 			case RunRewardGuard:
 				member.GuardReduction += operation.Amount
 			}

@@ -158,3 +158,50 @@ func TestSimulateRunRejectsUnknownPolicy(t *testing.T) {
 		t.Fatal("expected an unknown policy to be rejected")
 	}
 }
+
+func TestTacticalShopInvestsInPermanentStrikeWhenAffordable(t *testing.T) {
+	room := openTestShop(t, 1, "tactical-strike-shop")
+	player := room.Run.Players["player-1"]
+	player.Gold = 1000
+	room.Run.Camp.Offers = []ShopItem{{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30}}
+
+	command, ok := tacticalShopCommand(room, "player-1")
+	if !ok || command.Type != "buy" || command.ChoiceID != "whetstone" {
+		t.Fatalf("tactical policy should invest in an affordable Whetstone, got %+v, ok=%v", command, ok)
+	}
+	if err := buyShopItem(room, "player-1", command.ChoiceID); err != nil {
+		t.Fatal(err)
+	}
+	if player.StrikeDamage != PlayerStrikeDamage+1 {
+		t.Fatalf("tactical purchase did not increase Strike: %d", player.StrikeDamage)
+	}
+}
+
+func TestRandomCampPolicySkipsWhetstoneAtStrikeCap(t *testing.T) {
+	room := openTestShop(t, 1, "random-strike-cap-shop")
+	player := room.Run.Players["player-1"]
+	player.Gold = 1000
+	player.StrikeDamage = PlayerStrikeDamage + MaxPermanentStrikeBonus
+	room.Run.Camp.Offers = []ShopItem{{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30}}
+
+	command, ok := randomCampCommand(room, "player-1", rand.New(rand.NewSource(1)))
+	if !ok || command.Type != "ready" {
+		t.Fatalf("random policy should skip a capped Whetstone and ready up, got %+v, ok=%v", command, ok)
+	}
+}
+
+func TestTacticalShopPrioritizesUrgentHealingOverWhetstone(t *testing.T) {
+	room := openTestShop(t, 1, "tactical-heal-before-strike")
+	player := room.Run.Players["player-1"]
+	player.Gold = 1000
+	player.Health = player.MaxHealth - 15
+	room.Run.Camp.Offers = []ShopItem{
+		{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30},
+		{ID: "healing-draught", Name: "Healing Draught", Kind: ShopHeal, Amount: 12, Price: 12, Repeatable: true},
+	}
+
+	command, ok := tacticalShopCommand(room, "player-1")
+	if !ok || command.Type != "buy" || command.ChoiceID != "healing-draught" {
+		t.Fatalf("tactical policy should buy urgent healing before a Whetstone, got %+v, ok=%v", command, ok)
+	}
+}
