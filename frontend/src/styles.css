@@ -504,3 +504,5 @@ body,button,input,select,textarea{font-family:"DM Mono",monospace;font-size:14px
   .party-roster-combat .party-member { min-height: 50px; }
 }
 
+
+@media (max-width: 700px) { .class-action-panel { grid-column: 1 / -1; } }
