@@ -109,14 +109,6 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 		return Command{}, false
 	}
 	missing := player.MaxHealth - player.Health
-	// Model a player who deliberately invests in permanent damage, but respect the same cap as live play.
-	if player.StrikeDamage < PlayerStrikeDamage+MaxPermanentStrikeBonus {
-		for _, offer := range camp.Offers {
-			if offer.Kind == ShopStrike && offer.Price <= player.Gold && !contains(camp.Purchases[playerID], offer.ID) {
-				return Command{Type: "buy", ChoiceID: offer.ID}, true
-			}
-		}
-	}
 	for _, offer := range camp.Offers {
 		if offer.Price > player.Gold || (!offer.Repeatable && contains(camp.Purchases[playerID], offer.ID)) {
 			continue
@@ -126,6 +118,14 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 			offer.Kind == ShopHeal && missing >= offer.Amount,
 			offer.Kind == ShopFullHeal && missing*2 >= player.MaxHealth:
 			return Command{Type: "buy", ChoiceID: offer.ID}, true
+		}
+	}
+	// Invest in permanent damage when the adventurer is stable, but do not sacrifice an urgent recovery.
+	if player.StrikeDamage < PlayerStrikeDamage+MaxPermanentStrikeBonus {
+		for _, offer := range camp.Offers {
+			if offer.Kind == ShopStrike && offer.Price <= player.Gold && !contains(camp.Purchases[playerID], offer.ID) {
+				return Command{Type: "buy", ChoiceID: offer.ID}, true
+			}
 		}
 	}
 	return Command{}, false
