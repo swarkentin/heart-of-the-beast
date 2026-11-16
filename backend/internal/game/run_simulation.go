@@ -122,6 +122,9 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 				return RunSimulationReport{}, fmt.Errorf("seed %d reached missing room %q", seed, room.Run.CurrentRoomID)
 			}
 			if current.Event != nil && !current.Event.Resolved {
+				if len(current.Event.Choices) == 0 {
+					return RunSimulationReport{}, fmt.Errorf("seed %d room event %s has no choices", seed, current.Event.ID)
+				}
 				eligible := eligibleCombatPlayers(room)
 				if len(eligible) == 0 {
 					break
