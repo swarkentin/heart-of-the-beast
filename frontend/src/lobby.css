@@ -16,18 +16,32 @@
 .px-screen::before { content: ""; position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 18%, #3a264466 0, #0a0714cc 70%, #0a0714 100%); }
 .px-screen > * { position: relative; }
 .px-screen :is(h1, h2, h3, p, ul, dl, dd) { margin: 0; padding: 0; }
-.px-screen button, .px-screen input { font: inherit; }
+.px-screen :where(button, input) { font: inherit; }
 .px-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 /* ---------- sprites ---------- */
-.px-hero { --hs: var(--px); display: block; flex: none; width: calc(64px * var(--hs)); height: calc(64px * var(--hs)); background-repeat: no-repeat; background-size: calc(384px * var(--hs)) calc(128px * var(--hs)); animation: px-hero-idle .667s steps(4) infinite; }
+.px-hero { --hs: var(--px); display: block; flex: none; width: calc(64px * var(--hs)); height: calc(64px * var(--hs)); background-repeat: no-repeat; background-size: calc(384px * var(--hs)) calc(384px * var(--hs)); background-position: 0 0; animation: px-hero-4 .667s steps(4) infinite; }
+/* Sheet rows: 0 idle, 1 flourish, 2 hurt, 3 injured, 4 poisoned, 5 down (see docs/art/README.md). */
+.px-hero-injured { background-position-y: calc(-192px * var(--hs)); animation-duration: 1s; }
+.px-hero-poisoned { background-position-y: calc(-256px * var(--hs)); animation-duration: .8s; }
+.px-hero-down { background-position-y: calc(-320px * var(--hs)); animation: px-hero-2 1.6s steps(2) infinite; }
 .px-hero-empty { background-size: calc(256px * var(--hs)) calc(64px * var(--hs)); animation-duration: 1.2s; }
-.px-hero-flourish { animation: px-hero-flourish .6s steps(6) 1; }
-@keyframes px-hero-idle { to { background-position: calc(-256px * var(--hs)) 0; } }
-@keyframes px-hero-flourish { from { background-position: 0 calc(-64px * var(--hs)); } to { background-position: calc(-384px * var(--hs)) calc(-64px * var(--hs)); } }
+.px-hero.px-hero-flourish { background-position-y: calc(-64px * var(--hs)); animation: px-hero-6 .6s steps(6) 1; }
+.px-hero.px-hero-hurt { background-position-y: calc(-128px * var(--hs)); animation: px-hero-4 .34s steps(4) 1; }
+@keyframes px-hero-2 { to { background-position-x: calc(-128px * var(--hs)); } }
+@keyframes px-hero-4 { to { background-position-x: calc(-256px * var(--hs)); } }
+@keyframes px-hero-6 { to { background-position-x: calc(-384px * var(--hs)); } }
+/* Status overlays share the hero's cell: rows 0 heal, 1 guard, 2 ward, 3 buff, 4 poison, 5 sleep. */
+.px-statusfx { --hs: var(--px); position: absolute; left: 50%; bottom: 0; width: calc(64px * var(--hs)); height: calc(64px * var(--hs)); margin-left: calc(-32px * var(--hs)); pointer-events: none; background: url("/art/ui/status-fx.png") 0 0 / calc(384px * var(--hs)) calc(384px * var(--hs)) no-repeat; animation: px-hero-4 .667s steps(4) infinite; }
+.px-statusfx-heal { animation: px-hero-6 .6s steps(6) 1 forwards; }
+.px-statusfx-guard { background-position-y: calc(-64px * var(--hs)); }
+.px-statusfx-ward { background-position-y: calc(-128px * var(--hs)); }
+.px-statusfx-buff { background-position-y: calc(-192px * var(--hs)); }
+.px-statusfx-poison { background-position-y: calc(-256px * var(--hs)); animation-duration: .8s; }
+.px-statusfx-sleep { background-position-y: calc(-320px * var(--hs)); animation-duration: 1.4s; }
 .px-bust { --bs: 2; display: block; flex: none; width: calc(32px * var(--bs)); height: calc(32px * var(--bs)); background: 0 0 / 100% 100% no-repeat; }
 .px-bust-locked { filter: brightness(.22) saturate(0); }
-.px-icon { --s: 2; --i: 0; display: inline-block; flex: none; width: calc(16px * var(--s)); height: calc(16px * var(--s)); background: url("/art/ui/icons.png") calc(-16px * var(--i) * var(--s)) 0 / calc(240px * var(--s)) calc(16px * var(--s)) no-repeat; vertical-align: middle; }
+.px-icon { --s: 2; --i: 0; display: inline-block; flex: none; width: calc(16px * var(--s)); height: calc(16px * var(--s)); background: url("/art/ui/icons.png") calc(-16px * var(--i) * var(--s)) 0 / calc(16px * var(--n, 21) * var(--s)) calc(16px * var(--s)) no-repeat; vertical-align: middle; }
 .px-torch { display: block; flex: none; width: calc(16px * var(--px)); height: calc(32px * var(--px)); background: url("/art/ui/torch.png") 0 0 / calc(64px * var(--px)) 100% no-repeat; animation: px-torch .5s steps(4) infinite; }
 @keyframes px-torch { to { background-position: calc(-64px * var(--px)) 0; } }
 .px-emblem { display: block; flex: none; width: 32px; height: 32px; background: url("/art/ui/emblem.png") 0 0 / 100% 100% no-repeat; }
@@ -59,6 +73,7 @@
 .px-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; max-width: 1180px; margin: 0 auto; }
 .px-brand { display: flex; align-items: center; gap: 10px; color: var(--bone); font: 12px/1.4 var(--display); text-decoration: none; text-shadow: 0 2px 0 var(--edge); white-space: nowrap; }
 .px-status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 18px; letter-spacing: .1em; white-space: nowrap; }
+.px-tools { display: flex; align-items: center; gap: 8px; }
 .px-status i { width: 9px; height: 9px; background: var(--good); box-shadow: 0 0 0 3px var(--edge); }
 
 /* ---------- title ---------- */
@@ -205,6 +220,7 @@
   .px-stats { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .px-hero, .px-torch { animation: none; }
+  .px-hero, .px-torch, .px-statusfx { animation: none; }
+  .px-statusfx-heal { display: none; }
   .px-button:active:not(:disabled) { transform: none; }
 }

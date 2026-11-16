@@ -15,12 +15,15 @@ import type { EventLike, StageEnemy } from "./types";
 
 export type Cue =
   | { type: "hit"; enemyId: string; amount: number; via: string }
-  | { type: "act"; enemyId: string; label: string; partyWide: boolean; hits: number; damage: number; blocked: number; miss: boolean }
+  | { type: "act"; enemyId: string; label: string; partyWide: boolean; hits: number; damage: number; blocked: number; miss: boolean; targets: ActTarget[] }
   | { type: "drain"; enemyId: string; amount: number }
   | { type: "freeze"; enemyId: string }
   | { type: "defeat"; enemyId: string }
-  | { type: "playerHeal"; amount: number }
-  | { type: "playerBlock"; amount: number };
+  | { type: "playerHeal"; amount: number; playerId?: string }
+  | { type: "playerBlock"; amount: number; playerId?: string };
+
+/** What one enemy move did to one player, so party portraits can react when the move lands. */
+export type ActTarget = { playerId: string; damage: number; blocked: number };
 
 export type TimedCue = { at: number; cue: Cue };
 
@@ -84,11 +87,19 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
     const enemyId = ids[index];
     let draft = acts.find((item) => item.enemyId === enemyId);
     if (!draft) {
-      draft = { type: "act", enemyId, label, partyWide: false, hits: 0, damage: 0, blocked: 0, miss: false };
+      draft = { type: "act", enemyId, label, partyWide: false, hits: 0, damage: 0, blocked: 0, miss: false, targets: [] };
       acts.push(draft);
     }
     if (!draft.label && label) draft.label = label;
     return draft;
+  };
+
+  const noteTarget = (draft: ActDraft, playerId: string | undefined, damage: number, blocked: number) => {
+    if (!playerId) return;
+    let entry = draft.targets.find((item) => item.playerId === playerId);
+    if (!entry) { entry = { playerId, damage: 0, blocked: 0 }; draft.targets.push(entry); }
+    entry.damage += damage;
+    entry.blocked += blocked;
   };
 
   for (const event of events) {
@@ -107,13 +118,14 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
           draft.hits++;
           draft.damage += event.amount ?? 0;
           draft.partyWide = draft.hits > 1;
+          noteTarget(draft, event.targetId, event.amount ?? 0, 0);
         }
         break;
       }
       case "enemy_block": {
         const actor = actorOf(event.message, event.kind);
         const draft = actor ? draftFor(actor.name, event.targetId, false, "") : null;
-        if (draft) draft.blocked += event.amount ?? 0;
+        if (draft) { draft.blocked += event.amount ?? 0; noteTarget(draft, event.targetId, 0, event.amount ?? 0); }
         break;
       }
       case "enemy_miss": {
@@ -134,8 +146,8 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
       case "runic_ward":
         if ((event.amount ?? 0) > 0) {
           const last = acts[acts.length - 1];
-          if (last) last.blocked += event.amount ?? 0;
-          else playerCues.push({ type: "playerBlock", amount: event.amount ?? 0 });
+          if (last) { last.blocked += event.amount ?? 0; noteTarget(last, event.targetId, 0, event.amount ?? 0); }
+          else playerCues.push({ type: "playerBlock", amount: event.amount ?? 0, playerId: event.targetId });
         }
         break;
       case "elemental_frost": {
@@ -144,7 +156,7 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
         break;
       }
       default:
-        if (event.effect === "heal" && event.targetType === "player" && (event.amount ?? 0) > 0) playerCues.push({ type: "playerHeal", amount: event.amount ?? 0 });
+        if (event.effect === "heal" && event.targetType === "player" && (event.amount ?? 0) > 0) playerCues.push({ type: "playerHeal", amount: event.amount ?? 0, playerId: event.targetId });
     }
   }
 

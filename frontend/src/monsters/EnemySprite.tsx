@@ -177,7 +177,7 @@ export function EnemySprite({ enemy, view, x, floorY, selected, onClick, cues, s
       <g transform={`translate(0 ${plateY})`} opacity={showDead ? 0.45 : 1}>
         <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2" />
         <rect x="-69" y="5" width={Math.max(0, 138 * enemy.hp / Math.max(1, enemy.maxHp))} height="16" fill="#b45e53" />
-        <text x="0" y="-13" textAnchor="middle" fill="#f1e5d5" fontSize="20" fontWeight="bold">{enemy.name}</text>
+        <text x="0" y="-11" textAnchor="middle" fill="#f1e5d5" stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize="28">{enemy.name}</text>
         {telegraphing ? (
           <g transform="translate(-102 2)" className="enemy-ready" shapeRendering="crispEdges">
             <title>{enemy.name} has readied {enemy.rawIntent?.label}</title>

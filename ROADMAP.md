@@ -50,7 +50,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Replace the SVG monster art in the frontend with the pixel-art sprites: map server enemy definitions to sprite ids, play animations from combat events (telegraph, attack impact frame, hit, death), and honour reduced motion.
 - [x] Generate player-character sprites for the nine classes in the bestiary style (idle loop and a signature flourish each, plus roster busts) and a pixel-art interface kit: panel, slot and button frames, wall and floor tiles, torch, crest, and an icon sheet (ADR 0024, `docs/art/README.md`).
 - [x] Rebuild the title screen, party lobby, and class selection on the hero sprites and interface kit so the first screens match the monster art (ADR 0024).
-- [ ] Hand-polish pass on the generated monster and hero sprites; add hit, attack, and defeat animations for heroes when they appear in combat and spectator scenes.
+- [x] Add hero status animations for the party portraits: hurt, injured, poisoned, and down rows on every hero sheet, plus layered status overlays (heal, guard, ward, buff, poison, sleep), status icons, and a viewport frame (ADR 0027, `docs/art/heroes.png`).
+- [ ] Hand-polish pass on the generated monster and hero sprites; add attack animations for heroes if they ever act on stage in the spectator scene.
 - [x] Server-authoritative party path voting with a 15-second window, majority resolution, random tie/no-vote fallback, and immediate solo choices (ADR 0017).
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
@@ -61,11 +62,12 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Audition and tune the themed music by ear, and tune the mix on mobile, desktop, and spectator playback; consider authored assets later.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts. Title, lobby, and class selection were checked at 390, 820, and 1366 px wide in Chrome with fallback fonts; they still need a pass on real devices with the web fonts loaded.
-- [ ] Bring the rest of the in-game interface into the pixel-art direction using the interface kit from ADR 0024 (title, lobby, and class selection are done): pixel-appropriate typography, crisp stepped borders/panels, hero action controls, talent trees, HUD, navigation, dialogs, and feedback. Keep body text readable at small sizes and validate across mobile, tablet, desktop, and spectator views.
+- [x] Rebuild the run screen (exploring and combat) on the interface kit: party portraits on the borders, a framed viewport, a combat log, and one command panel for actions, path votes, room choices, descent votes, and run over. Actions press in and lock, show keys 1-9, and automatic defends are announced, logged, and marked on the portrait. Works from one to four players, on phones, and for spectators (ADR 0027).
+- [ ] Run-screen follow-ups: self-host or draw the pixel fonts (they still load from Google Fonts), check the screen on real phones with the real fonts, restyle the sound settings sliders, and replace the first-person hands placeholder in the viewport.
 
 ## Phase 2 — Core roguelike loop
 
-- [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
+- [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects. The portraits already show guard, ward, resolve, and charge from the combat state, and poison art exists (ADR 0027), but no rule applies poison or other timed conditions yet.
 - [ ] Define and implement a server-authoritative in-run resurrection action with explicit timing, health, and end-of-run permanent-death rules.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).

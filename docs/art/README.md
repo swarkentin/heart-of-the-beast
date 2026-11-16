@@ -79,13 +79,25 @@ monsters (`scripts/pixel-art/heroes.mjs`). Ids match the backend class catalog: 
 ```
 frontend/public/art/heroes/
   manifest.json        # frame size, animations, hero list
-  <class>.png          # 384x128 sheet: row 0 idle (4 frames, 6 fps, loops), row 1 flourish (6 frames, 10 fps)
+  <class>.png          # 384x384 sheet, 64x64 frames, one animation per row (see the table below)
   <class>-bust.png     # 32x32 head-and-shoulders crop for roster portraits
   empty.png            # 256x64 silhouette idle (4 frames) for open party slots; empty-bust.png to match
 ```
 
-Frames are 64x64 and anchor bottom-centre like monsters. The flourish is the class's signature move and is played once
-when a player confirms that class. Heroes do not have hit, attack, or death rows yet.
+Frames are 64x64 and anchor bottom-centre like monsters. `docs/art/heroes.png` shows every hero in every row.
+
+| Row | Animation | Frames | Use |
+| --- | --- | --- | --- |
+| 0 | `idle` | 4, loops | Default |
+| 1 | `flourish` | 6, once | The class's signature move; played when a player confirms the class |
+| 2 | `hurt` | 4, once | Played on a portrait when damage lands |
+| 3 | `injured` | 4, loops | Health at 35% or less |
+| 4 | `poisoned` | 4, loops | Reserved: no rule applies poison yet |
+| 5 | `down` | 2, loops | Health at zero |
+
+Status effects that can combine are not baked into the hero. They are overlays in `ui/status-fx.png` (64x64 cells
+that line up with a hero cell, 6 columns): rows `heal` (6 frames, once), `guard`, `ward`, `buff`, `poison`, `sleep`
+(4 frames each, looping). `HeroSprite` and `StatusFx` in `frontend/src/lobby.tsx` play both.
 
 ## Interface kit
 
@@ -94,6 +106,8 @@ when a player confirms that class. Heroes do not have hit, attack, or death rows
 | File | Size | Use |
 | --- | --- | --- |
 | `frame-panel.png` | 24x24, slice 6 | Main panels (`border-image`, with `fill`) |
+| `frame-view.png` | 32x32, slice 10 | Viewport frame with gold corner brackets; the centre is transparent |
+| `status-fx.png` | 64x64 cells, 6 columns | Hero status overlays (see Heroes) |
 | `frame-inset.png`, `frame-selected.png` | 16x16, slice 4 | Recessed slots, inputs, roster cells; gold selected state |
 | `button.png`, `button-primary.png`, `button-danger.png` | 16x16, slice 5 | Buttons with a 2px lip |
 | `tile-wall.png`, `tile-floor.png` | 32x32, 32x16 | Seamless backdrop brickwork and the floor heroes stand on |
@@ -102,7 +116,7 @@ when a player confirms that class. Heroes do not have hit, attack, or death rows
 | `icons.png` | 16x16 cells in one row | Order is listed in `ui/manifest.json` under `icons.order` |
 
 Icons are authored as small character maps in `ui.mjs` (one letter per material) and shaded by the engine. The CSS that
-uses the kit is `frontend/src/lobby.css`; `ui/manifest.json` also records the kit's colours.
+uses the kit is `frontend/src/lobby.css` (kit classes and the lobby) and `frontend/src/run/run.css` (the run screen); `ui/manifest.json` also records the kit's colours.
 
 ## Regenerating
 
@@ -112,7 +126,7 @@ Creature definitions live in `scripts/pixel-art/themes/<theme>.mjs`.
 ```
 npm run art:build     # regenerate every monster sheet, manifest, index and preview, then heroes and the interface kit
 npm run art:verify    # fail if art is stale, a frame is empty or clipped, or a roster rule is broken
-npm run art:gallery   # regenerate docs/art/bestiary.png
+npm run art:gallery   # regenerate docs/art/heroes.png and docs/art/bestiary.png
 ```
 
 `art:verify` enforces: unique creature ids, at least 5 monsters and 1-3 bosses per theme, sheets byte-identical

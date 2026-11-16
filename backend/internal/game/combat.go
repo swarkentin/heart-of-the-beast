@@ -224,7 +224,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if guard <= 0 {
 				guard = GuardDamageReduction
 			}
-			addCombatEvent(run, roundNumber, "player_defend", adventurerLabel(room, playerID)+" braces, blocking up to "+itoa(guard)+" damage from the next hit.")
+			message := adventurerLabel(room, playerID) + " braces, blocking up to " + itoa(guard) + " damage from the next hit."
+			if !submitted {
+				message = adventurerLabel(room, playerID) + " ran out of time and defends automatically, blocking up to " + itoa(guard) + " damage from the next hit."
+			}
+			addCombatEvent(run, roundNumber, "player_defend", message)
+			last := &run.LastCombatEvents[len(run.LastCombatEvents)-1]
+			last.ActorID = playerID
+			last.Auto = !submitted
 		}
 	}
 

@@ -556,3 +556,30 @@ func TestClassAbilityRejectsWrongModeAndArchetypeOnlyPlayers(t *testing.T) {
 		t.Fatalf("archetype-only legacy player should not gain an unassigned class ability, got %v", err)
 	}
 }
+
+func TestTimedOutPlayerIsMarkedAsDefendingAutomatically(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := &Room{ID: "room-1", PlayerIDs: []string{"player-1", "player-2"}, Version: 1}
+	if err := StartRun(room, "run-auto-defend", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
+		t.Fatal("expected the round to resolve at the deadline")
+	}
+	seen := map[string]CombatEvent{}
+	for _, event := range room.Run.LastCombatEvents {
+		if event.Kind == "player_defend" {
+			seen[event.ActorID] = event
+		}
+	}
+	if chosen, ok := seen["player-1"]; !ok || chosen.Auto {
+		t.Fatalf("a chosen defend must name its actor and not be automatic, got %+v", chosen)
+	}
+	timedOut, ok := seen["player-2"]
+	if !ok || !timedOut.Auto || !strings.Contains(timedOut.Message, "ran out of time") {
+		t.Fatalf("a timed-out player must be marked as defending automatically, got %+v", timedOut)
+	}
+}

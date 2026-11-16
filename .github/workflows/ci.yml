@@ -109,6 +109,9 @@ jobs:
       - name: Music system unit tests
         run: npm run test:audio
 
+      - name: Run screen unit tests
+        run: npm run test:ui
+
   backend:
     name: Backend workspace checks
     runs-on: ubuntu-latest
