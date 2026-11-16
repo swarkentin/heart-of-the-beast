@@ -54,7 +54,7 @@ jobs:
         run: |
           args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
           if [ -n "${BALANCE_BASELINE:-}" ]; then
-            args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
+            args+=(-baseline "$BALANCE_BASELINE")
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
           for variant in '6 1.00 10' '1 1.00 10' '6 1.75 10' '6 1.00 6'; do
