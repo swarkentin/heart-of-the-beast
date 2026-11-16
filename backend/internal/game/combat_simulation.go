@@ -13,6 +13,7 @@ type CombatSimulationSnapshot struct {
 	Players          []PlayerState `json:"players"`
 	Enemies          []Enemy       `json:"enemies"`
 	ExperienceReward int           `json:"experienceReward,omitempty"`
+	RandomPolicy     bool          `json:"randomPolicy,omitempty"`
 }
 
 // CombatSimulationReport is a machine-readable summary for one reproducible run.
@@ -20,6 +21,7 @@ type CombatSimulationReport struct {
 	Seed                  int64                            `json:"seed"`
 	Won                   bool                             `json:"won"`
 	Wiped                 bool                             `json:"wiped"`
+	Stalled               bool                             `json:"stalled"`
 	Rounds                int                              `json:"rounds"`
 	PlayerDamageDealt     int                              `json:"playerDamageDealt"`
 	PlayerDamageReceived  int                              `json:"playerDamageReceived"`
@@ -97,6 +99,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		PlayerProgression:     make(map[string]ProgressionTransition),
 	}
 	rng := rand.New(rand.NewSource(seed))
+	lastAbilityRound := make(map[string]int, len(players))
 
 	for round := 1; round <= maxRounds; round++ {
 		if allSimulationEnemiesDefeated(enemies) {
@@ -131,6 +134,10 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			if player.Health <= 0 {
 				continue
 			}
+			if snapshot.RandomPolicy {
+				simulateRandomCombatAction(playerID, player, players, enemies, rng, &report)
+				continue
+			}
 			targetIndex := simulationTarget(enemies, rng)
 			if targetIndex < 0 {
 				break
@@ -139,24 +146,27 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			bonuses := bonusesFor(player)
 			passive := classPassiveEffects(player, target, target.Intent)
 
-			if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
-				room := &Room{
-					PlayerIDs: playerIDs,
-					Run: &Run{
-						Players: players, CurrentRoomID: "simulation",
-						Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
-					},
+			if lastAbilityRound[playerID] == 0 || round-lastAbilityRound[playerID] >= 3 {
+				if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
+					room := &Room{
+						PlayerIDs: playerIDs,
+						Run: &Run{
+							Players: players, CurrentRoomID: "simulation",
+							Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
+						},
+					}
+					beforeEnemyHealth := simulationEnemyHealth(enemies)
+					beforePlayerHealth := simulationPlayerHealth(players)
+					if err := applyClassAbility(room, player, command, round); err != nil {
+						return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
+					}
+					report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
+					report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
+					ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
+					report.AbilityUses[ability.EffectID]++
+					lastAbilityRound[playerID] = round
+					continue
 				}
-				beforeEnemyHealth := simulationEnemyHealth(enemies)
-				beforePlayerHealth := simulationPlayerHealth(players)
-				if err := applyClassAbility(room, player, command, round); err != nil {
-					return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
-				}
-				report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
-				report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
-				ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
-				report.AbilityUses[ability.EffectID]++
-				continue
 			}
 
 			if target.Intent != nil && target.Intent.Interruptible && target.Intent.Damage >= 5 && player.Stats.Focus > 0 {
@@ -276,6 +286,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 	if allSimulationPlayersDown(players) && !report.Won {
 		report.Wiped = true
 	}
+	report.Stalled = !report.Won && !report.Wiped
 	if report.Won {
 		partyBonuses := simulationPartyBonuses(players)
 		for _, player := range players {
@@ -386,6 +397,60 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 		return command, true
 	default:
 		return Command{}, false
+	}
+}
+
+// simulateRandomCombatAction selects uniformly from legal basic combat choices.
+// It deliberately does not use class abilities: this is a deliberately weak
+// decision policy used to establish how much tactical decisions matter.
+func simulateRandomCombatAction(playerID string, player *PlayerState, players map[string]*PlayerState, enemies []Enemy, rng *rand.Rand, report *CombatSimulationReport) {
+	type choice struct {
+		action string
+		target int
+	}
+	choices := []choice{{action: "defend", target: -1}}
+	for i := range enemies {
+		enemy := &enemies[i]
+		if enemy.Health <= 0 {
+			continue
+		}
+		choices = append(choices, choice{action: "attack", target: i})
+		if enemy.Intent != nil && enemy.Intent.Interruptible {
+			choices = append(choices, choice{action: "interrupt", target: i})
+		}
+	}
+	selected := choices[rng.Intn(len(choices))]
+	switch selected.action {
+	case "defend":
+		player.Guarding = true
+	case "interrupt":
+		enemy := &enemies[selected.target]
+		passive := classPassiveEffects(player, enemy, enemy.Intent)
+		damage := resolveInterruptDamage(player.Stats.Focus, bonusesFor(player).InterruptDamage, passive.InterruptDamage)
+		transition := resolveHealthDamage(enemy.Health, damage)
+		enemy.Health = transition.Health
+		report.PlayerDamageDealt += transition.Applied
+		enemy.Intent = nil
+	case "attack":
+		enemy := &enemies[selected.target]
+		passive := classPassiveEffects(player, enemy, enemy.Intent)
+		attack := resolveAttackDamage(AttackDamageInput{
+			BaseDamage:          player.StrikeDamage + player.Stats.Power,
+			BonusDamage:         bonusesFor(player).AttackDamage + passive.AttackDamage,
+			MarkedDamage:        enemy.MarkedDamage,
+			IncludeMarkedDamage: true,
+			ConsumeMarkedDamage: true,
+			ResolveReady:        player.ClassCombat.ResolveReady,
+			UseResolve:          true,
+			ResolveBonus:        3,
+			Telegraph:           enemy.Intent != nil && enemy.Intent.Interruptible,
+			TelegraphBonus:      bonusesFor(player).AttackVsTelegraph,
+		})
+		enemy.MarkedDamage = attack.RemainingMarkedDamage
+		player.ClassCombat.ResolveReady = attack.ResolveReady
+		transition := resolveHealthDamage(enemy.Health, attack.Damage)
+		enemy.Health = transition.Health
+		report.PlayerDamageDealt += transition.Applied
 	}
 }
 
@@ -511,6 +576,7 @@ type CombatSimulationBatchReport struct {
 	Runs                 int     `json:"runs"`
 	Wins                 int     `json:"wins"`
 	Wipes                int     `json:"wipes"`
+	Stalled              int     `json:"stalled"`
 	WinRate              float64 `json:"winRate"`
 	MedianRounds         int     `json:"medianRounds"`
 	P90Rounds            int     `json:"p90Rounds"`
@@ -534,6 +600,9 @@ func SummarizeCombatBatch(reports []CombatSimulationReport) CombatSimulationBatc
 		}
 		if report.Wiped {
 			summary.Wipes++
+		}
+		if report.Stalled {
+			summary.Stalled++
 		}
 		rounds[i] = report.Rounds
 		dealt[i] = report.PlayerDamageDealt
