@@ -93,7 +93,7 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 		SeedCount: seedCount,
 		FirstSeed: firstSeed,
 		LastSeed:  firstSeed + int64(seedCount) - 1,
-		Policy:    "paired tactical benchmark with live enemy intent damage scaled x1.25 and party-aware enemy health, signature abilities spaced at least three rounds apart, and uniformly random legal basic combat choices",
+		Policy:    "paired tactical benchmark with party-scaled live enemy intent damage starting at x1.25 and party-aware enemy health, signature abilities spaced at least three rounds apart, and uniformly random legal basic combat choices",
 	}
 	for _, encounterID := range balanceEncounterIDs {
 		for _, class := range classes {
