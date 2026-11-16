@@ -28,6 +28,7 @@ type Room struct {
 	PlayerArchetypes   map[string]string         `json:"playerArchetypes,omitempty"`
 	PlayerClasses      map[string]string         `json:"playerClasses,omitempty"`
 	PlayerTokenHashes  map[string]string         `json:"playerTokenHashes"`
+	PlayerProfileIDs   map[string]string         `json:"playerProfileIds,omitempty"`
 	Presence           map[string]PlayerPresence `json:"presence,omitempty"`
 	SpectatorTokenHash string                    `json:"spectatorTokenHash"`
 	Run                *Run                      `json:"run,omitempty"`
