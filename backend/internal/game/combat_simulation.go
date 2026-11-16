@@ -389,11 +389,12 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 	}
 }
 
-
 // sortedSimulationPlayerIDs keeps policy tie-breaking independent of Go map iteration.
 func sortedSimulationPlayerIDs(players map[string]*PlayerState) []string {
 	ids := make([]string, 0, len(players))
-	for id := range players { ids = append(ids, id) }
+	for id := range players {
+		ids = append(ids, id)
+	}
 	sort.Strings(ids)
 	return ids
 }
