@@ -83,21 +83,37 @@ export function ConnectingScreen({ message }: { message: string }) {
 }
 
 export function SharedMenu({ profile, classes = [], rewards = [], audioControls, actions, onSaveName }: { profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; actions?: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
+  const [profileOpen, setProfileOpen] = useState(false);
   const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
   const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
-  return <details className="px-shared-menu">
+  useEffect(() => {
+    if (!profileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setProfileOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [profileOpen]);
+  return <>
+  <details className="px-shared-menu">
     <summary className="px-button px-button-small">MENU</summary>
     <div className="px-panel px-shared-menu-panel">
-      <strong className="px-menu-title">PROFILE & COLLECTION</strong>
-      {profile ? <ProfileSummary profile={profile} classes={classes} rewards={rewards} onSaveName={onSaveName} /> : <p className="px-copy">Preparing your profile...</p>}
-      {audioControls}
-      {actions}
-      <strong className="px-menu-title">ABOUT THIS BUILD</strong>
-      <span>Version: {versionLabel}</span>
-      {commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">VIEW GITHUB COMMIT</a> : null}
-      <a href="https://github.com/swarkentin/heart-of-the-beast/issues/new" target="_blank" rel="noreferrer">REPORT AN ISSUE</a>
+      <button type="button" className="px-button px-button-small" disabled={!profile} onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileOpen(true); }}>PROFILE & COLLECTION</button>
+      <div className="px-menu-audio"><strong className="px-menu-title">SOUND</strong>{audioControls}</div>
+      {actions ? <div className="px-menu-context"><span className="px-menu-title">PARTY</span>{actions}</div> : null}
+      <div className="px-menu-about">
+        <strong className="px-menu-title">ABOUT THIS BUILD</strong>
+        <span>Version: {versionLabel}</span>
+        {commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">VIEW GITHUB COMMIT</a> : null}
+        <a href="https://github.com/swarkentin/heart-of-the-beast/issues/new" target="_blank" rel="noreferrer">REPORT AN ISSUE</a>
+      </div>
     </div>
-  </details>;
+  </details>
+  {profileOpen && profile ? <div className="px-backdrop px-profile-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setProfileOpen(false); }}>
+    <section className="px-panel px-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="px-profile-title">
+      <header className="px-profile-dialog-head"><div><p className="px-eyebrow">PROFILE</p><h2 id="px-profile-title">Adventurer collection</h2></div><button type="button" className="px-button px-button-small" onClick={() => setProfileOpen(false)} autoFocus>CLOSE</button></header>
+      <ProfileSummary profile={profile} classes={classes} rewards={rewards} onSaveName={onSaveName} />
+    </section>
+  </div> : null}
+  </>;
 }
 
 export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profile, classes = [], rewards = [], audioControls, onSaveName }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
@@ -217,6 +233,8 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
   const passive = focusedClass ? catalog?.classPassives.find(value => value.id === focusedClass.passiveId) : undefined;
   const gear = focusedClass ? focusedClass.startingEquipment.map(id => catalog?.equipment.find(value => value.id === id)?.name || id) : [];
   const archetype = ARCHETYPES.find(item => item.id === focusedClass?.archetypeId);
+  const focusedMastery = focusedClass ? profile?.classMastery[focusedClass.id] || { experience: 0, level: 1 } : { experience: 0, level: 1 };
+  const focusedMasteryProgress = focusedMastery.experience % 100;
   const groups = [...ARCHETYPES.map(item => ({ ...item, classes: playable.filter(value => value.archetypeId === item.id) })), { id: "other", name: "Other", icon: "strike" as IconId, blurb: "", classes: playable.filter(value => !ARCHETYPES.some(item => item.id === value.archetypeId)) }].filter(group => group.classes.length > 0);
 
   return <GameShell status="PARTY LOBBY" tools={<SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<button type="button" className="px-button px-button-small px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>} />}>
@@ -264,7 +282,12 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
                 const mastery = profile?.classMastery[item.id] || { experience: 0, level: 1 };
                 const progress = mastery.experience % 100;
                 return <button key={item.id} className={"px-class" + (item.id === focusedClass.id ? " px-class-focused" : "") + (item.id === selectedClassId ? " px-class-chosen" : "")} style={vars({ "--accent": ACCENTS[item.id] || "#d6a64d" })} onClick={() => setPreviewClassId(item.id)} aria-pressed={item.id === focusedClass.id}>
-                  <Bust classId={item.id} /><strong>{item.name}</strong><small className="px-class-mastery">RANK {mastery.level || 1} Â· {progress}/100 XP</small><span className="px-class-mastery-track"><i style={{ width: progress + "%" }} /></span>{item.id === selectedClassId ? <i><Icon id="ready" size={1} /><span className="px-sr">Your chosen class</span></i> : null}
+                  <Bust classId={item.id} />
+                  <strong>{item.name}</strong>
+                  <span className="px-class-mastery-mini" title={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent to next rank"} aria-label={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent progress"}>
+                    <b>M{mastery.level || 1}</b><span><span style={vars({ width: progress + "%" })} /></span>
+                  </span>
+                  {item.id === selectedClassId ? <i><Icon id="ready" size={1} /><span className="px-sr">Your chosen class</span></i> : null}
                 </button>;
               })}</div>
             </div>)}
@@ -278,6 +301,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
             <div className="px-showcase"><div className="px-showcase-floor" /><HeroSprite key={focusedClass.id} classId={focusedClass.id} flourish={focusedClass.id === selectedClassId ? flourish : 0} label={focusedClass.name + " hero"} /></div>
             <div className="px-detail-copy">
               <div className="px-detail-title"><h3>{focusedClass.name}</h3><span className="px-chip">{archetype ? <Icon id={archetype.icon} size={1} /> : null}{(archetype?.name || focusedClass.archetypeId).toUpperCase()}</span></div>
+              <div className="px-selected-mastery"><strong>CLASS MASTERY · RANK {focusedMastery.level || 1}</strong><span>{focusedMasteryProgress}/100 XP TO NEXT RANK</span><div role="progressbar" aria-label={focusedClass.name + " mastery progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={focusedMasteryProgress}><i style={{ width: focusedMasteryProgress + "%" }} /></div></div>
               <p className="px-copy">{focusedClass.description}</p>
               <dl className="px-stats">
                 <div><dt><Icon id="vitality" />Vitality</dt><dd><b>{focusedClass.startingStats.health}</b></dd></div>
