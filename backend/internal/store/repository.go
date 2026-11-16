@@ -169,7 +169,7 @@ func (m *Memory) GetProfile(_ context.Context, credentialHash string) (*Profile,
 func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, classID string, xp int64, now time.Time) (*Profile, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	key := profileID + ":" + runID + ":" + playerID
+	key := profileID + ":" + runID
 	for _, profile := range m.profiles {
 		if profile.ID != profileID {
 			continue
