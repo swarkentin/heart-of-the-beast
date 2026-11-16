@@ -61,7 +61,7 @@ func renderMarkdown(report game.BalanceReport, comparison *game.BalanceCompariso
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Combat balance report\n\n")
 	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n- Tuning: block %d, enemy HP x%.2f, player damage %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount, report.Tuning.BlockAmount, report.Tuning.EnemyHealthMultiplier, report.Tuning.PlayerDamage)
-	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat findings as investigation prompts and validate with playtests.\n\n", report.Policy)
+	fmt.Fprintf(&b, "> Policy limitation: %s. The tactical policy is a deterministic benchmark, not optimal play; the random policy chooses uniformly among basic legal actions and omits class abilities. Treat findings as investigation prompts and validate with playtests.\n\n", report.Policy)
 	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Stalled | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|---:|\n")
 	for _, s := range report.Scenarios {
 		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.Stalled, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
