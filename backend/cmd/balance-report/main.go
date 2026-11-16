@@ -12,6 +12,9 @@ import (
 
 func main() {
 	seeds := flag.Int("seeds", 30, "number of deterministic seeds per scenario")
+	block := flag.Int("block", 6, "player block/guard amount override")
+	enemyHealth := flag.Float64("enemy-health", 1, "enemy health multiplier override")
+	playerDamage := flag.Int("player-damage", 10, "player base strike damage override")
 	firstSeed := flag.Int64("first-seed", 1, "first deterministic seed")
 	baselinePath := flag.String("baseline", "", "optional baseline report JSON to compare against")
 	jsonPath := flag.String("json", "balance-report.json", "JSON report output path")
@@ -19,7 +22,7 @@ func main() {
 	failOnRegression := flag.Bool("fail-on-regression", false, "exit non-zero when regression thresholds are crossed")
 	flag.Parse()
 
-	report, err := game.GenerateBalanceReport(*seeds, *firstSeed)
+	report, err := game.GenerateBalanceReportWithTuning(*seeds, *firstSeed, game.BalanceTuning{BlockAmount:*block, EnemyHealthMultiplier:*enemyHealth, PlayerDamage:*playerDamage})
 	if err != nil {
 		fatal(err)
 	}
@@ -57,11 +60,11 @@ func main() {
 func renderMarkdown(report game.BalanceReport, comparison *game.BalanceComparison) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Combat balance report\n\n")
-	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount)
+	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n- Tuning: block %d, enemy HP x%.2f, player damage %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount, report.Tuning.BlockAmount, report.Tuning.EnemyHealthMultiplier, report.Tuning.PlayerDamage)
 	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat findings as investigation prompts and validate with playtests.\n\n", report.Policy)
-	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|\n")
+	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Stalled | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|---:|\n")
 	for _, s := range report.Scenarios {
-		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
+		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.Stalled, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
 	}
 	b.WriteString("\n## Findings and suggested investigations\n\n")
 	if comparison == nil {
