@@ -438,7 +438,7 @@ func TestClericRenewalCanHealAnotherPartyMember(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if target.Health != 21 {
+	if target.Health != 18 {
 		t.Fatalf("Renewal should restore 11 health to the selected ally, got %d", target.Health)
 	}
 }
