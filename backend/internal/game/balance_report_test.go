@@ -4,9 +4,13 @@ import "testing"
 
 func TestGenerateBalanceReportCoversClassesAndPartySizesDeterministically(t *testing.T) {
 	first, err := GenerateBalanceReport(1, 41)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	second, err := GenerateBalanceReport(1, 41)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(first.Scenarios) != len(balanceEncounterIDs)*(len(ClassCatalog())+2) {
 		t.Fatalf("got %d scenarios", len(first.Scenarios))
 	}
@@ -26,11 +30,11 @@ func TestGenerateBalanceReportCoversClassesAndPartySizesDeterministically(t *tes
 func TestCompareBalanceReportsFindsRegressionsAndDifficultyExtremes(t *testing.T) {
 	baseline := BalanceReport{Version: 1, Scenarios: []BalanceScenarioReport{
 		{ID: "hard", Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 0.80, P90Rounds: 8}, WipeRate: 0.05},
-		{ID: "easy", Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 0.90}, WipeRate: 0.01},
+		{ID: "easy", EncounterBudget: 3, Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 0.90}, WipeRate: 0.01},
 	}}
 	current := BalanceReport{Version: 1, Scenarios: []BalanceScenarioReport{
 		{ID: "hard", Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 0.65, P90Rounds: 11}, WipeRate: 0.20},
-		{ID: "easy", Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 1}, WipeRate: 0},
+		{ID: "easy", EncounterBudget: 3, Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 1}, WipeRate: 0},
 		{ID: "new", Summary: CombatSimulationBatchReport{Runs: 100, WinRate: 0.40}, WipeRate: 0.35},
 	}}
 	result := CompareBalanceReports(baseline, current)
