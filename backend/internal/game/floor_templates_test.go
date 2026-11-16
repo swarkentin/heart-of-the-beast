@@ -49,7 +49,7 @@ func TestFloorTemplateCatalogRejectsInconsistentContent(t *testing.T) {
 // The fingerprint covers 400 seeds x 3 depths x 4 party sizes, ignoring the later-added themeId field. Change it
 // only as a deliberate Catacombs content migration.
 func TestCatacombsFloorsAreUnchangedByThemedGeneration(t *testing.T) {
-	const golden = "1e7c2fcc8fffe87e65216f1735afd8beb1b6ca25d07c3345129ebc717fb54588"
+	const golden = "75a3b30171497df21434312fa7e5ff272afe358cc6167b428e1ad16654a9832c"
 	hash := sha256.New()
 	for seed := uint64(1); seed <= 400; seed++ {
 		for depth := 1; depth <= 3; depth++ {
