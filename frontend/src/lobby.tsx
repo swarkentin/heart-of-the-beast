@@ -6,8 +6,9 @@ import "./lobby.css";
 
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
-export type LobbyProfile = { adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }> };
-export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[] };
+export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
+export type LobbyProfile = { adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
+export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[] };
 export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
@@ -81,7 +82,7 @@ export function ConnectingScreen({ message }: { message: string }) {
   </GameShell>;
 }
 
-export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel, profile, classes = [] }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[] }) {
+export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel, profile, classes = [], rewards = [] }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[] }) {
   const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
   const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
   return <GameShell status={profileLevel ? "ADVENTURER RANK " + profileLevel : "PREPARING PROFILE"} tools={
@@ -119,13 +120,14 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       </form>
       {error ? <p className="px-error" role="alert">{error}</p> : null}
     </section>
-    {profile ? <ProfileSummary profile={profile} classes={classes} /> : null}
+    {profile ? <ProfileSummary profile={profile} classes={classes} rewards={rewards} /> : null}
     <footer className="px-build-footer">{commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">BUILD {versionLabel}</a> : <span>DEVELOPMENT BUILD</span>}</footer>
   </GameShell>;
 }
 
-function ProfileSummary({ profile, classes }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[] }) {
+function ProfileSummary({ profile, classes, rewards }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[]; rewards: LobbyProfileReward[] }) {
   const rankXP = profile.adventurerXp % 100;
+  const recentRewards = profile.unlockedCosmetics.slice(-3).reverse().map(id => rewards.find(reward => reward.id === id)).filter((reward): reward is LobbyProfileReward => Boolean(reward));
   return <section className="px-panel px-profile-summary" aria-label="Adventurer progression">
     <div className="px-profile-head">
       <div><p className="px-eyebrow">YOUR ADVENTURER</p><strong className="px-profile-rank">RANK {profile.adventurerLevel}</strong></div>
@@ -143,6 +145,12 @@ function ProfileSummary({ profile, classes }: { profile: LobbyProfile; classes: 
           <span className="px-mastery-xp">{xp}/100 XP</span>
         </div>;
       })}
+    </div>
+    <div className="px-collection">
+      <div className="px-collection-head"><strong>COLLECTION</strong><span>{profile.unlockedCosmetics.length} REWARDS EARNED</span></div>
+      {recentRewards.length > 0
+        ? <ul>{recentRewards.map(reward => <li key={reward.id}><span className="px-collection-kind">{reward.category.toUpperCase()}</span><strong>{reward.name}</strong><small>{reward.description}</small></li>)}</ul>
+        : <p>{rewards.length === 0 ? "Preparing your collection…" : "Your first title arrives at Adventurer Rank 2 or Class Mastery Rank 2."}</p>}
     </div>
   </section>;
 }
@@ -226,7 +234,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
         </ul>
       </div>
 
-      {profile ? <ProfileSummary profile={profile} classes={catalog?.classes ?? []} /> : null}
+      {profile ? <ProfileSummary profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} /> : null}
 
       <div className="px-panel px-classes">
         <div className="px-classes-head"><p className="px-eyebrow">CREATE YOUR ADVENTURER</p><h2>Choose your path</h2><p className="px-copy">Every class can survive the catacombs alone. Pick the way of fighting that feels like yours.</p></div>
