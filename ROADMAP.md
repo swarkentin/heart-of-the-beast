@@ -87,10 +87,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
   - [x] Add explicit combat snapshots, deterministic attack/defend/interrupt baseline policies, repeatable seeded runs, batch execution, and median/tail distribution summaries.
   - [x] Apply existing talent combat modifiers and class passive triggers in the seeded simulator, including attack/interrupt bonuses, mitigation, reflection, Resolve, companion recovery, and encounter healing.
   - [x] Execute registered class signature abilities through the same authoritative handlers in seeded simulations, with deterministic situational policies and ability-use reporting.
+  - [x] Run a fixed solo/co-op balance suite in GitHub Actions, record successful main-branch reports as baselines, compare pull requests for meaningful drift, and publish evidence-based investigation prompts.
   - [x] Simulate complete seeded multi-floor runs by making random legal combat, route, event, and inter-floor decisions through authoritative game commands; report completion/wipe rates and the probability of reaching each depth for solo and 1–4 player parties.
-  - [ ] Add selectable player-like decision policies and compare their depth/completion probabilities against the random baseline; validate simulator outcomes against live-transition fixtures before using reports for balance decisions.
-  - [ ] Extend run simulation coverage as consumables and additional room/run effects become playable; keep the simulator on the same authoritative command/transition path.
-  - [ ] Add live-transition parity fixtures and player-like decision policies before using run reports for balance tuning.
+  - [ ] Add selectable player-like decision policies and compare their depth/completion probabilities against the random baseline across identical seeds and party compositions.
+  - [ ] Extend run simulation coverage as consumables become playable; add live-transition parity fixtures before using full-run reports for balance tuning.
 - [ ] Reward and difficulty curves validated through playtesting.
 - [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed; carry party state and run rewards between floors; add a health-restoration-versus-perk choice between floors, occasional seeded minibosses with meaningful rewards, and a soundtrack that evolves with depth and encounter intensity; scale encounter pressure with depth and party size. Target 3–5 minutes per level. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
 - [ ] Iterate on the playable multi-level run spike before merging it: rebalance health/damage and encounter pacing to reach the 3–5 minute floor target without relying on enemy HP inflation; slow early XP/level progression; tune healing and party-size scaling; add tactical enemy roles, complementary formations, and clearly telegraphed actions; introduce real risk/reward trade-offs for shrines, healing, perks, optional encounters, and treasure; add subtle depth-sensitive percussion to the existing musical progression. Validate solo and co-op with recorded floor duration, player damage/health changes, level-up timing, and choice outcomes. See the playtest follow-up section in `docs/game-design/multi-level-dungeon-spike.md`.
@@ -120,7 +120,8 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 - [ ] Traps, secrets, treasure rooms, merchants, puzzles, and alternate routes.
 - [ ] Reusable optional side-mission framework.
 - [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
-- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the non-Catacombs themes room graphs and floor generation so their encounters can appear in runs; add a dedicated miniboss sprite.
+- [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
+- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the nine remaining themes floor templates so their encounters can appear in runs; add a dedicated miniboss sprite.
 - [ ] Run modifiers and varied dungeon themes.
 
 ## Phase 4 — Open-world intermissions
@@ -133,7 +134,8 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 ## Phase 5 — Content and presentation
 
 - [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
-- [ ] Per-theme room backgrounds, props, and encounter tables for the eleven themes that already have monster art; server-side theme and enemy definitions that reference sprite ids.
+- [x] Pixel-art room backdrops (first-person and cinematic; entry, corridor, event, boss, vault) for all eleven themes, registered in Go so a missing background fails CI (ADR 0025)
+- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi; a lobby theme picker; encounter tables for the nine non-playable themes.
 - [ ] More enemy families, bosses, side missions, items, and abilities.
 - [ ] Cinematic spectator camera movement, animation, audio, accessibility, and localization polish.
 - [ ] Content authoring conventions and validation tools.
