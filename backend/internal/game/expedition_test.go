@@ -1463,7 +1463,6 @@ func TestShopStillWorksAfterTheCampIsSavedAndReloaded(t *testing.T) {
 	}
 }
 
-
 func TestPermanentStrikeUpgradesAreCappedAndWhetstonesScaleWithDepth(t *testing.T) {
 	room := openTestShop(t, 1, "strike-cap-run")
 	player := room.Run.Players["player-1"]
@@ -1497,7 +1496,6 @@ func TestPermanentStrikeUpgradesAreCappedAndWhetstonesScaleWithDepth(t *testing.
 		}
 	}
 }
-
 
 func TestGoldScalingTapersOffInLongExpeditions(t *testing.T) {
 	if got, want := EncounterGold(5, 100), EncounterGold(5, 8); got != want {
