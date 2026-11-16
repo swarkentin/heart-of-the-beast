@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 )
 
 // ClassMastery is profile-wide and intentionally independent of a character's
@@ -49,4 +51,17 @@ type ProfileRepository interface {
 	GetOrCreateProfile(context.Context, string, string, time.Time) (*Profile, error)
 	GetProfile(context.Context, string) (*Profile, error)
 	AwardRunXP(context.Context, string, string, string, string, int64, time.Time) (*Profile, error)
+}
+
+func applyProfileRewardUnlocks(profile *Profile) bool {
+	masteryLevels := make(map[string]int, len(profile.ClassMastery))
+	for classID, mastery := range profile.ClassMastery {
+		masteryLevels[classID] = mastery.Level
+	}
+	newUnlocks := game.ProfileRewardUnlocks(profile.AdventurerLevel, masteryLevels, profile.UnlockedCosmetics)
+	if len(newUnlocks) == 0 {
+		return false
+	}
+	profile.UnlockedCosmetics = append(profile.UnlockedCosmetics, newUnlocks...)
+	return true
 }
