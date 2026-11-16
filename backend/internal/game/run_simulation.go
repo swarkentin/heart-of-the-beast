@@ -141,6 +141,9 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 			// A shared party choice avoids nondeterministic tie-breaking in the
 			// live co-op vote resolver while still randomizing the route.
 			eligible := eligibleCombatPlayers(room)
+			if room.Run.NavigationVote == nil && len(eligible) > 1 {
+				eligible = eligible[:1]
+			}
 			for _, playerID := range eligible {
 				if err := ApplyCommand(room, playerID, Command{Type: "choose_exit", ExitID: exit.ID}, now); err != nil {
 					return RunSimulationReport{}, fmt.Errorf("seed %d choose exit %s: %w", seed, exit.ID, err)
