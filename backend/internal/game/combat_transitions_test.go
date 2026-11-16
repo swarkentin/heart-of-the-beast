@@ -90,7 +90,7 @@ func TestResolveIncomingDamage(t *testing.T) {
 		{
 			name:  "ward is consumed even when prior mitigation reduces damage to zero",
 			input: IncomingDamageInput{IntentDamage: 2, Ward: 5, WardReflect: 3},
-			want:  IncomingDamageTransition{Damage: 0, Blocked: 2, WardRemaining: 0, WardReflect: 3},
+			want:  IncomingDamageTransition{Damage: 0, Blocked: 2, WardAbsorbed: 2, WardRemaining: 0, WardReflect: 3},
 		},
 		{
 			name:  "guard blocks only its configured amount from an 8-damage hit",

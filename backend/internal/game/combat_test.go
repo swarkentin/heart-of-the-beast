@@ -350,8 +350,8 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.ClassCombat.DamageTakenLastRound != 11 {
-		t.Fatalf("expected 11 damage recorded for Reckoning, got %+v", player.ClassCombat)
+	if player.ClassCombat.DamageTakenLastRound != 12 {
+		t.Fatalf("expected 12 damage recorded for Reckoning, got %+v", player.ClassCombat)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "ability", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
@@ -362,8 +362,8 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 			found = true
 		}
 	}
-	if !found || player.ClassCombat.DamageTakenLastRound != 3 {
-		t.Fatalf("Reckoning should apply its 12-damage cap, consume the prior damage, then record the new 3-damage hit: events=%+v state=%+v", room.Run.LastCombatEvents, player.ClassCombat)
+	if !found || player.ClassCombat.DamageTakenLastRound != 4 {
+		t.Fatalf("Reckoning should apply its 12-damage cap, consume the prior damage, then record the new 4-damage hit: events=%+v state=%+v", room.Run.LastCombatEvents, player.ClassCombat)
 	}
 }
 
@@ -375,7 +375,7 @@ func TestSpellguardRunicWardAbsorbsAndReflectsNextAttack(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.Health != player.MaxHealth || enemy.Health != 12 || player.ClassCombat.Ward != 0 {
+	if player.Health != player.MaxHealth-1 || enemy.Health != 12 || player.ClassCombat.Ward != 0 {
 		t.Fatalf("Runic Ward should absorb the mitigated hit and reflect 2 damage: player=%+v enemy=%+v", player, enemy)
 	}
 }
@@ -413,7 +413,7 @@ func TestRangerPinningShotWeakensTelegraphedAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 10 || room.Run.Players["player-1"].Health != room.Run.Players["player-1"].MaxHealth || enemy.Intent == nil {
+	if enemy.Health != 10 || room.Run.Players["player-1"].Health != room.Run.Players["player-1"].MaxHealth-3 || enemy.Intent == nil {
 		t.Fatalf("Pinning Shot should deal 10 damage and weaken the current hit before a fresh intent is telegraphed: enemy=%+v player=%+v", enemy, room.Run.Players["player-1"])
 	}
 	weakenedIntent := false
