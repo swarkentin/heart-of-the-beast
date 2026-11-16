@@ -326,6 +326,14 @@ func applyFloorEntryDamage(room *Room) {
 // EncounterGold is the gold each adventurer earns for clearing an encounter, before floor modifiers: a base, plus
 // the encounter's difficulty budget, plus a little for depth.
 func EncounterGold(budget, depth int) int {
+	// Encounter payouts rise gently at first, then stop scaling. The old uncapped depth bonus
+	// rewarded farming longer expeditions with enough gold to buy every permanent upgrade.
+	if depth < 0 {
+		depth = 0
+	}
+	if depth > 8 {
+		depth = 8
+	}
 	return 4 + 2*budget + depth
 }
 
