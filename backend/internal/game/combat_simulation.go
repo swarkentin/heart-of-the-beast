@@ -571,7 +571,7 @@ func allSimulationPlayersDown(players map[string]*PlayerState) bool {
 type CombatSimulationBatchReport struct {
 	Runs                 int     `json:"runs"`
 	Wins                 int     `json:"wins"`
- 	Wipes                int     `json:"wipes"`
+	Wipes                int     `json:"wipes"`
 	Stalled              int     `json:"stalled"`
 	WinRate              float64 `json:"winRate"`
 	MedianRounds         int     `json:"medianRounds"`
