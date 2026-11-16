@@ -1428,3 +1428,30 @@ func TestRunProgressXPRewardsDistance(t *testing.T) {
 		t.Fatalf("a completed older run is worth %d, got %d", RunXPPerEncounter+RunXPCompletionBonus, got)
 	}
 }
+
+func TestShopStillWorksAfterTheCampIsSavedAndReloaded(t *testing.T) {
+	room := openTestShop(t, 2, "shop-reload")
+	data, err := json.Marshal(room.Run.Camp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reloaded Camp
+	if err := json.Unmarshal(data, &reloaded); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Purchases != nil || reloaded.Ready != nil {
+		t.Fatal("expected an untouched camp to reload without its maps, as the store does")
+	}
+	room.Run.Camp = &reloaded
+	buyer := room.Run.Players["player-1"]
+	buyer.Gold = 100
+	if err := ApplyCommand(room, "player-1", Command{Type: "buy", ChoiceID: "whetstone"}, expeditionNow); err != nil {
+		t.Fatalf("buying at a reloaded camp: %v", err)
+	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "ready"}, expeditionNow); err != nil {
+		t.Fatalf("readying at a reloaded camp: %v", err)
+	}
+	if !room.Run.Camp.Ready["player-1"] || len(room.Run.Camp.Purchases["player-1"]) != 1 {
+		t.Fatalf("purchase or ready was lost: %+v", room.Run.Camp)
+	}
+}

@@ -60,6 +60,20 @@ type Camp struct {
 	NextDungeonModifiers []ActiveFloorModifier `json:"nextDungeonModifiers,omitempty"`
 }
 
+// ensureMaps restores the per-player maps. They are saved with omitempty, so a camp reloaded before anyone bought,
+// readied or voted comes back with nil maps, and writing to one would panic.
+func (camp *Camp) ensureMaps() {
+	if camp.Purchases == nil {
+		camp.Purchases = make(map[string][]string)
+	}
+	if camp.Ready == nil {
+		camp.Ready = make(map[string]bool)
+	}
+	if camp.Votes == nil {
+		camp.Votes = make(map[string]string)
+	}
+}
+
 // openCamp ends a floor: the party rests, learns what the next floor holds, and starts the camp mini-game.
 func openCamp(room *Room, round int, now time.Time) {
 	run := room.Run
@@ -209,6 +223,7 @@ func applyCampCommand(room *Room, actorID string, command Command, now time.Time
 	if player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
 		return ErrInvalidPhase
 	}
+	run.Camp.ensureMaps()
 	// A command that arrives after the deadline finds the camp already moved on.
 	if AdvanceCamp(room, now) && (run.Phase != PhaseIntermission || run.Camp == nil) {
 		return ErrInvalidPhase
