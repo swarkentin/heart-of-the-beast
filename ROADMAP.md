@@ -135,7 +135,7 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 - [x] Dungeon expeditions (ADR 0029): an endless chain of dungeons, each 4–6 generated floors in one of eleven themes, ended only by a wipe; a two-option theme vote with per-dungeon modifiers after every dungeon boss; camps (mini-game and shop) only at a dungeon's midpoint and between dungeons; floor debuffs and perks that grow with depth; dungeon bosses with enrage, summon, barrier and cataclysm mechanics; discovery and vault rooms whose choices are trade-offs or gambles; a rank and personal best for how far the party got; lobby dungeon picker.
 - [x] Feed expedition distance into persistent progression (ADR 0028): profile and class-mastery XP now come from fights won, floors cleared and dungeons conquered across the whole expedition.
 - [ ] Keep each profile's best expedition distance and rank on the server and show them in the Profile menu (today the personal best is browser-only).
-- [ ] Tune the expedition by play: gold income and shop prices, modifier strength, boss thresholds, floor length against the 3–5 minute target, and the difficulty of floors 4–6. Give floor guardians (not only dungeon bosses) a mechanic each.
+- [ ] Tune the expedition by play: modifier strength, boss thresholds, floor length against the 3–5 minute target, and the difficulty of floors 4–6. Give floor guardians (not only dungeon bosses) a mechanic each. Initial Strike and gold curves are now capped and documented in `docs/game-design/expedition-economy-and-strike-scaling.md`.
 - [ ] Grow the camp: co-operative or head-to-head mini-games, consumables that are used as combat actions, and theme-flavoured modifiers, shopkeepers and camp backdrops.
 
 ## Phase 4 — Open-world intermissions
