@@ -143,11 +143,7 @@ func (catalog EncounterCatalog) Instantiate(id, instancePrefix string, scaling M
 		if err != nil {
 			return nil, fmt.Errorf("encounter %q spawn %q: %w", id, spawn.ID, err)
 		}
-		healthMultiplier := LiveEnemyHealthMultiplier
-		if scaling.PartySize > 1 {
-			healthMultiplier *= 1 + float64(scaling.PartySize-1)*PartyEnemyHealthMultiplierStep
-		}
-		enemy.Health = int(float64(enemy.Health)*healthMultiplier + 0.5)
+		enemy.Health = int(float64(enemy.Health)*LiveEnemyHealthMultiplier + 0.5)
 		enemy.MaxHealth = enemy.Health
 		enemies = append(enemies, enemy)
 	}
