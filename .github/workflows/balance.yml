@@ -52,6 +52,7 @@ jobs:
       - name: Run deterministic encounter regression suite
         working-directory: backend
         run: |
+          set -o pipefail
           args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
           if [ -n "${BALANCE_BASELINE:-}" ]; then
             args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
@@ -61,6 +62,7 @@ jobs:
       - name: Run endless expedition composition matrix
         working-directory: backend
         run: |
+          set -o pipefail
           go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
             -json endless-balance-report.json -markdown endless-balance-report.md \
             | tee -a "$GITHUB_STEP_SUMMARY"
