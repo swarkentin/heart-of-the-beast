@@ -257,6 +257,17 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
 		return nil, err
 	}
+	if applyProfileRewardUnlocks(&profile) {
+		updatedCosmetics, err := json.Marshal(profile.UnlockedCosmetics)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE player_profiles SET unlocked_cosmetics = $2::jsonb WHERE id = $1
+		`, profileID, updatedCosmetics); err != nil {
+			return nil, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
