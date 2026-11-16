@@ -159,6 +159,92 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	}
 }
 
+func TestSimulationClassAbilityPolicyCoversEverySignatureEffect(t *testing.T) {
+	tests := []struct {
+		name       string
+		effectID   string
+		mode       string
+		configure  func(*PlayerState, map[string]*PlayerState, []Enemy)
+		wantTarget string
+	}{
+		{name: "guard", effectID: "combat.guard", configure: func(p *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 10, TargetPlayerID: p.ID}
+		}},
+		{name: "counter", effectID: "combat.counter", configure: func(p *PlayerState, _ map[string]*PlayerState, _ []Enemy) {
+			p.ClassCombat.DamageTakenLastRound = 4
+		}, wantTarget: "enemy"},
+		{name: "ward", effectID: "combat.ward", configure: func(p *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 10, TargetPlayerID: p.ID}
+		}},
+		{name: "precision", effectID: "combat.precision", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 4}
+		}, wantTarget: "enemy"},
+		{name: "elemental", effectID: "combat.elemental", mode: "frost", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 8, Interruptible: true}
+		}, wantTarget: "enemy"},
+		{name: "disrupt", effectID: "combat.disrupt", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 4}
+		}, wantTarget: "enemy"},
+		{name: "heal", effectID: "combat.heal", configure: func(p *PlayerState, _ map[string]*PlayerState, _ []Enemy) {
+			p.Health = 20
+		}, wantTarget: "hero"},
+		{name: "command", effectID: "combat.command", configure: func(_ *PlayerState, _ map[string]*PlayerState, _ []Enemy) {}, wantTarget: "enemy"},
+		{name: "companion", effectID: "combat.companion", mode: "disrupt", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
+			enemies[0].Intent = &EnemyIntent{Damage: 8, Interruptible: true}
+		}, wantTarget: "enemy"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			player := &PlayerState{ID: "hero", Health: 30, MaxHealth: 30, Stats: PlayerStats{Focus: 2}}
+			players := map[string]*PlayerState{"hero": player, "ally": {ID: "ally", Health: 30, MaxHealth: 30}}
+			enemies := []Enemy{{ID: "enemy", Health: 20, MaxHealth: 20}}
+			player.ClassBuild = &ClassBuildSnapshot{SignatureAbilityID: signatureAbilityIDForEffect(test.effectID)}
+			test.configure(player, players, enemies)
+			command, ok := simulationClassAbilityCommand(player, players, enemies, 0, "hero")
+			if !ok {
+				t.Fatal("expected policy to select signature ability")
+			}
+			if command.Action != "ability" {
+				t.Fatalf("got action %q", command.Action)
+			}
+			if test.mode != "" && command.Mode != test.mode {
+				t.Fatalf("got mode %q, want %q", command.Mode, test.mode)
+			}
+			if test.wantTarget != "" && command.TargetID != test.wantTarget {
+				t.Fatalf("got target %q, want %q", command.TargetID, test.wantTarget)
+			}
+		})
+	}
+}
+
+func signatureAbilityIDForEffect(effectID string) string {
+	for _, ability := range classAbilities {
+		if ability.EffectID == effectID {
+			return ability.ID
+		}
+	}
+	return ""
+}
+
+func TestSimulateCombatExecutesSignatureAbilityAndReportsUse(t *testing.T) {
+	snapshot := simulationFixture(t)
+	snapshot.Players[0].ClassBuild = &ClassBuildSnapshot{SignatureAbilityID: "ability.elemental-surge"}
+	snapshot.Enemies[0].Health = 100
+	snapshot.Enemies[0].MaxHealth = 100
+
+	report, err := SimulateCombat(snapshot, 11, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.AbilityUses["combat.elemental"] != 1 {
+		t.Fatalf("expected elemental surge to be used once, got %#v", report.AbilityUses)
+	}
+	if report.PlayerDamageDealt <= 0 {
+		t.Fatalf("expected signature ability to deal damage, got %#v", report)
+	}
+}
+
 func TestSimulateCombatRejectsUnknownMonsterBehavior(t *testing.T) {
 	snapshot := simulationFixture(t)
 	snapshot.Enemies[0].Behavior = "missing-monster"

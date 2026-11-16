@@ -139,6 +139,26 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			bonuses := bonusesFor(player)
 			passive := classPassiveEffects(player, target, target.Intent)
 
+			if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
+				room := &Room{
+					PlayerIDs: playerIDs,
+					Run: &Run{
+						Players: players, CurrentRoomID: "simulation",
+						Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
+					},
+				}
+				beforeEnemyHealth := simulationEnemyHealth(enemies)
+				beforePlayerHealth := simulationPlayerHealth(players)
+				if err := applyClassAbility(room, player, command, round); err != nil {
+					return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
+				}
+				report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
+				report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
+				ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
+				report.AbilityUses[ability.EffectID]++
+				continue
+			}
+
 			if target.Intent != nil && target.Intent.Interruptible && target.Intent.Damage >= 5 && player.Stats.Focus > 0 {
 				interruptPassive := classPassiveEffects(player, target, target.Intent)
 				damage := resolveInterruptDamage(player.Stats.Focus, bonuses.InterruptDamage, interruptPassive.InterruptDamage)
@@ -221,6 +241,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 				onClassGuardBlocked(player, intent, mitigation.Guarded, mitigation.GuardBlocked)
 				transition := resolveHealthDamage(player.Health, mitigation.Damage)
 				player.Health = transition.Health
+				player.ClassCombat.DamageTakenThisRound += transition.Applied
 				report.PlayerDamageReceived += transition.Applied
 				if player.Health == 0 {
 					report.PlayersDowned++
@@ -242,6 +263,8 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		}
 		report.PlayerHealing += applySimulationCompanionInstinct(players, playerIDs)
 		for _, player := range players {
+			player.ClassCombat.DamageTakenLastRound = player.ClassCombat.DamageTakenThisRound
+			player.ClassCombat.DamageTakenThisRound = 0
 			player.Guarding = false
 			player.ClassCombat.GuardBonus = 0
 		}
@@ -295,6 +318,90 @@ func SimulateCombatBatch(snapshot CombatSimulationSnapshot, seeds []int64, maxRo
 		reports = append(reports, report)
 	}
 	return reports, nil
+}
+
+func simulationClassAbilityCommand(player *PlayerState, players map[string]*PlayerState, enemies []Enemy, targetIndex int, playerID string) (Command, bool) {
+	if player == nil || player.ClassBuild == nil {
+		return Command{}, false
+	}
+	ability, ok := findClassAbility(player.ClassBuild.SignatureAbilityID)
+	if !ok {
+		return Command{}, false
+	}
+	target := &enemies[targetIndex]
+	incoming := simulationIncomingFor(playerID, enemies, player, bonusesFor(player).DamageReduction)
+	command := Command{Action: "ability"}
+	switch ability.EffectID {
+	case "combat.guard":
+		return command, incoming > 0 && !player.Guarding
+	case "combat.counter":
+		command.TargetID = target.ID
+		return command, player.ClassCombat.DamageTakenLastRound > 0
+	case "combat.ward":
+		return command, incoming > 0 && player.ClassCombat.Ward == 0
+	case "combat.precision":
+		command.TargetID = target.ID
+		return command, target.Intent != nil || target.Health*2 <= target.MaxHealth
+	case "combat.elemental":
+		command.TargetID = target.ID
+		if target.Intent != nil && target.Intent.Interruptible {
+			command.Mode = "frost"
+		} else {
+			command.Mode = "fire"
+		}
+		return command, true
+	case "combat.disrupt":
+		command.TargetID = target.ID
+		return command, target.Intent != nil
+	case "combat.heal":
+		var recipient *PlayerState
+		for _, candidate := range players {
+			if candidate.Health <= 0 || candidate.Health >= candidate.MaxHealth {
+				continue
+			}
+			if recipient == nil || candidate.Health*recipient.MaxHealth < recipient.Health*candidate.MaxHealth {
+				recipient = candidate
+			}
+		}
+		if recipient == nil || recipient.MaxHealth-recipient.Health < 5 {
+			return Command{}, false
+		}
+		command.TargetID = recipient.ID
+		return command, true
+	case "combat.command":
+		command.TargetID = target.ID
+		return command, len(players) > 1 && target.Health > 0
+	case "combat.companion":
+		switch {
+		case target.Intent != nil && target.Intent.Interruptible:
+			command.Mode = "disrupt"
+			command.TargetID = target.ID
+		case incoming > 0:
+			command.Mode = "defend"
+		default:
+			command.Mode = "attack"
+			command.TargetID = target.ID
+		}
+		return command, true
+	default:
+		return Command{}, false
+	}
+}
+
+func simulationEnemyHealth(enemies []Enemy) int {
+	total := 0
+	for _, enemy := range enemies {
+		total += enemy.Health
+	}
+	return total
+}
+
+func simulationPlayerHealth(players map[string]*PlayerState) int {
+	total := 0
+	for _, player := range players {
+		total += player.Health
+	}
+	return total
 }
 
 func simulationTarget(enemies []Enemy, rng *rand.Rand) int {

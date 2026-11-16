@@ -224,3 +224,12 @@ The seeded runner now applies the existing talent modifier catalog and class pas
 The simulator continues to consume the shared pure damage, mitigation, and progression transitions. It does not duplicate talent values or passive trigger definitions: it reads the same catalogs and resolver functions as live combat. Added regression tests compare otherwise-identical snapshots with and without representative talent/passive builds.
 
 Signature abilities are not yet executed by the simulator. The next slice should add policy choices for those abilities by sharing deterministic effect application with live combat, rather than copying the current room/event handlers. Consumables, room/run effects, and inter-floor choices remain out of scope until those shared operation boundaries exist. Do not treat the simulator as a complete balance oracle yet.
+
+
+## Follow-up slice: signature ability policies
+
+The seeded simulator now recognizes each player's registered signature ability and uses the same `applyClassAbility` handlers as authoritative live combat. A deterministic policy selects situational actions: defensive abilities respond to incoming threats, Reckoning converts prior-round damage into a counterattack, precision and disruption abilities target enemies preparing or weakened by an intent, Elemental Surge chooses frost against interruptible intents and fire otherwise, Renewal heals the most-injured living party member, Commanding Strike is selected for parties where its mark can benefit allies, and Companion Command chooses between disruption, defense, and attack.
+
+Ability applications mutate only the simulator's copied player/enemy state through a minimal in-memory room/run adapter; no persistence, clock, websocket, or live room is involved. Ability use counts are included in the existing report. The simulator also now carries damage taken across rounds so Reckoning's live trigger can be represented. These policies are intentionally baseline heuristics, not an optimal-play solver.
+
+Consumables, room/run effects, and inter-floor choices remain uncovered. Before broad balance tuning, add parity fixtures that compare live transition outcomes with simulator outcomes for each ability and representative party compositions.
