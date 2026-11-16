@@ -10,7 +10,7 @@ export type LobbyProfileReward = { id: string; name: string; description: string
 export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
 export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[] };
 export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
-export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
+export type LobbyRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
 // Keep in step with scripts/pixel-art/heroes.mjs and ICON_ORDER in scripts/pixel-art/ui.mjs.
 const HERO_ART = new Set(["bulwark", "juggernaut", "spellguard", "assassin", "arcanist", "ranger", "cleric", "tactician", "beastcaller"]);
@@ -244,12 +244,13 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
           <div>
             <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
             <h1>The party is gathering</h1>
-            <p className="px-copy">Share the room code. Up to four adventurers can join before the host begins.</p>
+            <p className="px-copy">Send a friend the invite link to bring them straight here. The room code remains a fallback.</p>
           </div>
           <div className="px-code">
             <span className="px-label">ROOM CODE</span>
             <strong aria-label={"Room code " + room.code.split("").join(" ")}>{room.code}</strong>
-            <button className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(room.code).then(() => setCopied(true)).catch(() => undefined); }}>{copied ? "COPIED" : "COPY"}</button>
+            <button className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(window.location.origin + "/?invite=" + encodeURIComponent(room.id)).then(() => setCopied(true)).catch(() => undefined); }}>{copied ? "COPIED" : "COPY INVITE LINK"}</button>
+            <button className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(room.code).then(() => setCopied(true)).catch(() => undefined); }}>COPY CODE</button>
           </div>
         </div>
         <h2 className="px-label px-camp-count">ADVENTURERS {present.length}/{MAX_PARTY}</h2>
