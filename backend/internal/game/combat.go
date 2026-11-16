@@ -9,7 +9,8 @@ import (
 
 const (
 	CombatActionWindow   = 8 * time.Second
-	GuardDamageReduction = 6
+	PlayerStrikeDamage   = 6
+	GuardDamageReduction = 1
 )
 
 var (
