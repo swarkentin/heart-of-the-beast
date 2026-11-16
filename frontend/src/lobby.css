@@ -94,7 +94,25 @@
 .px-title-actions .px-error { grid-column: 1 / -1; }
 .px-connecting { display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(520px, 100%); margin: 12vh auto 0; text-align: center; }
 
-/* ---------- party lobby ---------- */
+.px-profile-summary { width: min(920px, 100%); margin: 16px auto 0; display: grid; gap: 8px; background: var(--pit); }
+.px-lobby .px-profile-summary { width: 100%; margin: 0; }
+.px-profile-head, .px-mastery-heading, .px-mastery-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.px-profile-head > div { display: grid; gap: 2px; }
+.px-profile-rank { color: var(--ember); font: 400 22px/1.2 var(--display); }
+.px-profile-xp, .px-mastery-meta span, .px-mastery-xp { color: var(--muted); font: 10px/1.2 var(--display); letter-spacing: .06em; white-space: nowrap; }
+.px-profile-track, .px-mastery-track { height: 7px; overflow: hidden; background: #171322; border: 1px solid #51466d; }
+.px-profile-track i, .px-mastery-track i { display: block; height: 100%; background: var(--gold); box-shadow: 0 0 5px #d6a64d88; }
+.px-mastery-heading { margin-top: 2px; color: var(--gold); font: 11px/1.2 var(--display); letter-spacing: .1em; }
+.px-mastery-heading span { color: var(--muted); font: 16px/1.2 var(--copy); letter-spacing: 0; }
+.px-mastery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; }
+.px-mastery-item { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 8px; align-items: center; }
+.px-mastery-meta { grid-column: 1 / -1; }
+.px-mastery-meta strong { overflow: hidden; color: var(--bone); font: 400 18px/1.1 var(--copy); text-overflow: ellipsis; white-space: nowrap; }
+.px-mastery-track { height: 5px; }
+.px-mastery-track i { background: #8fd6ff; }
+.px-mastery-xp { font-size: 9px; }
+
+ /* ---------- party lobby ---------- */
 .px-lobby { display: grid; gap: 18px; width: min(1180px, 100%); margin: 8px auto 0; }
 .px-camp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px 28px; flex-wrap: wrap; }
 .px-camp-head > div:first-child { display: grid; gap: 6px; flex: 1 1 320px; }
