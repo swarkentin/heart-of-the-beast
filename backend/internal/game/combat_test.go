@@ -274,7 +274,7 @@ func TestDefeatingOneEnemyOnlyCancelsItsOwnIntent(t *testing.T) {
 		t.Fatal(err)
 	}
 	encounter := room.Run.Rooms["reliquary"].Encounter
-	encounter.Enemies[0].Health = 10
+	encounter.Enemies[0].Health = PlayerStrikeDamage
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "attack", TargetID: "guardian"}, now); err != nil {
 		t.Fatal(err)
 	}
