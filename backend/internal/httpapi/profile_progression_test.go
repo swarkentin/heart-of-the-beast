@@ -87,3 +87,32 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 		t.Fatalf("unexpected ranger mastery: %+v", mastery)
 	}
 }
+
+func TestFailedRunAwardsProgressForClearedEncounters(t *testing.T) {
+	memory := store.NewMemory()
+	credentialHash := tokenHash("abcdef0123456789abcdef0123456789")
+	profile, err := memory.GetOrCreateProfile(t.Context(), "failed-run-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := &game.Room{
+		PlayerProfileIDs: map[string]string{"player-1": profile.ID},
+		Presence: map[string]game.PlayerPresence{"player-1": {}},
+		Run: &game.Run{
+			ID: "failed-run", Phase: game.PhaseFailed,
+			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1", ClassBuild: &game.ClassBuildSnapshot{ClassID: game.ClassCleric}}},
+			Rooms: map[string]*game.DungeonRoom{"cleared": {ID: "cleared", Encounter: &game.Encounter{Status: game.EncounterCleared}}},
+		},
+	}
+	handler := &Handler{rooms: memory, now: time.Now}
+	if err := handler.awardRunProgress(t.Context(), room); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := memory.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 10 || updated.ClassMastery[game.ClassCleric].Experience != 10 {
+		t.Fatalf("failed run should retain progress from a cleared encounter: %+v", updated)
+	}
+}
