@@ -111,6 +111,14 @@
 .px-mastery-track { height: 5px; }
 .px-mastery-track i { background: #8fd6ff; }
 .px-mastery-xp { font-size: 9px; }
+.px-collection { display: grid; gap: 6px; border-top: 1px solid #51466d; padding-top: 8px; }
+.px-collection-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--gold); font: 11px/1.2 var(--display); letter-spacing: .1em; }
+.px-collection-head span { color: var(--muted); font-size: 9px; }
+.px-collection ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 0; }
+.px-collection li { min-width: 0; display: grid; gap: 2px; padding: 6px 8px; background: #171322; border: 1px solid #51466d; }
+.px-collection-kind { color: var(--muted); font: 9px/1.2 var(--display); letter-spacing: .08em; }
+.px-collection li strong { color: var(--bone); font: 400 17px/1.1 var(--copy); }
+.px-collection li small, .px-collection > p { color: var(--muted); font: 14px/1.2 var(--copy); }
 
 /* ---------- party lobby ---------- */
 .px-lobby { display: grid; gap: 18px; width: min(1180px, 100%); margin: 8px auto 0; }
@@ -215,6 +223,7 @@
   .px-title-actions { grid-template-columns: 1fr; }
   .px-mastery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
   .px-mastery-meta strong { font-size: 16px; }
+  .px-collection ul { grid-template-columns: 1fr; }
   .px-title-or { border-inline: 0; border-block: 3px solid #2a2440; padding: 6px 0 !important; flex-direction: row !important; }
   .px-stage { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; background: var(--pit); background-clip: padding-box; }
   .px-stage-torch { display: none; }
