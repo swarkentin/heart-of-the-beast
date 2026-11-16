@@ -23,11 +23,31 @@ export type PlayerSession = { roomId: string; playerId: string; playerToken: str
 export type SpectatorAccess = { roomId: string; token: string };
 export type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 
+const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
+
+function guestProfileCredential(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    let credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) {
+      const bytes = new Uint8Array(32);
+      window.crypto.getRandomValues(bytes);
+      credential = Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+      window.localStorage.setItem(PROFILE_CREDENTIAL_KEY, credential);
+    }
+    return credential;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiRequest<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", "Bearer " + token);
+  const profileCredential = guestProfileCredential();
+  if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
   const response = await fetch("/api" + path, { ...init, headers });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Request failed (" + response.status + ")");
