@@ -222,7 +222,6 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 				player := players[playerID]
 				mitigation := resolveIncomingDamage(IncomingDamageInput{
 					IntentDamage:          intent.Damage,
-					AgilityReduction:      player.Stats.Agility,
 					TalentReduction:       bonusesFor(player).DamageReduction,
 					PassiveReduction:      classPassiveEffects(player, enemy, &intent).DamageReduction,
 					Ward:                  player.ClassCombat.Ward,
@@ -443,7 +442,7 @@ func simulationIncomingFor(playerID string, enemies []Enemy, player *PlayerState
 			continue
 		}
 		passive := classPassiveEffects(player, &enemy, enemy.Intent)
-		damage := enemy.Intent.Damage - player.Stats.Agility - talentReduction - passive.DamageReduction
+		damage := enemy.Intent.Damage - talentReduction - passive.DamageReduction
 		if damage > 0 {
 			total += damage
 		}

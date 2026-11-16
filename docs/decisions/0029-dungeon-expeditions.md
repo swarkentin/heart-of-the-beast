@@ -1,4 +1,4 @@
-# ADR 0028: Dungeon expeditions — the loop around a floor
+# ADR 0029: Dungeon expeditions — the loop around a floor
 
 - Status: Accepted
 - Date: 2026-11-16
@@ -49,7 +49,8 @@ seed) in one of the **eleven themes**. The expedition ends only when the party f
 7. **Distance is the score.** `Run.FloorsCleared` and `Run.DungeonsCleared` count progress, and when the party
    falls `Run.Rank` names it (Wanderer, Delver, Pathfinder, Dungeon Breaker, Realm Walker, Beast Hunter, Legend
    of the Deep, Heart of the Beast). The end screen shows the rank, the distance and the browser's personal best.
-   This is the hook for persistent mastery: awarding character experience from `FloorsCleared` is the next step.
+   Persistent profile and class-mastery experience (ADR 0028) is paid from that distance when the run ends:
+   10 per fight won, 15 per floor cleared, 50 per dungeon conquered (`game.RunProgressXP`).
 
 ### Runs persisted before this change
 
@@ -67,8 +68,7 @@ seed) in one of the **eleven themes**. The expedition ends only when the party f
 - Mini-games are played individually. Head-to-head or co-operative camp games are future work.
 - Expeditions never reach the `completed` phase. Rooms of a finished dungeon are dropped from the snapshot, and
   rooms of later dungeons have IDs prefixed `x<dungeon>-`.
-- The personal best lives in the browser only. Server-side mastery and rank that persist across runs are not
-  built yet; the run now records what they need.
+- The personal best distance lives in the browser only; storing it on the profile is future work.
 - Numbers (gold, prices, modifier strength, rests, boss thresholds, dungeon scaling) are first values and have
   not been tuned by play. The random-policy simulator almost never clears a first dungeon (under 2% of 300
   seeds); it is a regression baseline, not a difficulty target, but early floors are likely too hard.

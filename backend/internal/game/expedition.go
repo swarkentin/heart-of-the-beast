@@ -367,3 +367,38 @@ func ExpeditionRank(floorsCleared int) string {
 	}
 	return title
 }
+
+// Profile and class-mastery experience for a finished run (ADR 0028). Going further is worth more: every fight
+// won counts, every floor cleared adds to it, and every dungeon conquered adds a milestone.
+const (
+	RunXPPerEncounter = 10
+	RunXPPerFloor     = 15
+	RunXPPerDungeon   = 50
+	// RunXPCompletionBonus is the milestone for finishing a run persisted before expeditions, which could be won.
+	RunXPCompletionBonus = 20
+)
+
+// RunProgressXP is the persistent experience a finished run is worth to each adventurer who stayed. It is zero
+// until the run is over, and zero for a run that won no fight.
+func RunProgressXP(run *Run) int64 {
+	if run == nil || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
+		return 0
+	}
+	encounters := 0
+	for _, dungeonRoom := range run.Rooms {
+		if dungeonRoom != nil && dungeonRoom.Encounter != nil && dungeonRoom.Encounter.Status == EncounterCleared {
+			encounters++
+		}
+	}
+	if run.EncountersCleared > encounters {
+		encounters = run.EncountersCleared
+	}
+	if encounters == 0 {
+		return 0
+	}
+	xp := encounters*RunXPPerEncounter + run.FloorsCleared*RunXPPerFloor + run.DungeonsCleared*RunXPPerDungeon
+	if run.Phase == PhaseCompleted {
+		xp += RunXPCompletionBonus
+	}
+	return int64(xp)
+}

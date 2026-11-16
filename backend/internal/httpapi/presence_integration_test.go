@@ -174,3 +174,138 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 		t.Fatalf("freed slot should accept a replacement: %d %s", replacement.Code, replacement.Body.String())
 	}
 }
+
+func TestPostgresGuestProfilePersistsAcrossHandlers(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
+	}
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		t.Fatalf("connect to integration database: %v", err)
+	}
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
+	}
+
+	credential := "0123456789abcdef0123456789abcdef"
+	hash := tokenHash(credential)
+	defer db.Exec("DELETE FROM player_profiles WHERE credential_hash = $1", hash)
+	handler := NewHandler(store.NewPostgres(db))
+	request := func(target http.Handler, method string) *httptest.ResponseRecorder {
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(method, "/profile", nil)
+		req.Header.Set("Authorization", "Bearer "+credential)
+		target.ServeHTTP(recorder, req)
+		return recorder
+	}
+	created := request(handler, http.MethodPost)
+	if created.Code != http.StatusOK {
+		t.Fatalf("create profile: %d %s", created.Code, created.Body.String())
+	}
+	var first store.Profile
+	if err := json.Unmarshal(created.Body.Bytes(), &first); err != nil {
+		t.Fatal(err)
+	}
+	restartedHandler := NewHandler(store.NewPostgres(db))
+	loaded := request(restartedHandler, http.MethodGet)
+	if loaded.Code != http.StatusOK {
+		t.Fatalf("load profile after handler restart: %d %s", loaded.Code, loaded.Body.String())
+	}
+	var second store.Profile
+	if err := json.Unmarshal(loaded.Body.Bytes(), &second); err != nil {
+		t.Fatal(err)
+	}
+	if first.ID != second.ID || second.AdventurerLevel != 1 {
+		t.Fatalf("profile did not persist: first=%+v second=%+v", first, second)
+	}
+}
+
+func TestPostgresRunProgressionAwardIsIdempotent(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
+	}
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		t.Fatalf("connect to integration database: %v", err)
+	}
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
+	}
+
+	profiles := store.NewPostgres(db)
+	credentialHash := tokenHash("0123456789abcdef0123456789abcdef")
+	profile, err := profiles.GetOrCreateProfile(t.Context(), "progression-test-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Exec("DELETE FROM player_profiles WHERE id = $1", profile.ID)
+
+	for i := 0; i < 2; i++ {
+		if _, err := profiles.AwardRunXP(t.Context(), profile.ID, "progression-test-run", "player-1", "ranger", 50, time.Now().UTC()); err != nil {
+			t.Fatalf("award attempt %d: %v", i+1, err)
+		}
+	}
+	updated, err := profiles.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 50 || updated.ClassMastery["ranger"].Experience != 50 {
+		t.Fatalf("duplicate run award changed progression more than once: %+v", updated)
+	}
+}
+
+func TestPostgresProgressionAwardsPersistMilestoneUnlocks(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
+	}
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		t.Fatalf("connect to integration database: %v", err)
+	}
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
+	}
+
+	profiles := store.NewPostgres(db)
+	credentialHash := tokenHash("profile-reward-integration-credential")
+	profile, err := profiles.GetOrCreateProfile(t.Context(), "profile-reward-integration", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Exec("DELETE FROM player_profiles WHERE id = $1", profile.ID)
+
+	for _, runID := range []string{"reward-run-one", "reward-run-two", "reward-run-three", "reward-run-four"} {
+		if _, err := profiles.AwardRunXP(t.Context(), profile.ID, runID, "player-1", "ranger", 30, time.Now().UTC()); err != nil {
+			t.Fatalf("award %s: %v", runID, err)
+		}
+	}
+	updated, err := profiles.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerLevel != 2 || updated.ClassMastery["ranger"].Level != 2 {
+		t.Fatalf("profile and class mastery should reach rank two: %+v", updated)
+	}
+	unlocked := make(map[string]bool, len(updated.UnlockedCosmetics))
+	for _, id := range updated.UnlockedCosmetics {
+		unlocked[id] = true
+	}
+	if !unlocked["title.catacomb-wayfinder"] || !unlocked["title.mastery.ranger"] || len(unlocked) != 2 {
+		t.Fatalf("expected two persistent milestone rewards, got %#v", updated.UnlockedCosmetics)
+	}
+}

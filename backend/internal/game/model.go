@@ -28,6 +28,7 @@ type Room struct {
 	PlayerArchetypes   map[string]string         `json:"playerArchetypes,omitempty"`
 	PlayerClasses      map[string]string         `json:"playerClasses,omitempty"`
 	PlayerTokenHashes  map[string]string         `json:"playerTokenHashes"`
+	PlayerProfileIDs   map[string]string         `json:"playerProfileIds,omitempty"`
 	Presence           map[string]PlayerPresence `json:"presence,omitempty"`
 	SpectatorTokenHash string                    `json:"spectatorTokenHash"`
 	Run                *Run                      `json:"run,omitempty"`
@@ -60,8 +61,10 @@ type Run struct {
 	DungeonsCleared int `json:"dungeonsCleared,omitempty"`
 	// FloorsCleared counts floor bosses beaten across the whole expedition: how far the party got. Rank is the
 	// title that distance earned, set when the expedition ends.
-	FloorsCleared int    `json:"floorsCleared,omitempty"`
-	Rank          string `json:"rank,omitempty"`
+	FloorsCleared int `json:"floorsCleared,omitempty"`
+	// EncountersCleared counts every fight won. Rooms of finished dungeons are dropped, so this is the record.
+	EncountersCleared int    `json:"encountersCleared,omitempty"`
+	Rank              string `json:"rank,omitempty"`
 	// DungeonModifiers came with the dungeon the party voted for and hold on every one of its floors.
 	DungeonModifiers []ActiveFloorModifier `json:"dungeonModifiers,omitempty"`
 	// FloorModifiers are the level-wide debuffs and perks in force on the current floor.

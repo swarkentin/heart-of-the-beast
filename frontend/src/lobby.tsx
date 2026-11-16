@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
 
 // Title, connecting, party lobby and class selection screens. All art comes from
@@ -6,7 +6,9 @@ import "./lobby.css";
 
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
-export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[] };
+export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
+export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
+export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[] };
 export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
@@ -22,6 +24,9 @@ const ARCHETYPES: { id: string; name: string; icon: IconId; blurb: string }[] = 
   { id: "support", name: "Support", icon: "support", blurb: "Lift the party" },
 ];
 const MAX_PARTY = 4;
+// Injected at build time by Vite; empty for local development.
+declare const __APP_COMMIT__: string;
+const DEPLOY_COMMIT = typeof __APP_COMMIT__ === "string" ? __APP_COMMIT__ : "";
 
 const heroArt = (classId?: string) => (classId && HERO_ART.has(classId) ? classId : "empty");
 const vars = (values: Record<string, string | number>) => values as unknown as CSSProperties;
@@ -77,8 +82,44 @@ export function ConnectingScreen({ message }: { message: string }) {
   </GameShell>;
 }
 
-export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void }) {
-  return <GameShell status="NO ACCOUNT NEEDED">
+export function SharedMenu({ profile, classes = [], rewards = [], audioControls, actions, onSaveName }: { profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; actions?: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
+  const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
+  useEffect(() => {
+    if (!profileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setProfileOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [profileOpen]);
+  return <>
+  <details className="px-shared-menu">
+    <summary className="px-button px-button-small">MENU</summary>
+    <div className="px-panel px-shared-menu-panel">
+      <button type="button" className="px-button px-button-small" disabled={!profile} onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileOpen(true); }}>PROFILE & COLLECTION</button>
+      <div className="px-menu-audio"><strong className="px-menu-title">SOUND</strong>{audioControls}</div>
+      {actions ? <div className="px-menu-context"><span className="px-menu-title">PARTY</span>{actions}</div> : null}
+      <div className="px-menu-about">
+        <strong className="px-menu-title">ABOUT THIS BUILD</strong>
+        <span>Version: {versionLabel}</span>
+        {commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">VIEW GITHUB COMMIT</a> : null}
+        <a href="https://github.com/swarkentin/heart-of-the-beast/issues/new" target="_blank" rel="noreferrer">REPORT AN ISSUE</a>
+      </div>
+    </div>
+  </details>
+  {profileOpen && profile ? <div className="px-backdrop px-profile-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setProfileOpen(false); }}>
+    <section className="px-panel px-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="px-profile-title">
+      <header className="px-profile-dialog-head"><div><p className="px-eyebrow">PROFILE</p><h2 id="px-profile-title">Adventurer collection</h2></div><button type="button" className="px-button px-button-small" onClick={() => setProfileOpen(false)} autoFocus>CLOSE</button></header>
+      <ProfileSummary profile={profile} classes={classes} rewards={rewards} onSaveName={onSaveName} />
+    </section>
+  </div> : null}
+  </>;
+}
+
+export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profile, classes = [], rewards = [], audioControls, onSaveName }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
+  const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
+  const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
+  return <GameShell status="READY" tools={<SharedMenu profile={profile} classes={classes} rewards={rewards} audioControls={audioControls} onSaveName={onSaveName} />}>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
       <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
@@ -103,7 +144,51 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       </form>
       {error ? <p className="px-error" role="alert">{error}</p> : null}
     </section>
+    <footer className="px-build-footer">{commitUrl ? <a href={commitUrl} target="_blank" rel="noreferrer">BUILD {versionLabel}</a> : <span>DEVELOPMENT BUILD</span>}</footer>
   </GameShell>;
+}
+
+function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[]; rewards: LobbyProfileReward[]; onSaveName?: (name: string) => Promise<void> }) {
+  const [name, setName] = useState(profile.displayName || "Adventurer");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  useEffect(() => setName(profile.displayName || "Adventurer"), [profile.displayName]);
+  async function saveName(event: FormEvent) {
+    event.preventDefault();
+    const clean = name.trim();
+    if (!clean || [...clean].length > 18 || !onSaveName) return;
+    setSaving(true); setSaveError("");
+    try { await onSaveName(clean); } catch (error) { setSaveError(error instanceof Error ? error.message : "Could not save your name"); }
+    finally { setSaving(false); }
+  }
+  const rankXP = profile.adventurerXp % 100;
+  const unlockedRewards = profile.unlockedCosmetics.slice().reverse().map(id => rewards.find(reward => reward.id === id)).filter((reward): reward is LobbyProfileReward => Boolean(reward));
+  return <section className="px-profile-summary" aria-label="Adventurer progression">
+    <form className="px-profile-name" onSubmit={saveName}><label htmlFor="profile-name">ADVENTURER NAME</label><div><input id="profile-name" value={name} maxLength={18} onChange={event => setName(event.target.value)} disabled={saving} /><button className="px-button px-button-small" type="submit" disabled={saving || !name.trim() || name.trim() === profile.displayName}>{saving ? "SAVING..." : "SAVE"}</button></div>{saveError ? <span role="alert" className="px-error">{saveError}</span> : null}</form>
+    <div className="px-profile-head">
+      <div><p className="px-eyebrow">YOUR ADVENTURER</p><strong className="px-profile-rank">RANK {profile.adventurerLevel}</strong></div>
+      <span className="px-profile-xp">{rankXP}/100 XP TO NEXT RANK</span>
+    </div>
+    <div className="px-profile-track" role="progressbar" aria-label="Adventurer rank progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={rankXP}><i style={{ width: rankXP + "%" }} /></div>
+    <div className="px-mastery-heading"><strong>CLASS MASTERY</strong><span>Progress follows the class you play</span></div>
+    <div className="px-mastery-grid">
+      {classes.map(item => {
+        const mastery = profile.classMastery[item.id] || { experience: 0, level: 1 };
+        const xp = mastery.experience % 100;
+        return <div className="px-mastery-item" key={item.id}>
+          <div className="px-mastery-meta"><strong>{item.name}</strong><span>RANK {mastery.level || 1}</span></div>
+          <div className="px-mastery-track" role="progressbar" aria-label={item.name + " mastery progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={xp}><i style={{ width: xp + "%" }} /></div>
+          <span className="px-mastery-xp">{xp}/100 XP</span>
+        </div>;
+      })}
+    </div>
+    <div className="px-collection">
+      <div className="px-collection-head"><strong>COLLECTION</strong><span>{profile.unlockedCosmetics.length} REWARDS EARNED</span></div>
+      {unlockedRewards.length > 0
+        ? <ul>{unlockedRewards.map(reward => <li key={reward.id}><span className="px-collection-kind">{reward.category.toUpperCase()}</span><strong>{reward.name}</strong><small>{reward.description}</small></li>)}</ul>
+        : <p>{rewards.length === 0 ? "Preparing your collection…" : "Your first title arrives at Adventurer Rank 2 or Class Mastery Rank 2."}</p>}
+    </div>
+  </section>;
 }
 
 function skillIcon(id: string): IconId {
@@ -118,7 +203,7 @@ function Pips({ value, max = 4 }: { value: number; max?: number }) {
   return <span className="px-pips" aria-hidden="true">{Array.from({ length: Math.max(max, value) }, (_, index) => <i key={index} className={index < value ? "on" : ""} />)}</span>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, themes = [], themeId = "random", onTheme, onSelectClass, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
   const [treeOpen, setTreeOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -148,9 +233,11 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
   const passive = focusedClass ? catalog?.classPassives.find(value => value.id === focusedClass.passiveId) : undefined;
   const gear = focusedClass ? focusedClass.startingEquipment.map(id => catalog?.equipment.find(value => value.id === id)?.name || id) : [];
   const archetype = ARCHETYPES.find(item => item.id === focusedClass?.archetypeId);
+  const focusedMastery = focusedClass ? profile?.classMastery[focusedClass.id] || { experience: 0, level: 1 } : { experience: 0, level: 1 };
+  const focusedMasteryProgress = focusedMastery.experience % 100;
   const groups = [...ARCHETYPES.map(item => ({ ...item, classes: playable.filter(value => value.archetypeId === item.id) })), { id: "other", name: "Other", icon: "strike" as IconId, blurb: "", classes: playable.filter(value => !ARCHETYPES.some(item => item.id === value.archetypeId)) }].filter(group => group.classes.length > 0);
 
-  return <GameShell status="PARTY LOBBY">
+  return <GameShell status="PARTY LOBBY" tools={<SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<button type="button" className="px-button px-button-small px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>} />}>
     <section className="px-lobby">
       <div className="px-panel px-camp">
         <div className="px-camp-head">
@@ -176,7 +263,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
               <HeroSprite classId={classId} flourish={you ? flourish : 0} label={className(classId) || "Undecided adventurer"} />
               <div className="px-nameplate">
                 <span>{host ? "HOST" : "PLAYER " + (room.playerIds.indexOf(id) + 1)}{you ? " · YOU" : ""}</span>
-                <strong>{className(classId) || "Choosing…"}</strong>
+                <strong>{you && profile ? profile.displayName : className(classId) || "Choosing…"}</strong>
                 <em className={"px-presence px-presence-" + status}>{status === "online" ? (classId ? "READY" : "DECIDING") : "OFFLINE"}</em>
               </div>
             </li>;
@@ -191,9 +278,18 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
           <div className="px-roster" aria-label="Choose a class">
             {groups.map(group => <div className="px-roster-group" key={group.id}>
               <div className="px-roster-label"><Icon id={group.icon} size={1} /><b>{group.name.toUpperCase()}</b><span>{group.blurb}</span></div>
-              <div className="px-roster-row">{group.classes.map(item => <button key={item.id} className={"px-class" + (item.id === focusedClass.id ? " px-class-focused" : "") + (item.id === selectedClassId ? " px-class-chosen" : "")} style={vars({ "--accent": ACCENTS[item.id] || "#d6a64d" })} onClick={() => setPreviewClassId(item.id)} aria-pressed={item.id === focusedClass.id}>
-                <Bust classId={item.id} /><strong>{item.name}</strong>{item.id === selectedClassId ? <i><Icon id="ready" size={1} /><span className="px-sr">Your chosen class</span></i> : null}
-              </button>)}</div>
+              <div className="px-roster-row">{group.classes.map(item => {
+                const mastery = profile?.classMastery[item.id] || { experience: 0, level: 1 };
+                const progress = mastery.experience % 100;
+                return <button key={item.id} className={"px-class" + (item.id === focusedClass.id ? " px-class-focused" : "") + (item.id === selectedClassId ? " px-class-chosen" : "")} style={vars({ "--accent": ACCENTS[item.id] || "#d6a64d" })} onClick={() => setPreviewClassId(item.id)} aria-pressed={item.id === focusedClass.id}>
+                  <Bust classId={item.id} />
+                  <strong>{item.name}</strong>
+                  <span className="px-class-mastery-mini" title={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent to next rank"} aria-label={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent progress"}>
+                    <b>M{mastery.level || 1}</b><span><span style={vars({ width: progress + "%" })} /></span>
+                  </span>
+                  {item.id === selectedClassId ? <i><Icon id="ready" size={1} /><span className="px-sr">Your chosen class</span></i> : null}
+                </button>;
+              })}</div>
             </div>)}
             {locked.length > 0 ? <div className="px-roster-group">
               <div className="px-roster-label"><Icon id="locked" size={1} /><b>LOCKED PATHS</b><span>Earned through play</span></div>
@@ -205,6 +301,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
             <div className="px-showcase"><div className="px-showcase-floor" /><HeroSprite key={focusedClass.id} classId={focusedClass.id} flourish={focusedClass.id === selectedClassId ? flourish : 0} label={focusedClass.name + " hero"} /></div>
             <div className="px-detail-copy">
               <div className="px-detail-title"><h3>{focusedClass.name}</h3><span className="px-chip">{archetype ? <Icon id={archetype.icon} size={1} /> : null}{(archetype?.name || focusedClass.archetypeId).toUpperCase()}</span></div>
+              <div className="px-selected-mastery"><strong>CLASS MASTERY · RANK {focusedMastery.level || 1}</strong><span>{focusedMasteryProgress}/100 XP TO NEXT RANK</span><div role="progressbar" aria-label={focusedClass.name + " mastery progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={focusedMasteryProgress}><i style={{ width: focusedMasteryProgress + "%" }} /></div></div>
               <p className="px-copy">{focusedClass.description}</p>
               <dl className="px-stats">
                 <div><dt><Icon id="vitality" />Vitality</dt><dd><b>{focusedClass.startingStats.health}</b></dd></div>

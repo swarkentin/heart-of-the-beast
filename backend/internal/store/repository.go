@@ -23,12 +23,14 @@ type Repository interface {
 }
 
 type Memory struct {
-	mu    sync.RWMutex
-	rooms map[string][]byte
+	mu       sync.RWMutex
+	rooms    map[string][]byte
+	profiles map[string]*Profile
+	awards   map[string]bool
 }
 
 func NewMemory() *Memory {
-	return &Memory{rooms: make(map[string][]byte)}
+	return &Memory{rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool)}
 }
 
 func cloneRoom(room *game.Room) (*game.Room, error) {
@@ -137,4 +139,67 @@ func (m *Memory) Save(_ context.Context, room *game.Room, expectedVersion int64)
 	}
 	m.rooms[room.ID] = encoded
 	return nil
+}
+
+func (m *Memory) GetOrCreateProfile(_ context.Context, id, credentialHash string, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if existing := m.profiles[credentialHash]; existing != nil {
+		copy, err := cloneProfile(existing)
+		return copy, err
+	}
+	profile := &Profile{
+		ID: id, DisplayName: "Adventurer", AdventurerLevel: 1, ClassMastery: map[string]ClassMastery{},
+		UnlockedCosmetics: []string{}, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
+	}
+	m.profiles[credentialHash] = profile
+	return cloneProfile(profile)
+}
+
+func (m *Memory) UpdateProfileName(_ context.Context, credentialHash, name string, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	profile := m.profiles[credentialHash]
+	if profile == nil {
+		return nil, ErrNotFound
+	}
+	profile.DisplayName = name
+	profile.UpdatedAt = now.UTC()
+	return cloneProfile(profile)
+}
+
+func (m *Memory) GetProfile(_ context.Context, credentialHash string) (*Profile, error) {
+	m.mu.RLock()
+	profile := m.profiles[credentialHash]
+	m.mu.RUnlock()
+	if profile == nil {
+		return nil, ErrNotFound
+	}
+	return cloneProfile(profile)
+}
+
+func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, classID string, xp int64, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := profileID + ":" + runID
+	for _, profile := range m.profiles {
+		if profile.ID != profileID {
+			continue
+		}
+		if !m.awards[key] {
+			profile.AdventurerXP += xp
+			profile.AdventurerLevel = int(profile.AdventurerXP/100) + 1
+			if classID != "" {
+				mastery := profile.ClassMastery[classID]
+				mastery.Experience += xp
+				mastery.Level = int(mastery.Experience/100) + 1
+				profile.ClassMastery[classID] = mastery
+			}
+			applyProfileRewardUnlocks(profile)
+			profile.UpdatedAt = now.UTC()
+			m.awards[key] = true
+		}
+		return cloneProfile(profile)
+	}
+	return nil, ErrNotFound
 }

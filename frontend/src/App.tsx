@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiRequest, type ApiCommand, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
+import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
 import { AudioControls, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -22,6 +22,13 @@ const talentChoices: TalentChoice[] = [
   { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
 ];
 const SESSION_KEY = "heart-of-the-beast.player-session";
+const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
+
+function createProfileCredential(): string {
+  const bytes = new Uint8Array(32);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+}
 
 function readSpectatorAccess(): SpectatorAccess | null {
   if (typeof window === "undefined" || !window.location.hash.startsWith("#spectate=")) return null;
@@ -50,6 +57,24 @@ export default function App() {
   const [themes, setThemes] = useState<ApiTheme[]>([]);
   const [chosenTheme, setChosenTheme] = useState("random");
   useEffect(() => { void apiRequest<{ themes: ApiTheme[] }>("/themes").then(result => setThemes(result.themes ?? [])).catch(() => undefined); }, []);
+  const [profile, setProfile] = useState<ApiProfile | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    try {
+      let credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+      if (!credential) {
+        credential = createProfileCredential();
+        window.localStorage.setItem(PROFILE_CREDENTIAL_KEY, credential);
+      }
+      void apiRequest<ApiProfile>("/profile", credential, { method: "POST" })
+        .then(value => { if (active) setProfile(value); })
+        .catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load adventurer profile"); });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to initialize adventurer profile");
+    }
+    return () => { active = false; };
+  }, []);
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -60,6 +85,7 @@ export default function App() {
   const playerHp = (playerId ? run?.players[playerId]?.health : undefined) ?? 30;
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+  const audioControls = <AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
@@ -83,11 +109,22 @@ export default function App() {
   }, [roomId, token, spectator, pollMs]);
 
   useEffect(() => {
-    if (!snapshot || classCatalog) return;
+    if (spectator || (run?.phase !== "completed" && run?.phase !== "failed")) return;
+    let active = true;
+    const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) return;
+    void apiRequest<ApiProfile>("/profile", credential)
+      .then(value => { if (active) setProfile(value); })
+      .catch(() => { /* A later visit can retry loading the profile. */ });
+    return () => { active = false; };
+  }, [run?.id, run?.phase, spectator]);
+
+  useEffect(() => {
+    if (classCatalog) return;
     let active = true;
     void apiRequest<LobbyCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
     return () => { active = false; };
-  }, [snapshot?.id, classCatalog]);
+  }, [classCatalog]);
 
   useEffect(() => {
     if (!session || spectator) return;
@@ -117,6 +154,13 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the room");
     } finally { setBusy(false); }
+  }
+
+  async function saveProfileName(name: string) {
+    const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) throw new Error("Profile credential is unavailable. Reload and try again.");
+    const updated = await apiRequest<ApiProfile>("/profile", credential, { method: "PATCH", body: JSON.stringify({ displayName: name }) });
+    setProfile(updated);
   }
 
   async function joinRoom() {
@@ -208,7 +252,7 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} />;
+    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={saveProfileName} />;
   }
 
   if (!snapshot) {
@@ -216,10 +260,9 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
-  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} talents={talentChoices} busy={busy} error={error} isHost={isHost}
-    audioControls={<AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />}
+  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
     onCommand={sendCommand} onChooseTalent={chooseTalent} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />;
 }

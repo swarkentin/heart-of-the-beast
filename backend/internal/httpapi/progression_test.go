@@ -94,12 +94,16 @@ func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 		Talents []struct {
 			ID string `json:"id"`
 		} `json:"talents"`
+		ProfileRewards []struct {
+			ID       string `json:"id"`
+			Category string `json:"category"`
+		} `json:"profileRewards"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &catalog); err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Archetypes) != 3 || len(catalog.Classes) != 9 || len(catalog.ClassAvailability) != 9 || len(catalog.Talents) != 12 {
-		t.Fatalf("unexpected catalog size: %d archetypes, %d classes, %d availability entries, %d talents", len(catalog.Archetypes), len(catalog.Classes), len(catalog.ClassAvailability), len(catalog.Talents))
+	if len(catalog.Archetypes) != 3 || len(catalog.Classes) != 9 || len(catalog.ClassAvailability) != 9 || len(catalog.Talents) != 12 || len(catalog.ProfileRewards) != 11 {
+		t.Fatalf("unexpected catalog size: %d archetypes, %d classes, %d availability entries, %d talents, %d profile rewards", len(catalog.Archetypes), len(catalog.Classes), len(catalog.ClassAvailability), len(catalog.Talents), len(catalog.ProfileRewards))
 	}
 	for _, availability := range catalog.ClassAvailability {
 		if !availability.InitiallyAvailable {

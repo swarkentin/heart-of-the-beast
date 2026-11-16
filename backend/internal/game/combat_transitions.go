@@ -61,7 +61,6 @@ func resolveInterruptDamage(focus, talentBonus, passiveBonus int) int {
 // hit. Ward is consumed before guard, matching the live combat rules.
 type IncomingDamageInput struct {
 	IntentDamage          int
-	AgilityReduction      int
 	TalentReduction       int
 	PassiveReduction      int
 	Ward                  int
@@ -90,7 +89,7 @@ type IncomingDamageTransition struct {
 }
 
 func resolveIncomingDamage(input IncomingDamageInput) IncomingDamageTransition {
-	damage := input.IntentDamage - input.AgilityReduction - input.TalentReduction - input.PassiveReduction
+	damage := input.IntentDamage - input.TalentReduction - input.PassiveReduction
 	if damage < 0 {
 		damage = 0
 	}

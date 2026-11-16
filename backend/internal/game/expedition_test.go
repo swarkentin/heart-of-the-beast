@@ -1399,3 +1399,31 @@ func TestLegacyRunsKeepTheirRules(t *testing.T) {
 		t.Fatalf("legacy descent should build an old-template floor: depth=%d", run.Depth)
 	}
 }
+
+func TestRunProgressXPRewardsDistance(t *testing.T) {
+	room := startExpedition(t, 1, "catacombs", "xp-run")
+	run := room.Run
+	if RunProgressXP(run) != 0 {
+		t.Fatal("a run in progress is worth nothing yet")
+	}
+	defeatCurrentEncounter(t, room)
+	run.Phase = PhaseFailed
+	if got := RunProgressXP(run); got != RunXPPerEncounter {
+		t.Fatalf("one fight won is worth %d, got %d", RunXPPerEncounter, got)
+	}
+	// Rooms of finished dungeons are gone from the snapshot; the counters still pay for them.
+	run.Rooms = map[string]*DungeonRoom{}
+	run.EncountersCleared, run.FloorsCleared, run.DungeonsCleared = 30, 6, 1
+	if got, want := RunProgressXP(run), int64(30*RunXPPerEncounter+6*RunXPPerFloor+RunXPPerDungeon); got != want {
+		t.Fatalf("a deep expedition is worth %d, got %d", want, got)
+	}
+	fresh := startExpedition(t, 1, "catacombs", "xp-none")
+	fresh.Run.Phase = PhaseFailed
+	if RunProgressXP(fresh.Run) != 0 {
+		t.Fatal("a run that won no fight earns nothing")
+	}
+	legacy := &Run{Phase: PhaseCompleted, Rooms: map[string]*DungeonRoom{"a": {Encounter: &Encounter{Status: EncounterCleared}}, "b": {Encounter: &Encounter{Status: EncounterActive}}}}
+	if got := RunProgressXP(legacy); got != RunXPPerEncounter+RunXPCompletionBonus {
+		t.Fatalf("a completed older run is worth %d, got %d", RunXPPerEncounter+RunXPCompletionBonus, got)
+	}
+}

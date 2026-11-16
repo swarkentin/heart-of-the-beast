@@ -30,6 +30,13 @@ The service listens on port 8080 by default; set PORT to override it. GET /healt
 - POST /rooms/{id}/commands accepts validated gameplay commands.
 - GET /spectate/{id} returns a read-only snapshot using the separate spectator token. Spectator credentials cannot submit player commands.
 
+- POST /profile creates or resumes the browser's persistent guest profile. Supply a browser-generated bearer credential in Authorization; the service stores only its SHA-256 hash and returns the same profile on repeated bootstrap requests.
+- GET /profile returns the profile associated with that credential. Profile identity is independent of room/player tokens and survives room changes and backend restarts.
+- GET /progression includes the data-driven profile title and badge catalog. Run XP awards unlock eligible rewards for Adventurer Rank and class mastery milestones; the unlocked IDs are persisted with the profile.
+- POST /rooms and POST /rooms/join also accept the optional X-Guest-Profile-Credential header. When valid, the server links that room player to the guest profile without exposing the profile ID in room snapshots.
+- At run completion or party defeat, the server awards Adventurer XP and mastery XP for the class played. A cleared encounter is required; completed expeditions receive an additional milestone award. A persistent award ledger makes each player's run award idempotent.
+- Profile state is stored in PostgreSQL. The browser retains only the opaque credential; it is not authoritative for progression values.
+
 Send credentials in Authorization: Bearer <token>. The initial deterministic dungeon has three encounters to exercise combat, directional transitions, and run completion. The room aggregate is persisted as JSONB with optimistic version checks, so reconnecting clients can fetch the latest snapshot after a process restart. This is an initial persistence boundary, not yet an event log or realtime subscription protocol.
 
 Example command bodies:
