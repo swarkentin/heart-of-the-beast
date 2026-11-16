@@ -33,9 +33,6 @@
 .path-button b{font-size:12px;font-weight:500;color:#f0dfc9}
 .path-button small{overflow:hidden;color:#b8aa9a;font-size:10px;line-height:1.4;text-overflow:ellipsis}
 .path-button i{color:#e0b47e;font-size:10px;font-style:normal;letter-spacing:.8px;white-space:nowrap}
-.room-reliquary .scene-art{filter:hue-rotate(18deg) saturate(.78) brightness(.9)}
-.room-flooded-crossing .scene-art{filter:hue-rotate(155deg) saturate(.82) brightness(.88)}
-.room-warden-gate .scene-art{filter:hue-rotate(285deg) saturate(1.1) brightness(.86)}
 .scene{animation:room-arrive .42s ease-out}
 @keyframes room-arrive{from{opacity:.55;transform:scale(1.015)}to{opacity:1;transform:scale(1)}}
 @media(max-width:700px){.navigation-dock{grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding:6px}.navigation-intro{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;padding:3px 5px 7px;border-right:0;border-bottom:1px solid #51463d}.navigation-intro strong{font-size:10px}.navigation-intro span{font-size:9px}.path-button{gap:6px;padding:8px 6px}.path-direction{flex-basis:25px;height:28px;font-size:16px}.path-button b{font-size:9px}.path-button small{font-size:8px}.path-button i{font-size:8px}}
@@ -253,10 +250,6 @@
 .room-event-choices strong{font-size:12px;font-weight:500}
 .room-event-choices small{color:#c2b19d;font-size:10px;line-height:1.4}
 .room-event-result{padding:9px 11px;background:#20251f;border-left:3px solid #a2b18b;color:#d4ddc7;font-size:11px;line-height:1.5}
-.room-archive .scene-art{filter:sepia(.32) hue-rotate(8deg) saturate(.72) brightness(.82)}
-.room-bone-gallery .scene-art{filter:grayscale(.48) sepia(.3) hue-rotate(315deg) brightness(.78)}
-.room-captive-cell .scene-art{filter:sepia(.55) hue-rotate(340deg) brightness(.72)}
-.room-reliquary-vault .scene-art{filter:sepia(.42) hue-rotate(12deg) saturate(1.15) brightness(.88)}
 @media(max-width:700px){.room-event-panel{width:calc(100% - 12px);max-height:40%;margin:5px 0 7px;padding:9px 10px}.room-event-heading h2{font-size:15px}.room-event-panel>p{font-size:10px;margin-bottom:8px}.room-event-choices{grid-template-columns:1fr;gap:5px}.room-event-choices button{padding:8px}.room-event-choices strong{font-size:10px}.room-event-choices small{font-size:9px}}
 
 /* Pixel-art interface pass: keep the world and its controls in the same visual language. */

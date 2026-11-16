@@ -16,8 +16,8 @@ type DungeonThemeDefinition struct {
 	Tagline string
 	// Art is the pixel-art theme. Use the generated art.Theme* variables; a theme without art does not compile.
 	Art art.ThemeID
-	// Playable themes are built by the floor generator. The others have monsters, bosses and encounters in the
-	// catalog but no room graphs yet.
+	// Playable themes have a FloorTemplate and can be chosen when starting a run. The others have monsters,
+	// bosses and encounters in the catalog but no room graphs yet.
 	Playable bool
 }
 
@@ -32,7 +32,7 @@ var defaultDungeonThemeCatalog = newDungeonThemeCatalog()
 func newDungeonThemeCatalog() DungeonThemeCatalog {
 	definitions := []DungeonThemeDefinition{
 		{ID: "catacombs", Name: "Forgotten Catacombs", Tagline: "Ancient ruins, undead, and forgotten horrors", Art: art.ThemeCatacombs, Playable: true},
-		{ID: "scifi", Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI", Art: art.ThemeScifi},
+		{ID: "scifi", Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI", Art: art.ThemeScifi, Playable: true},
 		{ID: "mobster", Name: "1930s Mobster Underworld", Tagline: "Crime, corruption and organized chaos", Art: art.ThemeMobster},
 		{ID: "sunken", Name: "Sunken Kingdom", Tagline: "Lost cities and aquatic horrors", Art: art.ThemeSunken},
 		{ID: "clockwork", Name: "Clockwork Empire", Tagline: "Machines, precision and steam power", Art: art.ThemeClockwork},
@@ -61,6 +61,17 @@ func (catalog DungeonThemeCatalog) Theme(id string) (DungeonThemeDefinition, err
 		return DungeonThemeDefinition{}, fmt.Errorf("unknown dungeon theme %q", id)
 	}
 	return theme, nil
+}
+
+// PlayableDungeonThemes returns the themes a run can be started in, in authored order.
+func PlayableDungeonThemes() []DungeonThemeDefinition {
+	var themes []DungeonThemeDefinition
+	for _, id := range defaultDungeonThemeCatalog.order {
+		if theme := defaultDungeonThemeCatalog.Themes[id]; theme.Playable {
+			themes = append(themes, theme)
+		}
+	}
+	return themes
 }
 
 // IDs returns theme IDs in authored order.

@@ -117,7 +117,8 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 - [ ] Traps, secrets, treasure rooms, merchants, puzzles, and alternate routes.
 - [ ] Reusable optional side-mission framework.
 - [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
-- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the non-Catacombs themes room graphs and floor generation so their encounters can appear in runs; add a dedicated miniboss sprite.
+- [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
+- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the nine remaining themes floor templates so their encounters can appear in runs; add a dedicated miniboss sprite.
 - [ ] Run modifiers and varied dungeon themes.
 
 ## Phase 4 — Open-world intermissions
@@ -130,7 +131,8 @@ Character identity, lifetime records, and permadeath rules: see `docs/game-desig
 ## Phase 5 — Content and presentation
 
 - [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
-- [ ] Per-theme room backgrounds, props, and encounter tables for the eleven themes that already have monster art; server-side theme and enemy definitions that reference sprite ids.
+- [x] Pixel-art room backdrops (first-person and cinematic; entry, corridor, event, boss, vault) for all eleven themes, registered in Go so a missing background fails CI (ADR 0025)
+- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi; a lobby theme picker; encounter tables for the nine non-playable themes.
 - [ ] More enemy families, bosses, side missions, items, and abilities.
 - [ ] Cinematic spectator camera movement, animation, audio, accessibility, and localization polish.
 - [ ] Content authoring conventions and validation tools.

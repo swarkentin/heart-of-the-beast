@@ -1,0 +1,72 @@
+{
+  "width": 275,
+  "height": 155,
+  "kinds": [
+    "entry",
+    "corridor",
+    "event",
+    "boss",
+    "vault"
+  ],
+  "views": [
+    "first",
+    "cinema"
+  ],
+  "themes": [
+    {
+      "id": "catacombs",
+      "name": "Forgotten Catacombs",
+      "manifest": "catacombs/manifest.json"
+    },
+    {
+      "id": "scifi",
+      "name": "Sci-Fi Research Facility",
+      "manifest": "scifi/manifest.json"
+    },
+    {
+      "id": "mobster",
+      "name": "1930s Mobster Underworld",
+      "manifest": "mobster/manifest.json"
+    },
+    {
+      "id": "sunken",
+      "name": "Sunken Kingdom",
+      "manifest": "sunken/manifest.json"
+    },
+    {
+      "id": "clockwork",
+      "name": "Clockwork Empire",
+      "manifest": "clockwork/manifest.json"
+    },
+    {
+      "id": "carnival",
+      "name": "Haunted Carnival",
+      "manifest": "carnival/manifest.json"
+    },
+    {
+      "id": "jungle",
+      "name": "Alien Jungle",
+      "manifest": "jungle/manifest.json"
+    },
+    {
+      "id": "dreamscape",
+      "name": "Dreamscapes",
+      "manifest": "dreamscape/manifest.json"
+    },
+    {
+      "id": "arctic",
+      "name": "Arctic Station",
+      "manifest": "arctic/manifest.json"
+    },
+    {
+      "id": "ghosttown",
+      "name": "Ghost Town",
+      "manifest": "ghosttown/manifest.json"
+    },
+    {
+      "id": "wasteland",
+      "name": "Post-Apocalyptic Settlement",
+      "manifest": "wasteland/manifest.json"
+    }
+  ]
+}

@@ -17,6 +17,9 @@
     "preview": "npm run preview --workspace @heart-of-the-beast/frontend",
     "art:build": "node scripts/pixel-art/build.mjs && node scripts/pixel-art/build-interface.mjs",
     "art:verify": "node scripts/pixel-art/verify.mjs",
-    "art:gallery": "node scripts/pixel-art/gallery.mjs"
+    "art:gallery": "node scripts/pixel-art/gallery.mjs",
+    "art:rooms": "node scripts/pixel-art/rooms/build.mjs",
+    "art:rooms:verify": "node scripts/pixel-art/rooms/verify.mjs",
+    "art:rooms:gallery": "node scripts/pixel-art/rooms/gallery.mjs"
   }
 }

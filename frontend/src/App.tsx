@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AudioControls, useGameAudio } from "./audio";
+import { RoomBackdrop, backdropRef, themeTitle, type BackdropRef } from "./scenes";
 import { EnemyStage } from "./monsters/EnemyStage";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
 import { getSignatureAbility, partySupportCommand, signatureCommand, type SignatureMode } from "./combatAbilities";
@@ -28,7 +29,7 @@ type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "
 type ApiExit = { id: string; destination: string; label: string; description?: string };
 type ApiEventChoice = { id: string; label: string; description: string };
 type ApiRoomEvent = { id: string; title: string; description: string; choices: ApiEventChoice[]; resolved: boolean; result?: string };
-type ApiDungeonRoom = { id: string; name: string; floor?: string; roomType?: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; event?: ApiRoomEvent; cleared: boolean };
+type ApiDungeonRoom = { id: string; themeId?: string; name: string; floor?: string; roomType?: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; event?: ApiRoomEvent; cleared: boolean };
 
 type ApiStats = { power: number; focus: number; agility: number };
 type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; classBuild?: { classId: string; signatureAbilityId: string; passiveId: string }; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats; strikeDamage?: number; guardReduction?: number };
@@ -63,7 +64,7 @@ function xpProgress(player: ApiPlayer) {
 type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; mode?: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
-type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
+type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
 type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -134,26 +135,10 @@ function CombatImpacts({ events, enemies, playerId, view }: { events: ApiCombatE
   </div>;
 }
 
-function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteStatus, impacts, playerId }: { enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string; description?: string }[]; onNavigate: (id: string) => void; voteStatus?: VoteStatus; impacts: ApiCombatEvent[]; playerId: string }) {
+function PlayerView({ backdrop, enemies, target, onTarget, room, exits, onNavigate, voteStatus, impacts, playerId }: { backdrop: BackdropRef; enemies: Enemy[]; target: string; onTarget: (id: Enemy["id"]) => void; room: Room; exits: { id: string; destination: RoomId; label: string; description?: string }[]; onNavigate: (id: string) => void; voteStatus?: VoteStatus; impacts: ApiCombatEvent[]; playerId: string }) {
   return <div className={"scene player-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"First-person view of " + room.name}>
-      <defs>
-        <linearGradient id="wall" x2="0" y2="1"><stop stopColor="#34303a"/><stop offset="1" stopColor="#171922"/></linearGradient>
-        <linearGradient id="floor" x2="0" y2="1"><stop stopColor="#8a7059"/><stop offset="1" stopColor="#211f27"/></linearGradient>
-        <radialGradient id="torch"><stop stopColor="#f6a34f" stopOpacity=".8"/><stop offset="1" stopColor="#d87536" stopOpacity="0"/></radialGradient>
-        <pattern id="brick" width="100" height="58" patternUnits="userSpaceOnUse"><path d="M0 1H100M0 29H100M50 0V29M0 29V58" fill="none" stroke="#0d1018" strokeOpacity=".55" strokeWidth="5"/></pattern>
-        <pattern id="tiles" width="130" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h62l8 32H10zM76 2h52v32H82zM10 40h65v28H3zM83 40h44v28H80z" fill="#9c8065" fillOpacity=".13" stroke="#171820" strokeWidth="4"/></pattern>
-      </defs>
-      <rect width="1100" height="620" fill="#11131b"/>
-      <path d="M0 0H1100V400L760 255H340L0 400Z" fill="url(#wall)"/><path d="M0 0H1100V400L760 255H340L0 400Z" fill="url(#brick)"/>
-      <path d="M0 400L340 255H760L1100 400V620H0Z" fill="url(#floor)"/><path d="M0 400L340 255H760L1100 400V620H0Z" fill="url(#tiles)"/>
-      <path d="M0 400L340 255H760L1100 400" fill="none" stroke="#b19372" strokeOpacity=".5" strokeWidth="7"/>
-      <path d="M120 0V370L370 260V0M980 0V370L730 260V0" fill="#10131b" stroke="#514239" strokeWidth="13"/>
-      <path d="M160 0V350L390 265V0M940 0V350L710 265V0" fill="#20202a" stroke="#3c3637" strokeWidth="8"/>
-      <path d="M405 0V248Q550 210 695 248V0" fill="#0e121b" stroke="#665343" strokeWidth="12"/>
-      <ellipse cx="120" cy="220" rx="180" ry="180" fill="url(#torch)"/><ellipse cx="980" cy="220" rx="180" ry="180" fill="url(#torch)"/>
-      <g fill="#ffbd67"><path d="M112 160h16v-48h12v48h16v12h-44zM952 160h16v-48h12v48h16v12h-44z"/><path d="M134 112l-12 32h24zM974 112l-12 32h24z"/></g>
-      <path d="M0 510L420 390M1100 510L680 390M0 580L470 430M1100 580L630 430" stroke="#c5a17c" strokeOpacity=".16" strokeWidth="4"/>
+      <RoomBackdrop {...backdrop} view="first" />
       <g transform="translate(550 0)" shapeRendering="crispEdges">
         <path d="M-190 620l22-78 62-44h-40l-48 36-38 86zM190 620l-22-78-62-44h40l48 36 38 86z" fill="#293943"/>
         <path d="M-170 620l18-72 46-36 42 0 12 108zM170 620l-18-72-46-36-42 0-12 108z" fill="#53636a"/>
@@ -170,14 +155,10 @@ function PlayerView({ enemies, target, onTarget, room, exits, onNavigate, voteSt
   </div>;
 }
 
-function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts, depth }: { enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; depth: number; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
+function CastView({ backdrop, themeId, enemies, playerHp, playerMaxHp, room, exits, voteStatus, impacts, depth }: { backdrop: BackdropRef; themeId?: string; enemies: Enemy[]; playerHp: number; playerMaxHp: number; room: Room; depth: number; exits: { id: string; destination: RoomId; label: string; description?: string }[]; voteStatus?: VoteStatus; impacts: ApiCombatEvent[] }) {
   return <div className={"scene cast-scene room-" + room.id}>
     <svg className="scene-art" viewBox="0 0 1100 620" role="img" aria-label={"Cinematic elevated view of " + room.name}>
-      <defs><linearGradient id="castfloor" x2="0" y2="1"><stop stopColor="#4b3d39"/><stop offset="1" stopColor="#171923"/></linearGradient><pattern id="casttiles" width="120" height="70" patternUnits="userSpaceOnUse"><path d="M2 2h56v30H2zM64 2h54v30H64zM2 38h56v30H2zM64 38h54v30H64z" fill="#9d8065" fillOpacity=".15" stroke="#171820" strokeWidth="4"/></pattern></defs>
-      <rect width="1100" height="620" fill="#11131b"/><path d="M0 0H1100V620H0Z" fill="url(#castfloor)"/><path d="M0 0H1100V620H0Z" fill="url(#casttiles)"/>
-      <path d="M0 0H1100V85H0zM0 535H1100V620H0z" fill="#0b0e16" opacity=".8"/>
-      <path d="M120 90L980 90M120 530L980 530M120 90V530M980 90V530" stroke="#92765d" strokeWidth="12" opacity=".65"/>
-      <g fill="#e18b4d" opacity=".7"><circle cx="130" cy="115" r="16"/><circle cx="970" cy="115" r="16"/><circle cx="130" cy="505" r="16"/><circle cx="970" cy="505" r="16"/></g>
+      <RoomBackdrop {...backdrop} view="cinema" />
       <g key={impacts.reduce((latest, event) => event.effect === "damage" && event.targetType === "player" ? Math.max(latest, event.round) : latest, 0)} className={impacts.some(event => event.effect === "damage" && event.targetType === "player") ? "cast-player-hit" : ""} transform="translate(550 370)" shapeRendering="crispEdges"><ellipse cy="38" rx="65" ry="17" fill="#080a10" opacity=".8"/><path d="M-28-50h56v85h-56z" fill="#53636a"/><path d="M-23-84h46v40h-46z" fill="#c59d78"/><path d="M-28-92h56v13h-56z" fill="#49342d"/><path d="M-22 32h19v30h-19zM4 32h19v30H4z" fill="#38313a"/><text y="94" textAnchor="middle" fill="#f0d2a8" fontSize="20">THE WAYFARER</text></g>
       <EnemyStage key={room.id} view="cast" enemies={enemies} events={impacts} />
     </svg>
@@ -185,7 +166,7 @@ function CastView({ enemies, playerHp, playerMaxHp, room, exits, voteStatus, imp
     <div className="enemy-intents">{enemies.filter(e => e.hp > 0).map(e => <div key={e.id} className="intent"><span className="intent-dot"/><span>{e.name}</span><b>{e.intent}</b><small>{e.intentTarget}{e.interruptible ? " · INTERRUPTIBLE" : ""}</small></div>)}</div>
     {exits.length > 0 ? <div className="cast-exits" aria-label="Available paths">{voteStatus ? <div className="path-vote-status" role="timer"><strong>PARTY PATH VOTE</strong><b>{voteStatus.remainingSeconds}s</b><small>{voteStatus.submittedCount}/{voteStatus.eligibleCount} VOTED · TIES RANDOM</small><div className="path-vote-progress"><i style={{ width: voteStatus.progressPercent + "%" }} /></div></div> : null}{exits.map((exit, index) => <div key={exit.id} className={"cast-exit cast-exit-" + (exits.length === 1 ? "center" : index === 0 ? "left" : "right")}><span>{exits.length === 1 ? "↑" : index === 0 ? "↖" : "↗"}</span><strong>{exit.label}</strong><small>{exit.description || "AVAILABLE PATH"}</small>{voteStatus ? <small>{(voteStatus.voteCounts[exit.id] || 0)+" VOTES"}</small> : null}</div>)}</div> : null}
     <div className="scene-location"><span>◆</span> {room.name.toUpperCase()} <i>·</i> SPECTATOR CAMERA</div>
-    <div className="cast-overlay"><strong>THE FORGOTTEN CATACOMBS</strong><span>FLOOR {String(depth).padStart(2, "0")} · PARTY RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
+    <div className="cast-overlay"><strong>{themeTitle(themeId)}</strong><span>FLOOR {String(depth).padStart(2, "0")} · PARTY RUN</span><div className="cast-health">WAYFARER <Bar value={playerHp} max={playerMaxHp}/><b>{playerHp}/{playerMaxHp}</b></div></div>
     <CombatImpacts events={impacts} enemies={enemies} playerId="" view="cast" />
     <div className="scene-hint">CINEMATIC PARTY VIEW · LIVE ENCOUNTER</div>
   </div>;
@@ -320,7 +301,7 @@ export default function App() {
     let active = true;
     const heartbeat = async () => {
       try {
-        const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/heartbeat", session.playerToken, { method: "POST" });
+        const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/heartbeat", session.playerToken, { method: "POST", body: JSON.stringify({ themeId: new URLSearchParams(window.location.search).get("theme") || undefined }) }); // ?theme=scifi picks the dungeon theme until the lobby has a picker
         if (active) setSnapshot(current => !current || next.version >= current.version ? next : current);
       } catch {
         // Snapshot polling continues during a temporary disconnect; the server
@@ -495,8 +476,8 @@ export default function App() {
     {!spectator && <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: 16, padding: "8px 24px" }}>{session?.spectatorToken ? <><a href={spectatorLink} target="_blank" rel="noreferrer" style={{ color: "#d8a76e" }}>OPEN SPECTATOR VIEW</a><button className="turn-button" onClick={shareSpectatorLink}>{shareCopied ? "SPECTATOR LINK COPIED" : "COPY SPECTATOR LINK"} <span>↗</span></button></> : null}<button className="turn-button" onClick={() => void leaveRoom()} disabled={busy}>LEAVE PARTY</button></div>}
     <section className="play-area">
       {view === "player" && !spectator
-        ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} playerId={playerId || ""} />
-        : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} depth={run.depth ?? 1} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
+        ? <PlayerView backdrop={backdropRef({ id: serverRoom?.id ?? room.id, roomType: serverRoom?.roomType, themeId: serverRoom?.themeId }, run?.themeId)} enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} playerId={playerId || ""} />
+        : <CastView backdrop={backdropRef({ id: serverRoom?.id ?? room.id, roomType: serverRoom?.roomType, themeId: serverRoom?.themeId }, run?.themeId)} themeId={serverRoom?.themeId || run?.themeId} enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} depth={run.depth ?? 1} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
       {serverRoom?.event ? <section className={"room-event-panel" + (serverRoom.event.resolved ? " room-event-resolved" : "")} aria-live="polite">
         <div className="room-event-heading"><span>{serverRoom.event.resolved ? "DECISION RECORDED" : serverRoom.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</span><h2>{serverRoom.event.title}</h2></div>
         <p>{serverRoom.event.description}</p>
@@ -544,6 +525,6 @@ export default function App() {
       {gameOver ? <div className="event-message" role="status">{run.phase === "completed" ? "THE CATACOMBS ARE CLEARED — VICTORY" : "THE PARTY HAS FALLEN — RUN OVER"}</div> : null}
       {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
     </section>
-    <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
+    <footer className="game-foot"><span>{themeTitle(serverRoom?.themeId || run?.themeId)}</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>
   </main>;
 }

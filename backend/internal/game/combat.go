@@ -356,7 +356,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			run.Phase = PhaseCompleted
 			completed := now.UTC()
 			run.CompletedAt = &completed
-			addCombatEvent(run, roundNumber, "victory", "The final guardian falls. The catacombs are cleared!")
+			addCombatEvent(run, roundNumber, "victory", clearedText(run.Theme()))
 		} else {
 			run.Phase = PhaseExploring
 			startNavigationVote(room, now)

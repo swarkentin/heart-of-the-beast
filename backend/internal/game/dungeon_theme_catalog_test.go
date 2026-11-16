@@ -225,14 +225,23 @@ func TestDungeonThemeCatalogRejectsInconsistentContent(t *testing.T) {
 	})
 }
 
-func TestOnlyCatacombsIsPlayable(t *testing.T) {
+// A theme is playable exactly when the floor generator has a template for it.
+func TestPlayableThemesMatchFloorTemplates(t *testing.T) {
+	playable := 0
 	for _, id := range defaultDungeonThemeCatalog.IDs() {
 		theme, err := defaultDungeonThemeCatalog.Theme(id)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if theme.Playable != (id == "catacombs") {
-			t.Errorf("theme %q playable=%v", id, theme.Playable)
+		_, err = defaultFloorTemplateCatalog.Template(id)
+		if theme.Playable != (err == nil) {
+			t.Errorf("theme %q playable=%v but has template=%v", id, theme.Playable, err == nil)
 		}
+		if theme.Playable {
+			playable++
+		}
+	}
+	if playable < 2 {
+		t.Errorf("expected at least Catacombs and Sci-Fi to be playable, got %d", playable)
 	}
 }
