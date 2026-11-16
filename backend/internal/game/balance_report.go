@@ -114,7 +114,7 @@ func balancePlayers(definitions []ClassDefinition) ([]PlayerState, []string, err
 			ID:             fmt.Sprintf("hero-%d", i+1),
 			Health:         build.MaxHealth,
 			MaxHealth:      build.MaxHealth,
-			StrikeDamage:   10,
+			StrikeDamage:   PlayerStrikeDamage,
 			GuardReduction: GuardDamageReduction,
 			Archetype:      definition.ArchetypeID,
 			ClassBuild:     &build,
