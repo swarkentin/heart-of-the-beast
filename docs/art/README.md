@@ -161,3 +161,25 @@ the server's ability labels so the first two rules decide it.
 The `move` hint on `attack`/`special` (`slash`, `claw`, `smash`, `cast`, `shoot`, `roar`, `wail`, `spit`, `summon`, ...) and keywords in
 the move label choose the effect and its element (frost, fire, acid, shock, spectral, arcane; `fx/elements.ts`). With
 `prefers-reduced-motion` sprites hold a still frame and effects become short static markers.
+
+## Room backdrops
+
+Every theme also has pixel-art room backgrounds in `frontend/public/art/rooms/<theme>/`: five kinds (`entry`,
+`corridor`, `event`, `boss`, `vault`) in two views (`<kind>-first.png`, a first-person view, and `<kind>-cinema.png`, the
+elevated spectator view), 275x155 each, shown at 4x. Catacombs and Sci-Fi have hand-authored props; the other nine themes
+have their own palettes, surface patterns, light fixtures, doors and set pieces. The enemy standing area and the
+foreground floor are kept clear.
+
+![First-person backdrops](rooms-first-person.png)
+![Cinematic backdrops](rooms-cinematic.png)
+
+```
+npm run art:rooms           # regenerate PNGs, manifests, index.json and backend/internal/art/rooms_gen.go
+npm run art:rooms:verify    # fail if stale/missing/extra, non-deterministic, flat or cluttered (runs in CI)
+npm run art:rooms:gallery   # regenerate docs/art/rooms-first-person.png and rooms-cinematic.png
+```
+
+Rendering code and per-theme styles live in `scripts/pixel-art/rooms/` (`styles.mjs` is data, `painter.mjs` the
+per-pixel renderer, `props.mjs` the props and layouts). The Go registry (`art.BackdropFor`, `art.RoomKind*`) and
+`game.RoomBackdropKind` tie rooms to backdrops; a playable theme whose floors contain a room without a background fails
+`go test`. See ADR 0025. The themed encounter catalog now has 73 encounters (`scifi-breach` is new).

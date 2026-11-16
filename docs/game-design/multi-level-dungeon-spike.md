@@ -159,6 +159,10 @@ Cumulative level thresholds are now 60 / 150 / 275 / 425 XP for levels 2–5. Th
 - Enemy combinations create distinct tactical priorities, and telegraphed threats have understandable counterplay.
 - The existing music identity remains recognizable while percussion adds a subtle sense of depth and momentum.
 
+## Update: generation is now theme-aware
+
+The generator no longer hard-codes Catacombs content. Floors come from a per-theme `FloorTemplate` over the same topology, Catacombs output is unchanged (golden-tested), and Sci-Fi is the second playable theme. Runs and rooms carry `themeId`; legacy runs default to Catacombs. See ADR 0025.
+
 ## Decision after the spike
 
 Keep the generator only if the tests and playtest show that it creates meaningfully different, completable floors without making room content generic. If it does, promote the generator, encounter director, and floor transition into the Phase 3 procedural-dungeon work; otherwise retain authored floor graphs and use the spike's difficulty/progression findings to guide them.

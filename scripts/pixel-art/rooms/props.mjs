@@ -187,7 +187,7 @@ function extrasFirst(ctx, draws, kind) {
 
 function extrasCine(ctx, draws, kind) {
   if (ctx.id === "catacombs") draws.push((pen) => { for (const sx of [34, 241]) { pen.vline(sx, 0, 8, [96, 88, 100]); pen.disc(sx, 9, 1, [96, 88, 100]); } scatter(pen, ctx, 50, 230, 80, 150, 14, 3); });
-  else if (ctx.id === "scifi") draws.push((pen) => { for (const y of [CINE_TOP + 22, CINE_TOP + 70]) { pen.hline(36, y, 203, [255, 182, 79], 0.35); } scatter(pen, ctx, 45, 235, 70, 150, 12, 5); });
+  else if (ctx.id === "scifi") draws.push((pen) => { scatter(pen, ctx, 45, 235, 70, 150, 12, 5); });
   else draws.push((pen) => scatter(pen, ctx, 45, 235, 70, 150, 9, 2));
 }
 
@@ -242,7 +242,7 @@ function planCine(ctx) {
   // lamps on the back wall, braziers on the floor corners
   const lampX = kind === "boss" ? [38, 92, 183, 237] : [60, 215];
   for (const x of lampX) addLamp(ctx, draws, x, 14, 3, 40);
-  for (const t of kind === "boss" ? [0.1, 0.62] : [0.12]) for (const side of [-1, 1]) {
+  for (const t of ctx.style.lamp[0] === "strip" ? [] : kind === "boss" ? [0.1, 0.62] : [0.12]) for (const side of [-1, 1]) {
     const y = R(fy(t)), x = R(VPX + side * (ctx.half(y) - 9));
     light(ctx, x, y - 8, 30, ctx.lampColor, 0.6);
     draws.push((pen) => { pen.rect(x - 1, y - 6, 3, 8, [46, 38, 34]); pen.rect(x - 4, y - 8, 9, 2, [86, 74, 66]); lamp(pen, ctx, x, y - 12, 3); });
@@ -262,7 +262,7 @@ function planCine(ctx) {
   } else if (kind === "boss") {
     light(ctx, VPX, top - 10, 50, ctx.accent, 0.55);
     draws.push((pen) => runeCircle(pen, ctx, VPX, R(fy(0.6)), 90, 18, 0.28));
-    draws.push((pen) => bossPiece(pen, ctx, VPX, top + 6, 56, 44));
+    draws.push((pen) => bossPiece(pen, ctx, VPX, top + 6, 50, 38));
   } else {
     light(ctx, VPX, top - 4, 44, [255, 214, 110], 0.6);
     draws.push((pen) => { for (const dx of [-1, 1]) chest(pen, ctx, VPX + dx * 36, top + 8, 18, 12, true); chest(pen, ctx, VPX, top + 8, 30, 18, ctx.style.vault === "crate"); });
