@@ -241,7 +241,7 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} profile={profile} classes={classCatalog?.classes ?? []} />;
+    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} />;
   }
 
   if (!snapshot) {
