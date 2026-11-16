@@ -174,3 +174,53 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 		t.Fatalf("freed slot should accept a replacement: %d %s", replacement.Code, replacement.Body.String())
 	}
 }
+
+func TestPostgresGuestProfilePersistsAcrossHandlers(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
+	}
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		t.Fatalf("connect to integration database: %v", err)
+	}
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
+	}
+
+	credential := "0123456789abcdef0123456789abcdef"
+	hash := tokenHash(credential)
+	defer db.Exec("DELETE FROM player_profiles WHERE credential_hash = $1", hash)
+	handler := NewHandler(store.NewPostgres(db))
+	request := func(target http.Handler, method string) *httptest.ResponseRecorder {
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(method, "/profile", nil)
+		req.Header.Set("Authorization", "Bearer "+credential)
+		target.ServeHTTP(recorder, req)
+		return recorder
+	}
+	created := request(handler, http.MethodPost)
+	if created.Code != http.StatusOK {
+		t.Fatalf("create profile: %d %s", created.Code, created.Body.String())
+	}
+	var first store.Profile
+	if err := json.Unmarshal(created.Body.Bytes(), &first); err != nil {
+		t.Fatal(err)
+	}
+	restartedHandler := NewHandler(store.NewPostgres(db))
+	loaded := request(restartedHandler, http.MethodGet)
+	if loaded.Code != http.StatusOK {
+		t.Fatalf("load profile after handler restart: %d %s", loaded.Code, loaded.Body.String())
+	}
+	var second store.Profile
+	if err := json.Unmarshal(loaded.Body.Bytes(), &second); err != nil {
+		t.Fatal(err)
+	}
+	if first.ID != second.ID || second.AdventurerLevel != 1 {
+		t.Fatalf("profile did not persist: first=%+v second=%+v", first, second)
+	}
+}
