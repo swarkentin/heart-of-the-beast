@@ -132,7 +132,21 @@ func TestResolveEnemyIntent(t *testing.T) {
 
 func TestBuildEnemyIntentPreservesLegacyBehaviorFallback(t *testing.T) {
 	got := buildEnemyIntent(&Enemy{Behavior: "unknown-legacy-behavior"}, 1, 0, []string{"player-1"})
-	if got.Kind != "strike" || got.Label != "Strike" || got.Damage != 4 || got.TargetPlayerID != "player-1" {
+	if got.Kind != "strike" || got.Label != "Strike" || got.Damage != 5 || got.TargetPlayerID != "player-1" {
 		t.Fatalf("legacy behavior fallback changed: %+v", got)
+	}
+}
+
+func TestBuildEnemyIntentAppliesLiveDamageMultiplier(t *testing.T) {
+	got := buildEnemyIntent(&Enemy{Behavior: "scout"}, 1, 0, []string{"player-1"})
+	if got.Damage != 4 {
+		t.Fatalf("scout intent damage = %d, want 4 after live tuning", got.Damage)
+	}
+}
+
+func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
+	got := buildEnemyIntent(&Enemy{Behavior: "guardian"}, 1, 0, []string{"p1", "p2", "p3", "p4"})
+	if got.Damage != 12 {
+		t.Fatalf("four-player heavy intent damage = %d, want 12", got.Damage)
 	}
 }
