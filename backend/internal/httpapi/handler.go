@@ -356,13 +356,22 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not join room")
 		return
 	}
+	profileID := h.guestProfileID(r)
+	if profileID != "" {
+		for _, existingProfileID := range room.PlayerProfileIDs {
+			if existingProfileID == profileID {
+				writeError(w, http.StatusConflict, "this guest profile is already in the room")
+				return
+			}
+		}
+	}
 	expected := room.Version
 	room.PlayerIDs = append(room.PlayerIDs, playerID)
 	if room.PlayerTokenHashes == nil {
 		room.PlayerTokenHashes = make(map[string]string)
 	}
 	room.PlayerTokenHashes[playerID] = tokenHash(playerToken)
-	if profileID := h.guestProfileID(r); profileID != "" {
+	if profileID != "" {
 		if room.PlayerProfileIDs == nil {
 			room.PlayerProfileIDs = make(map[string]string)
 		}
