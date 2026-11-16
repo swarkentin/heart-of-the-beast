@@ -233,3 +233,22 @@ The seeded simulator now recognizes each player's registered signature ability a
 Ability applications mutate only the simulator's copied player/enemy state through a minimal in-memory room/run adapter; no persistence, clock, websocket, or live room is involved. Ability use counts are included in the existing report. The simulator also now carries damage taken across rounds so Reckoning's live trigger can be represented. These policies are intentionally baseline heuristics, not an optimal-play solver.
 
 Consumables, room/run effects, and inter-floor choices remain uncovered. Before broad balance tuning, add parity fixtures that compare live transition outcomes with simulator outcomes for each ability and representative party compositions.
+
+
+## Follow-up slice: random full-run simulation baseline
+
+`backend/internal/game/run_simulation.go` adds a full-expedition Monte Carlo runner on top of the existing seeded multi-floor dungeon. Each simulation creates a fresh 1–4 character party, starts the real run aggregate, and advances it until completion, party defeat, or a safety step limit.
+
+The baseline policy chooses uniformly among currently legal combat commands and targets (attack, defend, interrupt, and registered class abilities), then randomly chooses available room exits, room-event options, and the inter-floor recovery/perk decision. For co-op navigation and inter-floor votes, the simulation has the party submit the same randomly selected shared choice; this keeps the run reproducible and avoids relying on process-global random tie-breakers.
+
+Crucially, the runner does not implement a second version of gameplay. It calls `StartMultiLevelRun` and `ApplyCommand`, so combat rounds, enemy intents, ability handlers, room rewards, event effects, navigation, floor transitions, and run completion are the same domain operations used by live play. Each simulation is isolated in memory and uses a seeded random source.
+
+`SimulateRunBatch` reports completion and wipe rates, probability of reaching each depth, median/P90 depth, rooms visited, combat rounds, and per-run health/progression details. Run it from `backend/`:
+
+```sh
+go run ./cmd/run-simulation -runs 100 -first-seed 1 -party bulwark
+```
+
+The `-party` argument accepts one to four comma-separated class IDs, for example `bulwark,cleric,ranger`. Add `-json report.json` to retain machine-readable results.
+
+This is the deliberately weak random-decision baseline, not a model of actual player behavior. It tells us how far a party gets when it makes legal but unskilled choices. The next important step is to add one or more player-like policies (for example, interrupt dangerous telegraphs, prioritize threats, use healing and defensive abilities contextually, and make informed route/reward choices) and compare their depth-reach probabilities against this baseline across the same seeds and party compositions. Only then can we quantify whether game decisions reward player skill. Human playtests remain necessary to validate whether those policies resemble real players.
