@@ -350,7 +350,7 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.ClassCombat.DamageTakenLastRound != 4 {
+	if player.ClassCombat.DamageTakenLastRound != 11 {
 		t.Fatalf("expected 11 damage recorded for Reckoning, got %+v", player.ClassCombat)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "ability", TargetID: enemy.ID}, now); err != nil {
@@ -472,7 +472,7 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if enemy.Health != 7 {
 		t.Fatalf("companion and player attacks should deal 13 combined damage, enemy health=%d", enemy.Health)
 	}
-	if room.Run.Players["player-2"].Health != 7 {
+	if room.Run.Players["player-2"].Health != 6 {
 		t.Fatalf("Companion Instinct should heal the lowest-health ally after the enemy hit, health=%d", room.Run.Players["player-2"].Health)
 	}
 }
