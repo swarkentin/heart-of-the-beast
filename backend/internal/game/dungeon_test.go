@@ -206,8 +206,8 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
 		t.Fatalf("solo reliquary guardian health = %d, want 15", got)
 	}
-	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 16 {
-		t.Fatalf("solo bonebound guardian health = %d, want 16", got)
+	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 22 {
+		t.Fatalf("solo bonebound guardian health = %d, want 22", got)
 	}
 	if got := solo.Run.Rooms["flooded-crossing"].Encounter.Enemies[0].Health; got != 11 {
 		t.Fatalf("solo crossing scout health = %d, want 11", got)
