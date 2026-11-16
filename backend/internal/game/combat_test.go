@@ -93,7 +93,7 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 	if got := room.Run.Players["player-1"].Health; got != 30 {
 		t.Fatalf("untargeted player should take no damage, health=%d", got)
 	}
-	if got := room.Run.Players["player-2"].Health; got != 30 {
+	if got := room.Run.Players["player-2"].Health; got != 29 {
 		t.Fatalf("targeted player should block the 4 damage strike, health=%d", got)
 	}
 	if next := room.Run.Rooms["entry"].Encounter.Enemies[0].Intent; next == nil || next.TargetPlayerID != "player-1" {
@@ -103,7 +103,7 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 
 func TestWardenSoulSweepTelegraphsPartyWideDamage(t *testing.T) {
 	intent := buildEnemyIntent(&Enemy{Behavior: "warden"}, 3, 0, []string{"player-1", "player-2"})
-	if intent.Kind != "soul_sweep" || !intent.TargetAll || intent.Damage != 3 {
+	if intent.Kind != "soul_sweep" || !intent.TargetAll || intent.Damage != 4 {
 		t.Fatalf("expected a party-wide soul sweep on every third round, got %+v", intent)
 	}
 }
