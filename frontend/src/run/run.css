@@ -36,7 +36,6 @@ button.rn-threat-chip:hover { background: #1d1733f2; }
 .rn-threat-chip i { font-style: normal; color: var(--ember); font-size: 18px; }
 .rn-threat-chip small { color: var(--muted); font-size: 16px; letter-spacing: .04em; }
 .rn-banner { position: absolute; left: 50%; top: 42%; translate: -50% -50%; max-width: 90%; padding: 8px 18px 10px; background: var(--edge); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--gold); color: var(--bone); font: 400 14px/1.6 var(--display); text-align: center; animation: rn-banner .28s steps(4) 1; }
-.rn-banner-auto { box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--ember); color: var(--ember); }
 .rn-banner-good { color: var(--gold); font-size: 22px; } .rn-banner-bad { color: var(--bad); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px #9a4a4a; font-size: 18px; }
 @keyframes rn-banner { from { scale: 1.3; opacity: 0; } }
 
@@ -142,6 +141,9 @@ button.rn-card { cursor: pointer; background: none; }
 .rn-act-passed { filter: saturate(.2) brightness(.55); }
 .rn-act-chosen { translate: 0 calc(2px * var(--px)); filter: brightness(1.12); outline: 3px solid #fff0c0; outline-offset: 2px; animation: rn-press .24s steps(3) 1; }
 .rn-act-chosen small { color: inherit; letter-spacing: .1em; }
+/* The action the server will take for you when the timer runs out: a slow, quiet pulse over the last seconds. */
+.rn-act-auto { outline: 3px solid transparent; outline-offset: 2px; animation: rn-auto 1s steps(2, jump-none) infinite; }
+@keyframes rn-auto { to { filter: brightness(1.3); outline-color: var(--ember); } }
 @keyframes rn-press { 0% { translate: 0 0; filter: brightness(1.8); } 50% { translate: 0 calc(3px * var(--px)); } }
 .rn-inspect { flex: none; min-height: 2.1em; color: var(--muted); font-size: 16px; line-height: 1.05; }
 
@@ -172,35 +174,73 @@ button.rn-card { cursor: pointer; background: none; }
 @media (min-width: 2540px) and (min-height: 1380px) {
   .rn-screen > .px-topbar, .rn-board, .rn-screen .px-tree { zoom: 2; }
 }
-/* ---------- narrow screens: viewport, party strip, options, log ---------- */
+/* ---------- narrow screens: everything on one screen, no scrolling ----------
+   Top to bottom: the viewport (takes whatever height is left), the party as one strip of compact cards, your
+   options, and the last lines of the log. */
 @media (max-width: 900px) {
-  .rn-screen { overflow: hidden auto; }
+  .rn-screen { padding: 0 4px 4px; font-size: 18px; }
+  .rn-screen .px-topbar { height: 40px; }
   .rn-screen .px-brand > span:last-child { display: none; }
-  .rn-board { flex: none; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-template-rows: none; grid-template-areas: none; --cols: 4; }
-  .rn-party-1 .rn-board { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
+  .rn-board { --cols: 4; gap: 5px; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-template-rows: minmax(96px, 1fr) auto auto; grid-template-areas: none; }
+  .rn-party-1 .rn-board { --cols: 1; grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
   .rn-party-2 .rn-board { --cols: 2; } .rn-party-3 .rn-board { --cols: 3; }
   .rn-side { display: contents; }
   .rn-view, .rn-console { grid-area: auto; grid-column: 1 / -1; }
-  .rn-view { order: -1; }
-  .rn-scene { position: relative; inset: auto; }
-  .rn-scene-art { height: auto; aspect-ratio: 1100 / 620; }
-  .rn-threats { position: static; padding: 5px 4px 3px; background: var(--edge); }
-  .rn-console { order: 50; grid-template-columns: minmax(0, 1fr); height: auto; }
-  .rn-command { order: 1; overflow: visible; } .rn-log { order: 2; height: 150px; }
-  .rn-card { flex: none; padding: 0 2px 2px; gap: 4px; }
-  .rn-portrait { flex: none; height: 84px; min-height: 0; }
-  .rn-party-1 .rn-portrait, .rn-party-2 .rn-portrait { height: 128px; }
-  .rn-stats, .rn-xp, .rn-card-head i, .rn-kit { display: none; }
-  .rn-party-1 .rn-xp, .rn-party-1 .rn-stats, .rn-party-2 .rn-stats { display: flex; } .rn-party-1 .rn-xp { display: block; }
-  .rn-party-3 .rn-status, .rn-party-4 .rn-status { font-size: 0; gap: 0; padding: 1px 2px; }
-  .rn-party-4 .rn-card-head strong, .rn-party-3 .rn-long, .rn-party-4 .rn-long { display: none; }
-  .rn-party-4 .rn-incoming > span:not(.px-icon) { display: none; }
-  .rn-round { font-size: 14px; letter-spacing: 0; left: 2px; right: 2px; bottom: 2px; }
-  .rn-threat-chip small { display: none; } .rn-threat-chip b, .rn-threat-chip i { font-size: 16px; }
-  .rn-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rn-act { min-height: 52px; }
-  .rn-inspect { min-height: 0; }
-  .rn-timer { grid-template-columns: minmax(0, 1fr) auto; } .rn-timer-bar { grid-column: 1 / -1; grid-row: 2; }
+  .rn-view { grid-row: 1; }
+  .rn-console { grid-row: 3; display: flex; flex-direction: column; gap: 5px; height: auto; }
+
+  /* enemy moves: one compact line each, over the bottom edge of the scene */
+  .rn-threats { left: 2px; right: 2px; bottom: 2px; gap: 3px 4px; }
+  .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
+  .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
+  .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
+
+  /* party strip: portrait with badges over it, health under it */
+  .rn-card { grid-row: 2; flex: none; gap: 3px; padding: 0; border-width: calc(4px * var(--px)); border-image: url("/art/ui/frame-inset.png") 4 fill / calc(4px * var(--px)) stretch; filter: none; }
+  .rn-card-self { border-image-source: url("/art/ui/frame-selected.png"); }
+  .rn-portrait { flex: none; height: 64px; min-height: 0; max-height: none; box-shadow: none; }
+  .rn-card-threatened .rn-portrait { box-shadow: inset 0 0 0 2px #9a4a4a; }
+  /* the window is half a sprite tall: frame the head and shoulders, or the heap on the floor when down */
+  .rn-hero-box { margin-top: -26px; } .rn-card-down .rn-hero-box { margin-top: -64px; }
+  .rn-card-head { position: absolute; top: 1px; left: 1px; z-index: 2; gap: 3px; }
+  .rn-card-head strong, .rn-card-head i { display: none; }
+  .rn-party-1 .rn-card-head strong, .rn-party-2 .rn-card-head strong { display: block; padding: 0 3px; background: var(--edge); }
+  .rn-card-head em { padding: 0 3px; background: var(--edge); font-size: 14px; }
+  .rn-statuses { position: absolute; top: 1px; right: 1px; z-index: 2; flex-direction: column; gap: 2px; }
+  .rn-status { font-size: 0; gap: 0; padding: 1px; background: #0a0714d9; }
+  .rn-stats, .rn-xp, .rn-kit, .rn-incoming, .rn-long { display: none; }
+  .rn-hp { height: 14px; }
+  .rn-round { left: 1px; right: 1px; bottom: 1px; font-size: 14px; letter-spacing: 0; }
+  .rn-aid { top: auto; right: 1px; bottom: 16px; z-index: 3; }
+
+  /* options */
+  .rn-command { flex: none; max-height: 46dvh; padding: 0 2px; }
+  .rn-combat, .rn-context { gap: 5px; }
+  .rn-timer strong { font-size: 16px; letter-spacing: .06em; }
+  .rn-timer > b { font-size: 12px; }
+  .rn-target .px-label { flex: none; white-space: nowrap; font-size: 16px; } .rn-target strong { flex: 1; text-align: center; }
+  .rn-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(44px, auto); gap: 6px; flex: none; }
+  .rn-actions-5, .rn-actions-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rn-actions-5 .rn-act small, .rn-actions-6 .rn-act small { display: none; }
+  .rn-act { min-height: 44px; padding-left: 2px; } .rn-act small { -webkit-line-clamp: 1; line-clamp: 1; }
+  .rn-inspect { display: none; }
+  .rn-choice small { font-size: 16px; }
+
+  /* log: the last two lines; scroll it for more */
+  .rn-log { flex: none; height: 44px; padding: 2px 6px; border: 0; border-image: none; background: var(--pit); box-shadow: inset 0 0 0 2px #3d3658; filter: none; }
+  .rn-log > h2 { display: none; }
+  .rn-log-line { font-size: 16px; line-height: 1.1; } .rn-log-system { margin-top: 0; font-size: 14px; }
+}
+/* Tablets held upright have height to spare: larger portraits. */
+@media (max-width: 900px) and (min-width: 600px) and (min-height: 820px) {
+  .rn-portrait { height: 128px; } .rn-hero-box, .rn-card-down .rn-hero-box { margin-top: 0; } .rn-log { height: 96px; }
+  .rn-threat-chip b { display: inline; }
+}
+/* A phone on its side is too short for the stack: let the page scroll and keep the viewport a usable size. */
+@media (max-width: 900px) and (max-height: 460px) {
+  .rn-screen { overflow: hidden auto; }
+  .rn-board { flex: none; grid-template-rows: 62vh auto auto; }
+  .rn-command { max-height: none; }
 }
 @media (max-width: 700px) {
   .rn-view-switch { display: none; }
@@ -212,5 +252,6 @@ button.rn-card { cursor: pointer; background: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rn-pop { animation: none; } .rn-banner, .rn-log-line, .rn-act-chosen, .rn-round-choosing i, .rn-timer-urgent i.on { animation: none; }
+  .rn-act-auto { animation: none; outline-color: var(--ember); }
   .rn-act:active:not(:disabled), .rn-card-aid:active:not(:disabled) { translate: none; }
 }

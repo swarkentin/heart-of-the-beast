@@ -27,8 +27,13 @@ Exits, room events, and descent choices moved out of the scene and into the comm
 overlays the art and the primary action is in the same place on every screen size.
 
 **Party size.** Solo uses one wider border with a larger portrait; with one card per border the card also lists the
-class's signature and passive. Three and four players stack two cards per border. Below 900 px the borders become a
-strip of compact cards under the viewport, followed by the command panel and the log.
+class's signature and passive. Three and four players stack two cards per border.
+
+**Phones.** Below 900 px nothing scrolls, so the playfield never leaves the screen. From the top: the viewport (it
+takes whatever height is left), the party as one strip of compact cards (head-and-shoulders portrait with status and
+round badges over it, health under it), the last two lines of the log, and the command panel at the bottom where
+thumbs reach. The layout was sized for an iPhone 13 in Safari (390x664 visible). A phone on its side is too short for
+the stack and scrolls instead.
 
 **Portraits.** Each card shows the animated hero, health, level, stats, statuses, the enemy moves aimed at that
 player, and the player's round state (choosing, ready with the chosen action's icon, auto-defended, away, down).
@@ -48,8 +53,10 @@ Abilities aimed at an ally are chosen by selecting that ally's portrait.
 
 **Automatic actions.** Combat events now carry `actorId` and `auto` on defends. When a player's timer runs out the
 server's message says so, the log line is highlighted with an hourglass, the player's portrait is marked
-`AUTO-DEFENDED` until they act again, and the player sees a banner over the viewport. Before that, the timer text
-counts down "defending automatically in 3".
+`AUTO-DEFENDED` until they act again. For the player themselves the cue is on the Defend button, the action the
+server will take: it pulses over the last three seconds ("Automatic in 3"), then shows as pressed and marked
+`AUTOMATIC` while the round resolves. An earlier banner over the viewport was removed because it lingered and covered
+the scene.
 
 **Log.** The client keeps the last 80 lines across rounds (the server only returns the latest round), relabels
 "Adventurer N" to the portrait labels ("You", "P2 Arcanist"), and colours lines by what happened. It is an
