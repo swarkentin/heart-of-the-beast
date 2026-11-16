@@ -99,23 +99,24 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed; carry party state and run rewards between floors; add a health-restoration-versus-perk choice between floors, occasional seeded minibosses with meaningful rewards, and a soundtrack that evolves with depth and encounter intensity; scale encounter pressure with depth and party size. Target 3–5 minutes per level. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
 - [ ] Iterate on the playable multi-level run spike before merging it: rebalance health/damage and encounter pacing to reach the 3–5 minute floor target without relying on enemy HP inflation; slow early XP/level progression; tune healing and party-size scaling; add tactical enemy roles, complementary formations, and clearly telegraphed actions; introduce real risk/reward trade-offs for shrines, healing, perks, optional encounters, and treasure; add subtle depth-sensitive percussion to the existing musical progression. Validate solo and co-op with recorded floor duration, player damage/health changes, level-up timing, and choice outcomes. See the playtest follow-up section in `docs/game-design/multi-level-dungeon-spike.md`.
 
-### Persistent character progression and personalization
+### Persistent player progression and personalization
 
-- [ ] Distinguish persistent character meta-progression from temporary, within-run roguelike progression.
-- [ ] Add a persistent guest-character identity and a memorable character-creation flow, including a generated or chosen name, class selection, and a lifetime record visible from the lobby.
-- [ ] Track each character's life story: dungeons entered, completed, escaped, deaths, revivals, bosses defeated, discoveries, and other notable milestones. Show a concise lifetime summary when choosing or reviewing a character.
-- [ ] Make character death permanent when the character is not raised before the run ends. A successful in-run resurrection preserves that character's life; once a run ends with the character dead, retire the character and require creation or selection of a living character for the next run.
+- [ ] Add durable, accountless guest-profile identity, separate from room membership and run player tokens; retain an opaque guest credential in browser storage and keep authoritative progression on the server.
+- [ ] Add profile-wide Adventurer Rank and an independent class-mastery XP/level track for every class. Mastery persists across character retirement and class switching.
+- [ ] Award profile and active-class XP server-side for meaningful, validated run accomplishments, including partial progress on unsuccessful runs; make every grant idempotent and resistant to farming.
+- [ ] Add a free, non-expiring reward track with data-driven milestones and rewards. No paid tier, premium currency, FOMO deadline, or gameplay-power reward.
+- [ ] Add a data-driven cosmetic catalog and collection/equip experience: class skins, portraits, flourishes, profile titles, badges, interface themes, music selections, and visual effects.
+- [ ] Keep all nine launch classes available. Future class unlocks may use explicit profile milestones, achievements, quests, or class mastery, but grant content access only.
+- [ ] Surface profile rank, per-class mastery, progress to next level, collection, and recent unlocks in the lobby/profile experience.
+- [ ] Add export/recovery for guest progression and a safe guest-to-account linking path that preserves profile rank, class mastery, cosmetics, achievements, and character history.
+- [ ] Keep individual character levels, generated names, lifetime records, and permadeath separate from profile rank and class mastery.
+- [ ] Add persistent guest-character creation and selection, with a memorable identity flow and lifetime record visible from the lobby.
+- [ ] Track each character's life story: dungeons entered, completed, escaped, deaths, revivals, bosses defeated, discoveries, and other notable milestones.
 - [ ] Preserve memorial records for retired characters and their accomplishments; do not silently reset or overwrite a guest's lifetime history when creating a successor.
-- [ ] Award character experience server-side for meaningful run accomplishments: dungeon completions, boss and mini-quest victories, discoveries, and special challenges.
-- [ ] Provide persistent character levels with cosmetic and expressive unlocks such as name customization, interface themes, music selections, portraits, titles, and visual effects.
-- [ ] Add class unlocks as persistent content-access rewards, using data-defined requirements (character level, achievements, quests, or other milestones); unlocks must not grant combat power.
-- [ ] Give guest characters a randomly assigned name initially; unlock player-selected naming at an early level.
-- [ ] Support a useful local guest progression path before account creation, with a clear path to link and preserve that identity later.
-- [ ] Keep character levels and unlocks cosmetic/content-access focused; never grant combat power or gameplay advantages through meta-progression.
-- [ ] Make accomplishment rewards idempotent, resistant to farming, and fair to eligible party members, including meaningful partial progress on unsuccessful runs.
-- [ ] Define how a guest maintains or selects multiple characters locally, and how each character's record survives browser storage changes before account linking exists.
+- [ ] Unlock expressive character personalization such as name customization without granting combat stats, stronger equipment, or gameplay advantages.
+- [ ] Make progression grants fair to eligible party members and award meaningful effort without rewarding repeated polling, duplicate commands, or trivial-action farming.
 
-Character identity, lifetime records, and permadeath rules: see `docs/game-design/guest-character-life.md`.
+Progression scope, guest identity, reward integrity, and implementation sequence: see [ADR 0028](decisions/0028-player-progression-and-class-mastery.md). Character identity, lifetime records, and permadeath rules: see `docs/game-design/guest-character-life.md`.
 
 ## Phase 3 — Procedural dungeons and replayability
 
