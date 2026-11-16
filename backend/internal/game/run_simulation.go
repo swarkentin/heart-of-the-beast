@@ -151,7 +151,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	}
 
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
-	steps, itemsBought := 0, 0
+	steps, itemsBought, goldSpent := 0, 0, 0
 	combatMetrics := make(map[string]PlayerCombatMetrics, len(classIDs))
 	netPartyHealthLoss := 0
 	for room.Run.Phase != PhaseCompleted && room.Run.Phase != PhaseFailed && steps < maxSteps {
@@ -263,6 +263,12 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				}
 				if command.Type == "buy" {
 					itemsBought++
+					for _, offer := range room.Run.Camp.Offers {
+						if offer.ID == command.ChoiceID {
+							goldSpent += offer.Price
+							break
+						}
+					}
 				}
 			}
 		default:
@@ -301,17 +307,11 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		report.Levels[player.ID] = player.Level
 		report.StrikeDamageAtEnd[player.ID] = player.StrikeDamage
 		report.GoldEarned += player.Gold
-		for _, itemID := range player.Items {
-			for _, item := range shopCatalog {
-				if item.ID == itemID {
-					report.GoldEarned += item.Price
-				}
-			}
-		}
 		if player.Health <= 0 {
 			report.PlayersDownAtEnd++
 		}
 	}
+	report.GoldEarned += goldSpent
 	if report.RemainingMaxHealth > 0 {
 		report.RemainingHealthPct = report.RemainingHealth * 100 / report.RemainingMaxHealth
 	}
