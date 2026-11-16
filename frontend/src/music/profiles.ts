@@ -1,0 +1,185 @@
+// One music profile per dungeon theme in the backend DungeonThemeCatalog, plus a treatment for every boss in the
+// bestiary. All numbers are starting points for a human to audition and tune; see docs/decisions/0026.
+import type { ThemeId, ThemeProfile } from "./types.ts";
+
+const catacombs: ThemeProfile = {
+  id: "catacombs", name: "Forgotten Catacombs", character: "Minor drone, tolling bells, slow heartbeat toms and dripping stone",
+  rootHz: 73.42, depthDrift: [0, -2, -5], scale: "minor", bpm: 84, steps: 16, swing: 0, wobble: 0, leadOct: 2,
+  voices: { pad: "dronePad", bass: "subBass", lead: "bell", accent: "bell", kick: "tom", back: "wood", tick: "tick", fill: "tom" },
+  patterns: { kick: "X.......x.......", back: "........o.......", tick: "..o...o...o...o.", bass: "X.......x.....o.", lead: "X.....x...x.....", leadSparse: "X.......x......." },
+  motif: [0, 2, 3, 2, -1, 0], chordRoots: [0, 5, 3, 4], bassLines: [[0, 0, -3], [0, 3, 4]],
+  bed: { noise: "pink", filter: "lowpass", f: 700, q: 0.7, gain: 0.075, drones: [{ ratio: 1, w: "triangle", gain: 0.1, cents: 0 }, { ratio: 1.5, w: "sine", gain: 0.06, cents: -4 }, { ratio: 2, w: "sine", gain: 0.025, cents: 5 }] },
+  fx: [{ fx: "drip", p: 0.5 }, { fx: "creak", p: 0.12 }, { fx: "toll", p: 0.12, minDepth: 2 }],
+  variants: { flooded: { transpose: -5, bedFilterMul: 0.6, bedGainMul: 1.7 }, gate: { transpose: -11, bedFilterMul: 0.8 } },
+  bosses: {
+    crypt_warden: { tempoMul: 1.12, transpose: 0, scale: "harmonicMinor", lead: "horn", note: "Regal funeral march: harmonic minor, brass lead, soul-drain tension" },
+    ossuary_colossus: { tempoMul: 0.85, transpose: -5, fill: "anvil", lead: "sub", note: "Slow earth-shaking slams: a fifth lower, anvil fills, sub-bass melody" },
+    pale_archivist: { tempoMul: 1.25, transpose: 2, scale: "phrygian", lead: "musicBox", extraFx: "whisper", note: "Restless scholar: phrygian music-box runs over whispering stacks" },
+  },
+};
+
+const scifi: ThemeProfile = {
+  id: "scifi", name: "Sci-Fi Research Facility", character: "Pulsing synth arpeggios, square-wave bass, electric crack snare, steam hiss and alarm beeps",
+  rootHz: 55, depthDrift: [0, -2, 3], scale: "dorian", bpm: 116, steps: 16, swing: 0, wobble: 0, leadOct: 2,
+  voices: { pad: "synthPad", bass: "pulseBass", lead: "arp", accent: "glass", kick: "kick", back: "crack", tick: "tick", fill: "crack" },
+  patterns: { kick: "X...x...X...x.o.", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X.xxX.xxX.xxX.xx", lead: "x.x.x.x.x.x.x.x.", leadSparse: "X...x...X...x..." },
+  motif: [0, 2, 4, 7, 4, 2], chordRoots: [0, 3, 5, 4], bassLines: [[0, 0, 7, 0], [0, 0, 7, 5]],
+  bed: { noise: "white", filter: "highpass", f: 3000, q: 0.5, gain: 0.015, lfo: { rate: 0.6, depth: 0.4 }, drones: [{ ratio: 1, w: "sine", gain: 0.08, cents: 0 }, { ratio: 2, w: "square", gain: 0.012, cents: 6 }] },
+  fx: [{ fx: "beep", p: 0.5 }, { fx: "steam", p: 0.12 }, { fx: "static", p: 0.1, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    containment_mech: { tempoMul: 0.95, transpose: -5, fill: "anvil", lead: "sub", note: "Hydraulic stomp: low, heavy, anvil-struck fills" },
+    overseer_core: { tempoMul: 1.3, transpose: 0, scale: "diminished", lead: "pluck", extraFx: "beep", note: "Glitching machine mind: fast diminished plucks and beeps" },
+    patient_zero: { tempoMul: 1, transpose: -2, scale: "locrian", lead: "warble", extraFx: "swell", note: "Organic horror: locrian, wavering voice, swelling noise" },
+  },
+};
+
+const mobster: ThemeProfile = {
+  id: "mobster", name: "1930s Mobster Underworld", character: "Smoky swing with a walking upright bass, vibraphone, brushes, rain and vinyl crackle",
+  rootHz: 82.41, depthDrift: [0, -2, -5], scale: "blues", bpm: 104, steps: 16, swing: 0.28, wobble: 0, leadOct: 2,
+  voices: { pad: "smokePad", bass: "walkBass", lead: "vibes", accent: "vibes", kick: "kick", back: "brush", tick: "hat", fill: "snare" },
+  patterns: { kick: "x.......x.......", back: "....x.......x...", tick: "x.xxx.xxx.xxx.xx", bass: "x...x...x...x...", lead: "x..x..x...x.x...", leadSparse: "x.....x........." },
+  motif: [0, 1, 2, 3, 2, 1, 4, 2], chordRoots: [0, 3, 2, 4], bassLines: [[0, 2, 3, 4], [0, 4, 3, 2], [0, 2, 4, 3], [-1, 0, 2, 4]],
+  bed: { noise: "pink", filter: "bandpass", f: 500, q: 0.6, gain: 0.05, lfo: { rate: 0.1, depth: 0.3 }, drones: [{ ratio: 1, w: "sine", gain: 0.08, cents: 0 }] },
+  fx: [{ fx: "static", p: 0.6 }, { fx: "carHorn", p: 0.07 }, { fx: "siren", p: 0.08, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    the_don: { tempoMul: 0.9, transpose: -5, lead: "horn", note: "Menacing slow swing: low muted-brass lead" },
+    spectral_kingpin: { tempoMul: 1, transpose: 0, scale: "diminished", lead: "glass", extraFx: "swell", note: "Ghost boss: diminished glass tones and swelling haze" },
+    black_sedan: { tempoMul: 1.35, transpose: -2, fill: "tom", lead: "sub", extraFx: "carHorn", note: "Getaway chase: fast, engine-low, horn stabs" },
+  },
+};
+
+const sunken: ThemeProfile = {
+  id: "sunken", name: "Sunken Kingdom", character: "Muffled deep pads, sonar pings, bubbling, slow heartbeat and distant undersea bells",
+  rootHz: 55, depthDrift: [0, -2, -5], scale: "dorian", bpm: 66, steps: 16, swing: 0, wobble: 4, leadOct: 2,
+  voices: { pad: "muffledPad", bass: "subBass", lead: "sonarBell", accent: "glass", kick: "heartbeat", back: "tom", tick: "bellTick", fill: "tom" },
+  patterns: { kick: "X...............", back: "........x.......", tick: "....o.......o...", bass: "X.......o.......", lead: "X.......x.......", leadSparse: "X..............." },
+  motif: [0, 4, 2, 3, 1], chordRoots: [0, 3, 5, 4], bassLines: [[0, -3], [0, -1]],
+  bed: { noise: "brown", filter: "lowpass", f: 260, q: 0.7, gain: 0.12, lfo: { rate: 0.12, depth: 0.5 }, drones: [{ ratio: 1, w: "sine", gain: 0.12, cents: 0 }, { ratio: 0.5, w: "sine", gain: 0.1, cents: 0 }] },
+  fx: [{ fx: "sonar", p: 0.45 }, { fx: "bubble", p: 0.6 }, { fx: "toll", p: 0.1, minDepth: 2 }, { fx: "whisper", p: 0.1, minDepth: 3 }],
+  variants: {},
+  bosses: {
+    drowned_king: { tempoMul: 1, transpose: 0, scale: "minor", fill: "tom", lead: "bell", note: "Sunken court dirge: minor bells over drum-like toms" },
+    abyssal_angler: { tempoMul: 0.8, transpose: -7, extraFx: "sonar", note: "Stalking depths: slow, a fifth lower, relentless sonar" },
+    ancient_guardian: { tempoMul: 0.7, transpose: -12, fill: "anvil", lead: "sub", note: "Monolith waking: an octave down, anvil strikes" },
+  },
+};
+
+const clockwork: ThemeProfile = {
+  id: "clockwork", name: "Clockwork Empire", character: "Ticking gear percussion, music-box tune, boiler drone, steam jets and tolling brass bells",
+  rootHz: 98, depthDrift: [0, -2, -5], scale: "harmonicMinor", bpm: 112, steps: 16, swing: 0, wobble: 0, leadOct: 2,
+  voices: { pad: "boilerPad", bass: "thumpBass", lead: "musicBox", accent: "bell", kick: "kick", back: "gear", tick: "gear", fill: "clank" },
+  patterns: { kick: "X.......X.......", back: "....x.......x...", tick: "x.x.x.x.x.x.x.x.", bass: "X...x...X...x...", lead: "x.x...x.x.x...x.", leadSparse: "x...x.....x....." },
+  motif: [0, 2, 4, 2, 7, 4, 2, 0], chordRoots: [0, 3, 4, 0], bassLines: [[0, 0, 4, 0], [0, 3, 4, 5]],
+  bed: { noise: "white", filter: "bandpass", f: 1400, q: 1.2, gain: 0.02, drones: [{ ratio: 1, w: "triangle", gain: 0.09, cents: 0 }, { ratio: 2, w: "square", gain: 0.015, cents: 4 }] },
+  fx: [{ fx: "metalClank", p: 0.6 }, { fx: "steam", p: 0.25 }, { fx: "toll", p: 0.12, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    brass_colossus: { tempoMul: 0.9, transpose: -5, fill: "anvil", lead: "horn", note: "Furnace march: heavy brass over anvil fills" },
+    the_clockmaker: { tempoMul: 1.3, transpose: 0, scale: "phrygianDominant", lead: "musicBox", note: "Intricate artificer: fast music-box in phrygian dominant" },
+    leviathan_boiler: { tempoMul: 1.1, transpose: -7, extraFx: "steam", fill: "clank", note: "Living engine: low roar, venting steam, clanking fills" },
+  },
+};
+
+const carnival: ThemeProfile = {
+  id: "carnival", name: "Haunted Carnival", character: "A detuned calliope waltz in 12/8 with tuba oom-pah, crowd murmur, balloon pops and clown horns",
+  rootHz: 130.81, depthDrift: [0, -2, 3], scale: "harmonicMinor", bpm: 120, steps: 12, swing: 0, wobble: 14, leadOct: 1,
+  voices: { pad: "organPad", bass: "tubaBass", lead: "calliope", accent: "musicBox", kick: "kick", back: "rim", tick: "shaker", fill: "snare" },
+  patterns: { kick: "X.....x.....", back: "..x.x...x.x.", tick: "x.x.x.x.x.x.", bass: "X.....x.....", lead: "x..x..x..x.x", leadSparse: "x.....x....." },
+  motif: [0, 2, 4, 5, 4, 2, 0, -1], chordRoots: [0, 3, 4, 0], bassLines: [[0, 4]],
+  bed: { noise: "pink", filter: "bandpass", f: 900, q: 0.8, gain: 0.03, lfo: { rate: 0.25, depth: 0.4 }, drones: [{ ratio: 1, w: "triangle", gain: 0.07, cents: 0 }, { ratio: 1.5, w: "triangle", gain: 0.04, cents: 10 }] },
+  fx: [{ fx: "pop", p: 0.35 }, { fx: "honk", p: 0.15 }, { fx: "swell", p: 0.1, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    the_ringmaster: { tempoMul: 1.2, transpose: 2, lead: "horn", note: "Ringleader fanfare: brass over the waltz" },
+    laughing_big_top: { tempoMul: 1.4, transpose: 0, scale: "wholeTone", extraFx: "honk", note: "Cackling tent: fast whole-tone, honking" },
+    harlequin_horror: { tempoMul: 1.25, transpose: -2, scale: "diminished", lead: "musicBox", note: "Jerky contortionist: diminished music-box" },
+  },
+};
+
+const jungle: ThemeProfile = {
+  id: "jungle", name: "Alien Jungle", character: "Syncopated tribal toms and bongos, marimba, breathy pads, humming insects and bird calls",
+  rootHz: 87.31, depthDrift: [0, -2, -5], scale: "pentMinor", bpm: 108, steps: 16, swing: 0.12, wobble: 3, leadOct: 2,
+  voices: { pad: "breathPad", bass: "thumpBass", lead: "marimba", accent: "marimba", kick: "tom", back: "bongo", tick: "shaker", fill: "bongo" },
+  patterns: { kick: "X..x..x...x.x...", back: "....x..x....x...", tick: "x.x.xxx.x.x.xxx.", bass: "X..x....x..x..x.", lead: "x..x..x..x..x.x.", leadSparse: "x.....x....x...." },
+  motif: [0, 2, 1, 3, 2, 4, 3, 1], chordRoots: [0, 2, 3, 1], bassLines: [[0, 0, 2, 0], [0, 2, 3, 2]],
+  bed: { noise: "pink", filter: "bandpass", f: 3200, q: 1.5, gain: 0.04, lfo: { rate: 0.3, depth: 0.5 }, drones: [{ ratio: 1, w: "sine", gain: 0.1, cents: 0 }] },
+  fx: [{ fx: "insect", p: 0.8 }, { fx: "bird", p: 0.3 }, { fx: "drip", p: 0.2 }],
+  variants: {},
+  bosses: {
+    heartroot_titan: { tempoMul: 0.85, transpose: -7, fill: "tom", lead: "sub", note: "Ancient grove: a fifth lower, slow earth drums" },
+    mother_lantern: { tempoMul: 1, transpose: 2, scale: "lydian", lead: "glass", extraFx: "swell", note: "Luminous bloom: bright lydian glass and swells" },
+    apex_maw: { tempoMul: 1.3, transpose: -2, scale: "phrygian", fill: "bongo", note: "Apex predator: fast phrygian with bongo runs" },
+  },
+};
+
+const dreamscape: ThemeProfile = {
+  id: "dreamscape", name: "Dreamscapes", character: "Unstable tuning and a mode that rotates every four bars: choir pads, warbling voice, whispers and reversed swells",
+  rootHz: 110, depthDrift: [0, 1, -2], scale: "wholeTone", scaleCycle: ["wholeTone", "lydian", "locrian", "diminished"], bpm: 72, steps: 16, swing: 0.05, wobble: 30, leadOct: 2,
+  voices: { pad: "choirPad", bass: "subBass", lead: "warble", accent: "glass", kick: "heartbeat", back: "rim", tick: "bellTick", fill: "tom" },
+  patterns: { kick: "X.....x...x.....", back: "......x.........", tick: "..o.....o....o..", bass: "X.....x.........", lead: "x...x..x....x...", leadSparse: "x.....x........." },
+  motif: [0, 3, 1, 5, 2, 4], chordRoots: [0, 2, 4, 1], bassLines: [[0, 3], [0, -2]],
+  bed: { noise: "pink", filter: "bandpass", f: 600, q: 1, gain: 0.06, lfo: { rate: 0.07, depth: 0.8 }, drones: [{ ratio: 1, w: "sine", gain: 0.1, cents: 0 }, { ratio: 1.0595, w: "sine", gain: 0.05, cents: 0 }] },
+  fx: [{ fx: "swell", p: 0.5 }, { fx: "whisper", p: 0.35 }, { fx: "glassPing", p: 0.2 }],
+  variants: {},
+  bosses: {
+    moon_sovereign: { tempoMul: 0.8, transpose: 0, scale: "lydian", lead: "glass", note: "Stately lullaby: slow lydian glass" },
+    hungry_grin: { tempoMul: 1.3, transpose: 1, scale: "diminished", extraFx: "whisper", note: "Laughing void: fast, diminished, whispering" },
+    hollow_child: { tempoMul: 0.75, transpose: -3, scale: "minor", lead: "musicBox", extraFx: "whisper", note: "Lullaby from the door: a slow, wrong music box" },
+  },
+};
+
+const arctic: ThemeProfile = {
+  id: "arctic", name: "Arctic Station", character: "Sparse high glass tones, howling wind, ice cracks and a very slow pulse",
+  rootHz: 65.41, depthDrift: [0, -2, -5], scale: "pentMinor", bpm: 60, steps: 16, swing: 0, wobble: 2, leadOct: 3,
+  voices: { pad: "glassPad", bass: "subBass", lead: "glass", accent: "bell", kick: "heartbeat", back: "crack", tick: "tick", fill: "crack" },
+  patterns: { kick: "X...............", back: "........x.......", tick: "..o...........o.", bass: "X...............", lead: "x.......o.......", leadSparse: "x..............." },
+  motif: [0, 2, 4, 3, 1, 0], chordRoots: [0, 3, 1, 4], bassLines: [[0], [-2]],
+  bed: { noise: "white", filter: "bandpass", f: 900, q: 0.5, gain: 0.1, lfo: { rate: 0.2, depth: 0.7 }, drones: [{ ratio: 1, w: "sine", gain: 0.06, cents: 0 }] },
+  fx: [{ fx: "wind", p: 0.5 }, { fx: "icecreak", p: 0.25 }, { fx: "glassPing", p: 0.4 }],
+  variants: {},
+  bosses: {
+    glacier_titan: { tempoMul: 0.8, transpose: -7, fill: "tom", lead: "sub", note: "Colossal thaw: slow, a fifth down, deep toms" },
+    thing_in_the_ice: { tempoMul: 1.2, transpose: -1, scale: "locrian", lead: "warble", extraFx: "icecreak", note: "Thawed horror: locrian warble, cracking ice" },
+    cryo_warden: { tempoMul: 1.15, transpose: 0, lead: "arp", fill: "clank", note: "Security mech: cold arpeggios and clanking fills" },
+  },
+};
+
+const ghosttown: ThemeProfile = {
+  id: "ghosttown", name: "Ghost Town", character: "Twangy shuffle with hoof-clop ticks, reedy accordion pads, desert wind and a distant church bell",
+  rootHz: 82.41, depthDrift: [0, -2, -5], scale: "pentMinor", bpm: 96, steps: 16, swing: 0.22, wobble: 3, leadOct: 2,
+  voices: { pad: "reedPad", bass: "walkBass", lead: "twang", accent: "bell", kick: "tom", back: "wood", tick: "wood", fill: "snare" },
+  patterns: { kick: "X.......x.......", back: "....x.......x...", tick: "x.x.x.x.x.x.x.x.", bass: "X.......x.......", lead: "x..x.x..x.....x.", leadSparse: "x.....x........." },
+  motif: [0, 1, 2, 4, 2, 1, 0, -1], chordRoots: [0, 3, 4, 0], bassLines: [[0, 4], [0, 2]],
+  bed: { noise: "pink", filter: "bandpass", f: 500, q: 0.5, gain: 0.09, lfo: { rate: 0.15, depth: 0.6 }, drones: [{ ratio: 1, w: "sine", gain: 0.06, cents: 0 }] },
+  fx: [{ fx: "wind", p: 0.5 }, { fx: "creak", p: 0.3 }, { fx: "tumble", p: 0.2 }, { fx: "toll", p: 0.12, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    the_undertaker: { tempoMul: 0.8, transpose: -5, fill: "tom", lead: "bell", note: "Funeral toll: slow, low, bell lead" },
+    sheriff_of_the_damned: { tempoMul: 1.25, transpose: 0, scale: "phrygianDominant", lead: "twang", note: "High-noon showdown: fast phrygian dominant twang" },
+    hanging_tree: { tempoMul: 0.75, transpose: -2, scale: "minor", lead: "glass", extraFx: "creak", note: "Mournful gallows: slow minor glass, creaking rope" },
+  },
+};
+
+const wasteland: ThemeProfile = {
+  id: "wasteland", name: "Post-Apocalyptic Settlement", character: "Industrial clanks over detuned saw drones, geiger ticks, radio static and a distant siren",
+  rootHz: 61.74, depthDrift: [0, -2, -5], scale: "phrygian", bpm: 100, steps: 16, swing: 0, wobble: 6, leadOct: 2,
+  voices: { pad: "ironPad", bass: "ironBass", lead: "pluck", accent: "horn", kick: "kick", back: "clank", tick: "tick", fill: "anvil" },
+  patterns: { kick: "X..x..X...x.X...", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X..x..X...x.X...", lead: "x.....x...x.....", leadSparse: "X..............." },
+  motif: [0, 1, 3, 1, 4, 3, 1, 0], chordRoots: [0, 1, 3, 0], bassLines: [[0, 0, 1, 0], [0, 0, 3, 1]],
+  bed: { noise: "brown", filter: "lowpass", f: 400, q: 0.7, gain: 0.1, drones: [{ ratio: 1, w: "sawtooth", gain: 0.04, cents: -10 }, { ratio: 1.01, w: "sawtooth", gain: 0.04, cents: 10 }] },
+  fx: [{ fx: "metalClank", p: 0.5 }, { fx: "static", p: 0.3 }, { fx: "geiger", p: 0.7 }, { fx: "siren", p: 0.1, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    warlord_rig: { tempoMul: 1.2, transpose: -5, fill: "anvil", note: "War-engine: fast, low, anvil fills" },
+    fallout_behemoth: { tempoMul: 0.8, transpose: -12, extraFx: "geiger", lead: "sub", note: "Radioactive giant: an octave down, geiger crackle" },
+    scrap_heap_king: { tempoMul: 1.1, transpose: 1, scale: "diminished", extraFx: "metalClank", note: "Junk-crowned chaos: diminished and clattering" },
+  },
+};
+
+export const PROFILES: Readonly<Record<ThemeId, ThemeProfile>> = { catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland };
+
+export function profileFor(theme: ThemeId): ThemeProfile {
+  return PROFILES[theme];
+}

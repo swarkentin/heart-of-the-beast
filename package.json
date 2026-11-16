@@ -20,6 +20,8 @@
     "art:gallery": "node scripts/pixel-art/gallery.mjs",
     "art:rooms": "node scripts/pixel-art/rooms/build.mjs",
     "art:rooms:verify": "node scripts/pixel-art/rooms/verify.mjs",
-    "art:rooms:gallery": "node scripts/pixel-art/rooms/gallery.mjs"
+    "art:rooms:gallery": "node scripts/pixel-art/rooms/gallery.mjs",
+    "test:audio": "npm run test:audio --workspace @heart-of-the-beast/frontend",
+    "audio:check": "node scripts/audio/offline-render.mjs"
   }
 }
