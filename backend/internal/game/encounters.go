@@ -158,8 +158,9 @@ func newCatalogEncounter(id, instancePrefix string, scaling MonsterScaling) *Enc
 	if err != nil {
 		panic(fmt.Sprintf("invalid built-in encounter %q: %v", id, err))
 	}
+	healthMultiplier := enemyHealthMultiplierForParty(LiveEnemyHealthMultiplier, scaling.PartySize)
 	for i := range encounter.Enemies {
-		health := int(float64(encounter.Enemies[i].Health)*LiveEnemyHealthMultiplier + 0.5)
+		health := int(float64(encounter.Enemies[i].Health)*healthMultiplier + 0.5)
 		if health < 1 {
 			health = 1
 		}
