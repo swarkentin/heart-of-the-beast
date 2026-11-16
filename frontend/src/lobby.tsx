@@ -77,8 +77,8 @@ export function ConnectingScreen({ message }: { message: string }) {
   </GameShell>;
 }
 
-export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void }) {
-  return <GameShell status="NO ACCOUNT NEEDED">
+export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number }) {
+  return <GameShell status={profileLevel ? "ADVENTURER RANK " + profileLevel : "PREPARING PROFILE"}>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
       <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
