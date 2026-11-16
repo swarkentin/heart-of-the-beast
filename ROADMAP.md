@@ -105,8 +105,9 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add profile-wide Adventurer Rank and an independent class-mastery XP/level track for every class. Mastery persists across character retirement and class switching.
 - [x] Award profile and active-class XP server-side for cleared encounters and completed expeditions, including partial progress on unsuccessful runs; make every run award idempotent.
 - [ ] Tune profile and class-mastery XP pacing against simulation and playtest results.
-- [ ] Add a persistent, non-expiring reward track with data-driven milestones and rewards. Rewards remain available until earned and do not grant gameplay power.
-- [ ] Add a data-driven cosmetic catalog and collection/equip experience: class skins, portraits, flourishes, profile titles, badges, interface themes, music selections, and visual effects.
+- [x] Add a persistent, non-expiring reward track with data-driven profile-rank and class-mastery milestones. Initial titles and badges remain available until earned and do not grant gameplay power.
+- [x] Add an initial data-driven title/badge catalog and show recent unlocks in the profile collection.
+- [ ] Add cosmetic equip controls and further rewards such as class skins, portraits, flourishes, interface themes, music selections, and visual effects.
 - [ ] Keep all nine launch classes available. Future class unlocks may use explicit profile milestones, achievements, quests, or class mastery, but grant content access only.
 - [x] Surface profile rank, per-class mastery, and progress to next level in the title screen and party lobby.
 - [ ] Add collection and recent-unlock views to the lobby/profile experience.
