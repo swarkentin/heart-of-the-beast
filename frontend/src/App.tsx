@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiRequest, type ApiCommand, type ApiRoom, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
+import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
 import { AudioControls, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -22,6 +22,13 @@ const talentChoices: TalentChoice[] = [
   { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
 ];
 const SESSION_KEY = "heart-of-the-beast.player-session";
+const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
+
+function createProfileCredential(): string {
+  const bytes = new Uint8Array(32);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+}
 
 function readSpectatorAccess(): SpectatorAccess | null {
   if (typeof window === "undefined" || !window.location.hash.startsWith("#spectate=")) return null;
@@ -47,6 +54,24 @@ export default function App() {
   const [error, setError] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [classCatalog, setClassCatalog] = useState<LobbyCatalog | null>(null);
+  const [profile, setProfile] = useState<ApiProfile | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    try {
+      let credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+      if (!credential) {
+        credential = createProfileCredential();
+        window.localStorage.setItem(PROFILE_CREDENTIAL_KEY, credential);
+      }
+      void apiRequest<ApiProfile>("/profile", credential, { method: "POST" })
+        .then(value => { if (active) setProfile(value); })
+        .catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load adventurer profile"); });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to initialize adventurer profile");
+    }
+    return () => { active = false; };
+  }, []);
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -205,7 +230,7 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} />;
+    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} />;
   }
 
   if (!snapshot) {
