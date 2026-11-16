@@ -205,3 +205,17 @@ func TestStartRunEncountersReferenceCatalogDefinitionsAndPreserveComposition(t *
 		}
 	}
 }
+
+func TestNewRunPlayersUseLiveCombatTuning(t *testing.T) {
+	players, err := newRunPlayers(newTestRoom())
+	if err != nil {
+		t.Fatal(err)
+	}
+	player := players["player-1"]
+	if player.StrikeDamage != PlayerStrikeDamage {
+		t.Fatalf("strike damage = %d, want live value %d", player.StrikeDamage, PlayerStrikeDamage)
+	}
+	if player.GuardReduction != GuardDamageReduction {
+		t.Fatalf("guard reduction = %d, want live value %d", player.GuardReduction, GuardDamageReduction)
+	}
+}
