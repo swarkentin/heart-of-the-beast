@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { AudioControls, useGameAudio } from "./audio";
 import { EnemyStage } from "./monsters/EnemyStage";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
+import { getSignatureAbility, partySupportCommand, signatureCommand, type SignatureMode } from "./combatAbilities";
+import { ClassActionPanel, PartyRoster, type PartyCombatant } from "./CombatSupport";
 
 type Action = "strike" | "guard" | "interrupt";
 type View = "player" | "cast";
@@ -29,7 +31,7 @@ type ApiRoomEvent = { id: string; title: string; description: string; choices: A
 type ApiDungeonRoom = { id: string; name: string; floor?: string; roomType?: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; event?: ApiRoomEvent; cleared: boolean };
 
 type ApiStats = { power: number; focus: number; agility: number };
-type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats; strikeDamage?: number; guardReduction?: number };
+type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; classBuild?: { classId: string; signatureAbilityId: string; passiveId: string }; experience: number; level: number; talentPoints: number; talents: string[]; stats: ApiStats; strikeDamage?: number; guardReduction?: number };
 type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 const archetypes = [
   { id: "support", name: "Support", description: "Control enemy plans, create openings, and help the whole party." },
@@ -58,7 +60,7 @@ function xpProgress(player: ApiPlayer) {
   return { current: Math.max(0, player.experience - current), needed: Math.max(0, next - current), percent: next > current ? Math.min(100, Math.max(0, (player.experience - current) / (next - current) * 100)) : 100 };
 }
 
-type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; targetId?: string }> };
+type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, { type: string; action: string; mode?: string; targetId?: string }> };
 type ApiNavigationVote = { startedAt: string; deadline: string; votes: Record<string, string> };
 type VoteStatus = { remainingSeconds: number; progressPercent: number; submittedCount: number; eligibleCount: number; voteCounts: Record<string, number>; selectedExit?: string };
 type ApiRun = { id: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; pendingInterFloorChoice?: boolean; interFloorVote?: ApiNavigationVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiNavigationVote; lastCombatEvents?: ApiCombatEvent[] };
@@ -220,11 +222,38 @@ export default function App() {
   const enemies = (serverRoom?.encounter?.enemies || []).map((enemy, index, all) => visualEnemy(enemy, index, all.length, snapshot?.playerIds ?? []));
   const playerId = session?.playerId || snapshot?.ownerPlayerId || snapshot?.playerIds[0];
   const player = playerId ? run?.players[playerId] : undefined;
+  const playerClass = player?.classBuild?.classId;
+  const classDefinition = classCatalog?.classes.find(item => item.id === playerClass);
+  const signatureAbilityId = player?.classBuild?.signatureAbilityId || classDefinition?.signatureAbilityId;
+  const signatureAbility = getSignatureAbility(signatureAbilityId);
+  const abilityCatalogEntry = classCatalog?.classAbilities.find(item => item.id === signatureAbilityId);
+  const partyCombatants: PartyCombatant[] = (snapshot?.playerIds ?? []).map((id, index) => {
+    const member = run?.players[id];
+    const classId = member?.classBuild?.classId || snapshot?.playerClasses?.[id];
+    return {
+      id,
+      classId,
+      position: index + 1,
+      className: classCatalog?.classes.find(item => item.id === classId)?.name || archetypeName(member?.archetype || snapshot?.playerArchetypes?.[id]),
+      level: member?.level ?? 1,
+      health: member?.health ?? 0,
+      maxHealth: member?.maxHealth ?? 1,
+      power: member?.stats.power ?? 0,
+      focus: member?.stats.focus ?? 0,
+      agility: member?.stats.agility ?? 0,
+      experience: member?.experience ?? 0,
+      experienceNext: member ? levelThresholds[member.level] ?? "MAX" : "MAX",
+      experiencePercent: member ? xpProgress(member).percent : 0,
+      isSelf: id === playerId,
+      status: snapshot?.presence?.[id]?.status || "online",
+    };
+  });
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const playerHp = player?.health ?? 30;
   const playerMaxHp = player?.maxHealth ?? 30;
   const exits: ApiExit[] = serverRoom?.exits || [];
   const livingTarget = enemies.find(enemy => enemy.id === target && enemy.hp > 0) || enemies.find(enemy => enemy.hp > 0);
+  const allyActionLabel = !spectator && run?.phase === "combat" ? (signatureAbility?.id === "ability.renewal" ? "RENEW" : signatureAbility?.id === "ability.companion-command" ? "GUARD" : undefined) : undefined;
   const gameOver = run?.phase === "completed" || run?.phase === "failed";
   const actionSubmitted = Boolean(playerId && run?.combatRound?.actions?.[playerId]);
   const roundActionCount = run?.combatRound ? Object.keys(run.combatRound.actions).length : 0;
@@ -280,11 +309,11 @@ export default function App() {
   }, [roomId, token, spectator]);
 
   useEffect(() => {
-    if (run || spectator || !snapshot) return;
+    if (spectator || !snapshot || classCatalog) return;
     let active = true;
     void apiRequest<LobbyCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
     return () => { active = false; };
-  }, [Boolean(run), spectator, snapshot?.id]);
+  }, [spectator, snapshot?.id, classCatalog]);
 
   useEffect(() => {
     if (!session || spectator) return;
@@ -428,6 +457,17 @@ export default function App() {
     else if (livingTarget) void sendCommand({ type: "combat", round: run?.combatRound?.number ?? 0, action: "attack", targetId: livingTarget.id });
   }
 
+  function useSignatureAbility(mode: SignatureMode | "" = "") {
+    if (!signatureAbility || !run?.combatRound || (!livingTarget && (signatureAbility.target === "enemy" || signatureAbility.target === "mode_target" && mode !== "defend"))) return;
+    const allyId = signatureAbility.target === "player_optional" || signatureAbility.target === "mode_target" && mode === "defend" ? playerId || "" : "";
+    void sendCommand(signatureCommand(signatureAbility, run.combatRound.number, mode, livingTarget?.id || "", allyId));
+  }
+
+  function useSignatureOnPartyMember(memberId: string) {
+    if (!signatureAbility || !run?.combatRound || !allyActionLabel) return;
+    void sendCommand(partySupportCommand(signatureAbility, run.combatRound.number, memberId));
+  }
+
   function shareSpectatorLink() {
     if (!session?.spectatorToken) return;
     void navigator.clipboard.writeText(spectatorLink).then(() => setShareCopied(true)).catch(() => setError("Clipboard access was blocked. You can copy the spectator URL from the address bar after opening it."));
@@ -475,7 +515,7 @@ export default function App() {
           <button onClick={() => void sendCommand({ type: "choose_inter_floor", choiceId: "perk" })} disabled={busy}><strong>{run.interFloorVote?.votes?.[playerId || ""] === "perk" ? "✓ Take a run perk · YOUR VOTE" : "Take a run perk"}</strong><small>Every adventurer gains +1 Strike damage and +1 Guard for the rest of the run. {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length} votes.</small></button>
         </div> : <div className="room-event-result">THE PARTY IS CHOOSING ITS DESCENT · RESTORE {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "restore").length} · PERK {Object.values(run.interFloorVote?.votes || {}).filter(choice => choice === "perk").length}</div>}
       </section> : null}
-      <div className="player-hud"><div className="hero-token">{(player?.archetype || "damage").slice(0, 1).toUpperCase()}</div><div className="hero-vitals"><div className="hero-name">ADVENTURER {snapshot.playerIds.indexOf(playerId || "") + 1} <span>LV {player?.level ?? 1} · {archetypeName(player?.archetype).toUpperCase()}</span></div><div className="hero-health"><Bar value={playerHp} max={playerMaxHp}/><strong>{playerHp}<i>/{playerMaxHp}</i></strong></div><div className="xp-label"><span>RUN XP</span><b>{player?.experience ?? 0} / {levelThresholds[player?.level ?? 1] ?? "MAX"}</b></div><div className="xp-track"><i style={{ width: (player ? xpProgress(player).percent : 0) + "%" }}/></div></div><div className="run-stats"><span>POW <b>{player?.stats?.power ?? 0}</b></span><span>FOC <b>{player?.stats?.focus ?? 0}</b></span><span>AGI <b>{player?.stats?.agility ?? 0}</b></span></div></div>
+      <PartyRoster members={partyCombatants} aidLabel={allyActionLabel} disabled={busy || actionSubmitted || remainingMs <= 0} onAid={useSignatureOnPartyMember} combat={run.phase === "combat"} />
       {!spectator && exploring && player && progressionOpen ? <div className="progression-backdrop" role="presentation">
         <section className="progression-modal" role="dialog" aria-modal="true" aria-labelledby="progression-title">
           <div className="progression-modal-heading"><div><span className="progression-eyebrow">LEVEL {player.level} · RUN PROGRESSION</span><h2 id="progression-title">Choose your next talent</h2><p>{archetypeName(player.archetype)} · {player.talentPoints} point{player.talentPoints === 1 ? "" : "s"} available. Browse both branches before committing.</p></div><button className="progression-close" onClick={() => setProgressionOpen(false)} aria-label="Close talent selection">×</button></div>
@@ -492,12 +532,16 @@ export default function App() {
         </section>
       </div> : null}
       {view === "player" && !spectator
-        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className="action-target-hint">YOUR ACTIONS · TARGET: {livingTarget?.name || "NONE"} · STRIKE / INTERRUPT HIT THAT ENEMY · DEFEND PROTECTS YOU</div><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.filter(action => action.id !== "interrupt" || Boolean(livingTarget?.interruptible)).map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}</div></> : null}
+        ? <>{run.phase === "combat" ? <><div className="action-dock"><div className="action-target-hint">CHOOSE ONE ACTION · TARGET: {livingTarget?.name || "NONE"}</div><div className={"combat-timer" + (remainingSeconds <= 3 && remainingMs > 0 ? " combat-timer-urgent" : "") + (actionSubmitted ? " combat-timer-waiting" : "")} role="timer" aria-label={remainingMs > 0 ? remainingSeconds + " seconds remaining in combat round" : "Combat round resolving"}><div className="combat-timer-heading"><strong>{actionSubmitted ? "ACTION LOCKED · WAITING FOR PARTY" : remainingMs > 0 ? "TIME TO ACT" : "ROUND RESOLVING"}</strong><span>ROUND {run.combatRound?.number ?? 1} · {roundActionCount}/{livingPlayerCount} READY</span><b>{remainingMs > 0 ? remainingSeconds + "s" : "—"}</b></div><div className="combat-timer-track"><i style={{ width: roundTimePercent + "%" }} /></div></div>{actions.map(action => <button key={action.id} className={"move-button move-" + action.id} onClick={() => play(action.id)} disabled={busy || actionSubmitted || remainingMs <= 0 || (!livingTarget && action.id === "strike") || (action.id === "interrupt" && !livingTarget?.interruptible)}><span className="move-glyph">{action.glyph}</span><span className="move-label">{action.label}<small>{action.hint}</small></span></button>)}{signatureAbility && player ? <ClassActionPanel name={abilityCatalogEntry?.name || "Signature ability"} summary={signatureAbility.summary} details={signatureAbility.details} target={signatureAbility.target === "enemy" ? "ENEMY · " + (livingTarget?.name || "Select an enemy") : signatureAbility.target === "player_optional" ? "SELF OR CHOOSE A PARTY MEMBER" : signatureAbility.target === "mode_target" ? "ENEMY FOR ATTACK/DISRUPT · PARTY FOR DEFEND" : "YOU"}>
+{signatureAbility.id === "ability.elemental-surge" ? <><button type="button" className="signature-choice" onClick={() => useSignatureAbility("fire")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>FIRE</strong><small>More damage · {livingTarget?.name || "Choose enemy"}</small></button><button type="button" className="signature-choice" onClick={() => useSignatureAbility("frost")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>FROST</strong><small>Cancel its intent · {livingTarget?.name || "Choose enemy"}</small></button></>
+: signatureAbility.id === "ability.companion-command" ? <><button type="button" className="signature-choice" onClick={() => useSignatureAbility("attack")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>ATTACK</strong><small>Strike {livingTarget?.name || "an enemy"}</small></button><button type="button" className="signature-choice" onClick={() => useSignatureAbility("defend")} disabled={busy || actionSubmitted || remainingMs <= 0}><strong>DEFEND SELF</strong><small>Guard yourself</small></button><button type="button" className="signature-choice" onClick={() => useSignatureAbility("disrupt")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>DISRUPT</strong><small>Stop or weaken its intent</small></button></>
+: signatureAbility.id === "ability.renewal" ? <button type="button" className="signature-choice" onClick={() => useSignatureAbility()} disabled={busy || actionSubmitted || remainingMs <= 0}><strong>RENEW SELF</strong><small>Restore your health</small></button>
+: <button type="button" className="signature-choice" onClick={() => useSignatureAbility()} disabled={busy || actionSubmitted || remainingMs <= 0 || (signatureAbility.target === "enemy" && !livingTarget)}><strong>USE {abilityCatalogEntry?.name?.toUpperCase() || "SIGNATURE"}</strong><small>{signatureAbility.target === "enemy" ? livingTarget?.name || "Choose an enemy" : "Protect yourself"}</small></button>}
+</ClassActionPanel> : null}</div></> : <div className="action-dock action-dock-idle" aria-hidden="true" />}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => void returnToLobby()} disabled={busy}>{busy ? "RETURNING TO LOBBY…" : "RETURN TO LOBBY"} <span>↗</span></button></div> : null}
         </>
         : null}
       {gameOver ? <div className="event-message" role="status">{run.phase === "completed" ? "THE CATACOMBS ARE CLEARED — VICTORY" : "THE PARTY HAS FALLEN — RUN OVER"}</div> : null}
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, padding: "8px 16px", color: "#c7b9a8", fontSize: 12, letterSpacing: ".08em" }}>PARTY · {snapshot.playerIds.map((id, index) => <span key={id}>{id === snapshot.ownerPlayerId ? "HOST" : "PLAYER"} {index + 1}{id === playerId ? " (YOU)" : ""} · {snapshot.presence?.[id]?.status?.toUpperCase() || "UNKNOWN"}</span>)}</div>
       {error ? <div className="event-message" role="alert" style={{ color: "#f08f7e" }}>{error}</div> : null}
     </section>
     <footer className="game-foot"><span>THE FORGOTTEN CATACOMBS</span><span>{spectator ? "INDEPENDENT SPECTATOR · READ-ONLY" : view === "player" ? "PLAYER VIEW · SERVER-VALIDATED COMMANDS" : "SPECTATOR VIEW · READ-ONLY PRESENTATION"}</span></footer>

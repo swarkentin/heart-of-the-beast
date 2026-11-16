@@ -64,10 +64,11 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 ## Phase 2 — Core roguelike loop
 
 - [ ] Expand health and combat stats, add recovery/consumables, and introduce readable status effects.
+- [ ] Define and implement a server-authoritative in-run resurrection action with explicit timing, health, and end-of-run permanent-death rules.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
 - [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and an in-context talent-tree preview. Available and locked paths are shown distinctly, and the chosen hero joins the party line-up (ADR 0024). Next: continue multi-level spike iteration.
-- [ ] Add class signature actions and target/mode controls to the player combat UI.
+- [x] Add class signature actions and target/mode controls to the player combat UI; preserve universal actions and one action per round.
 - [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
 - [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
 - [ ] Snapshot class/build definition versions in active runs and test compatibility across reconnects and content updates.
