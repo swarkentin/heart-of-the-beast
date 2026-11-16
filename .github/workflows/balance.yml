@@ -1,0 +1,81 @@
+name: Combat balance
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/balance.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/balance.yml"
+  schedule:
+    - cron: "17 9 * * 1"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: balance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulate:
+    name: Seeded balance scenarios
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.mod
+
+      - name: Download latest accepted main-branch baseline
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id="$(gh run list --workflow balance.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)"
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --name balance-baseline --dir backend/balance-baseline
+            echo "BALANCE_BASELINE=balance-baseline/balance-report.json" >> "$GITHUB_ENV"
+          else
+            echo "No accepted main-branch balance baseline exists yet; this run will establish the first report."
+          fi
+
+      - name: Run deterministic balance suite
+        working-directory: backend
+        run: |
+          args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
+          if [ -n "${BALANCE_BASELINE:-}" ]; then
+            args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
+          fi
+          go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload PR balance report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-report-pr
+          path: |
+            backend/balance-report.json
+            backend/balance-report.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Record accepted main balance baseline
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-baseline
+          path: |
+            backend/balance-report.json
+            backend/balance-report.md
+          if-no-files-found: error
+          retention-days: 90

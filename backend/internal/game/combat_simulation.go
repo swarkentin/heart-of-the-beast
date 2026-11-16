@@ -355,7 +355,8 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 		return command, target.Intent != nil
 	case "combat.heal":
 		var recipient *PlayerState
-		for _, candidate := range players {
+		for _, candidateID := range sortedSimulationPlayerIDs(players) {
+			candidate := players[candidateID]
 			if candidate.Health <= 0 || candidate.Health >= candidate.MaxHealth {
 				continue
 			}
@@ -386,6 +387,16 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 	default:
 		return Command{}, false
 	}
+}
+
+// sortedSimulationPlayerIDs keeps policy tie-breaking independent of Go map iteration.
+func sortedSimulationPlayerIDs(players map[string]*PlayerState) []string {
+	ids := make([]string, 0, len(players))
+	for id := range players {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func simulationEnemyHealth(enemies []Enemy) int {
