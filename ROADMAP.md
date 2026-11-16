@@ -108,7 +108,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Add a persistent, non-expiring reward track with data-driven milestones and rewards. Rewards remain available until earned and do not grant gameplay power.
 - [ ] Add a data-driven cosmetic catalog and collection/equip experience: class skins, portraits, flourishes, profile titles, badges, interface themes, music selections, and visual effects.
 - [ ] Keep all nine launch classes available. Future class unlocks may use explicit profile milestones, achievements, quests, or class mastery, but grant content access only.
-- [ ] Surface profile rank, per-class mastery, progress to next level, collection, and recent unlocks in the lobby/profile experience.
+- [x] Surface profile rank, per-class mastery, and progress to next level in the title screen and party lobby.
+- [ ] Add collection and recent-unlock views to the lobby/profile experience.
 - [ ] Add export/recovery for guest progression and a safe guest-to-account linking path that preserves profile rank, class mastery, cosmetics, achievements, and character history.
 - [ ] Keep individual character levels, generated names, lifetime records, and permadeath separate from profile rank and class mastery.
 - [ ] Add persistent guest-character creation and selection, with a memorable identity flow and lifetime record visible from the lobby.
