@@ -140,7 +140,7 @@ func applyRunReward(room *Room, definition RunRewardDefinition, round int, flagI
 					addCombatImpact(run, round, operation.ImpactKind, fmt.Sprintf(operation.ImpactText, adventurerLabel(room, playerID), actual), "heal", playerID, "player", actual)
 				}
 			case RunRewardStrike:
-				member.StrikeDamage += operation.Amount
+				applyPermanentStrikeBonus(member, operation.Amount)
 			case RunRewardGuard:
 				member.GuardReduction += operation.Amount
 			}
