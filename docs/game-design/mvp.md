@@ -60,7 +60,7 @@ The initial enemy behaviors are deliberately small and learnable:
 - Reliquary Guardian: alternates an 8-damage Heavy Blow with a 4-damage Stone Strike.
 - Crypt Warden: Soul Drain hits one adventurer for 5 and restores up to 2 of its health; every third turn, Soul Sweep hits all living adventurers for 3.
 
-Enemy targets rotate predictably through the living party. This makes a targeted intent meaningful without hidden aggro rules, while party-wide attacks ask everyone to consider Defend. A 4-point guard absorbs small attacks and softens heavy attacks, so players can understand the tradeoff at a glance.
+Enemy targets rotate predictably through the living party; enemy health and telegraphed damage scale with party size. This makes a targeted intent meaningful without hidden aggro rules, while party-wide attacks ask everyone to consider Defend. A 4-point guard absorbs small attacks and softens heavy attacks, so players can understand the tradeoff at a glance.
 
 ### Solo encounter tuning
 
