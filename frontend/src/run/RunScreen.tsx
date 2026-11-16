@@ -70,7 +70,6 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
   const [pending, setPending] = useState<{ round: number; key: string } | null>(null);
   const [focused, setFocused] = useState("");
   const [fx, setFx] = useState<Record<string, CardFx>>({});
-  const [toast, setToast] = useState<{ text: string; tone: string } | null>(null);
   const [talentOpen, setTalentOpen] = useState(false);
   const [talentId, setTalentId] = useState("");
   const [copied, setCopied] = useState(false);
@@ -109,6 +108,11 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
   const lockedKey = myAction ? (myAction.action === "attack" ? "strike" : myAction.action === "defend" ? "guard" : myAction.action === "interrupt" ? "interrupt" : "sig" + (myAction.mode ? ":" + myAction.mode : "")) : pending && pending.round === round?.number ? pending.key : "";
   const canAct = Boolean(acting && round && self?.alive && !lockedKey && remainingMs > 0 && !busy);
   useEffect(() => { setPending(null); }, [round?.number]);
+  // If the timer runs out the server defends for you. Say so on the Defend button itself: it flashes over the last
+  // seconds, then shows as pressed while the round resolves.
+  const undecided = Boolean(acting && round && self?.alive && !lockedKey);
+  const autoSoon = undecided && remainingMs > 0 && seconds <= 3;
+  const shownKey = lockedKey || (undecided && remainingMs <= 0 ? "guard" : "");
 
   // ---- log -------------------------------------------------------------------------------------------------------
   const labels = partyLabels(party);
@@ -128,17 +132,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
     timers.current.push(window.setTimeout(() => setFx(all => all[impact.playerId] ? { ...all, [impact.playerId]: { ...all[impact.playerId], pops: all[impact.playerId].pops.filter(item => item.id !== id) } } : all), 1300));
   }, []);
 
-  // ---- automatic actions are announced, not just logged ------------------------------------------------------------
-  const autoRound = events.find(event => event.auto && event.actorId === selfId)?.round ?? 0;
-  const mounted = useRef(false);
-  useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return; }
-    if (!autoRound) return;
-    setToast({ text: "TIME RAN OUT · YOU DEFENDED AUTOMATICALLY", tone: "auto" });
-    const timer = window.setTimeout(() => setToast(null), 3600);
-    return () => window.clearTimeout(timer);
-  }, [autoRound]);
-  const banner = gameOver ? { text: run.phase === "completed" ? "VICTORY" : "THE PARTY HAS FALLEN", tone: run.phase === "completed" ? "good" : "bad" } : toast ?? undefined;
+  const banner = gameOver ? { text: run.phase === "completed" ? "VICTORY" : "THE PARTY HAS FALLEN", tone: run.phase === "completed" ? "good" : "bad" } : undefined;
 
   // ---- combat actions ----------------------------------------------------------------------------------------------
   const signatureAbilityId = player?.classBuild?.signatureAbilityId || catalog?.classes.find(item => item.id === player?.classBuild?.classId)?.signatureAbilityId;
@@ -199,7 +193,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
 
   const focusedAction = actions.find(action => action.key === focused);
-  const timerLabel = !round ? "" : lockedKey ? (waitingOn > 0 ? "LOCKED IN · WAITING FOR " + waitingOn + " MORE" : "LOCKED IN · RESOLVING") : !self?.alive ? "YOU ARE DOWN · THE PARTY FIGHTS ON" : remainingMs <= 0 ? "TIME UP · RESOLVING" : seconds <= 3 ? "DEFENDING AUTOMATICALLY IN " + seconds : "CHOOSE YOUR ACTION";
+  const timerLabel = !round ? "" : lockedKey ? (waitingOn > 0 ? "LOCKED IN · WAITING FOR " + waitingOn + " MORE" : "LOCKED IN · RESOLVING") : !self?.alive ? "YOU ARE DOWN · THE PARTY FIGHTS ON" : remainingMs <= 0 ? "TIME UP · DEFENDING" : seconds <= 3 ? "AUTO-DEFEND IN " + seconds : "CHOOSE YOUR ACTION";
 
   let command: ReactNode;
   if (gameOver) {
@@ -224,11 +218,11 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
         </div>
         <div className={"rn-actions rn-actions-" + actions.length}>{actions.map((action, index) => <button key={action.key} type="button"
-          className={"rn-act rn-act-" + action.tone + (lockedKey === action.key ? " rn-act-chosen" : lockedKey ? " rn-act-passed" : "")}
+          className={"rn-act rn-act-" + action.tone + (shownKey === action.key ? " rn-act-chosen" : shownKey ? " rn-act-passed" : autoSoon && action.key === "guard" ? " rn-act-auto" : "")}
           onClick={() => act(action)} onPointerEnter={() => setFocused(action.key)} onPointerLeave={() => setFocused("")} onFocus={() => setFocused(action.key)} onBlur={() => setFocused("")}
-          disabled={!lockedKey && (!canAct || action.disabled)} aria-disabled={Boolean(lockedKey) || undefined} aria-pressed={lockedKey === action.key} title={action.details}>
+          disabled={!shownKey && (!canAct || action.disabled)} aria-disabled={Boolean(shownKey) || undefined} aria-pressed={shownKey === action.key} title={action.details}>
           <kbd aria-hidden="true">{index + 1}</kbd><Icon id={action.icon} size={2} />
-          <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : action.hint}</small></span>
+          <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : shownKey === action.key ? "AUTOMATIC" : autoSoon && action.key === "guard" ? "Automatic in " + seconds : action.hint}</small></span>
         </button>)}</div>
         <p className="rn-inspect" aria-live="polite">{focusedAction ? focusedAction.details : aidLabel ? "Keys 1–" + actions.length + " choose · ◀ ▶ change target · select a portrait to " + aidLabel.toLowerCase() + " an ally" : "Keys 1–" + actions.length + " choose · ◀ ▶ change target · one action per round"}</p>
       </> : <p className="px-copy">{spectator ? "Spectating. The party is choosing its actions." : "Cast view is read-only. Switch to the player view to act."}</p>}

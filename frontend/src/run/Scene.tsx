@@ -33,7 +33,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
       <EnemyStage key={roomId} view={view} enemies={enemies} events={events} target={onTarget ? target : undefined} onTarget={onTarget} onPartyImpact={onPartyImpact} />
     </svg>
     {living.length > 0 ? <ul className="rn-threats" aria-label="Enemy intentions">{living.map(enemy => {
-      const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i>{enemy.intent}</i><small>{enemy.intentTarget}{enemy.interruptible ? " · CAN BE INTERRUPTED" : ""}</small></span></>;
+      const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i>{enemy.intent}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small></span></>;
       return <li key={enemy.id}>{onTarget
         ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
         : <div className="rn-threat-chip">{body}</div>}</li>;
