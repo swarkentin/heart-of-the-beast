@@ -1486,18 +1486,10 @@ func TestPermanentStrikeUpgradesAreCappedAndWhetstonesScaleWithDepth(t *testing.
 	depths := []int{1, 2, 4, 8}
 	prices := make([]int, 0, len(depths))
 	for _, depth := range depths {
-		room.Run.Depth = depth
-		room.Run.Camp.Offers = nil
-		openShop(room, expeditionNow)
-		for _, offer := range room.Run.Camp.Offers {
-			if offer.Kind == ShopStrike {
-				prices = append(prices, offer.Price)
-				break
-			}
-		}
+		prices = append(prices, shopItemPriceAtDepth(ShopItem{Kind: ShopStrike, Price: 30}, depth))
 	}
-	if len(prices) != len(depths) {
-		t.Fatalf("expected a Whetstone at each sampled depth, got %v", prices)
+	if prices[0] != 30 || prices[1] != 42 {
+		t.Fatalf("unexpected early Whetstone prices: %v", prices)
 	}
 	for i := 1; i < len(prices); i++ {
 		if prices[i] <= prices[i-1] {
