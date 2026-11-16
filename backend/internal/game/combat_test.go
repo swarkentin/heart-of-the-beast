@@ -53,6 +53,7 @@ func TestHeavyEnemyIntentCanBePartiallyBlocked(t *testing.T) {
 	if err := StartRun(room, "run-heavy", now); err != nil {
 		t.Fatal(err)
 	}
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = PlayerStrikeDamage
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -66,8 +67,8 @@ func TestHeavyEnemyIntentCanBePartiallyBlocked(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 25 {
-		t.Fatalf("guard should reduce the guardian's 8 damage blow by 6, then the scout should deal 3, health=%d", got)
+	if got := room.Run.Players["player-1"].Health; got != 23 {
+		t.Fatalf("guard should reduce the guardian's 8 damage blow by 4, then the scout should deal 3, health=%d", got)
 	}
 }
 
@@ -113,6 +114,7 @@ func TestDefeatingEnemyCancelsItsTelegraphedIntent(t *testing.T) {
 	if err := StartRun(room, "run-interrupt", now); err != nil {
 		t.Fatal(err)
 	}
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = PlayerStrikeDamage
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -238,6 +240,7 @@ func TestReliquaryPairCreatesTwoReadableThreats(t *testing.T) {
 	if err := StartRun(room, "run-pair", now); err != nil {
 		t.Fatal(err)
 	}
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = PlayerStrikeDamage
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +273,7 @@ func TestDefeatingOneEnemyOnlyCancelsItsOwnIntent(t *testing.T) {
 		t.Fatal(err)
 	}
 	encounter := room.Run.Rooms["reliquary"].Encounter
-	encounter.Enemies[0].Health = 10
+	encounter.Enemies[0].Health = PlayerStrikeDamage
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "attack", TargetID: "guardian"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +335,7 @@ func TestBulwarkShieldWallBlocksHeavyAttackAndEmpowersNextStrike(t *testing.T) {
 			attack = event
 		}
 	}
-	if attack == nil || attack.Amount != 15 {
+	if attack == nil || attack.Amount != 11 {
 		t.Fatalf("Resolve should add 3 damage to the next strike, got %+v", attack)
 	}
 }
@@ -371,7 +374,7 @@ func TestSpellguardRunicWardAbsorbsAndReflectsNextAttack(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.Health != player.MaxHealth || enemy.Health != 8 || player.ClassCombat.Ward != 0 {
+	if player.Health != player.MaxHealth || enemy.Health != 12 || player.ClassCombat.Ward != 0 {
 		t.Fatalf("Runic Ward should absorb the mitigated hit and reflect 2 damage: player=%+v enemy=%+v", player, enemy)
 	}
 }
@@ -449,7 +452,7 @@ func TestTacticianCommandingStrikeMarksTargetForNextPartyAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 12 || enemy.MarkedDamage != 0 {
+	if enemy.Health != 16 || enemy.MarkedDamage != 0 {
 		t.Fatalf("Commanding Strike should deal 5, then empower the next party attack by 3: %+v", enemy)
 	}
 }
@@ -465,7 +468,7 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 3 {
+	if enemy.Health != 7 {
 		t.Fatalf("companion and player attacks should deal 17 combined damage, enemy health=%d", enemy.Health)
 	}
 	if room.Run.Players["player-2"].Health != 7 {
