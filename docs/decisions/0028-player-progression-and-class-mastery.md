@@ -1,13 +1,13 @@
-# ADR 0028: Player progression, class mastery, and free reward track
+# ADR 0028: Player progression, class mastery, and milestone rewards
 
 - Status: Accepted direction
 - Date: 2026-11-16
 
 ## Context
 
-Heart of the Beast needs meaningful reasons to return between dungeon runs. Players should be able to build a long-term identity, make progress across the full class roster, and earn visible rewards without paying or creating an account.
+Heart of the Beast needs meaningful reasons to return between dungeon runs. Players should be able to build a long-term identity, make progress across the full class roster, and earn visible rewards without requiring an account.
 
-ADR 0016 already defines persistent character identity, character levels, lifetime records, and cosmetic personalization. ADR 0021 defines the extensible class catalog and content-access unlocks. This decision clarifies the relationship between those systems and adds profile-wide class mastery and a free, battle-pass-like reward track.
+ADR 0016 already defines persistent character identity, character levels, lifetime records, and cosmetic personalization. ADR 0021 defines the extensible class catalog and content-access unlocks. This decision clarifies the relationship between those systems and adds profile-wide class mastery and a persistent, battle-pass-style milestone reward track.
 
 The progression system must complement the roguelike run loop without turning accumulated playtime into combat power. It must also survive character retirement and eventually migrate cleanly into an optional account.
 
@@ -25,7 +25,7 @@ Run-only levels, stats, talents, gear, and temporary effects remain a fourth, st
 
 - Persistent progression rewards are cosmetic, expressive, or content-access only. They never grant stats, stronger equipment, combat advantages, or exclusive gameplay mechanics.
 - All nine launch classes remain available. Future class unlocks may use explicit profile milestones, achievements, quests, or mastery requirements, but unlocks grant access only.
-- A free reward track may present a sequence of milestones and rewards, but the initial track does not expire. Do not introduce paid tiers, premium currency, FOMO deadlines, or rewards that require payment.
+- The reward track presents a sequence of milestones and rewards. The initial track does not expire; milestones remain available until earned.
 - Reward definitions, eligibility requirements, XP curves, and unlock mappings are data-driven and use stable IDs.
 - Meaningful participation earns progress even on an unsuccessful run. Rewards are based on validated accomplishments and contribution/eligibility, not raw action counts, repeated polling, or easily farmed trivial actions.
 - A single accomplishment can advance profile progression, the active class's mastery, and character history where appropriate, but each award is granted at most once.
@@ -63,4 +63,4 @@ Keep each step small and releasable. Do not block normal guest play if profile p
 - Progress survives permadeath because mastery and profile rewards do not belong to a single adventurer.
 - The backend needs durable guest profiles, secure guest credentials, idempotent reward grants, and a data-driven reward catalog.
 - Local browser storage alone is insufficient as the source of truth for server-authoritative rewards. It is used to retain the guest credential and may cache profile data.
-- The first reward track is entirely free and non-expiring; seasonal cadence can be considered later only if it adds value without FOMO.
+- The first reward track is persistent and non-expiring; additional tracks can be considered later without making existing rewards unavailable.

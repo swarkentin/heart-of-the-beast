@@ -101,7 +101,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 
 ### Persistent player progression and personalization
 
-- [ ] Add durable, accountless guest-profile identity, separate from room membership and run player tokens; retain an opaque guest credential in browser storage and keep authoritative progression on the server.
+- [x] Add durable, accountless guest-profile identity, separate from room membership and run player tokens; retain an opaque guest credential in browser storage and keep authoritative profile state on the server (PR: guest profile foundation).
 - [ ] Add profile-wide Adventurer Rank and an independent class-mastery XP/level track for every class. Mastery persists across character retirement and class switching.
 - [ ] Award profile and active-class XP server-side for meaningful, validated run accomplishments, including partial progress on unsuccessful runs; make every grant idempotent and resistant to farming.
 - [ ] Add a free, non-expiring reward track with data-driven milestones and rewards. No paid tier, premium currency, FOMO deadline, or gameplay-power reward.

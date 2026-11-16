@@ -48,10 +48,63 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/class", h.selectClass)
 	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
 	mux.HandleFunc("GET /progression", progressionCatalog)
+	mux.HandleFunc("POST /profile", h.createOrGetProfile)
+	mux.HandleFunc("GET /profile", h.getProfile)
 	mux.HandleFunc("GET /themes", playableThemes)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
+}
+
+// createOrGetProfile bootstraps or resumes an anonymous profile using a
+// browser-held bearer credential. The server stores only its SHA-256 hash.
+func (h *Handler) createOrGetProfile(w http.ResponseWriter, r *http.Request) {
+	credential := bearer(r)
+	if len(credential) < 32 || len(credential) > 256 {
+		writeError(w, http.StatusUnauthorized, "a valid guest profile credential is required")
+		return
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "profile persistence is unavailable")
+		return
+	}
+	id, err := randomToken(16)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not initialize profile")
+		return
+	}
+	profile, err := profiles.GetOrCreateProfile(r.Context(), id, tokenHash(credential), h.now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not initialize profile")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, profile)
+}
+
+func (h *Handler) getProfile(w http.ResponseWriter, r *http.Request) {
+	credential := bearer(r)
+	if len(credential) < 32 || len(credential) > 256 {
+		writeError(w, http.StatusUnauthorized, "a valid guest profile credential is required")
+		return
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "profile persistence is unavailable")
+		return
+	}
+	profile, err := profiles.GetProfile(r.Context(), tokenHash(credential))
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "guest profile not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load profile")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, profile)
 }
 
 func health(w http.ResponseWriter, _ *http.Request) {

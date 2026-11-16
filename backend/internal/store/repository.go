@@ -23,12 +23,13 @@ type Repository interface {
 }
 
 type Memory struct {
-	mu    sync.RWMutex
-	rooms map[string][]byte
+	mu       sync.RWMutex
+	rooms    map[string][]byte
+	profiles map[string]*Profile
 }
 
 func NewMemory() *Memory {
-	return &Memory{rooms: make(map[string][]byte)}
+	return &Memory{rooms: make(map[string][]byte), profiles: make(map[string]*Profile)}
 }
 
 func cloneRoom(room *game.Room) (*game.Room, error) {
@@ -137,4 +138,29 @@ func (m *Memory) Save(_ context.Context, room *game.Room, expectedVersion int64)
 	}
 	m.rooms[room.ID] = encoded
 	return nil
+}
+
+func (m *Memory) GetOrCreateProfile(_ context.Context, id, credentialHash string, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if existing := m.profiles[credentialHash]; existing != nil {
+		copy, err := cloneProfile(existing)
+		return copy, err
+	}
+	profile := &Profile{
+		ID: id, AdventurerLevel: 1, ClassMastery: map[string]ClassMastery{},
+		UnlockedCosmetics: []string{}, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
+	}
+	m.profiles[credentialHash] = profile
+	return cloneProfile(profile)
+}
+
+func (m *Memory) GetProfile(_ context.Context, credentialHash string) (*Profile, error) {
+	m.mu.RLock()
+	profile := m.profiles[credentialHash]
+	m.mu.RUnlock()
+	if profile == nil {
+		return nil, ErrNotFound
+	}
+	return cloneProfile(profile)
 }
