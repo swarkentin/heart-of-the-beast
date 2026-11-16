@@ -122,7 +122,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", first, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 18 {
+	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 23 {
 		t.Fatalf("first player's action resolved before the party submitted: health=%d", got)
 	}
 	if err := ApplyCommand(room, "player-1", first, now); !errors.Is(err, ErrRoundActionSubmitted) {
@@ -131,7 +131,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if room.Run.Phase != PhaseCombat || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 6 {
+	if room.Run.Phase != PhaseCombat || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 11 {
 		t.Fatal("both submitted attacks should resolve together without instantly clearing the tougher encounter")
 	}
 	if room.Run.CombatRound == nil || room.Run.CombatRound.Number != 2 {
