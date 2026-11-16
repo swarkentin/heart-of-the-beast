@@ -146,7 +146,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			bonuses := bonusesFor(player)
 			passive := classPassiveEffects(player, target, target.Intent)
 
-			if round-lastAbilityRound[playerID] >= 3 {
+			if lastAbilityRound[playerID] == 0 || round-lastAbilityRound[playerID] >= 3 {
 				if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
 					room := &Room{
 						PlayerIDs: playerIDs,
