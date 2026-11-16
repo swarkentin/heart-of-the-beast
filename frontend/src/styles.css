@@ -293,3 +293,36 @@ body,button,input,select,textarea{font-family:"DM Mono",monospace;font-size:14px
   .scene-exit small,.cast-exit small,.path-button small,.path-button i,.room-event-heading>span,.action-target-hint{font-size:11px}
   .game-screen small{font-size:11px}
 }
+
+/* Stable combat footer and compact roster/action cards */
+.action-dock-idle{visibility:hidden;min-height:250px;pointer-events:none}
+.party-roster{padding:5px 7px;background:#11141df0}
+.party-roster-heading{margin-bottom:3px}
+.party-roster-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:4px}
+.party-member{position:relative;max-width:none;min-height:62px;gap:2px;padding:4px 6px;background:#1a1c25}
+.party-member-details,.party-member-xp{display:none}
+.party-member-action{position:absolute;right:6px;bottom:4px}
+.class-action-panel{grid-template-columns:minmax(0,1fr);gap:5px;padding:6px 8px}
+.class-action-copy{grid-template-columns:auto 1fr;gap:1px 6px}
+.class-action-copy>p{display:none}
+.class-action-copy>small{font-size:10px}
+.class-action-copy>i{font-size:9px}
+.class-action-choices{justify-content:stretch}
+.signature-choice{flex:1;min-width:85px;min-height:36px}
+@media(max-width:800px){.action-dock-idle{min-height:216px}.party-member{flex-basis:auto}.class-action-panel{grid-template-columns:1fr}.class-action-choices{justify-content:stretch}}
+@media(max-width:480px){.action-dock-idle{min-height:206px}.party-member{min-height:57px}.party-member-heading i{font-size:10px}}
+.signature-limit{grid-column:1/-1;color:#e3b878;font:7px/1.5 var(--pixel-display);font-style:normal}
+.party-roster{position:absolute;inset:0;z-index:4;width:auto;margin:0;padding:0;border:0;background:transparent;box-shadow:none;pointer-events:none}
+.party-roster-heading{position:absolute;left:50%;top:4px;transform:translateX(-50%);padding:3px 8px;background:#11141df0;border:1px solid #51463d}
+.party-roster-heading span{display:none}
+.party-roster-members{position:absolute;inset:0;display:block}
+.party-member{position:absolute;display:grid;grid-template-columns:72px minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;column-gap:7px;width:clamp(150px,19vw,230px);min-height:82px;padding:5px;background:#11141df0;border:2px solid #8a704e;pointer-events:auto}
+.party-member:nth-child(odd){left:6px}.party-member:nth-child(even){right:6px}
+.party-member-portrait{grid-row:1/4;grid-column:1;width:72px;height:76px;overflow:hidden;align-self:center;background:#25252b;border:1px solid #75604a}
+.party-member-portrait .px-hero{--hs:1.1;display:block;width:100%;height:100%;background-position:0 0;background-size:calc(384px * var(--hs)) calc(128px * var(--hs));image-rendering:pixelated;animation:px-hero-idle .667s steps(4) infinite}
+.party-member-heading{grid-column:2;grid-row:1;flex-direction:column;align-items:flex-start;gap:1px}
+.party-member-health{grid-column:2;grid-row:2}.party-member-action{grid-column:2;grid-row:3;position:static;justify-self:end}
+.action-dock-idle{visibility:hidden;min-height:250px}
+@media(max-width:700px){.party-roster{position:relative;inset:auto;order:1;flex:0 0 auto;margin:4px 0;padding:0}.party-roster-heading{position:static;width:max-content;margin:0 auto 4px;transform:none}.party-roster-heading span{display:inline}.party-roster-members{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.party-member{position:relative!important;inset:auto!important;display:grid;width:auto;min-height:60px;grid-template-columns:42px minmax(0,1fr);column-gap:5px}.party-member-portrait{width:42px;height:48px}.party-member-portrait .px-hero{--hs:.7}.party-member-details,.party-member-xp{display:none}.action-dock-idle{min-height:206px}}
+/* Keep player frames in the gutters so they never cover room labels or navigation. */
+@media(min-width:701px){.party-member:nth-child(odd){top:38%;transform:translateY(-50%)}.party-member:nth-child(even){top:38%;transform:translateY(-50%)}.party-roster-heading{top:auto;bottom:5px;left:50%;z-index:5}.room-event-panel:has(.room-event-result){position:absolute;top:58px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 340px));max-height:22%;margin:0;padding:8px 12px}.room-event-panel:has(.room-event-result) .room-event-heading h2{font-size:12px}.room-event-panel:has(.room-event-result)>p{margin-bottom:5px}.room-event-panel:has(.room-event-result) .room-event-result{padding:5px 8px}}

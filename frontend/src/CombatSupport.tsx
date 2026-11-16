@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { HeroSprite } from "./lobby";
 
 export type PartyCombatant = {
   id: string;
+  classId?: string;
   position: number;
   className: string;
   level: number;
@@ -28,6 +30,7 @@ export function PartyRoster({ members, aidLabel, disabled, onAid }: {
     <div className="party-roster-members">{members.map(member => {
       const alive = member.health > 0;
       const card = <>
+        <span className="party-member-portrait"><HeroSprite classId={member.classId} label={member.className + (member.isSelf ? ", you" : "")} /></span>
         <span className="party-member-heading"><b>ADVENTURER {member.position}{member.isSelf ? " · YOU" : ""}</b><i>{alive ? member.className : "DOWN"}</i></span>
         <span className="party-member-health"><span className="party-member-bar"><i style={{ width: (Math.max(0, member.health) / Math.max(1, member.maxHealth) * 100) + "%" }} /></span><strong>{member.health}/{member.maxHealth}</strong></span>
         <span className="party-member-details">LV {member.level} · POW {member.power} · FOC {member.focus} · AGI {member.agility}</span>
@@ -48,7 +51,7 @@ export function ClassActionPanel({ name, summary, details, target, children }: {
   children: ReactNode;
 }) {
   return <section className="class-action-panel" aria-label="Class signature action">
-    <div className="class-action-copy"><span>CLASS SIGNATURE</span><strong>{name}</strong><small>{summary}</small><p>{details}</p><i>{target}</i></div>
+    <div className="class-action-copy"><span>CLASS SIGNATURE</span><strong>{name}</strong><small>{summary}</small><p>{details}</p><i>{target}</i><em className="signature-limit">One action per round · No cooldown</em></div>
     <div className="class-action-choices">{children}</div>
   </section>;
 }

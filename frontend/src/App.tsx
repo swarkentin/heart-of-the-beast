@@ -232,6 +232,7 @@ export default function App() {
     const classId = member?.classBuild?.classId || snapshot?.playerClasses?.[id];
     return {
       id,
+      classId,
       position: index + 1,
       className: classCatalog?.classes.find(item => item.id === classId)?.name || archetypeName(member?.archetype || snapshot?.playerArchetypes?.[id]),
       level: member?.level ?? 1,
@@ -536,7 +537,7 @@ export default function App() {
 : signatureAbility.id === "ability.companion-command" ? <><button type="button" className="signature-choice" onClick={() => useSignatureAbility("attack")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>ATTACK</strong><small>Strike {livingTarget?.name || "an enemy"}</small></button><button type="button" className="signature-choice" onClick={() => useSignatureAbility("defend")} disabled={busy || actionSubmitted || remainingMs <= 0}><strong>DEFEND SELF</strong><small>Guard yourself</small></button><button type="button" className="signature-choice" onClick={() => useSignatureAbility("disrupt")} disabled={busy || actionSubmitted || remainingMs <= 0 || !livingTarget}><strong>DISRUPT</strong><small>Stop or weaken its intent</small></button></>
 : signatureAbility.id === "ability.renewal" ? <button type="button" className="signature-choice" onClick={() => useSignatureAbility()} disabled={busy || actionSubmitted || remainingMs <= 0}><strong>RENEW SELF</strong><small>Restore your health</small></button>
 : <button type="button" className="signature-choice" onClick={() => useSignatureAbility()} disabled={busy || actionSubmitted || remainingMs <= 0 || (signatureAbility.target === "enemy" && !livingTarget)}><strong>USE {abilityCatalogEntry?.name?.toUpperCase() || "SIGNATURE"}</strong><small>{signatureAbility.target === "enemy" ? livingTarget?.name || "Choose an enemy" : "Protect yourself"}</small></button>}
-</ClassActionPanel> : null}</div></> : null}
+</ClassActionPanel> : null}</div></> : <div className="action-dock action-dock-idle" aria-hidden="true" />}
           {gameOver ? <div className="action-dock"><button className="turn-button" onClick={() => void returnToLobby()} disabled={busy}>{busy ? "RETURNING TO LOBBY…" : "RETURN TO LOBBY"} <span>↗</span></button></div> : null}
         </>
         : null}
