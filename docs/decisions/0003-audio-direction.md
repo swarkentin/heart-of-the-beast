@@ -1,6 +1,6 @@
 # ADR 0003: Treat Music and Sound as Part of the Game Experience
 
-- Status: Accepted for the first playable prototype
+- Status: Accepted for the first playable prototype; theme-specific music implemented by ADR 0026
 - Date: 2026-11-14
 
 ## Context

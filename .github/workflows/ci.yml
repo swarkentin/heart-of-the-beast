@@ -106,6 +106,9 @@ jobs:
       - name: TypeScript check and production build
         run: npm run build
 
+      - name: Music system unit tests
+        run: npm run test:audio
+
   backend:
     name: Backend workspace checks
     runs-on: ubuntu-latest

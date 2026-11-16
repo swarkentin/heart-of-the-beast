@@ -56,7 +56,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add a contextual interrupt counter for the Crypt Warden Soul Drain; see ADR 0018 and `docs/game-design/combat-roadmap.md`.
 - [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then support and consumable actions.
 - [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).
-- [ ] Replace or expand the synthesized prototype with authored theme-specific music and effects; tune the mix on mobile, desktop, and spectator playback.
+- [x] Replace the single-theme prototype with a data-driven, theme-aware procedural music system: a profile per dungeon theme, per-state layers scaled by depth, per-boss treatments, crossfades and per-theme effects (ADR 0026).
+- [ ] Audition and tune the themed music by ear, and tune the mix on mobile, desktop, and spectator playback; consider authored assets later.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
 - [ ] Verify core screens on mobile, tablet, and desktop layouts. Title, lobby, and class selection were checked at 390, 820, and 1366 px wide in Chrome with fallback fonts; they still need a pass on real devices with the web fonts loaded.
 - [ ] Bring the rest of the in-game interface into the pixel-art direction using the interface kit from ADR 0024 (title, lobby, and class selection are done): pixel-appropriate typography, crisp stepped borders/panels, hero action controls, talent trees, HUD, navigation, dialogs, and feedback. Keep body text readable at small sizes and validate across mobile, tablet, desktop, and spectator views.
