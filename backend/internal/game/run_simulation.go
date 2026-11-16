@@ -77,7 +77,7 @@ type RunSimulationBatchReport struct {
 
 const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
-const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and healing purchases when hurt; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
+const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and invests in affordable permanent Strike upgrades up to the run cap, then buys healing or revival when needed; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
 
 // RunPolicy names how a full-run simulation makes decisions.
 type RunPolicy string
