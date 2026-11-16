@@ -93,7 +93,7 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 		SeedCount: seedCount,
 		FirstSeed: firstSeed,
 		LastSeed:  firstSeed + int64(seedCount) - 1,
-		Policy:    "paired tactical benchmark with live enemy intent damage scaled x1.5, signature abilities spaced at least three rounds apart, and uniformly random legal basic combat choices",
+		Policy:    "paired tactical benchmark with live enemy intent damage scaled x1.25 and party-aware enemy health, signature abilities spaced at least three rounds apart, and uniformly random legal basic combat choices",
 	}
 	for _, encounterID := range balanceEncounterIDs {
 		for _, class := range classes {
@@ -157,8 +157,9 @@ func applyBalanceTuning(players []PlayerState, enemies []Enemy, tuning BalanceTu
 		players[i].GuardReduction = tuning.BlockAmount
 		players[i].StrikeDamage = tuning.PlayerDamage
 	}
+	healthMultiplier := enemyHealthMultiplierForParty(tuning.EnemyHealthMultiplier, len(players))
 	for i := range enemies {
-		scaled := int(float64(enemies[i].MaxHealth)*tuning.EnemyHealthMultiplier + 0.5)
+		scaled := int(float64(enemies[i].MaxHealth)*healthMultiplier + 0.5)
 		if scaled < 1 {
 			scaled = 1
 		}
