@@ -1,7 +1,9 @@
 package main
 
 import (
-	"fmt"\n\t"strings"\n\t"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
+	"fmt"
+	"strings"
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"testing"
 )
 
