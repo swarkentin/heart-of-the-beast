@@ -23,7 +23,7 @@ func TestRoomEventRewardsAreAuthoritativeAndPartyWide(t *testing.T) {
 		t.Fatal("studying the inscription should record the Warden weakness")
 	}
 	for _, player := range room.Run.Players {
-		if player.StrikeDamage != 10 {
+		if player.StrikeDamage != PlayerStrikeDamage {
 			t.Fatalf("studying the inscription should not change ordinary Strike damage, got %d", player.StrikeDamage)
 		}
 	}
