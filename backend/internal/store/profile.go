@@ -18,14 +18,15 @@ type ClassMastery struct {
 // Profile is the persistent identity shared by a player's characters and runs.
 // Credential hashes are kept in the repository and are never serialized.
 type Profile struct {
-	ID                string                  `json:"id"`
-	DisplayName       string                  `json:"displayName"`
-	AdventurerXP      int64                   `json:"adventurerXp"`
-	AdventurerLevel   int                     `json:"adventurerLevel"`
-	ClassMastery      map[string]ClassMastery `json:"classMastery"`
-	UnlockedCosmetics []string                `json:"unlockedCosmetics"`
-	CreatedAt         time.Time               `json:"createdAt"`
-	UpdatedAt         time.Time               `json:"updatedAt"`
+	ID                 string                  `json:"id"`
+	DisplayName        string                  `json:"displayName"`
+	AdventurerXP       int64                   `json:"adventurerXp"`
+	AdventurerLevel    int                     `json:"adventurerLevel"`
+	ClassMastery       map[string]ClassMastery `json:"classMastery"`
+	UnlockedCosmetics  []string                `json:"unlockedCosmetics"`
+	SelectedClassTiers map[string]int          `json:"selectedClassTiers"`
+	CreatedAt          time.Time               `json:"createdAt"`
+	UpdatedAt          time.Time               `json:"updatedAt"`
 }
 
 func cloneProfile(profile *Profile) (*Profile, error) {
@@ -43,6 +44,9 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 	if copy.UnlockedCosmetics == nil {
 		copy.UnlockedCosmetics = []string{}
 	}
+	if copy.SelectedClassTiers == nil {
+		copy.SelectedClassTiers = map[string]int{}
+	}
 	return &copy, nil
 }
 
@@ -52,6 +56,8 @@ type ProfileRepository interface {
 	GetOrCreateProfile(context.Context, string, string, time.Time) (*Profile, error)
 	GetProfile(context.Context, string) (*Profile, error)
 	UpdateProfileName(context.Context, string, string, time.Time) (*Profile, error)
+	GetProfileByID(context.Context, string) (*Profile, error)
+	SetProfileClassTier(context.Context, string, string, int, time.Time) (*Profile, error)
 	AwardRunXP(context.Context, string, string, string, string, int64, time.Time) (*Profile, error)
 }
 

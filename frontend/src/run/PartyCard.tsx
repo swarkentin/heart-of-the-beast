@@ -15,7 +15,7 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     <span className="rn-portrait">
       <span className="rn-portrait-bg" aria-hidden="true" />
       <span className="rn-hero-box">
-        <HeroSprite classId={member.classId} pose={member.pose} hurt={fx.hurt} />
+        <HeroSprite classId={member.classId} tier={member.masteryTier} pose={member.pose} hurt={fx.hurt} />
         {member.overlays.map(kind => <StatusFx key={kind} kind={kind} />)}
         {fx.heal > 0 ? <StatusFx key={"heal-" + fx.heal} kind="heal" /> : null}
       </span>

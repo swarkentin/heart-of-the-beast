@@ -59,6 +59,48 @@ export function renderHero(h) {
   for (const name of Object.keys(STATUS_POSES)) frames[name] = renderPoses(cr, s, STATUS_POSES[name], STATUS_POST[name]);
   return { frames, head, scale: s };
 }
+const TIER_COLORS = [null, "#9aa2b8", "#63d7c4", "#78a9ff", "#c987ff", "#ffbd63", "#ff718f", "#fff0a0"];
+const TIER_NAMES = ["Base", "Tempered", "Runebound", "Dreadforged", "Mythic", "Celestial", "Ascendant", "Eternal"];
+const CLASS_ACCENTS = ["#8fe6c4", "#ff9a4d", "#8fd6ff", "#ff8fc0", "#c9a4ff", "#b6e87a", "#ffe08a", "#8ee0dc", "#a6e88f"];
+/** Pixel-scale mastery finish applied consistently to every frame in the established class rig. */
+function masteryFinish(img, tier, classIndex) {
+  if (tier <= 1) return img;
+  const color = mix(hex(TIER_COLORS[tier - 1]), hex(CLASS_ACCENTS[classIndex]), 0.38);
+  const plate = (cx, cy, radius) => {
+    for (let y = cy - radius; y <= cy + radius; y++) for (let x = cx - radius; x <= cx + radius; x++) {
+      if (Math.abs(x - cx) + Math.abs(y - cy) > radius + 1 || x < 0 || y < 0 || x >= img.w || y >= img.h) continue;
+      const i = (y * img.w + x) * 4; img.d[i] = color[0]; img.d[i + 1] = color[1]; img.d[i + 2] = color[2]; img.d[i + 3] = 255;
+    }
+  };
+  const pixel = (x, y, rgb = color) => { if (x < 0 || y < 0 || x >= img.w || y >= img.h) return; const i = (y * img.w + x) * 4; img.d[i] = rgb[0]; img.d[i + 1] = rgb[1]; img.d[i + 2] = rgb[2]; img.d[i + 3] = 255; };
+  // Paired shoulder plates grow with rank; at high mastery they carry a bright crown ridge.
+  const plateSize = Math.min(4, 1 + Math.floor((tier - 2) / 2));
+  plate(21, 25, plateSize); plate(42, 25, plateSize);
+  if (tier >= 4) plate(32, 33, Math.min(2, tier - 3));
+  if (tier >= 7) { plate(27, 18, 1); plate(37, 18, 1); }
+  if (tier >= 5) for (let feather = 0; feather < tier - 3; feather++) {
+    for (let px = 0; px < (tier >= 7 ? 2 : 1); px++) {
+      pixel(20 - feather * 2 - px, 23 + feather, color);
+      pixel(43 + feather * 2 + px, 23 + feather, color);
+    }
+  }
+  if (tier >= 7) { pixel(29, 7); pixel(30, 6); pixel(31, 6); pixel(32, 6); pixel(33, 6); pixel(34, 7); }
+  if (tier === 8) { pixel(27, 8); pixel(35, 8); pixel(24, 13); pixel(39, 13); pixel(22, 19); pixel(41, 19); }
+  for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) {
+    const i = (y * img.w + x) * 4;
+    if (!img.d[i + 3]) continue;
+    // Inlaid metal catches the light in a class-specific broken-chevron pattern.
+    const rune = y >= 17 && y <= 42 && ((x + classIndex * 3) % (12 - Math.min(5, tier)) < 2) && ((y + tier) % 7 < 2);
+    if (rune) { img.d[i] = color[0]; img.d[i + 1] = color[1]; img.d[i + 2] = color[2]; }
+  }
+  // Animated aura motes evolve from a few sparks into a full halo at the last tiers.
+  const count = tier - 1, phase = Math.floor((img.d[0] + img.d[4] + img.d[8] + tier * 7) % 5);
+  for (let n = 0; n < count; n++) {
+    const x = 5 + ((n * 11 + classIndex * 7 + phase * 3) % 54), y = 11 + ((n * 13 + classIndex * 5 + phase * 7) % 39);
+    const i = (y * img.w + x) * 4; img.d[i] = color[0]; img.d[i + 1] = color[1]; img.d[i + 2] = color[2]; img.d[i + 3] = 255;
+  }
+  return img;
+}
 function sheetOf(frames) {
   const sheet = new Img(HERO_COLS * HERO_SIZE, HERO_ANIMS.length * HERO_SIZE);
   HERO_ANIMS.forEach(([a], row) => frames[a].forEach((f, col) => sheet.blit(f, col * HERO_SIZE, row * HERO_SIZE)));
@@ -81,10 +123,16 @@ function silhouette(img) {
 export function renderInterface() {
   const files = {}, manifest = { version: 1, frame: { w: HERO_SIZE, h: HERO_SIZE }, columns: HERO_COLS, bust: { w: BUST, h: BUST }, anchor: { x: HERO_SIZE / 2, y: HERO_SIZE - 3 }, animations: Object.fromEntries(HERO_ANIMS.map(([a, n, fps, loop], row) => [a, { row, frames: n, fps, loop }])), heroes: [] };
   const png = (path, img) => { files[path] = encodePNG(img); };
-  for (const h of heroes) {
+  for (const [heroIndex, h] of heroes.entries()) {
     const { frames, head } = renderHero(h);
     png(`heroes/${h.id}.png`, sheetOf(frames)); png(`heroes/${h.id}-bust.png`, bustOf(frames.idle[0], head));
     manifest.heroes.push({ id: h.id, name: h.name, sheet: `heroes/${h.id}.png`, bust: `heroes/${h.id}-bust.png`, flourish: h.move });
+    manifest.heroes.at(-1).masteryTiers = TIER_NAMES.map((name, index) => ({ tier: index + 1, name, unlockRank: index + 1, sheet: index === 0 ? `heroes/${h.id}.png` : `heroes/${h.id}-tier-${index + 1}.png`, bust: index === 0 ? `heroes/${h.id}-bust.png` : `heroes/${h.id}-tier-${index + 1}-bust.png` }));
+    for (let tier = 2; tier <= 8; tier++) {
+      const variant = Object.fromEntries(Object.entries(frames).map(([animation, row]) => [animation, row.map(frame => masteryFinish(new Img(frame.w, frame.h).blit(frame, 0, 0), tier, heroIndex))]));
+      png(`heroes/${h.id}-tier-${tier}.png`, sheetOf(variant));
+      png(`heroes/${h.id}-tier-${tier}-bust.png`, bustOf(variant.idle[0], head));
+    }
     if (h.id === "tactician") { const empty = new Img(4 * HERO_SIZE, HERO_SIZE); frames.idle.forEach((f, i) => empty.blit(silhouette(f), i * HERO_SIZE, 0)); png("heroes/empty.png", empty); png("heroes/empty-bust.png", bustOf(silhouette(frames.idle[0]), head)); }
   }
   files["heroes/manifest.json"] = Buffer.from(JSON.stringify(manifest, null, 2) + "\n");

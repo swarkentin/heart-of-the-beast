@@ -150,10 +150,48 @@ func (m *Memory) GetOrCreateProfile(_ context.Context, id, credentialHash string
 	}
 	profile := &Profile{
 		ID: id, DisplayName: "Adventurer", AdventurerLevel: 1, ClassMastery: map[string]ClassMastery{},
-		UnlockedCosmetics: []string{}, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
+		UnlockedCosmetics: []string{}, SelectedClassTiers: map[string]int{}, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
 	}
 	m.profiles[credentialHash] = profile
 	return cloneProfile(profile)
+}
+
+func (m *Memory) GetProfileByID(_ context.Context, id string) (*Profile, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, profile := range m.profiles {
+		if profile.ID == id {
+			return cloneProfile(profile)
+		}
+	}
+	return nil, ErrNotFound
+}
+
+func (m *Memory) SetProfileClassTier(_ context.Context, profileID, classID string, tier int, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if tier < 1 || tier > 8 {
+		return nil, errors.New("mastery tier must be between 1 and 8")
+	}
+	for _, profile := range m.profiles {
+		if profile.ID != profileID {
+			continue
+		}
+		mastery := profile.ClassMastery[classID]
+		if mastery.Level == 0 {
+			mastery.Level = 1
+		}
+		if tier > mastery.Level {
+			return nil, errors.New("mastery tier is still locked")
+		}
+		if profile.SelectedClassTiers == nil {
+			profile.SelectedClassTiers = map[string]int{}
+		}
+		profile.SelectedClassTiers[classID] = tier
+		profile.UpdatedAt = now.UTC()
+		return cloneProfile(profile)
+	}
+	return nil, ErrNotFound
 }
 
 func (m *Memory) UpdateProfileName(_ context.Context, credentialHash, name string, now time.Time) (*Profile, error) {

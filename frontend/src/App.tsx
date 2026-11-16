@@ -184,6 +184,20 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
+  async function selectClassTier(classId: string, tier: number) {
+    if (!session || busy || run) return;
+    setBusy(true); setError("");
+    try {
+      const [next, credential] = await Promise.all([
+        apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class-tier", session.playerToken, { method: "POST", body: JSON.stringify({ classId, tier }) }),
+        Promise.resolve(window.localStorage.getItem(PROFILE_CREDENTIAL_KEY)),
+      ]);
+      setSnapshot(next);
+      if (credential) setProfile(await apiRequest<ApiProfile>("/profile", credential));
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not select mastery tier"); }
+    finally { setBusy(false); }
+  }
+
   async function chooseTalent(talentId: string): Promise<boolean> {
     if (!talentId || !session || busy || spectator) return false;
     setBusy(true); setError("");
@@ -257,7 +271,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onSelectTier={(classId, tier) => void selectClassTier(classId, tier)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
   return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}

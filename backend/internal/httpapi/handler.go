@@ -48,6 +48,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/return-to-lobby", h.returnToLobby)
 	mux.HandleFunc("POST /rooms/{id}/archetype", h.selectArchetype)
 	mux.HandleFunc("POST /rooms/{id}/class", h.selectClass)
+	mux.HandleFunc("POST /rooms/{id}/class-tier", h.selectClassTier)
 	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
 	mux.HandleFunc("GET /progression", progressionCatalog)
 	mux.HandleFunc("POST /profile", h.createOrGetProfile)
@@ -166,16 +167,17 @@ type playerPresenceResponse struct {
 }
 
 type roomResponse struct {
-	ID            string                            `json:"id"`
-	Code          string                            `json:"code"`
-	OwnerPlayerID string                            `json:"ownerPlayerId"`
-	PlayerIDs     []string                          `json:"playerIds"`
-	PlayerClasses map[string]string                 `json:"playerClasses,omitempty"`
-	Presence      map[string]playerPresenceResponse `json:"presence"`
-	Run           *game.Run                         `json:"run,omitempty"`
-	Version       int64                             `json:"version"`
-	CreatedAt     time.Time                         `json:"createdAt"`
-	UpdatedAt     time.Time                         `json:"updatedAt"`
+	ID               string                            `json:"id"`
+	Code             string                            `json:"code"`
+	OwnerPlayerID    string                            `json:"ownerPlayerId"`
+	PlayerIDs        []string                          `json:"playerIds"`
+	PlayerClasses    map[string]string                 `json:"playerClasses,omitempty"`
+	PlayerClassTiers map[string]int                    `json:"playerClassTiers,omitempty"`
+	Presence         map[string]playerPresenceResponse `json:"presence"`
+	Run              *game.Run                         `json:"run,omitempty"`
+	Version          int64                             `json:"version"`
+	CreatedAt        time.Time                         `json:"createdAt"`
+	UpdatedAt        time.Time                         `json:"updatedAt"`
 }
 
 const presenceTimeout = 30 * time.Second
@@ -195,7 +197,7 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 	}
 	return roomResponse{
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, Presence: presence, Run: room.Run,
+		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerClassTiers: room.PlayerClassTiers, Presence: presence, Run: room.Run,
 		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
@@ -598,6 +600,19 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusConflict, err.Error())
 			return
 		}
+		if room.PlayerClassTiers == nil {
+			room.PlayerClassTiers = map[string]int{}
+		}
+		room.PlayerClassTiers[actor] = 1
+		if profileID := room.PlayerProfileIDs[actor]; profileID != "" {
+			if profiles, ok := h.rooms.(store.ProfileRepository); ok {
+				if profile, e := profiles.GetProfileByID(r.Context(), profileID); e == nil {
+					if tier := profile.SelectedClassTiers[request.ClassID]; tier > 0 {
+						room.PlayerClassTiers[actor] = tier
+					}
+				}
+			}
+		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
 		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
@@ -611,6 +626,68 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeError(w, http.StatusConflict, "room is busy; retry the class choice")
+}
+
+func (h *Handler) selectClassTier(w http.ResponseWriter, r *http.Request) {
+	_, actor, ok := h.authorizedPlayer(w, r)
+	if !ok {
+		return
+	}
+	var request struct {
+		ClassID string `json:"classId"`
+		Tier    int    `json:"tier"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil || request.Tier < 1 || request.Tier > 8 {
+		writeError(w, http.StatusBadRequest, "choose an unlocked mastery tier")
+		return
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "profile persistence is unavailable")
+		return
+	}
+	for attempt := 0; attempt < 4; attempt++ {
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room not found")
+			return
+		}
+		if room.PlayerClasses[actor] != request.ClassID {
+			writeError(w, http.StatusConflict, "choose that class before selecting its mastery tier")
+			return
+		}
+		profileID := room.PlayerProfileIDs[actor]
+		if profileID == "" {
+			writeError(w, http.StatusForbidden, "a player profile is required to select mastery tiers")
+			return
+		}
+		profile, err := profiles.SetProfileClassTier(r.Context(), profileID, request.ClassID, request.Tier, h.now().UTC())
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "profile not found")
+			return
+		}
+		if err != nil {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		expected := room.Version
+		if room.PlayerClassTiers == nil {
+			room.PlayerClassTiers = map[string]int{}
+		}
+		room.PlayerClassTiers[actor] = profile.SelectedClassTiers[request.ClassID]
+		room.Version++
+		room.UpdatedAt = h.now().UTC()
+		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+			if errors.Is(err, store.ErrConflict) {
+				continue
+			}
+			writeStoreError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+		return
+	}
+	writeError(w, http.StatusConflict, "room is busy; retry the mastery tier choice")
 }
 
 func progressionCatalog(w http.ResponseWriter, _ *http.Request) {

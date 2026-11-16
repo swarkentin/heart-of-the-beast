@@ -7,10 +7,10 @@ import "./lobby.css";
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
-export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
+export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; selectedClassTiers?: Record<string, number>; unlockedCosmetics: string[] };
 export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[] };
 export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
-export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
+export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; playerClassTiers?: Record<string, number>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
 // Keep in step with scripts/pixel-art/heroes.mjs and ICON_ORDER in scripts/pixel-art/ui.mjs.
 const HERO_ART = new Set(["bulwark", "juggernaut", "spellguard", "assassin", "arcanist", "ranger", "cleric", "tactician", "beastcaller"]);
@@ -43,7 +43,7 @@ export type StatusFxKind = "heal" | "guard" | "ward" | "buff" | "poison" | "slee
  * Animated hero sprite. `pose` picks the looping row; bumping `flourish` or `hurt` plays that one-shot once
  * and returns to the pose.
  */
-export function HeroSprite({ classId, flourish = 0, hurt = 0, pose = "idle", label }: { classId?: string; flourish?: number; hurt?: number; pose?: HeroPose; label?: string }) {
+export function HeroSprite({ classId, tier = 1, flourish = 0, hurt = 0, pose = "idle", label }: { classId?: string; tier?: number; flourish?: number; hurt?: number; pose?: HeroPose; label?: string }) {
   const art = heroArt(classId);
   const [playing, setPlaying] = useState<"" | "flourish" | "hurt">("");
   useEffect(() => { if (flourish > 0 && art !== "empty") setPlaying("flourish"); }, [flourish, art]);
@@ -51,7 +51,7 @@ export function HeroSprite({ classId, flourish = 0, hurt = 0, pose = "idle", lab
   // Reduced motion disables the animation, so animationend never fires: always fall back to the pose.
   useEffect(() => { if (!playing) return; const timer = window.setTimeout(() => setPlaying(""), 900); return () => window.clearTimeout(timer); }, [playing, flourish, hurt]);
   return <span className={"px-hero" + (art === "empty" ? " px-hero-empty" : " px-hero-" + pose) + (playing ? " px-hero-" + playing : "")} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}
-    style={{ backgroundImage: "url(/art/heroes/" + art + ".png)" }} onAnimationEnd={() => setPlaying("")} />;
+    style={{ backgroundImage: "url(/art/heroes/" + art + (tier > 1 ? "-tier-" + tier : "") + ".png)" }} onAnimationEnd={() => setPlaying("")} />;
 }
 
 /** One status overlay, sized to sit exactly over a HeroSprite in the same positioned box. */
@@ -59,8 +59,8 @@ export function StatusFx({ kind }: { kind: StatusFxKind }) {
   return <span className={"px-statusfx px-statusfx-" + kind} aria-hidden="true" />;
 }
 
-export function Bust({ classId, locked }: { classId?: string; locked?: boolean }) {
-  return <span className={"px-bust" + (locked ? " px-bust-locked" : "")} aria-hidden="true" style={{ backgroundImage: "url(/art/heroes/" + heroArt(classId) + "-bust.png)" }} />;
+export function Bust({ classId, tier = 1, locked }: { classId?: string; tier?: number; locked?: boolean }) {
+  return <span className={"px-bust" + (locked ? " px-bust-locked" : "")} aria-hidden="true" style={{ backgroundImage: "url(/art/heroes/" + heroArt(classId) + (tier > 1 ? "-tier-" + tier : "") + "-bust.png)" }} />;
 }
 
 function Torch() { return <span className="px-torch" aria-hidden="true" />; }
@@ -203,7 +203,7 @@ function Pips({ value, max = 4 }: { value: number; max?: number }) {
   return <span className="px-pips" aria-hidden="true">{Array.from({ length: Math.max(max, value) }, (_, index) => <i key={index} className={index < value ? "on" : ""} />)}</span>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, profile, audioControls, onSaveName, onSelectClass, onStart, onLeave }: { room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, profile, audioControls, onSaveName, onSelectClass, onSelectTier, onStart, onLeave }: { room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string) => void; onSelectTier: (classId: string, tier: number) => void; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
   const [treeOpen, setTreeOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -235,6 +235,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
   const archetype = ARCHETYPES.find(item => item.id === focusedClass?.archetypeId);
   const focusedMastery = focusedClass ? profile?.classMastery[focusedClass.id] || { experience: 0, level: 1 } : { experience: 0, level: 1 };
   const focusedMasteryProgress = focusedMastery.experience % 100;
+  const selectedTier = focusedClass ? (profile?.selectedClassTiers?.[focusedClass.id] || (focusedClass.id === selectedClassId ? room.playerClassTiers?.[playerId] : 0) || 1) : 1;
   const groups = [...ARCHETYPES.map(item => ({ ...item, classes: playable.filter(value => value.archetypeId === item.id) })), { id: "other", name: "Other", icon: "strike" as IconId, blurb: "", classes: playable.filter(value => !ARCHETYPES.some(item => item.id === value.archetypeId)) }].filter(group => group.classes.length > 0);
 
   return <GameShell status="PARTY LOBBY" tools={<SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<button type="button" className="px-button px-button-small px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>} />}>
@@ -260,7 +261,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
             const classId = room.playerClasses?.[id], status = room.presence?.[id]?.status || "online", you = id === playerId, host = id === room.ownerPlayerId;
             return <li key={id} className={"px-slot" + (you ? " px-slot-you" : "") + (status !== "online" ? " px-slot-away" : "")} style={vars({ "--accent": ACCENTS[classId || ""] || "#d6a64d" })}>
               {host ? <span className="px-slot-crown" title="Host"><Icon id="host" size={1} /></span> : null}
-              <HeroSprite classId={classId} flourish={you ? flourish : 0} label={className(classId) || "Undecided adventurer"} />
+              <HeroSprite classId={classId} tier={room.playerClassTiers?.[id] || 1} flourish={you ? flourish : 0} label={className(classId) || "Undecided adventurer"} />
               <div className="px-nameplate">
                 <span>{host ? "HOST" : "PLAYER " + (room.playerIds.indexOf(id) + 1)}{you ? " · YOU" : ""}</span>
                 <strong>{you && profile ? profile.displayName : className(classId) || "Choosing…"}</strong>
@@ -282,7 +283,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
                 const mastery = profile?.classMastery[item.id] || { experience: 0, level: 1 };
                 const progress = mastery.experience % 100;
                 return <button key={item.id} className={"px-class" + (item.id === focusedClass.id ? " px-class-focused" : "") + (item.id === selectedClassId ? " px-class-chosen" : "")} style={vars({ "--accent": ACCENTS[item.id] || "#d6a64d" })} onClick={() => setPreviewClassId(item.id)} aria-pressed={item.id === focusedClass.id}>
-                  <Bust classId={item.id} />
+                  <Bust classId={item.id} tier={Math.min(8, mastery.level || 1)} />
                   <strong>{item.name}</strong>
                   <span className="px-class-mastery-mini" title={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent to next rank"} aria-label={item.name + " mastery rank " + (mastery.level || 1) + ", " + progress + " percent progress"}>
                     <b>M{mastery.level || 1}</b><span><span style={vars({ width: progress + "%" })} /></span>
@@ -298,10 +299,11 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
           </div>
 
           <section className="px-detail" aria-live="polite" style={vars({ "--accent": ACCENTS[focusedClass.id] || "#d6a64d" })}>
-            <div className="px-showcase"><div className="px-showcase-floor" /><HeroSprite key={focusedClass.id} classId={focusedClass.id} flourish={focusedClass.id === selectedClassId ? flourish : 0} label={focusedClass.name + " hero"} /></div>
+            <div className="px-showcase"><div className="px-showcase-floor" /><HeroSprite key={focusedClass.id + selectedTier} classId={focusedClass.id} tier={selectedTier} flourish={focusedClass.id === selectedClassId ? flourish : 0} label={focusedClass.name + " hero"} /></div>
             <div className="px-detail-copy">
               <div className="px-detail-title"><h3>{focusedClass.name}</h3><span className="px-chip">{archetype ? <Icon id={archetype.icon} size={1} /> : null}{(archetype?.name || focusedClass.archetypeId).toUpperCase()}</span></div>
               <div className="px-selected-mastery"><strong>CLASS MASTERY · RANK {focusedMastery.level || 1}</strong><span>{focusedMasteryProgress}/100 XP TO NEXT RANK</span><div role="progressbar" aria-label={focusedClass.name + " mastery progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={focusedMasteryProgress}><i style={{ width: focusedMasteryProgress + "%" }} /></div></div>
+              <div className="px-mastery-looks" aria-label="Choose mastery armor appearance"><span className="px-label">MASTERY ARMOR · TIER {selectedTier}</span><div>{Array.from({ length: 8 }, (_, index) => index + 1).map(tier => <button key={tier} type="button" className="px-mastery-look" aria-pressed={selectedTier === tier} disabled={tier > (focusedMastery.level || 1) || focusedClass.id !== selectedClassId || busy} onClick={() => onSelectTier(focusedClass.id, tier)} title={tier > (focusedMastery.level || 1) ? "Unlock at mastery rank " + tier : "Wear mastery tier " + tier}><Bust classId={focusedClass.id} tier={tier} locked={tier > (focusedMastery.level || 1)} /><b>{tier}</b></button>)}</div><small>{focusedClass.id === selectedClassId ? "Choose any appearance earned by this class." : "Choose this class first to equip its unlocked looks."}</small></div>
               <p className="px-copy">{focusedClass.description}</p>
               <dl className="px-stats">
                 <div><dt><Icon id="vitality" />Vitality</dt><dd><b>{focusedClass.startingStats.health}</b></dd></div>

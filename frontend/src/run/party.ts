@@ -6,7 +6,7 @@ export type PartyStatus = { id: string; icon: IconId; label: string; tone: "good
 export type PartyThreat = { enemyId: string; enemyName: string; label: string; damage: number; all: boolean };
 export type RoundState = "none" | "choosing" | "ready" | "down" | "offline";
 export type PartyMember = {
-  id: string; position: number; isSelf: boolean; classId?: string; className: string; level: number;
+  id: string; position: number; isSelf: boolean; classId?: string; masteryTier: number; className: string; level: number;
   health: number; maxHealth: number; alive: boolean; online: boolean;
   power: number; focus: number; agility: number; xpPercent: number; xpLabel: string;
   pose: HeroPose; overlays: StatusFxKind[]; statuses: PartyStatus[]; threats: PartyThreat[];
@@ -58,7 +58,7 @@ export function buildParty(room: ApiRoom, run: ApiRun, selfId: string, catalog: 
     const level = player?.level ?? 1;
     const floor = LEVEL_THRESHOLDS[level - 1] ?? 325, next = LEVEL_THRESHOLDS[level];
     return {
-      id, position: room.playerIds.indexOf(id) + 1, isSelf: id === selfId, classId,
+      id, position: room.playerIds.indexOf(id) + 1, isSelf: id === selfId, classId, masteryTier: room.playerClassTiers?.[id] || 1,
       className: catalog?.classes.find(item => item.id === classId)?.name || archetypeName(player?.archetype || room.playerArchetypes?.[id]),
       level, health, maxHealth, alive, online,
       power: player?.stats.power ?? 0, focus: player?.stats.focus ?? 0, agility: player?.stats.agility ?? 0,

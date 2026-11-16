@@ -57,63 +57,585 @@
       "name": "Bulwark",
       "sheet": "heroes/bulwark.png",
       "bust": "heroes/bulwark-bust.png",
-      "flourish": "brace"
+      "flourish": "brace",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/bulwark.png",
+          "bust": "heroes/bulwark-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/bulwark-tier-2.png",
+          "bust": "heroes/bulwark-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/bulwark-tier-3.png",
+          "bust": "heroes/bulwark-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/bulwark-tier-4.png",
+          "bust": "heroes/bulwark-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/bulwark-tier-5.png",
+          "bust": "heroes/bulwark-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/bulwark-tier-6.png",
+          "bust": "heroes/bulwark-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/bulwark-tier-7.png",
+          "bust": "heroes/bulwark-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/bulwark-tier-8.png",
+          "bust": "heroes/bulwark-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "juggernaut",
       "name": "Juggernaut",
       "sheet": "heroes/juggernaut.png",
       "bust": "heroes/juggernaut-bust.png",
-      "flourish": "smash"
+      "flourish": "smash",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/juggernaut.png",
+          "bust": "heroes/juggernaut-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/juggernaut-tier-2.png",
+          "bust": "heroes/juggernaut-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/juggernaut-tier-3.png",
+          "bust": "heroes/juggernaut-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/juggernaut-tier-4.png",
+          "bust": "heroes/juggernaut-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/juggernaut-tier-5.png",
+          "bust": "heroes/juggernaut-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/juggernaut-tier-6.png",
+          "bust": "heroes/juggernaut-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/juggernaut-tier-7.png",
+          "bust": "heroes/juggernaut-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/juggernaut-tier-8.png",
+          "bust": "heroes/juggernaut-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "spellguard",
       "name": "Spellguard",
       "sheet": "heroes/spellguard.png",
       "bust": "heroes/spellguard-bust.png",
-      "flourish": "channel"
+      "flourish": "channel",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/spellguard.png",
+          "bust": "heroes/spellguard-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/spellguard-tier-2.png",
+          "bust": "heroes/spellguard-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/spellguard-tier-3.png",
+          "bust": "heroes/spellguard-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/spellguard-tier-4.png",
+          "bust": "heroes/spellguard-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/spellguard-tier-5.png",
+          "bust": "heroes/spellguard-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/spellguard-tier-6.png",
+          "bust": "heroes/spellguard-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/spellguard-tier-7.png",
+          "bust": "heroes/spellguard-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/spellguard-tier-8.png",
+          "bust": "heroes/spellguard-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "assassin",
       "name": "Assassin",
       "sheet": "heroes/assassin.png",
       "bust": "heroes/assassin-bust.png",
-      "flourish": "slash"
+      "flourish": "slash",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/assassin.png",
+          "bust": "heroes/assassin-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/assassin-tier-2.png",
+          "bust": "heroes/assassin-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/assassin-tier-3.png",
+          "bust": "heroes/assassin-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/assassin-tier-4.png",
+          "bust": "heroes/assassin-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/assassin-tier-5.png",
+          "bust": "heroes/assassin-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/assassin-tier-6.png",
+          "bust": "heroes/assassin-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/assassin-tier-7.png",
+          "bust": "heroes/assassin-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/assassin-tier-8.png",
+          "bust": "heroes/assassin-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "arcanist",
       "name": "Arcanist",
       "sheet": "heroes/arcanist.png",
       "bust": "heroes/arcanist-bust.png",
-      "flourish": "channel"
+      "flourish": "channel",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/arcanist.png",
+          "bust": "heroes/arcanist-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/arcanist-tier-2.png",
+          "bust": "heroes/arcanist-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/arcanist-tier-3.png",
+          "bust": "heroes/arcanist-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/arcanist-tier-4.png",
+          "bust": "heroes/arcanist-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/arcanist-tier-5.png",
+          "bust": "heroes/arcanist-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/arcanist-tier-6.png",
+          "bust": "heroes/arcanist-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/arcanist-tier-7.png",
+          "bust": "heroes/arcanist-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/arcanist-tier-8.png",
+          "bust": "heroes/arcanist-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "ranger",
       "name": "Ranger",
       "sheet": "heroes/ranger.png",
       "bust": "heroes/ranger-bust.png",
-      "flourish": "shoot"
+      "flourish": "shoot",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/ranger.png",
+          "bust": "heroes/ranger-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/ranger-tier-2.png",
+          "bust": "heroes/ranger-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/ranger-tier-3.png",
+          "bust": "heroes/ranger-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/ranger-tier-4.png",
+          "bust": "heroes/ranger-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/ranger-tier-5.png",
+          "bust": "heroes/ranger-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/ranger-tier-6.png",
+          "bust": "heroes/ranger-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/ranger-tier-7.png",
+          "bust": "heroes/ranger-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/ranger-tier-8.png",
+          "bust": "heroes/ranger-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "cleric",
       "name": "Cleric",
       "sheet": "heroes/cleric.png",
       "bust": "heroes/cleric-bust.png",
-      "flourish": "channel"
+      "flourish": "channel",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/cleric.png",
+          "bust": "heroes/cleric-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/cleric-tier-2.png",
+          "bust": "heroes/cleric-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/cleric-tier-3.png",
+          "bust": "heroes/cleric-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/cleric-tier-4.png",
+          "bust": "heroes/cleric-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/cleric-tier-5.png",
+          "bust": "heroes/cleric-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/cleric-tier-6.png",
+          "bust": "heroes/cleric-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/cleric-tier-7.png",
+          "bust": "heroes/cleric-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/cleric-tier-8.png",
+          "bust": "heroes/cleric-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "tactician",
       "name": "Tactician",
       "sheet": "heroes/tactician.png",
       "bust": "heroes/tactician-bust.png",
-      "flourish": "slash"
+      "flourish": "slash",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/tactician.png",
+          "bust": "heroes/tactician-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/tactician-tier-2.png",
+          "bust": "heroes/tactician-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/tactician-tier-3.png",
+          "bust": "heroes/tactician-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/tactician-tier-4.png",
+          "bust": "heroes/tactician-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/tactician-tier-5.png",
+          "bust": "heroes/tactician-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/tactician-tier-6.png",
+          "bust": "heroes/tactician-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/tactician-tier-7.png",
+          "bust": "heroes/tactician-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/tactician-tier-8.png",
+          "bust": "heroes/tactician-tier-8-bust.png"
+        }
+      ]
     },
     {
       "id": "beastcaller",
       "name": "Beastcaller",
       "sheet": "heroes/beastcaller.png",
       "bust": "heroes/beastcaller-bust.png",
-      "flourish": "channel"
+      "flourish": "channel",
+      "masteryTiers": [
+        {
+          "tier": 1,
+          "name": "Base",
+          "unlockRank": 1,
+          "sheet": "heroes/beastcaller.png",
+          "bust": "heroes/beastcaller-bust.png"
+        },
+        {
+          "tier": 2,
+          "name": "Tempered",
+          "unlockRank": 2,
+          "sheet": "heroes/beastcaller-tier-2.png",
+          "bust": "heroes/beastcaller-tier-2-bust.png"
+        },
+        {
+          "tier": 3,
+          "name": "Runebound",
+          "unlockRank": 3,
+          "sheet": "heroes/beastcaller-tier-3.png",
+          "bust": "heroes/beastcaller-tier-3-bust.png"
+        },
+        {
+          "tier": 4,
+          "name": "Dreadforged",
+          "unlockRank": 4,
+          "sheet": "heroes/beastcaller-tier-4.png",
+          "bust": "heroes/beastcaller-tier-4-bust.png"
+        },
+        {
+          "tier": 5,
+          "name": "Mythic",
+          "unlockRank": 5,
+          "sheet": "heroes/beastcaller-tier-5.png",
+          "bust": "heroes/beastcaller-tier-5-bust.png"
+        },
+        {
+          "tier": 6,
+          "name": "Celestial",
+          "unlockRank": 6,
+          "sheet": "heroes/beastcaller-tier-6.png",
+          "bust": "heroes/beastcaller-tier-6-bust.png"
+        },
+        {
+          "tier": 7,
+          "name": "Ascendant",
+          "unlockRank": 7,
+          "sheet": "heroes/beastcaller-tier-7.png",
+          "bust": "heroes/beastcaller-tier-7-bust.png"
+        },
+        {
+          "tier": 8,
+          "name": "Eternal",
+          "unlockRank": 8,
+          "sheet": "heroes/beastcaller-tier-8.png",
+          "bust": "heroes/beastcaller-tier-8-bust.png"
+        }
+      ]
     }
   ]
 }

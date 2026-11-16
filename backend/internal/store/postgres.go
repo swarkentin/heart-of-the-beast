@@ -126,15 +126,15 @@ func (p *Postgres) Save(ctx context.Context, room *game.Room, expectedVersion in
 
 func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash string, now time.Time) (*Profile, error) {
 	var profile Profile
-	var masteryJSON, cosmeticsJSON []byte
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
 	err := p.db.QueryRowContext(ctx, `
 		INSERT INTO player_profiles (id, credential_hash, created_at, updated_at, last_seen_at)
 		VALUES ($1, $2, $3, $3, $3)
 		ON CONFLICT (credential_hash) DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at
-		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at
 	`, id, credentialHash, now.UTC()).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
-		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
+		&masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -143,6 +143,9 @@ func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash st
 		return nil, err
 	}
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
 		return nil, err
 	}
 	if profile.ClassMastery == nil {
@@ -156,13 +159,13 @@ func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash st
 
 func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Profile, error) {
 	var profile Profile
-	var masteryJSON, cosmeticsJSON []byte
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
 	err := p.db.QueryRowContext(ctx, `
-		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at
 		FROM player_profiles WHERE credential_hash = $1
 	`, credentialHash).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
-		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
+		&masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -174,6 +177,9 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 		return nil, err
 	}
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
 		return nil, err
 	}
 	if profile.ClassMastery == nil {
@@ -185,16 +191,70 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 	return &profile, nil
 }
 
+func (p *Postgres) GetProfileByID(ctx context.Context, id string) (*Profile, error) {
+	var profile Profile
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
+	err := p.db.QueryRowContext(ctx, `SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at FROM player_profiles WHERE id = $1`, id).Scan(&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel, &masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(masteryJSON, &profile.ClassMastery); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
+		return nil, err
+	}
+	return cloneProfile(&profile)
+}
+
+func (p *Postgres) SetProfileClassTier(ctx context.Context, profileID, classID string, tier int, now time.Time) (*Profile, error) {
+	if tier < 1 || tier > 8 {
+		return nil, errors.New("mastery tier must be between 1 and 8")
+	}
+	var profile Profile
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
+	err := p.db.QueryRowContext(ctx, `UPDATE player_profiles SET selected_class_tiers = jsonb_set(selected_class_tiers, ARRAY[$2], to_jsonb($3::integer), true), updated_at = $4 WHERE id = $1 AND $3 <= COALESCE((class_mastery->$2->>'level')::integer, 1) RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at`, profileID, classID, tier, now.UTC()).Scan(&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel, &masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		var exists bool
+		if e := p.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM player_profiles WHERE id = $1)`, profileID).Scan(&exists); e != nil {
+			return nil, e
+		}
+		if !exists {
+			return nil, ErrNotFound
+		}
+		return nil, errors.New("mastery tier is still locked")
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(masteryJSON, &profile.ClassMastery); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
+		return nil, err
+	}
+	return cloneProfile(&profile)
+}
+
 func (p *Postgres) UpdateProfileName(ctx context.Context, credentialHash, name string, now time.Time) (*Profile, error) {
 	var profile Profile
-	var masteryJSON, cosmeticsJSON []byte
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
 	err := p.db.QueryRowContext(ctx, `
 		UPDATE player_profiles SET display_name = $2, updated_at = $3
 		WHERE credential_hash = $1
-		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at
 	`, credentialHash, name, now.UTC()).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
-		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
+		&masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -206,6 +266,9 @@ func (p *Postgres) UpdateProfileName(ctx context.Context, credentialHash, name s
 		return nil, err
 	}
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
 		return nil, err
 	}
 	return &profile, nil
@@ -263,13 +326,13 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 		}
 	}
 	var profile Profile
-	var masteryJSON, cosmeticsJSON []byte
+	var masteryJSON, cosmeticsJSON, tiersJSON []byte
 	err = tx.QueryRowContext(ctx, `
-		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, selected_class_tiers, created_at, updated_at
 		FROM player_profiles WHERE id = $1
 	`, profileID).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
-		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
+		&masteryJSON, &cosmeticsJSON, &tiersJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -281,6 +344,9 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 		return nil, err
 	}
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(tiersJSON, &profile.SelectedClassTiers); err != nil {
 		return nil, err
 	}
 	if applyProfileRewardUnlocks(&profile) {
