@@ -48,7 +48,7 @@ Exact sprite scale, animation frame style, camera composition, and HUD arrangeme
 ## Combat: hybrid simultaneous tactics
 
 1. Each enemy shows a clear intent before players act: the move, damage, and intended target (or the whole party).
-2. Each living player submits one action during the shared window. The current slice offers Strike (10 damage) and Defend; additional actions are added only when they create a distinct, understandable choice.
+2. Each living player submits one action during the shared window. The current slice offers Strike (6 damage) and Defend; additional actions are added only when they create a distinct, understandable choice.
 3. Co-op uses an eight-second action window. Solo actions resolve immediately. An idle or disconnected player defaults to Defend when the group window closes.
 4. The server resolves player actions in stable player-ID order, then surviving enemies resolve their telegraphed intents. Defeating an enemy before its turn cancels its intent.
 5. Defend blocks up to 6 damage from the next incoming hit; it is not a heal. Damage, blocks, defeats, and player knockouts are shown in a short combat event log.
