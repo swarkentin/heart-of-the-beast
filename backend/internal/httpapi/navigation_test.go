@@ -57,12 +57,15 @@ func TestNavigationVoteDeadlineAdvancesThroughSnapshotPolling(t *testing.T) {
 	if started.Code != http.StatusOK {
 		t.Fatalf("start run: %d %s", started.Code, started.Body.String())
 	}
-	for _, player := range []struct {
-		token string
-	}{{host.PlayerToken}, {guest.PlayerToken}} {
-		response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", player.token, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
-		if response.Code != http.StatusOK {
-			t.Fatalf("combat action: %d %s", response.Code, response.Body.String())
+	for round := 1; round <= 2; round++ {
+		for _, player := range []struct {
+			token string
+		}{{host.PlayerToken}, {guest.PlayerToken}} {
+			body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": "sentinel"})
+			response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", player.token, string(body))
+			if response.Code != http.StatusOK {
+				t.Fatalf("combat action: %d %s", response.Code, response.Body.String())
+			}
 		}
 	}
 	voted := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"choose_exit","exitId":"north"}`)
