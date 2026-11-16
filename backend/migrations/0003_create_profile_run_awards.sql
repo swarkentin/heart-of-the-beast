@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS player_profile_run_awards (
     xp BIGINT NOT NULL CHECK (xp > 0),
     class_id TEXT,
     awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (profile_id, run_id, player_id)
+    UNIQUE (profile_id, run_id)
 );
 
 CREATE INDEX IF NOT EXISTS player_profile_run_awards_profile_idx
