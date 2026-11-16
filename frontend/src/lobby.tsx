@@ -6,6 +6,7 @@ import "./lobby.css";
 
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
+export type LobbyProfile = { adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }> };
 export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[] };
 export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
 export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
@@ -77,7 +78,7 @@ export function ConnectingScreen({ message }: { message: string }) {
   </GameShell>;
 }
 
-export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number }) {
+export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profileLevel, profile, classes = [] }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profileLevel?: number; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[] }) {
   return <GameShell status={profileLevel ? "ADVENTURER RANK " + profileLevel : "PREPARING PROFILE"}>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
@@ -103,7 +104,31 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       </form>
       {error ? <p className="px-error" role="alert">{error}</p> : null}
     </section>
+    {profile ? <ProfileSummary profile={profile} classes={classes} /> : null}
   </GameShell>;
+}
+
+function ProfileSummary({ profile, classes }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[] }) {
+  const rankXP = profile.adventurerXp % 100;
+  return <section className="px-panel px-profile-summary" aria-label="Adventurer progression">
+    <div className="px-profile-head">
+      <div><p className="px-eyebrow">YOUR ADVENTURER</p><strong className="px-profile-rank">RANK {profile.adventurerLevel}</strong></div>
+      <span className="px-profile-xp">{rankXP}/100 XP TO NEXT RANK</span>
+    </div>
+    <div className="px-profile-track" role="progressbar" aria-label="Adventurer rank progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={rankXP}><i style={{ width: rankXP + "%" }} /></div>
+    <div className="px-mastery-heading"><strong>CLASS MASTERY</strong><span>Progress follows the class you play</span></div>
+    <div className="px-mastery-grid">
+      {classes.map(item => {
+        const mastery = profile.classMastery[item.id] || { experience: 0, level: 1 };
+        const xp = mastery.experience % 100;
+        return <div className="px-mastery-item" key={item.id}>
+          <div className="px-mastery-meta"><strong>{item.name}</strong><span>RANK {mastery.level || 1}</span></div>
+          <div className="px-mastery-track" role="progressbar" aria-label={item.name + " mastery progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={xp}><i style={{ width: xp + "%" }} /></div>
+          <span className="px-mastery-xp">{xp}/100 XP</span>
+        </div>;
+      })}
+    </div>
+  </section>;
 }
 
 function skillIcon(id: string): IconId {
@@ -118,7 +143,7 @@ function Pips({ value, max = 4 }: { value: number; max?: number }) {
   return <span className="px-pips" aria-hidden="true">{Array.from({ length: Math.max(max, value) }, (_, index) => <i key={index} className={index < value ? "on" : ""} />)}</span>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, onSelectClass, onStart, onLeave }: { room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, profile, onSelectClass, onStart, onLeave }: { room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
   const [treeOpen, setTreeOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -184,6 +209,8 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
           <li className="px-stage-torch" aria-hidden="true"><Torch /></li>
         </ul>
       </div>
+
+      {profile ? <ProfileSummary profile={profile} classes={catalog?.classes ?? []} /> : null}
 
       <div className="px-panel px-classes">
         <div className="px-classes-head"><p className="px-eyebrow">CREATE YOUR ADVENTURER</p><h2>Choose your path</h2><p className="px-copy">Every class can survive the catacombs alone. Pick the way of fighting that feels like yours.</p></div>
