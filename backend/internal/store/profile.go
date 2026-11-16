@@ -48,4 +48,5 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 type ProfileRepository interface {
 	GetOrCreateProfile(context.Context, string, string, time.Time) (*Profile, error)
 	GetProfile(context.Context, string) (*Profile, error)
+	AwardRunXP(context.Context, string, string, string, string, int64, time.Time) (*Profile, error)
 }

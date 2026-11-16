@@ -26,10 +26,11 @@ type Memory struct {
 	mu       sync.RWMutex
 	rooms    map[string][]byte
 	profiles map[string]*Profile
+	awards   map[string]bool
 }
 
 func NewMemory() *Memory {
-	return &Memory{rooms: make(map[string][]byte), profiles: make(map[string]*Profile)}
+	return &Memory{rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool)}
 }
 
 func cloneRoom(room *game.Room) (*game.Room, error) {
@@ -163,4 +164,29 @@ func (m *Memory) GetProfile(_ context.Context, credentialHash string) (*Profile,
 		return nil, ErrNotFound
 	}
 	return cloneProfile(profile)
+}
+
+func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, classID string, xp int64, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := profileID + ":" + runID
+	for _, profile := range m.profiles {
+		if profile.ID != profileID {
+			continue
+		}
+		if !m.awards[key] {
+			profile.AdventurerXP += xp
+			profile.AdventurerLevel = int(profile.AdventurerXP/100) + 1
+			if classID != "" {
+				mastery := profile.ClassMastery[classID]
+				mastery.Experience += xp
+				mastery.Level = int(mastery.Experience/100) + 1
+				profile.ClassMastery[classID] = mastery
+			}
+			profile.UpdatedAt = now.UTC()
+			m.awards[key] = true
+		}
+		return cloneProfile(profile)
+	}
+	return nil, ErrNotFound
 }

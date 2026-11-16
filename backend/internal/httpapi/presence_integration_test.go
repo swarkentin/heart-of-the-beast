@@ -224,3 +224,42 @@ func TestPostgresGuestProfilePersistsAcrossHandlers(t *testing.T) {
 		t.Fatalf("profile did not persist: first=%+v second=%+v", first, second)
 	}
 }
+
+func TestPostgresRunProgressionAwardIsIdempotent(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
+	}
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Ping(); err != nil {
+		t.Fatalf("connect to integration database: %v", err)
+	}
+	if err := migrations.Apply(t.Context(), db); err != nil {
+		t.Fatalf("apply embedded migrations: %v", err)
+	}
+
+	profiles := store.NewPostgres(db)
+	credentialHash := tokenHash("0123456789abcdef0123456789abcdef")
+	profile, err := profiles.GetOrCreateProfile(t.Context(), "progression-test-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Exec("DELETE FROM player_profiles WHERE id = $1", profile.ID)
+
+	for i := 0; i < 2; i++ {
+		if _, err := profiles.AwardRunXP(t.Context(), profile.ID, "progression-test-run", "player-1", "ranger", 50, time.Now().UTC()); err != nil {
+			t.Fatalf("award attempt %d: %v", i+1, err)
+		}
+	}
+	updated, err := profiles.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 50 || updated.ClassMastery["ranger"].Experience != 50 {
+		t.Fatalf("duplicate run award changed progression more than once: %+v", updated)
+	}
+}

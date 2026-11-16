@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -192,6 +193,71 @@ func (h *Handler) authorizedPlayer(w http.ResponseWriter, r *http.Request) (*gam
 	return nil, "", false
 }
 
+// guestProfileID resolves the browser-held profile credential to a server-owned
+// profile ID. Missing/unavailable profiles do not prevent room play.
+func (h *Handler) guestProfileID(r *http.Request) string {
+	credential := r.Header.Get("X-Guest-Profile-Credential")
+	if len(credential) < 32 || len(credential) > 256 {
+		return ""
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		return ""
+	}
+	id, err := randomToken(16)
+	if err != nil {
+		return ""
+	}
+	profile, err := profiles.GetOrCreateProfile(r.Context(), id, tokenHash(credential), h.now().UTC())
+	if err != nil {
+		return ""
+	}
+	return profile.ID
+}
+
+func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
+	if room == nil || room.Run == nil || (room.Run.Phase != game.PhaseCompleted && room.Run.Phase != game.PhaseFailed) {
+		return nil
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		return nil
+	}
+	clearedEncounters := 0
+	for _, dungeonRoom := range room.Run.Rooms {
+		if dungeonRoom != nil && dungeonRoom.Encounter != nil && dungeonRoom.Encounter.Status == game.EncounterCleared {
+			clearedEncounters++
+		}
+	}
+	// A cleared encounter is the minimum meaningful accomplishment. Failed
+	// runs still earn progress for encounters cleared before the party fell.
+	// Completing the expedition adds a one-time milestone bonus.
+	if clearedEncounters == 0 {
+		return nil
+	}
+	xp := int64(clearedEncounters * 10)
+	if room.Run.Phase == game.PhaseCompleted {
+		xp += 20
+	}
+	for playerID, profileID := range room.PlayerProfileIDs {
+		if profileID == "" || room.Presence[playerID].LeftAt != nil {
+			continue
+		}
+		player := room.Run.Players[playerID]
+		if player == nil {
+			continue
+		}
+		classID := ""
+		if player.ClassBuild != nil {
+			classID = player.ClassBuild.ClassID
+		}
+		if _, err := profiles.AwardRunXP(ctx, profileID, room.Run.ID, playerID, classID, xp, h.now().UTC()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 	roomID, err := randomToken(16)
 	if err != nil {
@@ -225,11 +291,15 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 		OwnerPlayerID:      playerID,
 		PlayerIDs:          []string{playerID},
 		PlayerTokenHashes:  map[string]string{playerID: tokenHash(playerToken)},
+		PlayerProfileIDs:   map[string]string{},
 		Presence:           map[string]game.PlayerPresence{playerID: {LastSeenAt: now}},
 		SpectatorTokenHash: tokenHash(spectatorToken),
 		Version:            1,
 		CreatedAt:          now,
 		UpdatedAt:          now,
+	}
+	if profileID := h.guestProfileID(r); profileID != "" {
+		room.PlayerProfileIDs[playerID] = profileID
 	}
 	if err := h.rooms.Create(r.Context(), room); err != nil {
 		writeError(w, http.StatusInternalServerError, "could not create room")
@@ -286,12 +356,27 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not join room")
 		return
 	}
+	profileID := h.guestProfileID(r)
+	if profileID != "" {
+		for _, existingProfileID := range room.PlayerProfileIDs {
+			if existingProfileID == profileID {
+				writeError(w, http.StatusConflict, "this guest profile is already in the room")
+				return
+			}
+		}
+	}
 	expected := room.Version
 	room.PlayerIDs = append(room.PlayerIDs, playerID)
 	if room.PlayerTokenHashes == nil {
 		room.PlayerTokenHashes = make(map[string]string)
 	}
 	room.PlayerTokenHashes[playerID] = tokenHash(playerToken)
+	if profileID != "" {
+		if room.PlayerProfileIDs == nil {
+			room.PlayerProfileIDs = make(map[string]string)
+		}
+		room.PlayerProfileIDs[playerID] = profileID
+	}
 	if room.Presence == nil {
 		room.Presence = make(map[string]game.PlayerPresence)
 	}
@@ -416,7 +501,7 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 		changed = true
 	}
 	if !changed {
-		return room, nil
+		return room, h.awardRunProgress(r.Context(), room)
 	}
 	expected := room.Version
 	room.Version++
@@ -427,7 +512,7 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 		}
 		return nil, err
 	}
-	return room, nil
+	return room, h.awardRunProgress(r.Context(), room)
 }
 
 type archetypeRequest struct {
@@ -700,6 +785,10 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			writeStoreError(w, err)
+			return
+		}
+		if err := h.awardRunProgress(r.Context(), room); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not save progression")
 			return
 		}
 		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
