@@ -20,7 +20,7 @@ type CombatSimulationSnapshot struct {
 type CombatSimulationReport struct {
 	Seed                  int64                            `json:"seed"`
 	Won                   bool                             `json:"won"`
- 	Wiped                 bool                             `json:"wiped"`
+	Wiped                 bool                             `json:"wiped"`
 	Stalled               bool                             `json:"stalled"`
 	Rounds                int                              `json:"rounds"`
 	PlayerDamageDealt     int                              `json:"playerDamageDealt"`
@@ -431,16 +431,16 @@ func simulateRandomCombatAction(playerID string, player *PlayerState, players ma
 		enemy := &enemies[selected.target]
 		passive := classPassiveEffects(player, enemy, enemy.Intent)
 		attack := resolveAttackDamage(AttackDamageInput{
-			BaseDamage: player.StrikeDamage + player.Stats.Power,
-			BonusDamage: bonusesFor(player).AttackDamage + passive.AttackDamage,
-			MarkedDamage: enemy.MarkedDamage,
+			BaseDamage:          player.StrikeDamage + player.Stats.Power,
+			BonusDamage:         bonusesFor(player).AttackDamage + passive.AttackDamage,
+			MarkedDamage:        enemy.MarkedDamage,
 			IncludeMarkedDamage: true,
 			ConsumeMarkedDamage: true,
-			ResolveReady: player.ClassCombat.ResolveReady,
-			UseResolve: true,
-			ResolveBonus: 3,
-			Telegraph: enemy.Intent != nil && enemy.Intent.Interruptible,
-			TelegraphBonus: bonusesFor(player).AttackVsTelegraph,
+			ResolveReady:        player.ClassCombat.ResolveReady,
+			UseResolve:          true,
+			ResolveBonus:        3,
+			Telegraph:           enemy.Intent != nil && enemy.Intent.Interruptible,
+			TelegraphBonus:      bonusesFor(player).AttackVsTelegraph,
 		})
 		enemy.MarkedDamage = attack.RemainingMarkedDamage
 		player.ClassCombat.ResolveReady = attack.ResolveReady
@@ -594,7 +594,7 @@ func SummarizeCombatBatch(reports []CombatSimulationReport) CombatSimulationBatc
 		if report.Won {
 			summary.Wins++
 		}
- 		if report.Wiped {
+		if report.Wiped {
 			summary.Wipes++
 		}
 		if report.Stalled {
