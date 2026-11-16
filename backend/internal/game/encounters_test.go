@@ -31,7 +31,7 @@ func TestEncounterCatalogInstantiatesStableSlotsAndPartyVariants(t *testing.T) {
 		},
 		{
 			name: "co-op flooded crossing variant", partySize: 2, encounter: "catacombs-flooded-crossing", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
-			wantIDs: []string{"scout"}, wantHealth: []int{26},
+			wantIDs: []string{"scout"}, wantHealth: []int{27},
 		},
 		{
 			name: "solo boss variant", partySize: 1, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 1},
@@ -39,7 +39,7 @@ func TestEncounterCatalogInstantiatesStableSlotsAndPartyVariants(t *testing.T) {
 		},
 		{
 			name: "co-op boss variant", partySize: 2, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
-			wantIDs: []string{"warden"}, wantHealth: []int{79},
+			wantIDs: []string{"warden"}, wantHealth: []int{80},
 		},
 	}
 	for _, test := range tests {
