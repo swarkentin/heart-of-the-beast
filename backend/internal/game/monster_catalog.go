@@ -61,6 +61,7 @@ func defineMonster(sprite art.SpriteID, definition MonsterDefinition) MonsterDef
 
 // LiveEnemyHealthMultiplier increases runtime enemy durability while preserving catalog base health.
 const LiveEnemyHealthMultiplier = 1.75
+const LiveEnemyDamageMultiplier = 1.5
 
 type MonsterScaling struct {
 	Depth            int
