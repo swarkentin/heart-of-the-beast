@@ -87,7 +87,7 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 		SeedCount: seedCount,
 		FirstSeed: firstSeed,
 		LastSeed:  firstSeed + int64(seedCount) - 1,
-		Policy:    "deterministic baseline policy: situational signature abilities, interrupt dangerous telegraphs, defend against high incoming pressure, otherwise focus lowest-health target",
+		Policy:    "paired tactical baseline and uniformly random legal basic combat choices; random policy omits class abilities and is intentionally unskilled",
 	}
 	for _, encounterID := range balanceEncounterIDs {
 		for _, class := range classes {
@@ -150,6 +150,8 @@ func appendBalanceScenario(report *BalanceReport, encounterID string, partySize 
 		return err
 	}
 	applyBalanceTuning(players, encounter.Enemies, tuning)
+	maxHealth := 0
+	for _, player := range players { maxHealth += player.MaxHealth }
 	snapshot := CombatSimulationSnapshot{Players: players, Enemies: encounter.Enemies, ExperienceReward: EncounterExperienceReward}
 	seeds := make([]int64, seedCount)
 	for i := range seeds {
