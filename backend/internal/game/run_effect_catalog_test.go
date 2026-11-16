@@ -45,7 +45,6 @@ func TestStudyWeaknessEffectProvidesWardenOnlyStrikeBonus(t *testing.T) {
 	}
 }
 
-
 func TestPermanentStrikeBonusHasSharedRunCap(t *testing.T) {
 	player := &PlayerState{StrikeDamage: PlayerStrikeDamage}
 	applyPermanentStrikeBonus(player, 3)
