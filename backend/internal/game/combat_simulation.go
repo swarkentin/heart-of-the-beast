@@ -99,6 +99,7 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		PlayerProgression:     make(map[string]ProgressionTransition),
 	}
 	rng := rand.New(rand.NewSource(seed))
+	lastAbilityRound := make(map[string]int, len(players))
 
 	for round := 1; round <= maxRounds; round++ {
 		if allSimulationEnemiesDefeated(enemies) {
@@ -145,8 +146,9 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			bonuses := bonusesFor(player)
 			passive := classPassiveEffects(player, target, target.Intent)
 
-			if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
-				room := &Room{
+			if round-lastAbilityRound[playerID] >= 3 {
+				if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
+					room := &Room{
 					PlayerIDs: playerIDs,
 					Run: &Run{
 						Players: players, CurrentRoomID: "simulation",
@@ -158,11 +160,13 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 				if err := applyClassAbility(room, player, command, round); err != nil {
 					return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
 				}
-				report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
-				report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
-				ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
-				report.AbilityUses[ability.EffectID]++
-				continue
+					report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
+					report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
+					ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
+					report.AbilityUses[ability.EffectID]++
+					lastAbilityRound[playerID] = round
+					continue
+				}
 			}
 
 			if target.Intent != nil && target.Intent.Interruptible && target.Intent.Damage >= 5 && player.Stats.Focus > 0 {
