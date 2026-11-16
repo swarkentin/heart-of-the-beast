@@ -204,7 +204,11 @@ func (h *Handler) guestProfileID(r *http.Request) string {
 	if !ok {
 		return ""
 	}
-	profile, err := profiles.GetProfile(r.Context(), tokenHash(credential))
+	id, err := randomToken(16)
+	if err != nil {
+		return ""
+	}
+	profile, err := profiles.GetOrCreateProfile(r.Context(), id, tokenHash(credential), h.now().UTC())
 	if err != nil {
 		return ""
 	}
@@ -225,10 +229,13 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 			clearedEncounters++
 		}
 	}
-	// Participation earns a baseline; cleared encounters and a completed
-	// expedition add meaningful progress. The same validated run result feeds
-	// both profile rank and the class actually played.
-	xp := int64(20 + clearedEncounters*10)
+	// A cleared encounter is the minimum meaningful accomplishment. Failed
+	// runs still earn progress for encounters cleared before the party fell.
+	// Completing the expedition adds a one-time milestone bonus.
+	if clearedEncounters == 0 {
+		return nil
+	}
+	xp := int64(clearedEncounters * 10)
 	if room.Run.Phase == game.PhaseCompleted {
 		xp += 20
 	}
