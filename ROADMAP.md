@@ -24,7 +24,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Introduce the persisted room/session aggregate, local PostgreSQL workflow, and initial versioned migration.
 - [x] Provide one-command local startup/shutdown, health status, and transactional versioned migration tooling (ADR 0011).
 - [x] Make `npm run dev:up` observable and fail-fast: numbered progress with timings, preflight checks, separate backend build, live service log output, and immediate failure with log tails when a service exits (ADR 0011 amendment).
-- [x] Add the Render Blueprint for the static frontend and Go API on free compute, CI-gated auto-deploys, startup migrations, readiness checks, and graceful HTTP shutdown (ADR 0025).
+- [x] Add the Render Blueprint for the static frontend and Go API on Render, CI-gated auto-deploys, startup migrations, readiness checks, and graceful HTTP shutdown (ADR 0025).
 - [ ] Create the Neon project, configure its pooled DATABASE_URL secret in Render, and verify the first production deploy.
 - [x] Define the room/run lifecycle and deterministic authoritative state transitions.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
