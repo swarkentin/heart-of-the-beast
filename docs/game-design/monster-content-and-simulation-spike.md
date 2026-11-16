@@ -268,4 +268,19 @@ go run ./cmd/run-simulation -runs 100 -first-seed 1 -party bulwark
 
 The `-party` argument accepts one to four comma-separated class IDs, for example `bulwark,cleric,ranger`. Add `-json report.json` to retain machine-readable results.
 
-This is the deliberately weak random-decision baseline, not a model of actual player behavior. It tells us how far a party gets when it makes legal but unskilled choices. The next important step is to add one or more player-like policies (for example, interrupt dangerous telegraphs, prioritize threats, use healing and defensive abilities contextually, and make informed route/reward choices) and compare their depth-reach probabilities against this baseline across the same seeds and party compositions. Only then can we quantify whether game decisions reward player skill. Human playtests remain necessary to validate whether those policies resemble real players.
+This is the deliberately weak random-decision baseline, not a model of actual player behavior. It tells us how far a party gets when it makes legal but unskilled choices. The tactical policy is a first player-like comparison: it interrupts dangerous telegraphs, prioritizes threats, uses class abilities contextually, defends against lethal/heavy pressure, and buys healing when hurt. Both policies still randomize routes, room-event choices, theme votes, and other seeded decisions. Human playtests remain necessary to validate whether these heuristics resemble real players.
+
+
+## Follow-up slice: endless expedition composition matrix
+
+`backend/cmd/endless-balance` turns the full-run simulator into a repeatable party-composition study. It evaluates all nine solo classes, all 45 two-player compositions (including duplicate classes), and deterministic samples of 36 three-player and 36 four-player compositions. Each composition is simulated under both the random and tactical decision policies using the same seed range, with a seeded mix of dungeon themes across the endless chain.
+
+Run it from `backend/`:
+
+```sh
+go run ./cmd/endless-balance -runs 30 -first-seed 1 -theme random
+```
+
+The JSON report retains every expedition result and its seed, party, outcome, reached depth, dungeon clears, room/encounter progress, remaining health, levels, and wipe location. The Markdown report compares median, P10, and P90 depth for each composition and provides survival rates by party size and policy at every reached depth. This makes the useful balance question visible: what fraction of parties are still alive at depth N, and how does that distribution change with composition and decision quality?
+
+The Combat balance GitHub Actions workflow now publishes this matrix alongside the focused encounter regression report. Pull requests run a smaller 12-seed matrix; main-branch and scheduled runs retain a baseline artifact. The matrix is comparative evidence, not an optimal-play solver or automatic tuning oracle. Review individual seed outcomes and validate balance changes with real solo/co-op playtests.
