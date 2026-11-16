@@ -149,17 +149,17 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			if round-lastAbilityRound[playerID] >= 3 {
 				if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
 					room := &Room{
-					PlayerIDs: playerIDs,
-					Run: &Run{
-						Players: players, CurrentRoomID: "simulation",
-						Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
-					},
-				}
-				beforeEnemyHealth := simulationEnemyHealth(enemies)
-				beforePlayerHealth := simulationPlayerHealth(players)
-				if err := applyClassAbility(room, player, command, round); err != nil {
-					return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
-				}
+						PlayerIDs: playerIDs,
+						Run: &Run{
+							Players: players, CurrentRoomID: "simulation",
+							Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
+						},
+					}
+					beforeEnemyHealth := simulationEnemyHealth(enemies)
+					beforePlayerHealth := simulationPlayerHealth(players)
+					if err := applyClassAbility(room, player, command, round); err != nil {
+						return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
+					}
 					report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
 					report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
 					ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
