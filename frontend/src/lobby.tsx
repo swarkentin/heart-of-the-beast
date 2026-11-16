@@ -13,8 +13,8 @@ export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string
 // Keep in step with scripts/pixel-art/heroes.mjs and ICON_ORDER in scripts/pixel-art/ui.mjs.
 const HERO_ART = new Set(["bulwark", "juggernaut", "spellguard", "assassin", "arcanist", "ranger", "cleric", "tactician", "beastcaller"]);
 const PARADE = ["spellguard", "ranger", "juggernaut", "cleric", "bulwark", "arcanist", "tactician", "assassin", "beastcaller"];
-const ICONS = ["vitality", "power", "focus", "agility", "strike", "guard", "life", "arcane", "control", "damage", "support", "host", "ready", "waiting", "locked"] as const;
-type IconId = (typeof ICONS)[number];
+export const ICONS = ["vitality", "power", "focus", "agility", "strike", "guard", "life", "arcane", "control", "damage", "support", "host", "ready", "waiting", "locked", "poison", "empower", "ward", "down", "threat", "offline"] as const;
+export type IconId = (typeof ICONS)[number];
 const ACCENTS: Record<string, string> = { bulwark: "#8fe6c4", juggernaut: "#ff9a4d", spellguard: "#8fd6ff", assassin: "#ff8fc0", arcanist: "#c9a4ff", ranger: "#b6e87a", cleric: "#ffe08a", tactician: "#8ee0dc", beastcaller: "#a6e88f" };
 const ARCHETYPES: { id: string; name: string; icon: IconId; blurb: string }[] = [
   { id: "tank", name: "Tank", icon: "guard", blurb: "Hold the line" },
@@ -27,29 +27,45 @@ const heroArt = (classId?: string) => (classId && HERO_ART.has(classId) ? classI
 const vars = (values: Record<string, string | number>) => values as unknown as CSSProperties;
 
 export function Icon({ id, size = 2 }: { id: IconId; size?: number }) {
-  return <span className="px-icon" aria-hidden="true" style={vars({ "--i": ICONS.indexOf(id), "--s": size })} />;
+  return <span className="px-icon" aria-hidden="true" style={vars({ "--i": ICONS.indexOf(id), "--n": ICONS.length, "--s": size })} />;
 }
 
-/** Animated hero sprite. Bumping `flourish` plays the class's signature move once. */
-export function HeroSprite({ classId, flourish = 0, label }: { classId?: string; flourish?: number; label?: string }) {
+/** Looping body language. Status overlays (StatusFx) are layered on top of it. */
+export type HeroPose = "idle" | "injured" | "poisoned" | "down";
+export type StatusFxKind = "heal" | "guard" | "ward" | "buff" | "poison" | "sleep";
+
+/**
+ * Animated hero sprite. `pose` picks the looping row; bumping `flourish` or `hurt` plays that one-shot once
+ * and returns to the pose.
+ */
+export function HeroSprite({ classId, flourish = 0, hurt = 0, pose = "idle", label }: { classId?: string; flourish?: number; hurt?: number; pose?: HeroPose; label?: string }) {
   const art = heroArt(classId);
-  const [playing, setPlaying] = useState(false);
-  useEffect(() => { if (flourish > 0 && art !== "empty") setPlaying(true); }, [flourish, art]);
-  return <span className={"px-hero" + (art === "empty" ? " px-hero-empty" : "") + (playing ? " px-hero-flourish" : "")} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}
-    style={{ backgroundImage: "url(/art/heroes/" + art + ".png)" }} onAnimationEnd={() => setPlaying(false)} />;
+  const [playing, setPlaying] = useState<"" | "flourish" | "hurt">("");
+  useEffect(() => { if (flourish > 0 && art !== "empty") setPlaying("flourish"); }, [flourish, art]);
+  useEffect(() => { if (hurt > 0 && art !== "empty") setPlaying("hurt"); }, [hurt, art]);
+  // Reduced motion disables the animation, so animationend never fires: always fall back to the pose.
+  useEffect(() => { if (!playing) return; const timer = window.setTimeout(() => setPlaying(""), 900); return () => window.clearTimeout(timer); }, [playing, flourish, hurt]);
+  return <span className={"px-hero" + (art === "empty" ? " px-hero-empty" : " px-hero-" + pose) + (playing ? " px-hero-" + playing : "")} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}
+    style={{ backgroundImage: "url(/art/heroes/" + art + ".png)" }} onAnimationEnd={() => setPlaying("")} />;
 }
 
-function Bust({ classId, locked }: { classId?: string; locked?: boolean }) {
+/** One status overlay, sized to sit exactly over a HeroSprite in the same positioned box. */
+export function StatusFx({ kind }: { kind: StatusFxKind }) {
+  return <span className={"px-statusfx px-statusfx-" + kind} aria-hidden="true" />;
+}
+
+export function Bust({ classId, locked }: { classId?: string; locked?: boolean }) {
   return <span className={"px-bust" + (locked ? " px-bust-locked" : "")} aria-hidden="true" style={{ backgroundImage: "url(/art/heroes/" + heroArt(classId) + "-bust.png)" }} />;
 }
 
 function Torch() { return <span className="px-torch" aria-hidden="true" />; }
 
-export function GameShell({ status, children }: { status: string; children: ReactNode }) {
-  return <main className="px-screen">
+export function GameShell({ status, children, className, center, tools }: { status: string; children: ReactNode; className?: string; center?: ReactNode; tools?: ReactNode }) {
+  return <main className={"px-screen" + (className ? " " + className : "")}>
     <header className="px-topbar">
       <a className="px-brand" href="#" aria-label="Heart of the Beast"><span className="px-emblem" aria-hidden="true" /><span>HEART OF THE BEAST</span></a>
-      <div className="px-status"><i aria-hidden="true" />{status}</div>
+      {center}
+      {tools ? <div className="px-tools">{tools}</div> : <div className="px-status"><i aria-hidden="true" />{status}</div>}
     </header>
     {children}
   </main>;

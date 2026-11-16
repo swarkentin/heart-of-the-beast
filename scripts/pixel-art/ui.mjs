@@ -42,6 +42,39 @@ export function buttonFrame(r) {
   for (const [x, y] of [[1, 1], [14, 1], [1, 14], [14, 14]]) g.plot(x, y, C.edge, 1);
   return g;
 }
+/** 32x32, slice 10: iron viewport frame with gold corner brackets. The centre is transparent. */
+export function viewFrame() {
+  const g = new Img(32, 32); fill(g, 0, 0, 32, 32, C.edge); bevel(g, 1, 1, 30, 30, R.slate); fill(g, 2, 2, 28, 28, R.slate.mid); fill(g, 2, 2, 28, 1, R.slate.light); fill(g, 2, 2, 1, 28, R.slate.light); fill(g, 2, 29, 28, 1, R.slate.dark); fill(g, 29, 2, 1, 28, R.slate.dark);
+  fill(g, 5, 5, 22, 22, C.edge);
+  for (let y = 6; y < 26; y++) for (let x = 6; x < 26; x++) clear(g, x, y);
+  for (const [fx, fy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    const px = (x) => (fx ? 31 - x : x), py = (y) => (fy ? 31 - y : y);
+    for (let k = 0; k < 10; k++) for (let t = 0; t < 5; t++) { const edge = t === 0 || t === 4 || k === 9, col = edge ? C.edge : t === 1 ? R.gold.light : t === 3 ? R.gold.dark : R.gold.mid; g.plot(px(k), py(t), col, 1); g.plot(px(t), py(k), col, 1); }
+    for (let a = 1; a < 4; a++) for (let b = 1; b < 4; b++) g.plot(px(a), py(b), a === 1 || b === 1 ? R.gold.light : R.gold.mid, 1);
+    g.plot(px(2), py(2), R.gold.hi, 1); g.plot(px(0), py(0), C.edge, 1);
+  }
+  return g;
+}
+
+/**
+ * Status overlays for hero portraits: 64x64 cells that line up with a hero cell, one row per status, 6 columns.
+ * Layered over the hero sprite so several statuses can show at once.
+ */
+export const STATUS_FX = [["heal", 6, 10, false], ["guard", 4, 6, true], ["ward", 4, 6, true], ["buff", 4, 6, true], ["poison", 4, 5, true], ["sleep", 4, 3, true]];
+export function statusFx() {
+  const sheet = new Img(6 * 64, STATUS_FX.length * 64);
+  const mats = { heal: { color: "#9be84a", emissive: true, glowR: 1 }, core: { color: "#f4ffe0", emissive: true, glowR: 1 }, guard: { color: "#a9d9f3", emissive: true, glowR: 1 }, ward: { color: "#b9a4ff", emissive: true, glowR: 1 }, rune: { color: "#8fe6f0", emissive: true, glowR: 1 }, buff: { color: "#ffd98a", emissive: true, glowR: 1 }, tox: { color: "#8fe04a", emissive: true, glowR: 1 }, toxd: "#3f7a2c", z: { color: "#cfd6ff", emissive: true, glowR: 1 } };
+  const draw = {
+    heal: (c, i) => { const t = i / 5; [[18, 0], [32, 0.18], [46, 0.08], [25, 0.36], [40, 0.3]].forEach(([x, d], n) => { const u = t - d; if (u < 0 || u > 0.72) return; const y = Math.round(54 - u * 46 - (n % 2) * 4); c.part().rect(x - 2, y, 5, 1, "heal"); c.part().rect(x, y - 2, 1, 5, "heal"); c.pid++; c.px(x, y, "core"); }); },
+    guard: (c, i) => { for (const k of [-1, 1]) for (let n = 0; n < 9; n++) { if ((n + i) % 3 === 2) continue; const a = (n - 4) / 4, x = Math.round(32 + k * (25 - a * a * 6)), y = Math.round(40 + a * 17); c.part().rect(x, y, 1, 2, "guard"); } c.part().rect(30, 60, 5, 1, "guard"); },
+    ward: (c, i) => { for (let n = 0; n < 4; n++) { const a = (n / 4 + i / 16) * Math.PI * 2, x = Math.round(32 + Math.cos(a) * 25), y = Math.round(42 + Math.sin(a) * 9); if (Math.sin(a) < -0.35) continue; c.part().poly([[x, y - 3], [x + 2.5, y], [x, y + 3], [x - 2.5, y]], "ward"); c.pid++; c.px(x, y, "rune"); } },
+    buff: (c, i) => { [[11, 0], [53, 2], [17, 1], [47, 3]].forEach(([x, d]) => { const y = 52 - ((i + d) % 4) * 9; c.part().rect(x, y, 1, 1, "buff"); c.part().rect(x - 1, y + 1, 3, 1, "buff"); c.part().rect(x - 2, y + 2, 2, 1, "buff"); c.part().rect(x + 1, y + 2, 2, 1, "buff"); }); },
+    poison: (c, i) => { [[16, 0, 2], [28, 2, 1], [44, 1, 2], [50, 3, 1], [22, 3, 1]].forEach(([x, d, r]) => { const k = (i + d) % 4, y = 48 - k * 9, wob = k % 2 ? 1 : 0; if (r === 2) { c.part().rect(x + wob, y - 1, 3, 3, "tox"); c.pid++; c.px(x + wob, y - 1, "core"); } else c.part().rect(x + wob, y, 1, 2, "tox"); }); c.part().rect(24, 58, 3, 1, "toxd"); c.part().rect(38, 59, 4, 1, "toxd"); },
+    sleep: (c, i) => { const z = (x, y, n) => { c.part().rect(x, y, n, 1, "z"); c.part().rect(x, y + n - 1, n, 1, "z"); for (let k = 1; k < n - 1; k++) c.px(x + n - 1 - k, y + k, "z"); }; if (i !== 3) z(44, 22 - i, 3); if (i >= 1) z(49, 13 - i, 4); if (i >= 2) z(55, 4 - (i - 2), 5); },
+  };
+  STATUS_FX.forEach(([name, n], row) => { for (let i = 0; i < n; i++) { const c = new Canvas(64, 64, mats, T); draw[name](c, i); sheet.blit(c.render({ glowR: 1 }), i * 64, row * 64); } });
+  return sheet;
+}
 export const buttons = () => ({ "button": buttonFrame(R.stone), "button-primary": buttonFrame(R.gold), "button-danger": buttonFrame(R.red) });
 
 const crop = (img, x0, y0, w, h) => { const o = new Img(w, h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let k = 0; k < 4; k++) o.d[(y * w + x) * 4 + k] = img.d[((y + y0) * img.w + x + x0) * 4 + k]; return o; };
@@ -89,7 +122,7 @@ export function emblem() {
 }
 
 // ---------- icons: 16x16 cells, authored as material maps and shaded by the engine ----------
-const ICON_MATS = { R: "#c0504a", S: "#9aa2b8", G: "#dcae52", W: "#7a5540", B: "#e3d9bd", L: "#6fae5a", P: "#9a7fe0", C: "#6fc4d6", K: "#2a2440", g: { color: "#ffe08a", emissive: true, glowR: 1 }, c: { color: "#8fe6f0", emissive: true, glowR: 1 }, v: { color: "#c9a4ff", emissive: true, glowR: 1 } };
+const ICON_MATS = { R: "#c0504a", S: "#9aa2b8", G: "#dcae52", W: "#7a5540", B: "#e3d9bd", L: "#6fae5a", P: "#9a7fe0", C: "#6fc4d6", K: "#2a2440", T: "#7fd14a", g: { color: "#ffe08a", emissive: true, glowR: 1 }, c: { color: "#8fe6f0", emissive: true, glowR: 1 }, v: { color: "#c9a4ff", emissive: true, glowR: 1 } };
 export const ICONS = {
   vitality: ["", "", "..RRR...RRR", ".RRRRR.RRRRR", ".RBBRRRRRRRR", ".RBRRRRRRRRR", ".RRRRRRRRRRR", "..RRRRRRRRR", "...RRRRRRR", "....RRRRR", ".....RRR", "......R"],
   power: ["", "..........SS", ".........SSS", "........SSS", ".......SSS", "......SSS", ".G...SSS", ".GG.SSS", "..GGSS", "..WGG", ".WW.GG", ".W...G"],
@@ -106,6 +139,12 @@ export const ICONS = {
   ready: ["", "", "..........LL", ".........LLL", "........LLL", ".LL....LLL", ".LLL..LLL", "..LLLLLL", "...LLLL", "....LL"],
   waiting: ["", ".WWWWWWWWWWW", "..BBBBBBBBB", "..BGGGGGGGB", "...BGGGGGB", "....BGGGB", ".....BGB", "....B.G.B", "...B..G..B", "..B..GGG..B", "..BGGGGGGGB", ".WWWWWWWWWWW"],
   locked: ["", "....SSSSS", "...SS...SS", "...S.....S", "...S.....S", ".GGGGGGGGGGG", ".GGGGGGGGGGG", ".GGGGKKKGGGG", ".GGGGGKGGGGG", ".GGGGGKGGGGG", ".GGGGGGGGGGG", ".GGGGGGGGGGG"],
+  poison: ["", "......T", ".....TTT", ".....TTT", "....TTTTT", "...TTTTTTT", "..TTBTTTTTT", "..TBTTTTTTT", "..TTTTTTTTT", "..TTTTTTTTT", "...TTTTTTT", ".....TTT"],
+  empower: ["", "......g", ".....ggg", "....ggggg", "...ggg.ggg", "..ggg...ggg", "......g", ".....ggg", "....ggggg", "...ggg.ggg", "..ggg...ggg"],
+  ward: ["", "......v", ".....vvv", "....vv.vv", "...vv.c.vv", "..vv.ccc.vv", "...vv.c.vv", "....vv.vv", ".....vvv", "......v"],
+  down: ["", "...BBBBBBB", "..BBBBBBBBB", "..BBBBBBBBB", "..BKKBBBKKB", "..BKKBBBKKB", "..BBBBKBBBB", "...BBBBBBB", "....BKBKB", "....BBBBB"],
+  threat: ["", "......R", ".....RRR", ".....RBR", "....RRBRR", "....RRBRR", "...RRRBRRR", "...RRRBRRR", "..RRRRRRRRR", "..RRRRBRRRR", ".RRRRRRRRRRR"],
+  offline: ["", "", "..SS.....SS", "...SS...SS", "....SS.SS", ".....SSS", "....SS.SS", "...SS...SS", "..SS.....SS"],
 };
 export const ICON_ORDER = Object.keys(ICONS);
 export function iconSheet() {

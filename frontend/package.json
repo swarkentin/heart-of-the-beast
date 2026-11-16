@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "test": "node --test combatAbilities.test.mjs",
     "preview": "vite preview",
-    "test:audio": "node --test --experimental-strip-types src/music/music.test.ts"
+    "test:audio": "node --test --experimental-strip-types src/music/music.test.ts",
+    "test:ui": "node --test --experimental-strip-types src/run/run.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",

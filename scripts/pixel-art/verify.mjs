@@ -91,6 +91,11 @@ for (const h of heroes) {
   frames.flourish.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${h.id}: flourish[${i}] is empty`); if (touchesEdge(img)) warn(`[heroes] ${h.id}: flourish[${i}] touches the frame edge`); });
   if (![1, 2, 3].some((i) => differs(frames.idle[0], frames.idle[i]))) fail(`[heroes] ${h.id}: idle loop does not animate`);
   if (!differs(frames.idle[0], frames.flourish[3])) fail(`[heroes] ${h.id}: flourish peak identical to idle`);
+  for (const row of ["hurt", "injured", "poisoned", "down"]) {
+    if (!frames[row]?.length || frames[row].some((img) => opaque(img) === 0)) fail(`[heroes] ${h.id}: ${row} has an empty frame`);
+    else if (!differs(frames.idle[0], frames[row][0])) fail(`[heroes] ${h.id}: ${row} is identical to idle`);
+    else if (row !== "hurt" && frames[row].some((img) => touchesEdge(img))) fail(`[heroes] ${h.id}: ${row} touches the frame edge (clipped)`);
+  }
 }
 for (const w of warnings) console.warn("warn:", w);
 if (errors.length) { for (const e of errors) console.error("FAIL:", e); console.error(`\n${errors.length} problem(s) across ${total} creatures.`); process.exit(1); }

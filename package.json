@@ -17,11 +17,12 @@
     "preview": "npm run preview --workspace @heart-of-the-beast/frontend",
     "art:build": "node scripts/pixel-art/build.mjs && node scripts/pixel-art/build-interface.mjs",
     "art:verify": "node scripts/pixel-art/verify.mjs",
-    "art:gallery": "node scripts/pixel-art/gallery.mjs",
+    "art:gallery": "node scripts/pixel-art/gallery.mjs && node scripts/pixel-art/build-interface.mjs --gallery",
     "art:rooms": "node scripts/pixel-art/rooms/build.mjs",
     "art:rooms:verify": "node scripts/pixel-art/rooms/verify.mjs",
     "art:rooms:gallery": "node scripts/pixel-art/rooms/gallery.mjs",
     "test:audio": "npm run test:audio --workspace @heart-of-the-beast/frontend",
+    "test:ui": "npm run test:ui --workspace @heart-of-the-beast/frontend",
     "audio:check": "node scripts/audio/offline-render.mjs"
   }
 }

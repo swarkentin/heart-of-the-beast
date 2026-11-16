@@ -175,6 +175,10 @@ type CombatEvent struct {
 	TargetID   string `json:"targetId,omitempty"`
 	TargetType string `json:"targetType,omitempty"`
 	Amount     int    `json:"amount,omitempty"`
+	// ActorID is the player who took the action, when the event is a player's action.
+	ActorID string `json:"actorId,omitempty"`
+	// Auto marks an action the server chose because the player did not act before the round deadline.
+	Auto bool `json:"auto,omitempty"`
 }
 
 type Command struct {

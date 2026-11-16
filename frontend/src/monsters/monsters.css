@@ -31,6 +31,3 @@
   .enemy-shake, .enemy-ready { animation: none; }
   .dmg-num { animation: none; opacity: 1; }
 }
-
-/* The stage draws its own damage numbers on the sprites; the old overlay stays in the DOM for screen readers (aria-live) only. */
-.scene .combat-impacts { opacity: 0; }

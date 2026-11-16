@@ -25,7 +25,11 @@ export type EnemyStageProps = {
   events: EventLike[];
   target?: string;
   onTarget?: (id: string) => void;
+  /** Called at the moment an effect lands on a party member, so portraits can react in step with the stage. */
+  onPartyImpact?: (impact: PartyImpact) => void;
 };
+
+export type PartyImpact = { playerId: string; effect: "damage" | "heal" | "block"; amount: number };
 
 /** Enemy positions: the first-person view uses the server-provided x; the cast view spreads them evenly. */
 export function stageX(view: StageView, enemies: StageEnemy[], index: number): number {
@@ -43,7 +47,9 @@ const nextId = (prefix: string) => `${prefix}${++counter}`;
  * (see choreography.ts) with pixel effects over the top (see fx/). It renders into the scene's SVG, so it is
  * used inside a <svg viewBox="0 0 1100 620"> by both the player view and the spectator (cast) view.
  */
-export function EnemyStage({ view, enemies, events, target, onTarget }: EnemyStageProps) {
+export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImpact }: EnemyStageProps) {
+  const impactRef = useRef(onPartyImpact);
+  impactRef.current = onPartyImpact;
   const reduced = useReducedMotion();
   const floorY = FLOOR_Y[view];
   const [effects, setEffects] = useState<FxInstance[]>([]);
@@ -142,10 +148,12 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
         spawn("heal", "acid", party.x, party.y - 40);
         sfx("heal");
         popup(party.x, party.y - 90, "+" + cue.amount, "#9be84a");
+        if (cue.playerId) impactRef.current?.({ playerId: cue.playerId, effect: "heal", amount: cue.amount });
         break;
       case "playerBlock":
         spawn("shield", "physical", party.x, party.y - 40);
         sfx("block");
+        if (cue.playerId) impactRef.current?.({ playerId: cue.playerId, effect: "block", amount: cue.amount });
         break;
     }
   }, [centerOf, popup, push, sfx, spawn]);
@@ -164,6 +172,10 @@ export function EnemyStage({ view, enemies, events, target, onTarget }: EnemySta
     const move = sprite?.creature.animations[anim].move;
     const el = elementFor(c.theme, cue.label, move);
     const target = { x: party.x, y: party.y - 40 };
+    for (const hit of cue.targets) {
+      if (hit.blocked > 0) impactRef.current?.({ playerId: hit.playerId, effect: "block", amount: hit.blocked });
+      if (hit.damage > 0) impactRef.current?.({ playerId: hit.playerId, effect: "damage", amount: hit.damage });
+    }
     if (cue.miss) {
       spawn("cross", "physical", c.x, c.y);
       return;

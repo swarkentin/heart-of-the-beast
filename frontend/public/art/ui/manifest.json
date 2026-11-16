@@ -29,6 +29,11 @@
       "size": 16,
       "slice": 4
     },
+    "view": {
+      "file": "ui/frame-view.png",
+      "size": 32,
+      "slice": 10
+    },
     "button": {
       "files": [
         "ui/button.png",
@@ -65,6 +70,52 @@
     "w": 32,
     "h": 32
   },
+  "statusFx": {
+    "file": "ui/status-fx.png",
+    "frame": {
+      "w": 64,
+      "h": 64
+    },
+    "columns": 6,
+    "animations": {
+      "heal": {
+        "row": 0,
+        "frames": 6,
+        "fps": 10,
+        "loop": false
+      },
+      "guard": {
+        "row": 1,
+        "frames": 4,
+        "fps": 6,
+        "loop": true
+      },
+      "ward": {
+        "row": 2,
+        "frames": 4,
+        "fps": 6,
+        "loop": true
+      },
+      "buff": {
+        "row": 3,
+        "frames": 4,
+        "fps": 6,
+        "loop": true
+      },
+      "poison": {
+        "row": 4,
+        "frames": 4,
+        "fps": 5,
+        "loop": true
+      },
+      "sleep": {
+        "row": 5,
+        "frames": 4,
+        "fps": 3,
+        "loop": true
+      }
+    }
+  },
   "icons": {
     "file": "ui/icons.png",
     "cell": 16,
@@ -83,7 +134,13 @@
       "host",
       "ready",
       "waiting",
-      "locked"
+      "locked",
+      "poison",
+      "empower",
+      "ward",
+      "down",
+      "threat",
+      "offline"
     ]
   }
 }
