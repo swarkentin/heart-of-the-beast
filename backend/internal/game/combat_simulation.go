@@ -376,7 +376,7 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 		return command, true
 	case "combat.command":
 		command.TargetID = target.ID
-		return command, len(players) > 1 && target.Health > 0
+		return command, target.Health > 0
 	case "combat.companion":
 		switch {
 		case target.Intent != nil && target.Intent.Interruptible:
