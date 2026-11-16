@@ -95,12 +95,12 @@ func TestResolveIncomingDamage(t *testing.T) {
 		{
 			name:  "guard blocks only its configured amount from an 8-damage hit",
 			input: IncomingDamageInput{IntentDamage: 8, Guarding: true, GuardReduction: 4},
-			want: IncomingDamageTransition{Damage: 4, Blocked: 4, GuardBlocked: 4, Guarded: true, Guarding: false},
+			want:  IncomingDamageTransition{Damage: 4, Blocked: 4, GuardBlocked: 4, Guarded: true, Guarding: false},
 		},
 		{
 			name:  "guard fully blocks a hit smaller than its configured amount",
 			input: IncomingDamageInput{IntentDamage: 3, Guarding: true, GuardReduction: 4},
-			want: IncomingDamageTransition{Damage: 0, Blocked: 3, GuardBlocked: 3, Guarded: true, Guarding: false},
+			want:  IncomingDamageTransition{Damage: 0, Blocked: 3, GuardBlocked: 3, Guarded: true, Guarding: false},
 		},
 		{
 			name:  "unguarded player retains guard bonus",
