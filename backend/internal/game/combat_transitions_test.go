@@ -143,3 +143,10 @@ func TestBuildEnemyIntentAppliesLiveDamageMultiplier(t *testing.T) {
 		t.Fatalf("scout intent damage = %d, want 4 after live tuning", got.Damage)
 	}
 }
+
+func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
+	got := buildEnemyIntent(&Enemy{Behavior: "guardian"}, 1, 0, []string{"p1", "p2", "p3", "p4"})
+	if got.Damage != 12 {
+		t.Fatalf("four-player heavy intent damage = %d, want 12", got.Damage)
+	}
+}
