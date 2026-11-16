@@ -213,6 +213,8 @@
   .px-brand { font-size: 10px; } .px-status { font-size: 16px; }
   .px-lede { font-size: 20px; }
   .px-title-actions { grid-template-columns: 1fr; }
+  .px-mastery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+  .px-mastery-meta strong { font-size: 16px; }
   .px-title-or { border-inline: 0; border-block: 3px solid #2a2440; padding: 6px 0 !important; flex-direction: row !important; }
   .px-stage { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; background: var(--pit); background-clip: padding-box; }
   .px-stage-torch { display: none; }
