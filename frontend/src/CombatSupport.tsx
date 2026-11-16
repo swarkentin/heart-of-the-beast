@@ -19,13 +19,14 @@ export type PartyCombatant = {
   status: string;
 };
 
-export function PartyRoster({ members, aidLabel, disabled, onAid }: {
+export function PartyRoster({ members, aidLabel, disabled, onAid, combat }: {
   members: PartyCombatant[];
   aidLabel?: string;
   disabled: boolean;
   onAid: (memberId: string) => void;
+  combat: boolean;
 }) {
-  return <section className="party-roster" aria-label="Party health and combat status">
+  return <section className={"party-roster" + (combat ? " party-roster-combat" : "")} aria-label="Party health and combat status">
     <div className="party-roster-heading"><strong>PARTY</strong>{aidLabel ? <span>SELECT A MEMBER TO {aidLabel}</span> : <span>CLASS · LEVEL · HEALTH</span>}</div>
     <div className="party-roster-members">{members.map(member => {
       const alive = member.health > 0;
