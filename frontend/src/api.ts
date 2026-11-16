@@ -18,6 +18,7 @@ export type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" |
 export type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 export type ApiCommand = { type: string; round?: number; action?: string; mode?: string; targetId?: string; exitId?: string; choiceId?: string };
+export type ApiProfile = { id: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; createdAt: string; updatedAt: string };
 export type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 export type SpectatorAccess = { roomId: string; token: string };
 export type TalentChoice = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
