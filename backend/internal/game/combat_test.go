@@ -481,6 +481,9 @@ func TestTacticianCommandingStrikeCanBeUsedSolo(t *testing.T) {
 	if enemy.Health >= 30 || enemy.MarkedDamage != 3 {
 		t.Fatalf("solo Commanding Strike should damage and mark its target: %+v", enemy)
 	}
+	if _, ok := simulationClassAbilityCommand(player, room.Run.Players, []Enemy{*enemy}, 0, player.ID); ok {
+		t.Fatal("Commanding Strike should wait for the marked target to be struck before reapplying")
+	}
 }
 
 func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
