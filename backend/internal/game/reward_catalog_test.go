@@ -60,9 +60,9 @@ func rewardTestRoom() *Room {
 		Run: &Run{
 			Flags: make(map[string]bool),
 			Players: map[string]*PlayerState{
-				"player-1": {ID: "player-1", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
-				"player-2": {ID: "player-2", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
-				"player-3": {ID: "player-3", Health: 30, MaxHealth: 30, StrikeDamage: 10, GuardReduction: GuardDamageReduction},
+				"player-1": {ID: "player-1", Health: 30, MaxHealth: 30, StrikeDamage: PlayerStrikeDamage, GuardReduction: GuardDamageReduction},
+				"player-2": {ID: "player-2", Health: 30, MaxHealth: 30, StrikeDamage: PlayerStrikeDamage, GuardReduction: GuardDamageReduction},
+				"player-3": {ID: "player-3", Health: 30, MaxHealth: 30, StrikeDamage: PlayerStrikeDamage, GuardReduction: GuardDamageReduction},
 			},
 		},
 	}
@@ -76,11 +76,11 @@ func TestRoomRewardsPreserveLivingEligibilityAndIdempotency(t *testing.T) {
 
 	sigil, _ := defaultRunRewardCatalog.Reward("room.reliquary")
 	applyRunReward(room, sigil, 1, "")
-	if room.Run.Players["player-1"].StrikeDamage != 11 || room.Run.Players["player-2"].StrikeDamage != 10 || room.Run.Players["player-3"].StrikeDamage != 11 {
+	if room.Run.Players["player-1"].StrikeDamage != PlayerStrikeDamage+1 || room.Run.Players["player-2"].StrikeDamage != PlayerStrikeDamage || room.Run.Players["player-3"].StrikeDamage != PlayerStrikeDamage+1 {
 		t.Fatalf("reliquary reward should affect every living run member: %+v", room.Run.Players)
 	}
 	applyRunReward(room, sigil, 2, "")
-	if room.Run.Players["player-1"].StrikeDamage != 11 {
+	if room.Run.Players["player-1"].StrikeDamage != PlayerStrikeDamage+1 {
 		t.Fatal("reliquary reward must not be applied twice")
 	}
 
@@ -100,7 +100,7 @@ func TestMinibossAndFloorRewardsPreserveTheirDistinctTargetPolicies(t *testing.T
 	miniboss, _ := defaultRunRewardCatalog.Reward("encounter.miniboss")
 	applyRunReward(room, miniboss, 1, "miniboss-d2-mini")
 	for id, player := range room.Run.Players {
-		if player.StrikeDamage != 11 {
+		if player.StrikeDamage != PlayerStrikeDamage+1 {
 			t.Fatalf("miniboss reward should include all run members, %s: %+v", id, player)
 		}
 	}
@@ -118,7 +118,7 @@ func TestMinibossAndFloorRewardsPreserveTheirDistinctTargetPolicies(t *testing.T
 	perk, _ := defaultRunRewardCatalog.Reward("floor.perk")
 	applyRunReward(room, perk, 4, "floor-1-perk")
 	for id, player := range room.Run.Players {
-		if player.StrikeDamage != 12 || player.GuardReduction != GuardDamageReduction+1 {
+		if player.StrikeDamage != PlayerStrikeDamage+2 || player.GuardReduction != GuardDamageReduction+1 {
 			t.Fatalf("floor perk should affect all run members, %s: %+v", id, player)
 		}
 	}
