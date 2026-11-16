@@ -116,3 +116,31 @@ func TestFailedRunAwardsProgressForClearedEncounters(t *testing.T) {
 		t.Fatalf("failed run should retain progress from a cleared encounter: %+v", updated)
 	}
 }
+
+func TestRunWithoutClearedEncountersDoesNotAwardProgress(t *testing.T) {
+	memory := store.NewMemory()
+	credentialHash := tokenHash("0123456789abcdef0123456789abcdef")
+	profile, err := memory.GetOrCreateProfile(t.Context(), "empty-run-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := &game.Room{
+		PlayerProfileIDs: map[string]string{"player-1": profile.ID},
+		Run: &game.Run{
+			ID: "empty-run", Phase: game.PhaseFailed,
+			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1"}},
+			Rooms: map[string]*game.DungeonRoom{"uncleared": {ID: "uncleared", Encounter: &game.Encounter{Status: game.EncounterActive}}},
+		},
+	}
+	handler := &Handler{rooms: memory, now: time.Now}
+	if err := handler.awardRunProgress(t.Context(), room); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := memory.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 0 || len(updated.ClassMastery) != 0 {
+		t.Fatalf("run without a cleared encounter should not award progression: %+v", updated)
+	}
+}
