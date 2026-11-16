@@ -82,10 +82,10 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 		tuning.BlockAmount = GuardDamageReduction
 	}
 	if tuning.EnemyHealthMultiplier <= 0 {
-		tuning.EnemyHealthMultiplier = 1
+		tuning.EnemyHealthMultiplier = LiveEnemyHealthMultiplier
 	}
 	if tuning.PlayerDamage == 0 {
-		tuning.PlayerDamage = 10
+		tuning.PlayerDamage = PlayerStrikeDamage
 	}
 	report := BalanceReport{
 		Tuning:    tuning,
@@ -139,7 +139,7 @@ func balancePlayers(definitions []ClassDefinition) ([]PlayerState, []string, err
 			ID:             fmt.Sprintf("hero-%d", i+1),
 			Health:         build.MaxHealth,
 			MaxHealth:      build.MaxHealth,
-			StrikeDamage:   10,
+			StrikeDamage:   PlayerStrikeDamage,
 			GuardReduction: GuardDamageReduction,
 			Archetype:      definition.ArchetypeID,
 			ClassBuild:     &build,
