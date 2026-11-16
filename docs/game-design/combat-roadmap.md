@@ -29,8 +29,9 @@ The tactical depth should come from choosing when to deal damage, defend, interr
 
 Implemented in PR #17:
 
-- Strike: deal 10 damage to one living enemy.
-- Defend: block up to 6 damage from the next incoming hit.
+- Strike: deal 6 damage to one living enemy.
+- Defend: block up to 1 damage from the next incoming hit.
+- Runtime enemy health is multiplied by 1.75 after the authored party/depth scaling. This is a provisional playtest tuning pass, not a permanent balance target.
 - Sentinel: 4-damage single-target strike.
 - Scout: 3-damage quick jab.
 - Guardian: alternating 8-damage heavy blow and 4-damage stone strike.
