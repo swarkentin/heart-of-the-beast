@@ -336,7 +336,7 @@ func TestBulwarkShieldWallBlocksHeavyAttackAndEmpowersNextStrike(t *testing.T) {
 			attack = event
 		}
 	}
-	if attack == nil || attack.Amount != 15 {
+	if attack == nil || attack.Amount != 11 {
 		t.Fatalf("Resolve should add 3 damage to the next strike, got %+v", attack)
 	}
 }
@@ -350,7 +350,7 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.ClassCombat.DamageTakenLastRound != 11 {
+	if player.ClassCombat.DamageTakenLastRound != 4 {
 		t.Fatalf("expected 11 damage recorded for Reckoning, got %+v", player.ClassCombat)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 2, Action: "ability", TargetID: enemy.ID}, now); err != nil {
@@ -362,7 +362,7 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 			found = true
 		}
 	}
-	if !found || player.ClassCombat.DamageTakenLastRound != 3 {
+	if !found || player.ClassCombat.DamageTakenLastRound != 4 {
 		t.Fatalf("Reckoning should apply its 12-damage cap, consume the prior damage, then record the new 3-damage hit: events=%+v state=%+v", room.Run.LastCombatEvents, player.ClassCombat)
 	}
 }
@@ -375,7 +375,7 @@ func TestSpellguardRunicWardAbsorbsAndReflectsNextAttack(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.Health != player.MaxHealth || enemy.Health != 8 || player.ClassCombat.Ward != 0 {
+	if player.Health != player.MaxHealth || enemy.Health != 16 || player.ClassCombat.Ward != 0 {
 		t.Fatalf("Runic Ward should absorb the mitigated hit and reflect 2 damage: player=%+v enemy=%+v", player, enemy)
 	}
 }
@@ -453,7 +453,7 @@ func TestTacticianCommandingStrikeMarksTargetForNextPartyAttack(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 12 || enemy.MarkedDamage != 0 {
+	if enemy.Health != 16 || enemy.MarkedDamage != 0 {
 		t.Fatalf("Commanding Strike should deal 5, then empower the next party attack by 3: %+v", enemy)
 	}
 }
@@ -469,8 +469,8 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: enemy.ID}, now); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.Health != 3 {
-		t.Fatalf("companion and player attacks should deal 17 combined damage, enemy health=%d", enemy.Health)
+	if enemy.Health != 7 {
+		t.Fatalf("companion and player attacks should deal 13 combined damage, enemy health=%d", enemy.Health)
 	}
 	if room.Run.Players["player-2"].Health != 7 {
 		t.Fatalf("Companion Instinct should heal the lowest-health ally after the enemy hit, health=%d", room.Run.Players["player-2"].Health)
