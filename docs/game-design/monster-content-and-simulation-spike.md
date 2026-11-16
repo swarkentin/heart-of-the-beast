@@ -232,7 +232,24 @@ The seeded simulator now recognizes each player's registered signature ability a
 
 Ability applications mutate only the simulator's copied player/enemy state through a minimal in-memory room/run adapter; no persistence, clock, websocket, or live room is involved. Ability use counts are included in the existing report. The simulator also now carries damage taken across rounds so Reckoning's live trigger can be represented. These policies are intentionally baseline heuristics, not an optimal-play solver.
 
-At that stage, the encounter-only simulator did not cover consumables, room/run effects, or inter-floor choices. The full-run runner now exercises existing room events and inter-floor choices through live domain commands; consumables remain out of scope because there is no consumable command/system to execute. Before broad balance tuning, add parity fixtures that compare simulator outcomes with live transition outcomes for representative abilities and party compositions.
+Consumables, room/run effects, and inter-floor choices remain uncovered. Before broad balance tuning, add parity fixtures that compare live transition outcomes with simulator outcomes for each ability and representative party compositions.
+
+
+## Follow-up slice: continuous balance reporting
+
+The balance-report generator in `backend/internal/game/balance_report.go` runs a fixed catalog-backed suite across all nine starting classes in solo play and deterministic mixed-class parties of two and four. It covers the opening, multi-enemy, miniboss, gate, and boss encounters. Every scenario uses the same fixed seed range, the shared seeded combat simulator, and the same starting class builds.
+
+Run the report locally from `backend` with:
+
+```sh
+go run ./cmd/balance-report -seeds 30 -first-seed 1
+```
+
+The command writes machine-readable `balance-report.json` and a Markdown summary. The report captures win/wipe rates, median and 90th-percentile encounter rounds, damage dealt/received, remaining party health, healing, and downed-player counts. It records the scenario, class composition, seed range, and the baseline policy description.
+
+GitHub Actions runs the suite for backend pull requests, pushes to `main`, and weekly. Successful main-branch runs publish a 90-day `balance-baseline` artifact. Pull requests compare their report against the latest successful main baseline and fail only on large regression thresholds (a 10-point win-rate drop or 10-point wipe-rate increase); large encounter-length changes and absolute difficulty extremes are reported as investigation prompts. PR reports are retained as artifacts, and the Markdown report is written to the Actions job summary.
+
+The report is a trend/regression instrument, not a balance oracle. Its deterministic policy uses situational signature abilities, interrupts dangerous telegraphs, defends against high incoming pressure, and otherwise focuses the lowest-health enemy. It does not model optimal play, human mistakes, all talent choices, consumables, room events, or a complete floor. Suggestions identify scenarios and likely systems to inspect; they never prescribe or apply stat changes automatically. Review trends alongside actual solo/co-op playtests before changing balance.
 
 
 ## Follow-up slice: random full-run simulation baseline
