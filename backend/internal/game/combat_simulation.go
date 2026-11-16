@@ -266,6 +266,9 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 			player.ClassCombat.DamageTakenThisRound = 0
 			player.Guarding = false
 			player.ClassCombat.GuardBonus = 0
+			if player.ClassCombat.AbilityCooldown > 0 {
+				player.ClassCombat.AbilityCooldown--
+			}
 		}
 	}
 
@@ -324,6 +327,9 @@ func simulationClassAbilityCommand(player *PlayerState, players map[string]*Play
 		return Command{}, false
 	}
 	ability, ok := findClassAbility(player.ClassBuild.SignatureAbilityID)
+	if ok && classAbilityHandlers[ability.EffectID].cooldown > 0 && player.ClassCombat.AbilityCooldown > 0 {
+		return Command{}, false
+	}
 	if !ok {
 		return Command{}, false
 	}

@@ -490,9 +490,16 @@ func entryRoom(t *testing.T, startBody []byte) *game.DungeonRoom {
 	return room
 }
 
-// attackEntryEnemy is a Strike command against the first enemy of the expedition's entry room.
+// attackEntryEnemy is a Strike command against the first living enemy of the expedition's entry room in a snapshot.
 func attackEntryEnemy(t *testing.T, startBody []byte, round int) string {
 	t.Helper()
-	body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": entryRoom(t, startBody).Encounter.Enemies[0].ID})
+	target := ""
+	for _, enemy := range entryRoom(t, startBody).Encounter.Enemies {
+		if enemy.Health > 0 {
+			target = enemy.ID
+			break
+		}
+	}
+	body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": target})
 	return string(body)
 }

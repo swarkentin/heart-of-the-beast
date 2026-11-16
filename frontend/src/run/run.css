@@ -194,6 +194,8 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
   .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
   .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
+  /* three or more enemies: drop the move name so the chips pack several to a row instead of covering the scene */
+  .rn-threats-crowded .rn-intent-move { display: none; }
 
   /* party strip: portrait with badges over it, health under it */
   .rn-card { grid-row: 2; flex: none; gap: 3px; padding: 0; border-width: calc(4px * var(--px)); border-image: url("/art/ui/frame-inset.png") 4 fill / calc(4px * var(--px)) stretch; filter: none; }

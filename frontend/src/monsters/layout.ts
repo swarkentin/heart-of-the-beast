@@ -1,0 +1,53 @@
+// Where the combat scene puts a fight's enemies. A fight holds up to six (MaxEncounterEnemies on the server):
+// larger parties meet more enemies. The stage, each sprite and the run screen read their positions and scale from
+// here, so effects always land on the sprite they are aimed at.
+import type { StageView } from "./types";
+
+/** The most enemies one fight can hold; the server enforces the same cap. */
+export const MAX_STAGE_ENEMIES = 6;
+
+/** Scene scale in scene units per art pixel. Monsters and bosses are drawn at different scales so a boss's 128px cell still fits. */
+export const SPRITE_SCALE: Record<StageView, { monster: number; boss: number }> = { player: { monster: 5, boss: 3 }, cast: { monster: 3, boss: 2 } };
+
+const CENTER = 550;
+
+/** A fight of five or six is drawn a little smaller so the sprites keep a gap between them. */
+export function crowdFactor(count: number): number {
+  return count >= 5 ? 0.8 : 1;
+}
+
+/** The scene scale of one sprite in a fight of `count` enemies. */
+export function spriteScale(view: StageView, tier: "monster" | "boss", count: number): number {
+  return SPRITE_SCALE[view][tier] * crowdFactor(count);
+}
+
+/**
+ * The horizontal centre of enemy `index` of `count`. The first-person view keeps the original spacing for up to
+ * four and closes the gaps beyond that so a row of six stays inside the frame. The party view spreads three or
+ * fewer across the middle and wider fights across most of the frame.
+ */
+export function enemyX(view: StageView, count: number, index: number): number {
+  if (count <= 1) return CENTER;
+  if (view === "player") {
+    const spacing = count === 2 ? 240 : Math.min(220, 860 / (count - 1));
+    return CENTER + (index - (count - 1) / 2) * spacing;
+  }
+  if (count === 2) return 365 + index * 370;
+  const span = count === 3 ? 500 : 800;
+  return CENTER - span / 2 + (index * span) / (count - 1);
+}
+
+/**
+ * How far (scene units) enemy `index`'s nameplate is pushed off its usual line. In a fight of three or more,
+ * neighbouring names would collide, so every other plate is staggered: up in the first-person view (plates sit
+ * above heads), down in the party view (plates sit under feet).
+ */
+export function plateOffset(view: StageView, count: number, index: number): number {
+  if (count < 3 || index % 2 === 0) return 0;
+  return view === "player" ? -64 : 64;
+}
+
+/** Nameplate text size: smaller when six names share the row. */
+export function plateFontSize(count: number): number {
+  return count >= 5 ? 22 : 28;
+}

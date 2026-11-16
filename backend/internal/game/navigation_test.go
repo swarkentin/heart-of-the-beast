@@ -13,6 +13,7 @@ func coopExploringRoom(t *testing.T, playerIDs ...string) (*Room, time.Time) {
 	if err := StartRun(room, "run-navigation", now); err != nil {
 		t.Fatal(err)
 	}
+	withoutReinforcements(room, "entry")
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 2 * PlayerStrikeDamage
 	for index, playerID := range playerIDs {
 		action := Command{Type: "combat", Round: 1, Action: "defend"}

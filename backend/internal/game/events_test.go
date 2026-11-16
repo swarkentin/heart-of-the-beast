@@ -85,7 +85,7 @@ func TestInscriptionBonusAppliesOnlyAgainstTheWarden(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "attack", TargetID: "warden"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 43 {
+	if got := room.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 37 {
 		t.Fatalf("the Warden should lose 8 Strike damage, then recover 2 from Soul Drain, health=%d", got)
 	}
 	if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Message != "Adventurer 1 hits Crypt Warden for 8 damage." {

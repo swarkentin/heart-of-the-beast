@@ -772,7 +772,8 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 	run.Players["player-1"].Health = 10
 	run.Players["player-2"].Health = 0
 	clearToCamp(t, room)
-	if got := run.Players["player-1"].Health; got != 10+run.Players["player-1"].MaxHealth*CampRestPercent/100 {
+	// The boss fight that ends the floor restores EncounterRecoveryPercent before the camp rest adds its share.
+	if got, maxHealth := run.Players["player-1"].Health, run.Players["player-1"].MaxHealth; got != 10+maxHealth*EncounterRecoveryPercent/100+maxHealth*CampRestPercent/100 {
 		t.Fatalf("camp rest left player-1 at %d", got)
 	}
 	if run.Players["player-2"].Health != 0 {

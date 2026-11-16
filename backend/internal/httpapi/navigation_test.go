@@ -59,18 +59,23 @@ func TestNavigationVoteDeadlineAdvancesThroughSnapshotPolling(t *testing.T) {
 		t.Fatalf("start run: %d %s", started.Code, started.Body.String())
 	}
 	entry := entryRoom(t, started.Body.Bytes())
+	latest := started.Body.Bytes()
 	cleared := false
 	for round := 1; round <= 8 && !cleared; round++ {
 		for _, token := range []string{host.PlayerToken, guest.PlayerToken} {
-			response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", token, attackEntryEnemy(t, started.Body.Bytes(), round))
+			response := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", token, attackEntryEnemy(t, latest, round))
 			if response.Code != http.StatusOK {
 				t.Fatalf("combat action: %d %s", response.Code, response.Body.String())
 			}
 			cleared = strings.Contains(response.Body.String(), `"phase":"exploring"`)
+			latest = response.Body.Bytes()
+			if cleared {
+				break
+			}
 		}
 	}
 	if !cleared {
-		t.Fatal("the entry fight should be won within eight rounds of two strikes")
+		t.Fatal("the entry fight, reinforcement included, should be won within eight rounds of two strikes")
 	}
 	chosen := entry.Exits[1]
 	vote, _ := json.Marshal(map[string]string{"type": "choose_exit", "exitId": chosen.ID})

@@ -11,9 +11,13 @@ const (
 	CombatActionWindow             = 8 * time.Second
 	PlayerStrikeDamage             = 6
 	GuardDamageReduction           = 4
-	LiveEnemyHealthMultiplier      = 1.35
-	PartyEnemyHealthMultiplierStep = 0.4
-	PartyEnemyDamageMultiplierStep = 0.65
+	LiveEnemyHealthMultiplier      = 1.2
+	PartyEnemyHealthMultiplierStep = 0.15
+	PartyEnemyDamageMultiplierStep = 0.1
+	// EncounterRecoveryPercent is the share of their maximum health every living adventurer catches back after an
+	// expedition fight is won. A floor is five to seven fights with no other rest, so without it attrition alone
+	// decides a floor; with it each fight is a test of its own and a bad one still carries into the next.
+	EncounterRecoveryPercent = 30
 )
 
 var (
@@ -343,10 +347,17 @@ func resolveCombatRound(room *Room, now time.Time) {
 	for _, player := range run.Players {
 		player.Guarding = false
 		player.ClassCombat.GuardBonus = 0
+		if player.ClassCombat.AbilityCooldown > 0 {
+			player.ClassCombat.AbilityCooldown--
+		}
 	}
 
 	if allEnemiesDefeated(current.Encounter) {
 		current.Encounter.Status = EncounterCleared
+		// Every fight starts with signature abilities ready.
+		for _, player := range run.Players {
+			player.ClassCombat.AbilityCooldown = 0
+		}
 		applyEncounterReward(room, current, roundNumber)
 		current.Cleared = true
 		grantEncounterExperience(room, roundNumber)
@@ -363,7 +374,11 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			heal := rules.healing(bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal + rules.EncounterHeal)
+			recovery := 0
+			if run.Generator >= ExpeditionGenerator {
+				recovery = player.MaxHealth * EncounterRecoveryPercent / 100
+			}
+			heal := rules.healing(recovery + bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal + rules.EncounterHeal)
 			if heal > 0 {
 				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
 				player.Health = transition.Health

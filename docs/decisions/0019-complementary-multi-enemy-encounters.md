@@ -1,6 +1,6 @@
 # ADR 0019: Complementary multi-enemy encounters
 
-- Status: Accepted
+- Status: Accepted; the two-enemy limit is amended by [ADR 0030](0030-party-scaled-encounters-and-dungeon-tuning.md)
 - Date: 2026-11-15
 
 ## Context

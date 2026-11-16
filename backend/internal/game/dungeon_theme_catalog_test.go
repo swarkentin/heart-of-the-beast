@@ -78,14 +78,17 @@ func TestEveryMonsterHasAnAbilityOnEveryTurn(t *testing.T) {
 
 func TestEveryEncounterInstantiatesForEveryPartySize(t *testing.T) {
 	for id := range defaultEncounterCatalog.Encounters {
-		for partySize := 1; partySize <= 4; partySize++ {
+		previous := 0
+		for partySize := 1; partySize <= MaxEncounterPartySize; partySize++ {
 			encounter, err := defaultEncounterCatalog.Instantiate(id, "t-", MonsterScaling{Depth: 1, PartySize: partySize})
 			if err != nil {
 				t.Fatalf("%s party %d: %v", id, partySize, err)
 			}
-			if len(encounter.Enemies) == 0 || len(encounter.Enemies) > 2 {
-				t.Errorf("%s has %d enemies", id, len(encounter.Enemies))
+			// A larger party never meets fewer enemies, and no fight outgrows what the scene can lay out.
+			if len(encounter.Enemies) == 0 || len(encounter.Enemies) > MaxEncounterEnemies || len(encounter.Enemies) < previous {
+				t.Errorf("%s has %d enemies for a party of %d (%d for one fewer)", id, len(encounter.Enemies), partySize, previous)
 			}
+			previous = len(encounter.Enemies)
 			for _, enemy := range encounter.Enemies {
 				if _, ok := art.ParseSprite(enemy.SpriteID); !ok {
 					t.Errorf("%s: enemy %q has unknown sprite %q", id, enemy.ID, enemy.SpriteID)

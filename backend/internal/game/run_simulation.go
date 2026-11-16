@@ -34,6 +34,9 @@ type RunSimulationReport struct {
 	RemainingHealthPct int            `json:"remainingHealthPct"`
 	Levels             map[string]int `json:"levels"`
 	Steps              int            `json:"steps"`
+	// EndRoomType and EndDepth say where the run ended: the room type (encounter, miniboss, boss) a wipe happened in.
+	EndRoomType string `json:"endRoomType,omitempty"`
+	EndDepth    int    `json:"endDepth,omitempty"`
 }
 
 // RunSimulationBatchReport summarizes a reproducible collection of full runs.
@@ -59,14 +62,43 @@ type RunSimulationBatchReport struct {
 
 const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
+const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and healing purchases when hurt; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
+
+// RunPolicy names how a full-run simulation makes decisions.
+type RunPolicy string
+
+const (
+	// RunPolicyRandom picks uniformly among legal moves: the floor of how badly a run can be played.
+	RunPolicyRandom RunPolicy = "random"
+	// RunPolicyTactical plays combat the way an attentive player reads intents. It is what balance targets use.
+	RunPolicyTactical RunPolicy = "tactical"
+)
+
+// Description is the policy's report text.
+func (policy RunPolicy) Description() string {
+	if policy == RunPolicyTactical {
+		return TacticalRunPolicyDescription
+	}
+	return RandomRunPolicyDescription
+}
+
 // SimulateRun runs one seeded expedition through Forgotten Catacombs with the supplied class composition.
 func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationReport, error) {
 	return SimulateRunInTheme(seed, DefaultDungeonThemeID, classIDs, maxSteps)
 }
 
-// SimulateRunInTheme runs one seeded expedition in a dungeon theme (or RandomDungeonThemeID). A fresh aggregate
-// is created for every run and every game transition goes through the same commands as live play.
+// SimulateRunInTheme runs one seeded expedition in a dungeon theme (or RandomDungeonThemeID) under the random
+// policy. A fresh aggregate is created for every run and every game transition goes through the same commands as
+// live play.
 func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps int) (RunSimulationReport, error) {
+	return SimulateRunWithPolicy(seed, themeID, classIDs, maxSteps, RunPolicyRandom)
+}
+
+// SimulateRunWithPolicy runs one seeded expedition under a decision policy.
+func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSteps int, policy RunPolicy) (RunSimulationReport, error) {
+	if policy != RunPolicyRandom && policy != RunPolicyTactical {
+		return RunSimulationReport{}, fmt.Errorf("unknown run simulation policy %q", policy)
+	}
 	if len(classIDs) < 1 || len(classIDs) > 4 {
 		return RunSimulationReport{}, fmt.Errorf("party must contain between 1 and 4 characters")
 	}
@@ -118,11 +150,16 @@ func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps 
 				if player == nil || player.Health <= 0 {
 					continue
 				}
-				candidates := randomCombatCommands(room, playerID, round)
-				if len(candidates) == 0 {
-					candidates = []Command{{Type: "combat", Round: round, Action: "defend"}}
+				var command Command
+				if policy == RunPolicyTactical {
+					command = tacticalCombatCommand(room, playerID, round, rng)
+				} else {
+					candidates := randomCombatCommands(room, playerID, round)
+					if len(candidates) == 0 {
+						candidates = []Command{{Type: "combat", Round: round, Action: "defend"}}
+					}
+					command = candidates[rng.Intn(len(candidates))]
 				}
-				command := candidates[rng.Intn(len(candidates))]
 				if err := ApplyCommand(room, playerID, command, now); err != nil {
 					return RunSimulationReport{}, fmt.Errorf("seed %d player %s combat action: %w", seed, playerID, err)
 				}
@@ -173,7 +210,13 @@ func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps 
 				if room.Run.Phase != PhaseIntermission {
 					break
 				}
-				command, ok := randomCampCommand(room, playerID, rng)
+				command, ok := Command{}, false
+				if policy == RunPolicyTactical {
+					command, ok = tacticalShopCommand(room, playerID)
+				}
+				if !ok {
+					command, ok = randomCampCommand(room, playerID, rng)
+				}
 				if !ok {
 					continue
 				}
@@ -207,6 +250,9 @@ func SimulateRunInTheme(seed int64, themeID string, classIDs []string, maxSteps 
 		report.Outcome = "completed"
 	case report.Wiped:
 		report.Outcome = "wiped"
+		if current := room.Run.Rooms[room.Run.CurrentRoomID]; current != nil {
+			report.EndRoomType, report.EndDepth = current.RoomType, room.Run.Depth
+		}
 	default:
 		report.Outcome = "step_limit"
 	}
@@ -388,11 +434,16 @@ func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxStep
 // SimulateRunBatchInTheme repeats the same party composition across consecutive seeds in one dungeon theme, or
 // in a seeded mix of themes for RandomDungeonThemeID.
 func SimulateRunBatchInTheme(seedCount int, firstSeed int64, themeID string, classIDs []string, maxSteps int) (RunSimulationBatchReport, error) {
+	return SimulateRunBatchWithPolicy(seedCount, firstSeed, themeID, classIDs, maxSteps, RunPolicyRandom)
+}
+
+// SimulateRunBatchWithPolicy repeats the same party composition across consecutive seeds under a decision policy.
+func SimulateRunBatchWithPolicy(seedCount int, firstSeed int64, themeID string, classIDs []string, maxSteps int, policy RunPolicy) (RunSimulationBatchReport, error) {
 	if seedCount <= 0 {
 		return RunSimulationBatchReport{}, fmt.Errorf("seed count must be positive")
 	}
 	report := RunSimulationBatchReport{
-		Policy: RandomRunPolicyDescription, ThemeID: themeID, SeedCount: seedCount, FirstSeed: firstSeed,
+		Policy: policy.Description(), ThemeID: themeID, SeedCount: seedCount, FirstSeed: firstSeed,
 		LastSeed: firstSeed + int64(seedCount) - 1, PartyClasses: append([]string(nil), classIDs...),
 		DepthReachRates: make(map[int]float64),
 		Runs:            make([]RunSimulationReport, 0, seedCount),
@@ -401,7 +452,7 @@ func SimulateRunBatchInTheme(seedCount int, firstSeed int64, themeID string, cla
 	rooms := make([]int, 0, seedCount)
 	rounds := make([]int, 0, seedCount)
 	for i := 0; i < seedCount; i++ {
-		run, err := SimulateRunInTheme(firstSeed+int64(i), themeID, classIDs, maxSteps)
+		run, err := SimulateRunWithPolicy(firstSeed+int64(i), themeID, classIDs, maxSteps, policy)
 		if err != nil {
 			return RunSimulationBatchReport{}, err
 		}

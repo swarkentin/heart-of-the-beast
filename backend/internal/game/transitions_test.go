@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -116,6 +117,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := StartRun(room, "run-coop", now); err != nil {
 		t.Fatal(err)
 	}
+	withoutReinforcements(room, "entry")
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 2 * PlayerStrikeDamage
 
 	first := Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}
@@ -146,8 +148,10 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 	if err := StartRun(room, "run-timeout", now); err != nil {
 		t.Fatal(err)
 	}
+	withoutReinforcements(room, "entry")
 	room.Run.Players["player-2"].Health = 20
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
+	room.Run.Rooms["entry"].Encounter.Enemies[0].Intent.Damage = 7
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -206,4 +210,17 @@ func TestStartRunEncountersReferenceCatalogDefinitionsAndPreserveComposition(t *
 			t.Errorf("%s encounter = %+v, want definition=%s budget=%d enemies=%d", roomID, encounter, expected.definition, expected.budget, expected.enemies)
 		}
 	}
+}
+
+// withoutReinforcements removes the enemies that only join larger parties from a room's encounter. Tests that are
+// about one enemy's behavior in a co-op party use it so the party-size reinforcements do not join the fight.
+func withoutReinforcements(room *Room, roomID string) {
+	encounter := room.Run.Rooms[roomID].Encounter
+	kept := encounter.Enemies[:0]
+	for _, enemy := range encounter.Enemies {
+		if !strings.Contains(enemy.ID, "reinforcement-") {
+			kept = append(kept, enemy)
+		}
+	}
+	encounter.Enemies = kept
 }

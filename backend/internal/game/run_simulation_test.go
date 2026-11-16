@@ -80,3 +80,38 @@ func TestSimulateRunRejectsInvalidPartyAndSeedCount(t *testing.T) {
 		t.Fatal("expected non-positive run count to be rejected")
 	}
 }
+
+// TestTacticalPlayUsuallyClearsTheFirstFloor is a coarse balance guard, not a tuning target: an attentive party of
+// any size should usually get through floor one. It fails if a content or scaling change makes the opening floor
+// a wall again. Targets and the full matrix are in docs/game-design/encounter-scaling-and-tuning.md.
+func TestTacticalPlayUsuallyClearsTheFirstFloor(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulates whole runs")
+	}
+	parties := [][]string{
+		{ClassRanger},
+		{ClassBulwark},
+		{ClassRanger, ClassAssassin},
+		{ClassJuggernaut, ClassAssassin, ClassTactician},
+		{ClassSpellguard, ClassAssassin, ClassRanger, ClassTactician},
+	}
+	for _, party := range parties {
+		report, err := SimulateRunBatchWithPolicy(40, 1, DefaultDungeonThemeID, party, 4000, RunPolicyTactical)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("party %v: floor one cleared in %.0f%% of runs", party, report.DepthReachRates[InitialDungeonDepth+1]*100)
+		if rate := report.DepthReachRates[InitialDungeonDepth+1]; rate < 0.75 {
+			t.Errorf("party %v cleared floor one in %.0f%% of tactical runs, want at least 75%%", party, rate*100)
+		}
+		if report.Stalled > 0 {
+			t.Errorf("party %v stalled in %d tactical runs; the policy must always make progress", party, report.Stalled)
+		}
+	}
+}
+
+func TestSimulateRunRejectsUnknownPolicy(t *testing.T) {
+	if _, err := SimulateRunWithPolicy(1, DefaultDungeonThemeID, []string{ClassRanger}, 10, RunPolicy("optimal")); err == nil {
+		t.Fatal("expected an unknown policy to be rejected")
+	}
+}

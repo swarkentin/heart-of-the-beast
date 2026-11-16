@@ -5,7 +5,8 @@ import { elementFor, type Element } from "../fx/elements";
 import { FxLayer } from "../fx/FxLayer";
 import { DURATIONS, type FxInstance, type FxKind } from "../fx/render";
 import { eventKeys, planRound, type Cue } from "./choreography";
-import { EnemySprite, SPRITE_SCALE, type SeqCue } from "./EnemySprite";
+import { EnemySprite, type SeqCue } from "./EnemySprite";
+import { enemyX, spriteScale } from "./layout";
 import { useReducedMotion } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { peekSprite } from "./spriteStore";
@@ -31,12 +32,10 @@ export type EnemyStageProps = {
 
 export type PartyImpact = { playerId: string; effect: "damage" | "heal" | "block"; amount: number };
 
-/** Enemy positions: the first-person view uses the server-provided x; the cast view spreads them evenly. */
+/** Enemy positions: the first-person view uses the x the run screen laid out; the cast view spreads them (see layout.ts). */
 export function stageX(view: StageView, enemies: StageEnemy[], index: number): number {
   if (view === "player") return enemies[index].x;
-  if (enemies.length <= 1) return 550;
-  if (enemies.length === 2) return 365 + index * 370;
-  return 300 + (index * 500) / (enemies.length - 1);
+  return enemyX(view, enemies.length, index);
 }
 
 let counter = 0;
@@ -75,7 +74,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     const sprite = peekSprite(enemy.sprite);
     const x = stageX(v, list, index);
     if (!sprite) return { x, y: floorY - 100, theme: undefined, top: floorY - 200, side: 60 };
-    const scale = sprite.creature.tier === "boss" ? SPRITE_SCALE[v].boss : SPRITE_SCALE[v].monster;
+    const scale = spriteScale(v, sprite.creature.tier, list.length);
     const mid = (sprite.bbox.top + sprite.bbox.bottom) / 2;
     return { x, y: floorY - (sprite.creature.anchor.y - mid) * scale, theme: sprite.themeId, top: floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale, side: (sprite.bbox.right - sprite.creature.anchor.x) * scale };
   }, [floorY]);
@@ -227,6 +226,8 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
           enemy={enemy}
           view={view}
           x={positions[index]}
+          index={index}
+          count={enemies.length}
           floorY={floorY}
           selected={target === enemy.id}
           onClick={onTarget && enemy.hp > 0 ? () => onTarget(enemy.id) : undefined}

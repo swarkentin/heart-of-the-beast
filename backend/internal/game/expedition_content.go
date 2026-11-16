@@ -99,7 +99,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Breached Cell", "A test subject has torn free of its restraints and its keeper drone is still active. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Security Checkpoint", "The last defenders of this level hold the lift to the lower sectors. Their targeting lights sweep the room."),
 			Light:    []string{"scifi-outpost"},
-			Standard: []string{"scifi-ambush", "scifi-vanguard"},
+			Standard: []string{"scifi-outpost", "scifi-ambush", "scifi-vanguard"},
 			Heavy:    []string{"scifi-patrol"},
 			EliteID:  "scifi-breach",
 			Guardians: []FloorBossTemplate{
@@ -139,7 +139,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Enforcer's Garage", "The syndicate's heaviest hitters wait among the parked cars. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Velvet Rope", "The Don's own doormen stand at the last door. They are not checking names."),
 			Light:    []string{"mobster-outpost"},
-			Standard: []string{"mobster-patrol", "mobster-vanguard"},
+			Standard: []string{"mobster-outpost", "mobster-patrol", "mobster-vanguard"},
 			Heavy:    []string{"mobster-ambush"},
 			EliteID:  "mobster-ambush",
 			Guardians: []FloorBossTemplate{
@@ -178,8 +178,8 @@ func expeditionThemes() []ExpeditionTheme {
 				option("Take the royal coin", "vault_coin"), option("Lift the coral crown", "vault_relic"), option("Leave the dead their crown", "leave")),
 			Elite:    hall("The Leviathan's Pen", "A brute of the deep and its handler guard a flooded arena. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Royal Guardhouse", "The king's last knights form up before the inner doors."),
-			Light:    []string{"sunken-outpost"},
-			Standard: []string{"sunken-patrol", "sunken-vanguard"},
+			Light:    []string{"sunken-skirmish"},
+			Standard: []string{"sunken-outpost", "sunken-patrol", "sunken-vanguard"},
 			Heavy:    []string{"sunken-ambush"},
 			EliteID:  "sunken-ambush",
 			Guardians: []FloorBossTemplate{
@@ -219,7 +219,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Proving Floor", "The Empire's newest war machines are being tested here. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Regulator Gate", "The gate's keepers move in perfect step, and they have been wound tight."),
 			Light:    []string{"clockwork-outpost"},
-			Standard: []string{"clockwork-patrol"},
+			Standard: []string{"clockwork-outpost", "clockwork-patrol"},
 			Heavy:    []string{"clockwork-ambush", "clockwork-vanguard"},
 			EliteID:  "clockwork-vanguard",
 			Guardians: []FloorBossTemplate{
@@ -259,7 +259,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Strongman's Ring", "The star attractions are warming up. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Performers' Entrance", "The whole troupe waits in the wings. The show must go on."),
 			Light:    []string{"carnival-outpost"},
-			Standard: []string{"carnival-patrol"},
+			Standard: []string{"carnival-outpost", "carnival-patrol"},
 			Heavy:    []string{"carnival-ambush", "carnival-vanguard"},
 			EliteID:  "carnival-vanguard",
 			Guardians: []FloorBossTemplate{
@@ -299,7 +299,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Apex Den", "Two of the jungle's best hunters share this den. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Thorn Gate", "A wall of thorns parts just enough to show what guards it."),
 			Light:    []string{"jungle-outpost"},
-			Standard: []string{"jungle-ambush", "jungle-vanguard"},
+			Standard: []string{"jungle-outpost", "jungle-ambush", "jungle-vanguard"},
 			Heavy:    []string{"jungle-patrol"},
 			EliteID:  "jungle-patrol",
 			Guardians: []FloorBossTemplate{
@@ -339,7 +339,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Recurring Nightmare", "This one always ends the same way. Defeating it will strengthen the whole party."),
 			Guard:    hall("The Edge of Waking", "The dream thins here, and its last defenders are the ones that feel most real."),
 			Light:    []string{"dreamscape-outpost"},
-			Standard: []string{"dreamscape-patrol"},
+			Standard: []string{"dreamscape-outpost", "dreamscape-patrol"},
 			Heavy:    []string{"dreamscape-ambush", "dreamscape-vanguard"},
 			EliteID:  "dreamscape-ambush",
 			Guardians: []FloorBossTemplate{
@@ -379,7 +379,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Thaw Chamber", "The station's worst specimens were kept here. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Pressure Door", "What is left of the security detail holds the last door, frozen to their posts."),
 			Light:    []string{"arctic-outpost"},
-			Standard: []string{"arctic-patrol"},
+			Standard: []string{"arctic-outpost", "arctic-patrol"},
 			Heavy:    []string{"arctic-ambush", "arctic-vanguard"},
 			EliteID:  "arctic-ambush",
 			Guardians: []FloorBossTemplate{
@@ -419,8 +419,8 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Hanging Judge's Court", "The worst of the town's dead hold court here. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Gallows Square", "A posse of the damned forms a line across the square."),
 			Light:    []string{"ghosttown-outpost"},
-			Standard: []string{"ghosttown-ambush", "ghosttown-vanguard"},
-			Heavy:    []string{"ghosttown-patrol"},
+			Standard: []string{"ghosttown-outpost", "ghosttown-ambush", "ghosttown-vanguard"},
+			Heavy:    []string{"ghosttown-showdown"},
 			EliteID:  "ghosttown-patrol",
 			Guardians: []FloorBossTemplate{
 				guardian("The Undertaker's Parlour", "ghosttown-boss-the-undertaker", "Coffins stand ready along the wall, already measured. The Undertaker tips his hat."),
@@ -459,7 +459,7 @@ func expeditionThemes() []ExpeditionTheme {
 			Elite:    hall("The Thunder Pit", "The settlement's champions fight here for sport. Defeating them will strengthen the whole party."),
 			Guard:    hall("The Throne Road", "The king's own war band lines the last stretch of road, revving."),
 			Light:    []string{"wasteland-outpost"},
-			Standard: []string{"wasteland-patrol"},
+			Standard: []string{"wasteland-outpost", "wasteland-patrol"},
 			Heavy:    []string{"wasteland-ambush", "wasteland-vanguard"},
 			EliteID:  "wasteland-ambush",
 			Guardians: []FloorBossTemplate{

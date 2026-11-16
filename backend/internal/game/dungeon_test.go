@@ -200,20 +200,20 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 		t.Fatal(err)
 	}
 	entryEnemy := solo.Run.Rooms["entry"].Encounter.Enemies[0]
-	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 14 || entryEnemy.DefinitionID == "" {
-		t.Fatalf("initial enemy = %+v, want sentinel health 14 and catalog reference", entryEnemy)
+	if entryEnemy.ID != "sentinel" || entryEnemy.Health != 12 || entryEnemy.DefinitionID == "" {
+		t.Fatalf("initial enemy = %+v, want sentinel health 12 and catalog reference", entryEnemy)
 	}
-	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 20 {
-		t.Fatalf("solo reliquary guardian health = %d, want 20", got)
+	if got := solo.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 18 {
+		t.Fatalf("solo reliquary guardian health = %d, want 18", got)
 	}
-	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 22 {
-		t.Fatalf("solo bonebound guardian health = %d, want 22", got)
+	if got := solo.Run.Rooms["bone-gallery"].Encounter.Enemies[0].Health; got != 19 {
+		t.Fatalf("solo bonebound guardian health = %d, want 19", got)
 	}
-	if got := solo.Run.Rooms["flooded-crossing"].Encounter.Enemies[0].Health; got != 15 {
-		t.Fatalf("solo crossing scout health = %d, want 15", got)
+	if got := solo.Run.Rooms["flooded-crossing"].Encounter.Enemies[0].Health; got != 13 {
+		t.Fatalf("solo crossing scout health = %d, want 13", got)
 	}
-	if got := solo.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 49 {
-		t.Fatalf("solo warden health = %d, want 36", got)
+	if got := solo.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 43 {
+		t.Fatalf("solo warden health = %d, want 43", got)
 	}
 
 	coop := newTestRoom()
@@ -221,11 +221,11 @@ func TestStartRunEnemiesReferenceCatalogDefinitionsAndPreserveSoloScaling(t *tes
 	if err := StartRun(coop, "catalog-coop", now); err != nil {
 		t.Fatal(err)
 	}
-	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 38 {
-		t.Fatalf("co-op reliquary guardian health = %d, want 38", got)
+	if got := coop.Run.Rooms["reliquary"].Encounter.Enemies[0].Health; got != 28 {
+		t.Fatalf("co-op reliquary guardian health = %d, want 28", got)
 	}
-	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 80 {
-		t.Fatalf("co-op warden health = %d, want 80", got)
+	if got := coop.Run.Rooms["warden"].Encounter.Enemies[0].Health; got != 58 {
+		t.Fatalf("co-op warden health = %d, want 58", got)
 	}
 }
 
@@ -239,7 +239,7 @@ func TestGeneratedFloorEncountersReferenceCatalogDefinitions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("room %s has unknown encounter definition %q: %v", roomID, room.Encounter.DefinitionID, err)
 		}
-		if room.Encounter.Budget != definition.Budget || len(room.Encounter.Enemies) != len(definition.Enemies) {
+		if room.Encounter.Budget != definition.Budget || len(room.Encounter.Enemies) != definition.SpawnCount(1) {
 			t.Fatalf("room %s runtime encounter %+v does not match definition %+v", roomID, room.Encounter, definition)
 		}
 	}

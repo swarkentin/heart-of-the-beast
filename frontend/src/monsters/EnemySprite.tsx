@@ -4,12 +4,11 @@ import { useSprite } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { moveAnim } from "./moves";
 import type { SpriteData } from "./spriteStore";
+import { plateFontSize, plateOffset, spriteScale } from "./layout";
 import type { AnimName, StageEnemy, StageView } from "./types";
 
 export type SeqCue = { seq: number; cue: Cue };
 
-/** Scene scale in scene units per art pixel. Monsters and bosses are drawn at different scales so a boss's 128px cell still fits. */
-export const SPRITE_SCALE: Record<StageView, { monster: number; boss: number }> = { player: { monster: 5, boss: 3 }, cast: { monster: 3, boss: 2 } };
 
 type Clip = { kind: "base" | "oneshot"; key: string; anim: AnimName; from: number; to: number; fps: number; loop: boolean; start: number; impact?: number; impactSeq?: number; fired?: boolean };
 
@@ -144,6 +143,9 @@ type Props = {
   enemy: StageEnemy;
   view: StageView;
   x: number;
+  /** This enemy's place in the fight, and how many enemies the fight holds: crowded fights draw smaller and stagger nameplates. */
+  index: number;
+  count: number;
   floorY: number;
   selected: boolean;
   onClick?: () => void;
@@ -153,17 +155,17 @@ type Props = {
   onImpact: (seq: number) => void;
 };
 
-export function EnemySprite({ enemy, view, x, floorY, selected, onClick, cues, startDead, reduced, onImpact }: Props) {
+export function EnemySprite({ enemy, view, x, index, count, floorY, selected, onClick, cues, startDead, reduced, onImpact }: Props) {
   const sprite = useSprite(enemy.sprite);
   const [shake, setShake] = useState(0);
   const alive = enemy.hp > 0;
   const telegraph = alive && enemy.rawIntent ? moveAnim(sprite?.creature, enemy.rawIntent) : null;
   const { pose, dead } = useSpriteMachine(sprite, telegraph, startDead, reduced, cues, onImpact, () => setShake((value) => value + 1));
-  const scale = sprite ? (sprite.creature.tier === "boss" ? SPRITE_SCALE[view].boss : SPRITE_SCALE[view].monster) : 5;
+  const scale = sprite ? spriteScale(view, sprite.creature.tier, count) : 5;
   const headY = sprite ? floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale : floorY - 200;
   const boxLeft = sprite ? (sprite.bbox.left - sprite.creature.anchor.x) * scale : -50;
   const boxRight = sprite ? (sprite.bbox.right - sprite.creature.anchor.x) * scale : 50;
-  const plateY = view === "player" ? Math.max(30, headY - 40) : floorY + 40;
+  const plateY = view === "player" ? Math.max(40, headY - 40 + plateOffset(view, count, index)) : floorY + 40 + plateOffset(view, count, index);
   const showDead = dead || !alive;
   const telegraphing = alive && Boolean(enemy.rawIntent);
   return (
@@ -177,7 +179,7 @@ export function EnemySprite({ enemy, view, x, floorY, selected, onClick, cues, s
       <g transform={`translate(0 ${plateY})`} opacity={showDead ? 0.45 : 1}>
         <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2" />
         <rect x="-69" y="5" width={Math.max(0, 138 * enemy.hp / Math.max(1, enemy.maxHp))} height="16" fill="#b45e53" />
-        <text x="0" y="-11" textAnchor="middle" fill="#f1e5d5" stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize="28">{enemy.name}</text>
+        <text x="0" y="-11" textAnchor="middle" fill="#f1e5d5" stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize={plateFontSize(count)}>{enemy.name}</text>
         {telegraphing ? (
           <g transform="translate(-102 2)" className="enemy-ready" shapeRendering="crispEdges">
             <title>{enemy.name} has readied {enemy.rawIntent?.label}</title>
