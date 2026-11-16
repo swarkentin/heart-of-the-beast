@@ -162,7 +162,6 @@ export default function App() {
         body: themeId ? JSON.stringify({ themeId }) : undefined,
       });
       setSnapshot(started);
-      setMessage(themeId ? "The party has entered the " + themeTitle(started.run?.themeId) + "." : "The party has entered the catacombs.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the run");
     } finally { setBusy(false); }
