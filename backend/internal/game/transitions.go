@@ -114,7 +114,7 @@ func newRunPlayers(room *Room) (map[string]*PlayerState, error) {
 		} else {
 			player = newPlayerState(id, room.PlayerArchetypes[id])
 		}
-		player.StrikeDamage = 10
+		player.StrikeDamage = PlayerStrikeDamage
 		player.GuardReduction = GuardDamageReduction
 		players[id] = player
 	}
