@@ -12,9 +12,9 @@ import (
 
 func main() {
 	seeds := flag.Int("seeds", 30, "number of deterministic seeds per scenario")
-	block := flag.Int("block", 6, "player block/guard amount override")
-	enemyHealth := flag.Float64("enemy-health", 1, "enemy health multiplier override")
-	playerDamage := flag.Int("player-damage", 10, "player base strike damage override")
+	block := flag.Int("block", game.GuardDamageReduction, "player block/guard amount override")
+	enemyHealth := flag.Float64("enemy-health", game.LiveEnemyHealthMultiplier, "enemy health multiplier override")
+	playerDamage := flag.Int("player-damage", game.PlayerStrikeDamage, "player base strike damage override")
 	firstSeed := flag.Int64("first-seed", 1, "first deterministic seed")
 	baselinePath := flag.String("baseline", "", "optional baseline report JSON to compare against")
 	jsonPath := flag.String("json", "balance-report.json", "JSON report output path")
