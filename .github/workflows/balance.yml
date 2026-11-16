@@ -43,8 +43,8 @@ jobs:
         run: |
           run_id="$(gh run list --workflow balance.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
           if [ -n "$run_id" ]; then
-            gh run download "$run_id" --name balance-baseline --dir backend
-            echo "BALANCE_BASELINE=backend/balance-report.json" >> "$GITHUB_ENV"
+            gh run download "$run_id" --name balance-baseline --dir backend/balance-baseline
+            echo "BALANCE_BASELINE=balance-baseline/balance-report.json" >> "$GITHUB_ENV"
           else
             echo "No accepted main-branch balance baseline exists yet; this run will establish the first report."
           fi
@@ -54,7 +54,7 @@ jobs:
         run: |
           args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
           if [ -n "${BALANCE_BASELINE:-}" ]; then
-            args+=(-baseline balance-report.json -fail-on-regression)
+            args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
 
