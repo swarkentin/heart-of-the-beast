@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"strings"
-	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"testing"
+
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 )
 
 func TestPartyCompositionsCoverAllSizesAndAreDeterministic(t *testing.T) {
