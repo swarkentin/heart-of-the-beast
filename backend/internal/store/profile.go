@@ -19,6 +19,7 @@ type ClassMastery struct {
 // Credential hashes are kept in the repository and are never serialized.
 type Profile struct {
 	ID                string                  `json:"id"`
+	DisplayName       string                  `json:"displayName"`
 	AdventurerXP      int64                   `json:"adventurerXp"`
 	AdventurerLevel   int                     `json:"adventurerLevel"`
 	ClassMastery      map[string]ClassMastery `json:"classMastery"`
@@ -50,6 +51,7 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 type ProfileRepository interface {
 	GetOrCreateProfile(context.Context, string, string, time.Time) (*Profile, error)
 	GetProfile(context.Context, string) (*Profile, error)
+	UpdateProfileName(context.Context, string, string, time.Time) (*Profile, error)
 	AwardRunXP(context.Context, string, string, string, string, int64, time.Time) (*Profile, error)
 }
 

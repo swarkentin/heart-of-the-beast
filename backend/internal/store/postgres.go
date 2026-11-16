@@ -131,9 +131,9 @@ func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash st
 		INSERT INTO player_profiles (id, credential_hash, created_at, updated_at, last_seen_at)
 		VALUES ($1, $2, $3, $3, $3)
 		ON CONFLICT (credential_hash) DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at
-		RETURNING id, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
 	`, id, credentialHash, now.UTC()).Scan(
-		&profile.ID, &profile.AdventurerXP, &profile.AdventurerLevel,
+		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
 		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if err != nil {
@@ -158,10 +158,10 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 	var profile Profile
 	var masteryJSON, cosmeticsJSON []byte
 	err := p.db.QueryRowContext(ctx, `
-		SELECT id, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
 		FROM player_profiles WHERE credential_hash = $1
 	`, credentialHash).Scan(
-		&profile.ID, &profile.AdventurerXP, &profile.AdventurerLevel,
+		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
 		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -181,6 +181,32 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 	}
 	if profile.UnlockedCosmetics == nil {
 		profile.UnlockedCosmetics = []string{}
+	}
+	return &profile, nil
+}
+
+func (p *Postgres) UpdateProfileName(ctx context.Context, credentialHash, name string, now time.Time) (*Profile, error) {
+	var profile Profile
+	var masteryJSON, cosmeticsJSON []byte
+	err := p.db.QueryRowContext(ctx, `
+		UPDATE player_profiles SET display_name = $2, updated_at = $3
+		WHERE credential_hash = $1
+		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+	`, credentialHash, name, now.UTC()).Scan(
+		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
+		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(masteryJSON, &profile.ClassMastery); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
+		return nil, err
 	}
 	return &profile, nil
 }
@@ -239,10 +265,10 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 	var profile Profile
 	var masteryJSON, cosmeticsJSON []byte
 	err = tx.QueryRowContext(ctx, `
-		SELECT id, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
+		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
 		FROM player_profiles WHERE id = $1
 	`, profileID).Scan(
-		&profile.ID, &profile.AdventurerXP, &profile.AdventurerLevel,
+		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
 		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {

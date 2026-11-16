@@ -82,6 +82,7 @@ export default function App() {
   const playerHp = (playerId ? run?.players[playerId]?.health : undefined) ?? 30;
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+  const audioControls = <AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
@@ -150,6 +151,13 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the room");
     } finally { setBusy(false); }
+  }
+
+  async function saveProfileName(name: string) {
+    const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) throw new Error("Profile credential is unavailable. Reload and try again.");
+    const updated = await apiRequest<ApiProfile>("/profile", credential, { method: "PATCH", body: JSON.stringify({ displayName: name }) });
+    setProfile(updated);
   }
 
   async function joinRoom() {
@@ -241,7 +249,7 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profileLevel={profile?.adventurerLevel} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} />;
+    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={saveProfileName} />;
   }
 
   if (!snapshot) {
@@ -249,10 +257,9 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
-  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} talents={talentChoices} busy={busy} error={error} isHost={isHost}
-    audioControls={<AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />}
+  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
     onCommand={sendCommand} onChooseTalent={chooseTalent} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />;
 }

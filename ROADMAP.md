@@ -109,8 +109,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Add an initial data-driven title/badge catalog and show recent unlocks in the profile collection.
 - [ ] Add cosmetic equip controls and further rewards such as class skins, portraits, flourishes, interface themes, music selections, and visual effects.
 - [ ] Keep all nine launch classes available. Future class unlocks may use explicit profile milestones, achievements, quests, or class mastery, but grant content access only.
-- [x] Surface profile rank, per-class mastery, and progress to next level in the title screen and party lobby.
-- [ ] Add collection and recent-unlock views to the lobby/profile experience.
+- [x] Surface profile rank, class mastery, and earned rewards through the shared Profile menu on the title screen, party lobby, and combat screen; show each class's mastery during class selection.
+- [x] Add profile collection and recent-unlock views to the shared Profile menu.
 - [ ] Add export/recovery for guest progression and a safe guest-to-account linking path that preserves profile rank, class mastery, cosmetics, achievements, and character history.
 - [ ] Keep individual character levels, generated names, lifetime records, and permadeath separate from profile rank and class mastery.
 - [ ] Add persistent guest-character creation and selection, with a memorable identity flow and lifetime record visible from the lobby.

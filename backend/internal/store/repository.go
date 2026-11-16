@@ -149,10 +149,22 @@ func (m *Memory) GetOrCreateProfile(_ context.Context, id, credentialHash string
 		return copy, err
 	}
 	profile := &Profile{
-		ID: id, AdventurerLevel: 1, ClassMastery: map[string]ClassMastery{},
+		ID: id, DisplayName: "Adventurer", AdventurerLevel: 1, ClassMastery: map[string]ClassMastery{},
 		UnlockedCosmetics: []string{}, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
 	}
 	m.profiles[credentialHash] = profile
+	return cloneProfile(profile)
+}
+
+func (m *Memory) UpdateProfileName(_ context.Context, credentialHash, name string, now time.Time) (*Profile, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	profile := m.profiles[credentialHash]
+	if profile == nil {
+		return nil, ErrNotFound
+	}
+	profile.DisplayName = name
+	profile.UpdatedAt = now.UTC()
 	return cloneProfile(profile)
 }
 

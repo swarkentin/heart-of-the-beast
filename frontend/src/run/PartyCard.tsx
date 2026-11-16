@@ -7,11 +7,11 @@ export const NO_FX: CardFx = { hurt: 0, heal: 0, pops: [] };
 const ACCENTS: Record<string, string> = { bulwark: "#8fe6c4", juggernaut: "#ff9a4d", spellguard: "#8fd6ff", assassin: "#ff8fc0", arcanist: "#c9a4ff", ranger: "#b6e87a", cleric: "#ffe08a", tactician: "#8ee0dc", beastcaller: "#a6e88f" };
 
 /** One party member on the border of the screen: portrait, health, statuses, incoming threats and round state. */
-export function PartyCard({ member, fx, order, aid, onAid, kit }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean }; onAid?: (id: string) => void; kit?: { name: string; description: string }[] }) {
+export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean }; onAid?: (id: string) => void; kit?: { name: string; description: string }[]; displayName?: string }) {
   const ratio = Math.max(0, Math.min(1, member.health / member.maxHealth));
   const who = (member.isSelf ? "You, " : "Player " + member.position + ", ") + member.className;
   const body = <>
-    <span className="rn-card-head"><b>P{member.position}</b><strong>{member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
+    <span className="rn-card-head"><b>P{member.position}</b><strong title={member.className}>{displayName || member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
     <span className="rn-portrait">
       <span className="rn-portrait-bg" aria-hidden="true" />
       <span className="rn-hero-box">
