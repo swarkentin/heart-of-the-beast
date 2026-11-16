@@ -92,7 +92,7 @@ func TestJoinRoomByInvitationLink(t *testing.T) {
 		Room struct {
 			ID string `json:"id"`
 		} `json:"room"`
-		PlayerID string `json:"playerId"`
+		PlayerID    string `json:"playerId"`
 		PlayerToken string `json:"playerToken"`
 	}
 	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
