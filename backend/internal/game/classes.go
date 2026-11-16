@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const ClassDefinitionVersion = 1
+const ClassDefinitionVersion = 2
 
 const (
 	ClassBulwark     = "bulwark"
@@ -153,7 +153,7 @@ var equipmentCatalog = []EquipmentDefinition{
 var classCatalog = []ClassDefinition{
 	{ID: ClassBulwark, ArchetypeID: "tank", Name: "Bulwark", Description: "A defensive shield specialist who protects allies and holds the line.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 36, Power: 2, Focus: 1, Agility: 1}, StartingEquipment: []string{"weapon.tower-shield", "weapon.mace", "armor.heavy"}, SignatureAbilityID: "ability.shield-wall", PassiveID: "passive.resolve"},
 	{ID: ClassJuggernaut, ArchetypeID: "tank", Name: "Juggernaut", Description: "An aggressive bruiser who turns punishment into retaliation.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 38, Power: 4, Focus: 0, Agility: 1}, StartingEquipment: []string{"weapon.warhammer", "armor.reinforced", "armor.heavy-boots"}, SignatureAbilityID: "ability.reckoning", PassiveID: "passive.bloodied-strength"},
-	{ID: ClassSpellguard, ArchetypeID: "tank", Name: "Spellguard", Description: "An arcane defender who relies on wards and resistance.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 32, Power: 2, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.rune-blade", "accessory.warding-charm", "armor.medium"}, SignatureAbilityID: "ability.runic-ward", PassiveID: "passive.arcane-resistance"},
+	{ID: ClassSpellguard, ArchetypeID: "tank", Name: "Spellguard", Description: "An arcane defender who relies on wards and resistance.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 34, Power: 3, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.rune-blade", "accessory.warding-charm", "armor.medium"}, SignatureAbilityID: "ability.runic-ward", PassiveID: "passive.arcane-resistance"},
 	{ID: ClassAssassin, ArchetypeID: "damage", Name: "Assassin", Description: "A precision fighter who exploits openings and wounded targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 28, Power: 3, Focus: 1, Agility: 4}, StartingEquipment: []string{"weapon.twin-daggers", "accessory.throwing-knives", "armor.leather"}, SignatureAbilityID: "ability.exploit-weakness", PassiveID: "passive.executioner"},
 	{ID: ClassArcanist, ArchetypeID: "damage", Name: "Arcanist", Description: "An elemental specialist who combines damage and control.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 27, Power: 1, Focus: 4, Agility: 2}, StartingEquipment: []string{"weapon.arcane-staff", "accessory.spellbook", "armor.cloth-robes"}, SignatureAbilityID: "ability.elemental-surge", PassiveID: "passive.arcane-focus"},
 	{ID: ClassRanger, ArchetypeID: "damage", Name: "Ranger", Description: "A tactical ranged fighter who disrupts dangerous targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 30, Power: 3, Focus: 1, Agility: 3}, StartingEquipment: []string{"weapon.longbow", "weapon.hunting-knife", "armor.reinforced-leather"}, SignatureAbilityID: "ability.pinning-shot", PassiveID: "passive.first-strike"},
