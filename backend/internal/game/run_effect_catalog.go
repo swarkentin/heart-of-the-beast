@@ -6,6 +6,23 @@ import (
 	"sort"
 )
 
+// Permanent Strike upgrades are powerful because they compound with class Power. Cap their combined
+// contribution from shops, room events, and rewards so a long expedition does not become a one-hit sweep.
+const MaxPermanentStrikeBonus = 4
+
+func applyPermanentStrikeBonus(player *PlayerState, amount int) {
+	if player == nil || amount == 0 {
+		return
+	}
+	player.StrikeDamage += amount
+	if amount > 0 && player.StrikeDamage > PlayerStrikeDamage+MaxPermanentStrikeBonus {
+		player.StrikeDamage = PlayerStrikeDamage + MaxPermanentStrikeBonus
+	}
+	if player.StrikeDamage < 1 {
+		player.StrikeDamage = 1
+	}
+}
+
 type RunEffectKind string
 
 const (
@@ -188,7 +205,7 @@ func applyRoomEventEffect(room *Room, effectID string) (bool, string) {
 				addCombatImpact(run, 0, "player_heal", adventurerLabel(room, playerID)+" recovers "+itoa(member.Health-before)+" health from the archivist's draughts.", "heal", playerID, "player", member.Health-before)
 			}
 		case RunEffectPartyStrike:
-			member.StrikeDamage += definition.Amount
+			applyPermanentStrikeBonus(member, definition.Amount)
 		case RunEffectPartyGuard:
 			member.GuardReduction += definition.Amount
 		}
@@ -247,10 +264,7 @@ func applyRunEffectOperation(room *Room, operation RunEffectOperation, playerIDs
 		case RunEffectPartyGold:
 			member.Gold += operation.Amount
 		case RunEffectPartyStrike:
-			member.StrikeDamage += operation.Amount
-			if member.StrikeDamage < 1 {
-				member.StrikeDamage = 1
-			}
+			applyPermanentStrikeBonus(member, operation.Amount)
 		case RunEffectPartyGuard:
 			member.GuardReduction += operation.Amount
 			if member.GuardReduction < 1 {
