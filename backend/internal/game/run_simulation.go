@@ -11,22 +11,22 @@ import (
 // random-decision policy. The simulation executes the same domain commands as
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
-	Seed                  int64          `json:"seed"`
-	PartyClasses          []string       `json:"partyClasses"`
-	PartySize             int            `json:"partySize"`
-	Outcome               string         `json:"outcome"`
-	Completed             bool           `json:"completed"`
-	Wiped                 bool           `json:"wiped"`
-	ReachedDepth          int            `json:"reachedDepth"`
-	RoomsVisited          int            `json:"roomsVisited"`
-	EncountersCleared     int            `json:"encountersCleared"`
-	CombatRounds          int            `json:"combatRounds"`
-	PlayersDownAtEnd      int            `json:"playersDownAtEnd"`
-	RemainingHealth       int            `json:"remainingHealth"`
-	RemainingMaxHealth    int            `json:"remainingMaxHealth"`
-	RemainingHealthPct    int            `json:"remainingHealthPct"`
-	Levels                map[string]int `json:"levels"`
-	Steps                 int            `json:"steps"`
+	Seed               int64          `json:"seed"`
+	PartyClasses       []string       `json:"partyClasses"`
+	PartySize          int            `json:"partySize"`
+	Outcome            string         `json:"outcome"`
+	Completed          bool           `json:"completed"`
+	Wiped              bool           `json:"wiped"`
+	ReachedDepth       int            `json:"reachedDepth"`
+	RoomsVisited       int            `json:"roomsVisited"`
+	EncountersCleared  int            `json:"encountersCleared"`
+	CombatRounds       int            `json:"combatRounds"`
+	PlayersDownAtEnd   int            `json:"playersDownAtEnd"`
+	RemainingHealth    int            `json:"remainingHealth"`
+	RemainingMaxHealth int            `json:"remainingMaxHealth"`
+	RemainingHealthPct int            `json:"remainingHealthPct"`
+	Levels             map[string]int `json:"levels"`
+	Steps              int            `json:"steps"`
 }
 
 // RunSimulationBatchReport summarizes a reproducible collection of full runs.
@@ -76,9 +76,9 @@ func SimulateRun(seed int64, classIDs []string, maxSteps int) (RunSimulationRepo
 	runID := fmt.Sprintf("simulation-%d", seed)
 	room := &Room{
 		ID: runID, OwnerPlayerID: "hero-1",
-		PlayerIDs: make([]string, len(classIDs)),
+		PlayerIDs:     make([]string, len(classIDs)),
 		PlayerClasses: make(map[string]string, len(classIDs)),
-		Presence: make(map[string]PlayerPresence, len(classIDs)),
+		Presence:      make(map[string]PlayerPresence, len(classIDs)),
 	}
 	for i, classID := range classIDs {
 		playerID := fmt.Sprintf("hero-%d", i+1)
@@ -301,7 +301,7 @@ func SimulateRunBatch(seedCount int, firstSeed int64, classIDs []string, maxStep
 		Policy: RandomRunPolicyDescription, SeedCount: seedCount, FirstSeed: firstSeed,
 		LastSeed: firstSeed + int64(seedCount) - 1, PartyClasses: append([]string(nil), classIDs...),
 		DepthReachRates: make(map[int]float64),
-		Runs: make([]RunSimulationReport, 0, seedCount),
+		Runs:            make([]RunSimulationReport, 0, seedCount),
 	}
 	depths := make([]int, 0, seedCount)
 	rooms := make([]int, 0, seedCount)
