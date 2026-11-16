@@ -1,6 +1,9 @@
 package game
 
-import ("testing"; "strings")
+import (
+	"strings"
+	"testing"
+)
 
 func TestGenerateBalanceReportCoversClassesAndPartySizesDeterministically(t *testing.T) {
 	first, err := GenerateBalanceReport(1, 41)
@@ -26,15 +29,35 @@ func TestGenerateBalanceReportCoversClassesAndPartySizesDeterministically(t *tes
 		}
 	}
 	var hasRandom, hasTactical bool
-	for _, scenario := range first.Scenarios { if strings.HasSuffix(scenario.ID, "/random") { hasRandom = true }; if strings.HasSuffix(scenario.ID, "/tactical") { hasTactical = true } }
-	if !hasRandom || !hasTactical { t.Fatal("expected both random and tactical policy scenarios") }
+	for _, scenario := range first.Scenarios {
+		if strings.HasSuffix(scenario.ID, "/random") {
+			hasRandom = true
+		}
+		if strings.HasSuffix(scenario.ID, "/tactical") {
+			hasTactical = true
+		}
+	}
+	if !hasRandom || !hasTactical {
+		t.Fatal("expected both random and tactical policy scenarios")
+	}
 }
 
 func TestTuningOverridesAreReportedAndApplied(t *testing.T) {
 	report, err := GenerateBalanceReportWithTuning(2, 1, BalanceTuning{BlockAmount: 3, EnemyHealthMultiplier: 1.25, PlayerDamage: 8})
-	if err != nil { t.Fatal(err) }
-	if report.Tuning.BlockAmount != 3 || report.Tuning.EnemyHealthMultiplier != 1.25 || report.Tuning.PlayerDamage != 8 { t.Fatalf("tuning not recorded: %+v", report.Tuning) }
-	for _, scenario := range report.Scenarios { if scenario.Summary.Runs != 2 { t.Fatalf("unexpected run count: %+v", scenario) }; if scenario.Summary.Wins+scenario.Summary.Wipes+scenario.Summary.Stalled != scenario.Summary.Runs { t.Fatalf("outcomes do not account for all runs: %+v", scenario.Summary) } }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Tuning.BlockAmount != 3 || report.Tuning.EnemyHealthMultiplier != 1.25 || report.Tuning.PlayerDamage != 8 {
+		t.Fatalf("tuning not recorded: %+v", report.Tuning)
+	}
+	for _, scenario := range report.Scenarios {
+		if scenario.Summary.Runs != 2 {
+			t.Fatalf("unexpected run count: %+v", scenario)
+		}
+		if scenario.Summary.Wins+scenario.Summary.Wipes+scenario.Summary.Stalled != scenario.Summary.Runs {
+			t.Fatalf("outcomes do not account for all runs: %+v", scenario.Summary)
+		}
+	}
 }
 
 func TestCompareBalanceReportsFindsRegressionsAndDifficultyExtremes(t *testing.T) {
