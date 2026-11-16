@@ -159,7 +159,7 @@ func percentile(sorted []int, p int) int {
 		index = 0
 	}
 	if index >= len(sorted) {
-		index = len(sorted)-1
+		index = len(sorted) - 1
 	}
 	return sorted[index]
 }
@@ -173,25 +173,37 @@ func renderMarkdown(report Report) string {
 	b.WriteString("## Party composition results\n\n")
 	b.WriteString("| Party | Policy | Median depth | P10 | P90 | Wipe rate | First dungeon cleared | Stalled |\n|---|---|---:|---:|---:|---:|---:|---:|\n")
 	for _, s := range report.Scenarios {
-		completedRate := float64(s.Completed)/float64(s.Runs)
+		completedRate := float64(s.Completed) / float64(s.Runs)
 		fmt.Fprintf(&b, "| %s | %s | %d | %d | %d | %.0f%% | %.0f%% | %d |\n",
 			strings.Join(s.Party, "+"), s.Policy, s.Median, s.P10, s.P90, s.WipeRate*100, completedRate*100, s.Stalled)
 	}
 	b.WriteString("\n## Survival by party size and policy\n\n")
-	type bucket struct { size int; policy game.RunPolicy; results []game.RunSimulationReport }
+	type bucket struct {
+		size    int
+		policy  game.RunPolicy
+		results []game.RunSimulationReport
+	}
 	buckets := make(map[string]*bucket)
 	maxDepth := 0
 	for _, s := range report.Scenarios {
 		key := fmt.Sprintf("%d/%s", s.PartySize, s.Policy)
-		if buckets[key] == nil { buckets[key] = &bucket{size:s.PartySize, policy:s.Policy} }
+		if buckets[key] == nil {
+			buckets[key] = &bucket{size: s.PartySize, policy: s.Policy}
+		}
 		buckets[key].results = append(buckets[key].results, s.Results...)
-		for _, run := range s.Results { if run.ReachedDepth > maxDepth { maxDepth = run.ReachedDepth } }
+		for _, run := range s.Results {
+			if run.ReachedDepth > maxDepth {
+				maxDepth = run.ReachedDepth
+			}
+		}
 	}
 	b.WriteString("| Party size | Policy | Depth | Expeditions reaching depth |\n|---:|---|---:|---:|\n")
 	for size := 1; size <= 4; size++ {
 		for _, policy := range []game.RunPolicy{game.RunPolicyRandom, game.RunPolicyTactical} {
 			bucket := buckets[fmt.Sprintf("%d/%s", size, policy)]
-			if bucket == nil { continue }
+			if bucket == nil {
+				continue
+			}
 			for depth := 1; depth <= maxDepth; depth++ {
 				reached := 0
 				for _, run := range bucket.results {
