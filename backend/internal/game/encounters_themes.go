@@ -3,11 +3,11 @@ package game
 // themedEncounters returns the authored encounters for the pixel-art themes beyond the original Forgotten
 // Catacombs content. Each non-catacombs theme has an outpost (one monster), a patrol, an ambush and a
 // vanguard (two monsters each), and one single-monster boss encounter per boss. Budgets are provisional
-// relative scores (striker 2, support 2, disruptor 2, protector 3, bruiser 4, boss 8) pending simulation.
+// relative scores (striker 2, support 2, disruptor 2, protector 3, bruiser 4, boss 8).
 //
-// These are catalog content only: the floor generator still builds Catacombs floors, so nothing here is
-// reachable in a run until a theme gets its room graphs. Encounters stay at two enemies or fewer, which is
-// what the current scene layout can place.
+// Expedition content (expedition_content.go) places them on a ladder every theme keeps: light openers around 2,
+// standard halls around 4, heavy halls and guard rooms around 6. Every encounter is authored for a solo
+// adventurer; larger parties get the theme's reinforcements on top (encounter_reinforcements.go).
 func themedEncounters() []EncounterDefinition {
 	return []EncounterDefinition{
 		// Forgotten Catacombs additions
@@ -32,6 +32,7 @@ func themedEncounters() []EncounterDefinition {
 		{ID: "mobster-boss-black-sedan", ThemeID: "mobster", Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: "black-sedan", BudgetCost: 8}}},
 		// Sunken Kingdom
 		{ID: "sunken-outpost", ThemeID: "sunken", Budget: 3, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "drowned-knight", BudgetCost: 3}}},
+		{ID: "sunken-skirmish", ThemeID: "sunken", Budget: 2, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "reef-lurker", BudgetCost: 2}}},
 		{ID: "sunken-patrol", ThemeID: "sunken", Budget: 4, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "reef-lurker", BudgetCost: 2}, {ID: "slot-b", MonsterID: "ghost-jelly", BudgetCost: 2}}},
 		{ID: "sunken-ambush", ThemeID: "sunken", Budget: 6, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "tide-brute", BudgetCost: 4}, {ID: "slot-b", MonsterID: "drowned-siren", BudgetCost: 2}}},
 		{ID: "sunken-vanguard", ThemeID: "sunken", Budget: 5, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "drowned-knight", BudgetCost: 3}, {ID: "slot-b", MonsterID: "drowned-siren", BudgetCost: 2}}},
@@ -81,6 +82,7 @@ func themedEncounters() []EncounterDefinition {
 		// Ghost Town
 		{ID: "ghosttown-outpost", ThemeID: "ghosttown", Budget: 2, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "revenant-gunslinger", BudgetCost: 2}}},
 		{ID: "ghosttown-patrol", ThemeID: "ghosttown", Budget: 7, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "tumbleweed-haunt", BudgetCost: 3}, {ID: "slot-b", MonsterID: "cursed-prospector", BudgetCost: 4}}},
+		{ID: "ghosttown-showdown", ThemeID: "ghosttown", Budget: 6, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "cursed-prospector", BudgetCost: 4}, {ID: "slot-b", MonsterID: "revenant-gunslinger", BudgetCost: 2}}},
 		{ID: "ghosttown-ambush", ThemeID: "ghosttown", Budget: 4, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "carrion-vulture", BudgetCost: 2}, {ID: "slot-b", MonsterID: "phantom-coyote", BudgetCost: 2}}},
 		{ID: "ghosttown-vanguard", ThemeID: "ghosttown", Budget: 4, Enemies: []EncounterMonsterDefinition{{ID: "slot-a", MonsterID: "revenant-gunslinger", BudgetCost: 2}, {ID: "slot-b", MonsterID: "phantom-coyote", BudgetCost: 2}}},
 		{ID: "ghosttown-boss-the-undertaker", ThemeID: "ghosttown", Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: "the-undertaker", BudgetCost: 8}}},

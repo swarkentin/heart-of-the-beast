@@ -5,7 +5,8 @@ import { RoomBackdrop, type BackdropRef } from "../scenes";
 import { Icon } from "../lobby";
 import type { PartyMember } from "./party";
 
-export type SceneEnemy = StageEnemy & { intent: string; intentTarget: string; interruptible: boolean };
+/** intentMove names the telegraphed move; intentEffect is what it does ("5 DMG · HEALS 2"), empty when no move is ready. */
+export type SceneEnemy = StageEnemy & { intentMove: string; intentEffect: string; intentTarget: string; interruptible: boolean };
 
 /** The framed viewport: the room, its enemies and their telegraphed moves. Everything else lives outside the frame. */
 export function Scene({ view, roomId, roomName, backdrop, enemies, events, party, target, onTarget, onPartyImpact, banner }: {
@@ -32,8 +33,8 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
       })}</g>}
       <EnemyStage key={roomId} view={view} enemies={enemies} events={events} target={onTarget ? target : undefined} onTarget={onTarget} onPartyImpact={onPartyImpact} />
     </svg>
-    {living.length > 0 ? <ul className="rn-threats" aria-label="Enemy intentions">{living.map(enemy => {
-      const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i>{enemy.intent}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small></span></>;
+    {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 3 ? " rn-threats-crowded" : "")} aria-label="Enemy intentions">{living.map(enemy => {
+      const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small></span></>;
       return <li key={enemy.id}>{onTarget
         ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
         : <div className="rn-threat-chip">{body}</div>}</li>;

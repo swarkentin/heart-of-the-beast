@@ -772,7 +772,8 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 	run.Players["player-1"].Health = 10
 	run.Players["player-2"].Health = 0
 	clearToCamp(t, room)
-	if got := run.Players["player-1"].Health; got != 10+run.Players["player-1"].MaxHealth*CampRestPercent/100 {
+	// The boss fight that ends the floor restores EncounterRecoveryPercent before the camp rest adds its share.
+	if got, maxHealth := run.Players["player-1"].Health, run.Players["player-1"].MaxHealth; got != 10+maxHealth*EncounterRecoveryPercent/100+maxHealth*CampRestPercent/100 {
 		t.Fatalf("camp rest left player-1 at %d", got)
 	}
 	if run.Players["player-2"].Health != 0 {
@@ -1425,5 +1426,32 @@ func TestRunProgressXPRewardsDistance(t *testing.T) {
 	legacy := &Run{Phase: PhaseCompleted, Rooms: map[string]*DungeonRoom{"a": {Encounter: &Encounter{Status: EncounterCleared}}, "b": {Encounter: &Encounter{Status: EncounterActive}}}}
 	if got := RunProgressXP(legacy); got != RunXPPerEncounter+RunXPCompletionBonus {
 		t.Fatalf("a completed older run is worth %d, got %d", RunXPPerEncounter+RunXPCompletionBonus, got)
+	}
+}
+
+func TestShopStillWorksAfterTheCampIsSavedAndReloaded(t *testing.T) {
+	room := openTestShop(t, 2, "shop-reload")
+	data, err := json.Marshal(room.Run.Camp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reloaded Camp
+	if err := json.Unmarshal(data, &reloaded); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Purchases != nil || reloaded.Ready != nil {
+		t.Fatal("expected an untouched camp to reload without its maps, as the store does")
+	}
+	room.Run.Camp = &reloaded
+	buyer := room.Run.Players["player-1"]
+	buyer.Gold = 100
+	if err := ApplyCommand(room, "player-1", Command{Type: "buy", ChoiceID: "whetstone"}, expeditionNow); err != nil {
+		t.Fatalf("buying at a reloaded camp: %v", err)
+	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "ready"}, expeditionNow); err != nil {
+		t.Fatalf("readying at a reloaded camp: %v", err)
+	}
+	if !room.Run.Camp.Ready["player-1"] || len(room.Run.Camp.Purchases["player-1"]) != 1 {
+		t.Fatalf("purchase or ready was lost: %+v", room.Run.Camp)
 	}
 }

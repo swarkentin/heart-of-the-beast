@@ -4,15 +4,39 @@ import "fmt"
 
 // EncounterMonsterDefinition describes one stable spawn slot in an encounter.
 // SoloMonsterID is an explicit content variant for a one-player party.
+// MinPartySize makes the slot a reinforcement: it only spawns when the party has at least that many adventurers.
+// Zero or one means the slot always spawns.
 type EncounterMonsterDefinition struct {
 	ID            string
 	MonsterID     string
 	SoloMonsterID string
 	BudgetCost    int
+	MinPartySize  int
 }
 
-// EncounterDefinition is an authored composition. Budget is a provisional,
-// relative authoring score; it does not affect combat stats or selection yet.
+const (
+	// MaxEncounterEnemies is the most enemies one fight can hold, reinforcements and boss summons included. It is
+	// what the combat scene can lay out with every nameplate and intent still legible.
+	MaxEncounterEnemies = 6
+	// MaxEncounterPartySize is the largest party encounters are authored for.
+	MaxEncounterPartySize = 4
+)
+
+// spawnsFor reports whether a slot is part of the encounter for a party of the given size.
+func (spawn EncounterMonsterDefinition) spawnsFor(partySize int) bool {
+	return spawn.MinPartySize <= 1 || partySize >= spawn.MinPartySize
+}
+
+// isReinforcement reports whether a slot only joins larger parties.
+func (spawn EncounterMonsterDefinition) isReinforcement() bool {
+	return spawn.MinPartySize > 1
+}
+
+// EncounterDefinition is an authored composition. Budget is a provisional, relative authoring score of the slots
+// every party meets (reinforcements excluded); it sets the encounter's gold, not its combat stats.
+//
+// Larger parties meet more enemies rather than much tougher ones: reinforcement slots (MinPartySize > 1) join as
+// the party grows, so each adventurer faces about the same pressure and the party has more targets to choose.
 type EncounterDefinition struct {
 	ID string
 	// ThemeID is the dungeon theme (see DungeonThemeCatalog) whose monsters this encounter is built from.
@@ -82,6 +106,7 @@ func newEncounterCatalog() EncounterCatalog {
 	definitions = append(definitions, themedEncounters()...)
 	encounters := make(map[string]EncounterDefinition, len(definitions))
 	for _, definition := range definitions {
+		definition = withPartyReinforcements(definition)
 		if _, duplicate := encounters[definition.ID]; duplicate {
 			panic(fmt.Sprintf("duplicate built-in encounter %q", definition.ID))
 		}
@@ -103,10 +128,13 @@ func (catalog EncounterCatalog) Validate(monsters MonsterCatalog) error {
 		if id == "" || definition.ID != id || definition.ThemeID == "" || definition.Budget <= 0 || len(definition.Enemies) == 0 {
 			return fmt.Errorf("invalid encounter definition %q", id)
 		}
-		totalBudget := 0
+		if len(definition.Enemies) > MaxEncounterEnemies {
+			return fmt.Errorf("encounter %q can spawn %d enemies; a fight holds at most %d", id, len(definition.Enemies), MaxEncounterEnemies)
+		}
+		totalBudget, baseSlots := 0, 0
 		seenSlots := make(map[string]bool, len(definition.Enemies))
 		for _, spawn := range definition.Enemies {
-			if spawn.ID == "" || seenSlots[spawn.ID] || spawn.BudgetCost <= 0 {
+			if spawn.ID == "" || seenSlots[spawn.ID] || spawn.BudgetCost <= 0 || spawn.MinPartySize < 0 || spawn.MinPartySize > MaxEncounterPartySize {
 				return fmt.Errorf("encounter %q has invalid spawn slot %q", id, spawn.ID)
 			}
 			seenSlots[spawn.ID] = true
@@ -118,7 +146,14 @@ func (catalog EncounterCatalog) Validate(monsters MonsterCatalog) error {
 					return fmt.Errorf("encounter %q solo variant: %w", id, err)
 				}
 			}
+			if spawn.isReinforcement() {
+				continue
+			}
+			baseSlots++
 			totalBudget += spawn.BudgetCost
+		}
+		if baseSlots == 0 {
+			return fmt.Errorf("encounter %q has no enemy that a solo party meets", id)
 		}
 		if totalBudget != definition.Budget {
 			return fmt.Errorf("encounter %q budget %d does not match spawn costs %d", id, definition.Budget, totalBudget)
@@ -135,6 +170,9 @@ func (catalog EncounterCatalog) Instantiate(id, instancePrefix string, scaling M
 	}
 	enemies := make([]Enemy, 0, len(definition.Enemies))
 	for _, spawn := range definition.Enemies {
+		if !spawn.spawnsFor(scaling.PartySize) {
+			continue
+		}
 		monsterID := spawn.MonsterID
 		if scaling.PartySize == 1 && spawn.SoloMonsterID != "" {
 			monsterID = spawn.SoloMonsterID
@@ -161,4 +199,15 @@ func newCatalogEncounter(id, instancePrefix string, scaling MonsterScaling) *Enc
 		panic(fmt.Sprintf("invalid built-in encounter %q: %v", id, err))
 	}
 	return encounter
+}
+
+// SpawnCount is how many enemies the encounter puts in front of a party of the given size.
+func (definition EncounterDefinition) SpawnCount(partySize int) int {
+	count := 0
+	for _, spawn := range definition.Enemies {
+		if spawn.spawnsFor(partySize) {
+			count++
+		}
+	}
+	return count
 }

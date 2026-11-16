@@ -3,6 +3,7 @@ import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, 
 import { getSignatureAbility, partySupportCommand, signatureCommand, type SignatureMode } from "../combatAbilities";
 import { GameShell, Icon, SharedMenu, type IconId, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
+import { enemyX } from "../monsters/layout";
 import { backdropRef, themeTitle } from "../scenes";
 import { Camp, ExpeditionResult, FloorStatus } from "./Camp";
 import { relabel, useCombatLog, type LogLine } from "./log";
@@ -29,8 +30,9 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
   const targetIndex = intent?.targetPlayerId ? playerIds.indexOf(intent.targetPlayerId) + 1 : 0;
   return {
     id: enemy.id, name: enemy.name + (enemy.enraged ? " · ENRAGED" : "") + ((enemy.barrier ?? 0) > 0 ? " · BARRIER " + enemy.barrier : ""), hp: enemy.health, maxHp: enemy.maxHealth, sprite: enemy.sprite, rawIntent: intent,
-    x: count === 1 ? 550 : 550 + (index - (count - 1) / 2) * (count === 2 ? 240 : 220),
-    intent: intent ? intent.label + " · " + intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "No move ready",
+    x: enemyX("player", count, index),
+    intentMove: intent ? intent.label : "No move ready",
+    intentEffect: intent ? intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "",
     intentTarget: intent?.targetAll ? "→ WHOLE PARTY" : intent?.targetPlayerId && intent.targetPlayerId === selfId ? "→ YOU" : targetIndex > 0 ? "→ P" + targetIndex : "",
     interruptible: Boolean(intent?.interruptible),
   };
@@ -140,6 +142,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const signatureAbilityId = player?.classBuild?.signatureAbilityId || catalog?.classes.find(item => item.id === player?.classBuild?.classId)?.signatureAbilityId;
   const signature = getSignatureAbility(signatureAbilityId);
   const signatureName = catalog?.classAbilities.find(item => item.id === signatureAbilityId)?.name || "Signature";
+  // Rounds until the signature ability can be used again (Renewal recovers for a few rounds after each cast).
+  const cooldown = player?.classCombat?.abilityCooldown ?? 0;
+  const recovering = cooldown > 0 ? "Ready in " + cooldown + (cooldown === 1 ? " round" : " rounds") : "";
   const aidLabel = combat && acting && signature ? (signature.id === "ability.renewal" ? "RENEW" : signature.id === "ability.companion-command" ? "GUARD" : "") : "";
   const actions: ActionDef[] = [];
   if (round && player) {
@@ -149,7 +154,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     actions.push({ key: "guard", label: "Defend", hint: "Block " + (player.guardReduction || 6) + "+ damage", details: "Brace: the next hit against you is reduced by at least " + (player.guardReduction || 6) + ". This is also what happens if the timer runs out.", icon: "guard", tone: "guard", disabled: false, command: { type: "combat", round: n, action: "defend" } });
     actions.push({ key: "interrupt", label: "Interrupt", hint: foe?.interruptible ? "Cancel " + (foe.rawIntent?.label ?? "its move") : "Nothing to interrupt", details: foe?.interruptible ? "Stop " + foeName + " from using " + (foe.rawIntent?.label ?? "its move") + " this round." : "Only moves marked CAN BE INTERRUPTED can be cancelled. Pick an enemy that shows that mark.", icon: "control", tone: "control", disabled: !foe?.interruptible, command: { type: "combat", round: n, action: "interrupt", targetId: foe?.id } });
     if (signature) {
-      const make = (mode: SignatureMode | "", label: string, hint: string, icon: IconId, needsFoe: boolean, allyId = ""): ActionDef => ({ key: "sig" + (mode ? ":" + mode : ""), label, hint, details: signature.details, icon, tone: "signature", disabled: needsFoe && !foe, command: signatureCommand(signature, n, mode, foe?.id ?? "", allyId) });
+      const make = (mode: SignatureMode | "", label: string, hint: string, icon: IconId, needsFoe: boolean, allyId = ""): ActionDef => ({ key: "sig" + (mode ? ":" + mode : ""), label, hint: recovering || hint, details: signature.details, icon, tone: "signature", disabled: (needsFoe && !foe) || cooldown > 0, command: signatureCommand(signature, n, mode, foe?.id ?? "", allyId) });
       if (signature.id === "ability.elemental-surge") { actions.push(make("fire", "Fire Surge", "More damage", "arcane", true)); actions.push(make("frost", "Frost Surge", "Less damage, cancels its move", "control", true)); }
       else if (signature.id === "ability.companion-command") { actions.push(make("attack", "Pet: Attack", "Companion strikes", "strike", true)); actions.push(make("defend", "Pet: Guard", "Guard yourself, or pick an ally", "guard", false, selfId)); actions.push(make("disrupt", "Pet: Disrupt", "Stop or weaken its move", "control", true)); }
       else if (signature.id === "ability.renewal") actions.push(make("", "Renewal", "Heal yourself, or pick an ally", "life", false, selfId));
@@ -163,7 +168,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     void onCommand(action.command).then(ok => { if (!ok) setPending(null); });
   };
   const aid = (memberId: string) => {
-    if (!canAct || !signature || !round) return;
+    if (!canAct || !signature || !round || cooldown > 0) return;
     navigator.vibrate?.(12);
     setPending({ round: round.number, key: signature.id === "ability.companion-command" ? "sig:defend" : "sig" });
     void onCommand(partySupportCommand(signature, round.number, memberId)).then(ok => { if (!ok) setPending(null); });
@@ -272,7 +277,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     return [catalog?.classAbilities.find(item => item.id === definition.signatureAbilityId), catalog?.classPassives.find(item => item.id === definition.passiveId)].filter(item => item !== undefined).map(item => ({ name: item.name, description: item.description }));
   };
   // A card that has a whole border to itself also explains the class kit.
-  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: aidLabel ? { label: aidLabel, disabled: !canAct } : undefined, onAid: aid });
+  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: aidLabel ? { label: aidLabel, disabled: !canAct || cooldown > 0 } : undefined, onAid: aid });
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}

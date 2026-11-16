@@ -100,6 +100,8 @@ type ClassCombatState struct {
 	WardReflect          int  `json:"wardReflect,omitempty"`
 	ResolveReady         bool `json:"resolveReady,omitempty"`
 	ArcaneCharges        int  `json:"arcaneCharges,omitempty"`
+	// AbilityCooldown is how many more rounds the signature ability is unavailable. It resets when a fight ends.
+	AbilityCooldown int `json:"abilityCooldown,omitempty"`
 }
 
 type PlayerState struct {

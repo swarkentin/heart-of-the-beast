@@ -41,9 +41,10 @@ func TestFloorTemplateCatalogRejectsInconsistentContent(t *testing.T) {
 
 // Floors for the original theme must stay exactly as they were before floor generation became data-driven.
 // The fingerprint covers 400 seeds x 3 depths x 4 party sizes, ignoring the later-added themeId field. Change it
-// only as a deliberate Catacombs content migration.
+// only as a deliberate Catacombs content migration. Last migration: party-size reinforcements and the encounter
+// scaling retune (docs/decisions/0030-party-scaled-encounters-and-dungeon-tuning.md).
 func TestCatacombsFloorsAreUnchangedByThemedGeneration(t *testing.T) {
-	const golden = "6dac8bdbf6bae16ab32eb420633a3b6347bba019c3de3af3d26628cf2db82fcc"
+	const golden = "5f71aea865c67c5a5e5d6ffc1a1d4b5a217f47af61a61f44d53fe3154c373b12"
 	hash := sha256.New()
 	for seed := uint64(1); seed <= 400; seed++ {
 		for depth := 1; depth <= 3; depth++ {

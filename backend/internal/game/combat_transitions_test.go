@@ -149,7 +149,8 @@ func TestBuildEnemyIntentPreservesLegacyBehaviorFallback(t *testing.T) {
 func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
 	players := []string{"player-1", "player-2", "player-3", "player-4"}
 	got := buildEnemyIntent(&Enemy{Behavior: "guardian"}, 1, 0, players)
-	if got.Damage != 24 {
-		t.Fatalf("four-player guardian heavy intent damage = %d, want 24", got.Damage)
+	// 8 damage x (1 + 3 x PartyEnemyDamageMultiplierStep): larger parties mostly meet more enemies, not harder hits.
+	if got.Damage != 10 {
+		t.Fatalf("four-player guardian heavy intent damage = %d, want 10", got.Damage)
 	}
 }

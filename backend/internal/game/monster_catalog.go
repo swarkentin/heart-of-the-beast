@@ -201,9 +201,9 @@ func (catalog MonsterCatalog) NewEnemy(instanceID, monsterID string, scaling Mon
 	if multiplier <= 0 {
 		multiplier = 1
 		if scaling.Depth > 0 {
-			multiplier += float64(scaling.Depth-1) * 0.18
+			multiplier += float64(scaling.Depth-1) * 0.12
 			if scaling.PartySize == 1 {
-				multiplier -= 0.12
+				multiplier -= 0.2
 			}
 		}
 	}

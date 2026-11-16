@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -79,11 +80,13 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 	if err := StartRun(room, "run-targeting", now); err != nil {
 		t.Fatal(err)
 	}
+	withoutReinforcements(room, "entry")
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
 	intent := room.Run.Rooms["entry"].Encounter.Enemies[0].Intent
 	if intent == nil || intent.TargetPlayerID != "player-2" {
 		t.Fatalf("first enemy intent should target the second player in a two-player party, got %+v", intent)
 	}
+	intent.Damage = 7
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +97,7 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 		t.Fatalf("untargeted player should take no damage, health=%d", got)
 	}
 	if got := room.Run.Players["player-2"].Health; got != 27 {
-		t.Fatalf("targeted player should block the 4 damage strike, health=%d", got)
+		t.Fatalf("targeted player should block 4 of the 7 damage strike, health=%d", got)
 	}
 	if next := room.Run.Rooms["entry"].Encounter.Enemies[0].Intent; next == nil || next.TargetPlayerID != "player-1" {
 		t.Fatalf("the next single-target intent should rotate to the first player, got %+v", next)
@@ -103,7 +106,7 @@ func TestCoopEnemyIntentTargetsOnePlayerAndGuardProtectsThatPlayer(t *testing.T)
 
 func TestWardenSoulSweepTelegraphsPartyWideDamage(t *testing.T) {
 	intent := buildEnemyIntent(&Enemy{Behavior: "warden"}, 3, 0, []string{"player-1", "player-2"})
-	if intent.Kind != "soul_sweep" || !intent.TargetAll || intent.Damage != 5 {
+	if intent.Kind != "soul_sweep" || !intent.TargetAll || intent.Damage != 3 {
 		t.Fatalf("expected a party-wide soul sweep on every third round, got %+v", intent)
 	}
 }
@@ -172,6 +175,7 @@ func TestPartyWideIntentAppliesGuardIndependently(t *testing.T) {
 	if err := StartRun(room, "run-sweep", now); err != nil {
 		t.Fatal(err)
 	}
+	withoutReinforcements(room, "entry")
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
 	enemy.Health = 20
 	enemy.Intent = &EnemyIntent{Kind: "soul_sweep", Label: "Soul sweep", Damage: 3, TargetAll: true}
@@ -302,6 +306,7 @@ func newClassCombatTestRoom(t *testing.T, classID string, playerIDs ...string) (
 	if err := StartRun(room, "run-class-"+classID, now); err != nil {
 		t.Fatalf("start class run: %v", err)
 	}
+	withoutReinforcements(room, "entry")
 	return room, now
 }
 
@@ -370,6 +375,7 @@ func TestJuggernautReckoningUsesDamageAbsorbedInPreviousRound(t *testing.T) {
 func TestSpellguardRunicWardAbsorbsAndReflectsNextAttack(t *testing.T) {
 	room, now := newClassCombatTestRoom(t, ClassSpellguard)
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 14, 14
 	enemy.Intent = &EnemyIntent{Kind: "strike", Label: "Strike", Damage: 8, TargetPlayerID: "player-1"}
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "ability"}, now); err != nil {
 		t.Fatal(err)
@@ -472,7 +478,7 @@ func TestBeastcallerCompanionCanAttackAndPassiveHealsLowestAlly(t *testing.T) {
 	if enemy.Health != 7 {
 		t.Fatalf("companion and player attacks should deal 17 combined damage, enemy health=%d", enemy.Health)
 	}
-	if room.Run.Players["player-2"].Health != 4 {
+	if room.Run.Players["player-2"].Health != 7 {
 		t.Fatalf("Companion Instinct should heal the lowest-health ally after the enemy hit, health=%d", room.Run.Players["player-2"].Health)
 	}
 }
@@ -585,5 +591,45 @@ func TestTimedOutPlayerIsMarkedAsDefendingAutomatically(t *testing.T) {
 	timedOut, ok := seen["player-2"]
 	if !ok || !timedOut.Auto || !strings.Contains(timedOut.Message, "ran out of time") {
 		t.Fatalf("a timed-out player must be marked as defending automatically, got %+v", timedOut)
+	}
+}
+
+func TestRenewalRecoversForThreeRoundsAndIsReadyAgainNextFight(t *testing.T) {
+	room, now := newClassCombatTestRoom(t, ClassCleric)
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 200, 200
+	cleric := room.Run.Players["player-1"]
+	cleric.Health = 10
+	renew := func() error {
+		return ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "ability"}, now)
+	}
+	defend := func() {
+		t.Helper()
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "defend"}, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := renew(); err != nil {
+		t.Fatal(err)
+	}
+	for wait := RenewalCooldownRounds; wait > 0; wait-- {
+		if got := cleric.ClassCombat.AbilityCooldown; got != wait {
+			t.Fatalf("Renewal should report %d rounds left, got %d", wait, got)
+		}
+		if err := renew(); !errors.Is(err, ErrAbilityCoolingDown) {
+			t.Fatalf("Renewal should be recovering with %d rounds left, got %v", wait, err)
+		}
+		defend()
+	}
+	if err := renew(); err != nil {
+		t.Fatalf("Renewal should be ready %d rounds after a cast: %v", RenewalCooldownRounds, err)
+	}
+
+	enemy.Health = 1
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "attack", TargetID: enemy.ID}, now); err != nil {
+		t.Fatal(err)
+	}
+	if cleric.ClassCombat.AbilityCooldown != 0 {
+		t.Fatalf("a won fight should leave Renewal ready for the next one, cooldown=%d", cleric.ClassCombat.AbilityCooldown)
 	}
 }

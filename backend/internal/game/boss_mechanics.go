@@ -115,7 +115,7 @@ func applyBossMechanics(room *Room, current *DungeonRoom, round int) {
 			enemy.Barrier = BossBarrierBase + BossBarrierPerPlayer*partySize
 			addCombatEvent(run, round, "boss_barrier", enemy.Name+" raises "+enemy.BarrierLabel+". It absorbs "+itoa(enemy.Barrier)+" Strike damage; signature abilities and interrupts pierce it.")
 		}
-		if enemy.hasMechanic(BossMechanicSummon) && enemy.SummonsLeft > 0 && enemy.Health*100 <= enemy.MaxHealth*BossSummonHealthPercent {
+		if enemy.hasMechanic(BossMechanicSummon) && enemy.SummonsLeft > 0 && len(encounter.Enemies) < MaxEncounterEnemies && enemy.Health*100 <= enemy.MaxHealth*BossSummonHealthPercent {
 			enemy.SummonsLeft--
 			scaling := MonsterScaling{Depth: run.Depth + dungeonExtraDepth(run), PartySize: len(room.PlayerIDs)}
 			add, err := defaultMonsterCatalog.NewEnemy(fmt.Sprintf("%s-add-%d", enemy.ID, len(encounter.Enemies)), enemy.SummonMonsterID, scaling)

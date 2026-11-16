@@ -5,12 +5,22 @@ import (
 	"fmt"
 )
 
-var ErrInvalidAbility = errors.New("class ability is not available or its target is invalid")
+var (
+	ErrInvalidAbility = errors.New("class ability is not available or its target is invalid")
+	// ErrAbilityCoolingDown rejects a signature ability that was used too recently.
+	ErrAbilityCoolingDown = errors.New("class ability is still recovering")
+)
+
+// RenewalCooldownRounds is how many rounds a Cleric must wait after Renewal before casting it again: used in round
+// N, it is ready again in round N+1+RenewalCooldownRounds. A heal every round outpaced anything a fight could deal.
+const RenewalCooldownRounds = 3
 
 type classAbilityHandler struct {
 	target string
 	modes  []string
 	apply  func(*Room, *PlayerState, Command, *Enemy, *PlayerState, int) error
+	// cooldown is how many rounds after a use the ability stays unavailable. Zero means it can be used every round.
+	cooldown int
 }
 
 type classPassiveBonuses struct {
@@ -109,7 +119,8 @@ var classAbilityHandlers = map[string]classAbilityHandler{
 		},
 	},
 	"combat.heal": {
-		target: "player_optional",
+		target:   "player_optional",
+		cooldown: RenewalCooldownRounds,
 		apply: func(room *Room, player *PlayerState, _ Command, _ *Enemy, target *PlayerState, round int) error {
 			if target == nil {
 				target = player
@@ -198,6 +209,9 @@ func validateClassAbilityCommand(player *PlayerState, encounter *Encounter, comm
 		return ErrInvalidAbility
 	}
 	handler, ok := classAbilityHandlers[ability.EffectID]
+	if ok && handler.cooldown > 0 && player.ClassCombat.AbilityCooldown > 0 {
+		return ErrAbilityCoolingDown
+	}
 	if !ok || !handler.supportsMode(command.Mode) {
 		return ErrInvalidAbility
 	}
@@ -272,6 +286,10 @@ func applyClassAbility(room *Room, player *PlayerState, command Command, round i
 	}
 	if err := handler.apply(room, player, command, enemy, target, round); err != nil {
 		return err
+	}
+	if handler.cooldown > 0 {
+		// Counted down at the end of every round, this one included.
+		player.ClassCombat.AbilityCooldown = handler.cooldown + 1
 	}
 	if ability.EffectID != "combat.elemental" {
 		player.ClassCombat.ArcaneCharges = 0
