@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"fmt"\n\t"strings"\n\t"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"testing"
 )
 
@@ -29,5 +29,30 @@ func TestPartyCompositionsCoverAllSizesAndAreDeterministic(t *testing.T) {
 	}
 	if counts[1] != 9 || counts[2] != 45 || counts[3] != 36 || counts[4] != 36 {
 		t.Fatalf("unexpected composition distribution: %v", counts)
+	}
+}
+
+func TestRenderMarkdownStopsSurvivalTableAtZeroReachAndOmitsSuggestions(t *testing.T) {
+	report := Report{
+		Theme: "random", CompositionCount: 1, RunsPerCase: 2,
+		Scenarios: []Scenario{{
+			Party: []string{"arcanist"}, PartySize: 1, Policy: "tactical",
+			Runs: 2, Results: []game.RunSimulationReport{
+				{ReachedDepth: 1},
+				{ReachedDepth: 2},
+			},
+		}},
+	}
+
+	markdown := renderMarkdown(report)
+	if strings.Contains(markdown, "Reading the results") ||
+		strings.Contains(markdown, "Treat this as comparative evidence") {
+		t.Fatalf("report still contains explanatory suggestions:\n%s", markdown)
+	}
+	if strings.Contains(markdown, "| 1 | tactical | 3 |") {
+		t.Fatalf("survival table continued past zero reach:\n%s", markdown)
+	}
+	if !strings.Contains(markdown, "| 1 | tactical | 2 | 50.0% (1/2) |") {
+		t.Fatalf("survival table omitted the last non-zero depth:\n%s", markdown)
 	}
 }
