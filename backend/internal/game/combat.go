@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	CombatActionWindow            = 8 * time.Second
-	PlayerStrikeDamage            = 6
+	CombatActionWindow             = 8 * time.Second
+	PlayerStrikeDamage             = 6
 	GuardDamageReduction           = 4
 	LiveEnemyHealthMultiplier      = 1.35
 	PartyEnemyHealthMultiplierStep = 0.4
