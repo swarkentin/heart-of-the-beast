@@ -327,3 +327,180 @@ body,button,input,select,textarea{font-family:"DM Mono",monospace;font-size:14px
 /* Keep player frames in the gutters so they never cover room labels or navigation. */
 @media(min-width:701px){.party-member:nth-child(odd){top:38%;transform:translateY(-50%)}.party-member:nth-child(even){top:38%;transform:translateY(-50%)}.party-roster-heading{top:auto;bottom:5px;left:50%;z-index:5}.room-event-panel:has(.room-event-result){position:absolute;top:58px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 340px));max-height:22%;margin:0;padding:8px 12px}.room-event-panel:has(.room-event-result) .room-event-heading h2{font-size:12px}.room-event-panel:has(.room-event-result)>p{margin-bottom:5px}.room-event-panel:has(.room-event-result) .room-event-result{padding:5px 8px}}
 @media(min-width:701px){.party-roster:not(.party-roster-combat){position:relative;inset:auto;order:3;flex:0 0 auto;width:100%;margin:8px 0 0;padding:5px;background:#11141df0;border:1px solid #51463d;box-shadow:3px 3px 0 #080a10;pointer-events:auto}.party-roster:not(.party-roster-combat) .party-roster-heading{position:static;width:auto;margin:0 0 4px;transform:none}.party-roster:not(.party-roster-combat) .party-roster-heading span{display:block}.party-roster:not(.party-roster-combat) .party-roster-members{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:4px}.party-roster:not(.party-roster-combat) .party-member{position:relative;inset:auto;width:auto;max-width:none;min-height:62px;transform:none}}
+
+
+/* Phone-first run layout: keep the room visible and make combat decisions compact. */
+@media (max-width: 700px) {
+  .game-screen {
+    height: auto;
+    min-height: 100dvh;
+    padding: 0 10px;
+  }
+
+  .game-topline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand audio"
+      "switch switch"
+      "status status";
+    align-items: center;
+    gap: 6px 8px;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+    padding: 8px 0;
+  }
+  .game-topline > :nth-child(1) { grid-area: brand; min-width: 0; }
+  .game-topline > :nth-child(2) { grid-area: status; text-align: center; }
+  .game-topline > :nth-child(3) { grid-area: audio; justify-self: end; }
+  .game-topline > :nth-child(4) { grid-area: switch; justify-self: start; }
+  .game-brand { font-size: 10px; white-space: normal; }
+  .game-brand span { flex: 0 0 23px; }
+  .run-status { font-size: 10px; }
+  .view-switch { width: max-content; max-width: 100%; }
+  .view-switch button { white-space: nowrap; }
+
+  /* Keep party actions reachable without letting the share controls dominate the screen. */
+  .game-topline + div {
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 4px 0 7px !important;
+  }
+  .game-topline + div > a { font-size: 12px; }
+  .game-topline + div > button.turn-button:first-of-type { display: none; }
+  .game-topline + div > button.turn-button:last-child {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .play-area {
+    min-height: 0;
+    padding: 6px 0;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  /* The scene gets a predictable share of the phone viewport instead of being
+     squeezed by the full-height action dock and party roster. */
+  .scene {
+    inset: 6px 0 auto;
+    height: clamp(210px, 31dvh, 310px);
+    border-width: 2px;
+  }
+  .scene-art { object-fit: cover; object-position: center 45%; }
+  .scene-location { top: 7px; left: 7px; max-width: 48%; padding: 6px 7px; font-size: 10px; }
+  .scene-hint { display: none; }
+  .enemy-intents {
+    top: 7px;
+    right: 7px;
+    bottom: auto;
+    max-width: 55%;
+    max-height: calc(100% - 48px);
+    overflow: auto;
+    gap: 4px;
+  }
+  .intent {
+    display: grid;
+    grid-template-columns: 7px minmax(0, 1fr);
+    gap: 2px 6px;
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+  .intent > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+  .intent b { grid-column: 2; margin: 0; font-size: 10px; white-space: normal; }
+  .intent small { grid-column: 2; font-size: 10px; }
+
+  .action-dock {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 6px;
+    margin-top: 0;
+    padding: 7px;
+  }
+  .action-target-hint { grid-column: 1 / -1; line-height: 1.35; }
+  .combat-timer { grid-column: 1 / -1; min-width: 0; }
+  .combat-timer-heading { display: flex; align-items: center; gap: 6px; }
+  .combat-timer-heading strong { flex: 1; min-width: 0; }
+  .combat-timer-heading span { white-space: nowrap; }
+  .move-button {
+    min-width: 0;
+    min-height: 58px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 3px;
+    text-align: center;
+  }
+  .move-glyph { font-size: 17px; line-height: 1; }
+  .move-label { gap: 1px; font-size: 12px; }
+  .move-label small { font-size: 10px; white-space: normal; }
+
+  .class-action-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(112px, .8fr);
+    align-items: center;
+    gap: 8px;
+    padding: 7px;
+  }
+  .class-action-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .class-action-copy > span { font-size: 9px; }
+  .class-action-copy > strong { white-space: normal; overflow-wrap: anywhere; font-size: 12px; }
+  .class-action-copy > small { font-size: 11px; line-height: 1.25; }
+  .class-action-copy > p,
+  .class-action-copy > i,
+  .class-action-copy > .signature-limit { display: none; }
+  .class-action-choices { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .signature-choice { width: 100%; min-width: 0; min-height: 42px; padding: 5px; }
+  .signature-choice strong { font-size: 10px; }
+  .signature-choice small { font-size: 10px; }
+
+  .party-roster-combat {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+  .party-roster-combat .party-roster-heading {
+    width: max-content;
+    margin: 0 auto 4px;
+    padding: 3px 8px;
+  }
+  .party-roster-combat .party-roster-members {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .party-roster-combat .party-member {
+    min-height: 54px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    padding: 4px;
+  }
+  .party-roster-combat .party-member-portrait { width: 38px; height: 44px; }
+  .party-roster-combat .party-member-heading b { font-size: 10px; }
+  .party-roster-combat .party-member-heading i { font-size: 10px; }
+  .party-roster-combat .party-member-action { font-size: 10px; }
+}
+
+@media (max-width: 420px) {
+  .game-screen { padding-right: 7px; padding-left: 7px; }
+  .game-brand { font-size: 9px; }
+  .run-status { font-size: 9px; }
+  .view-switch button { padding: 6px 7px; font-size: 10px; }
+  .scene { height: clamp(195px, 29dvh, 260px); }
+  .scene-location { max-width: 44%; font-size: 9px; }
+  .intent { padding: 4px 5px; font-size: 10px; }
+  .intent b, .intent small { font-size: 9px; }
+  .action-dock { gap: 4px; padding: 5px; }
+  .move-button { min-height: 54px; }
+  .move-label { font-size: 11px; }
+  .move-label small { font-size: 9px; }
+  .class-action-panel { grid-template-columns: minmax(0, 1fr) minmax(100px, .75fr); gap: 5px; }
+  .party-roster-combat .party-member { min-height: 50px; }
+}
+
