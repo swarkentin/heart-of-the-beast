@@ -154,8 +154,8 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
 		t.Fatal("round should resolve when its deadline is reached")
 	}
-	if got := room.Run.Players["player-2"].Health; got != 20 {
-		t.Fatalf("missing action should default to guard and block the telegraphed hit, health=%d", got)
+	if got := room.Run.Players["player-2"].Health; got != 19 {
+		t.Fatalf("missing action should default to guard and mitigate the scaled telegraphed hit, health=%d", got)
 	}
 	if got := room.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 14 {
 		t.Fatalf("submitted attack should resolve at deadline, enemy health=%d", got)
