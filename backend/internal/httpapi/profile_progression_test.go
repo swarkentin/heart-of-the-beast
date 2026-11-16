@@ -97,11 +97,11 @@ func TestFailedRunAwardsProgressForClearedEncounters(t *testing.T) {
 	}
 	room := &game.Room{
 		PlayerProfileIDs: map[string]string{"player-1": profile.ID},
-		Presence: map[string]game.PlayerPresence{"player-1": {}},
+		Presence:         map[string]game.PlayerPresence{"player-1": {}},
 		Run: &game.Run{
 			ID: "failed-run", Phase: game.PhaseFailed,
 			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1", ClassBuild: &game.ClassBuildSnapshot{ClassID: game.ClassCleric}}},
-			Rooms: map[string]*game.DungeonRoom{"cleared": {ID: "cleared", Encounter: &game.Encounter{Status: game.EncounterCleared}}},
+			Rooms:   map[string]*game.DungeonRoom{"cleared": {ID: "cleared", Encounter: &game.Encounter{Status: game.EncounterCleared}}},
 		},
 	}
 	handler := &Handler{rooms: memory, now: time.Now}
@@ -129,7 +129,7 @@ func TestRunWithoutClearedEncountersDoesNotAwardProgress(t *testing.T) {
 		Run: &game.Run{
 			ID: "empty-run", Phase: game.PhaseFailed,
 			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1"}},
-			Rooms: map[string]*game.DungeonRoom{"uncleared": {ID: "uncleared", Encounter: &game.Encounter{Status: game.EncounterActive}}},
+			Rooms:   map[string]*game.DungeonRoom{"uncleared": {ID: "uncleared", Encounter: &game.Encounter{Status: game.EncounterActive}}},
 		},
 	}
 	handler := &Handler{rooms: memory, now: time.Now}
