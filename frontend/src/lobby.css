@@ -112,7 +112,7 @@
 .px-mastery-track i { background: #8fd6ff; }
 .px-mastery-xp { font-size: 9px; }
 
- /* ---------- party lobby ---------- */
+/* ---------- party lobby ---------- */
 .px-lobby { display: grid; gap: 18px; width: min(1180px, 100%); margin: 8px auto 0; }
 .px-camp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px 28px; flex-wrap: wrap; }
 .px-camp-head > div:first-child { display: grid; gap: 6px; flex: 1 1 320px; }
