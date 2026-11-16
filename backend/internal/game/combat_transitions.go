@@ -161,5 +161,10 @@ func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []strin
 		// historical fallback until the explicit content-version migration.
 		ability = AbilityDefinition{Kind: "strike", Label: "Strike", Damage: 4}
 	}
-	return resolveEnemyIntent(ability, roundNumber, enemyIndex, players)
+	intent := resolveEnemyIntent(ability, roundNumber, enemyIndex, players)
+	if len(players) > 1 {
+		damageMultiplier := 1 + float64(len(players)-1)*PartyEnemyDamageMultiplierStep
+		intent.Damage = int(float64(intent.Damage)*damageMultiplier + 0.5)
+	}
+	return intent
 }
