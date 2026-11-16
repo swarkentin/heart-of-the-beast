@@ -30,6 +30,11 @@ function createProfileCredential(): string {
   return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
 }
 
+function readInviteRoomId(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("invite")?.trim() ?? "";
+}
+
 function readSpectatorAccess(): SpectatorAccess | null {
   if (typeof window === "undefined" || !window.location.hash.startsWith("#spectate=")) return null;
   try {
@@ -44,8 +49,9 @@ function readSpectatorAccess(): SpectatorAccess | null {
 
 export default function App() {
   const [spectatorAccess] = useState<SpectatorAccess | null>(readSpectatorAccess);
+  const [inviteRoomId] = useState<string>(readInviteRoomId);
   const [session, setSession] = useState<PlayerSession | null>(() => {
-    if (typeof window === "undefined" || readSpectatorAccess()) return null;
+    if (typeof window === "undefined" || readSpectatorAccess() || readInviteRoomId()) return null;
     try { return JSON.parse(window.localStorage.getItem(SESSION_KEY) || "null") as PlayerSession | null; }
     catch { return null; }
   });
@@ -75,6 +81,35 @@ export default function App() {
     }
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!inviteRoomId) return;
+    let active = true;
+    async function acceptInvite() {
+      setBusy(true);
+      setError("");
+      try {
+        const joined = await apiRequest<{ room: ApiRoom; playerId: string; playerToken: string }>("/rooms/join", undefined, {
+          method: "POST",
+          body: JSON.stringify({ roomId: inviteRoomId }),
+        });
+        if (!active) return;
+        const nextSession = { roomId: joined.room.id, playerId: joined.playerId, playerToken: joined.playerToken };
+        window.localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+        setSession(nextSession);
+        setSnapshot(joined.room);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("invite");
+        window.history.replaceState({}, "", url.toString());
+      } catch (err) {
+        if (active) setError(err instanceof Error ? err.message : "Could not join the invited party");
+      } finally {
+        if (active) setBusy(false);
+      }
+    }
+    void acceptInvite();
+    return () => { active = false; };
+  }, [inviteRoomId]);
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;

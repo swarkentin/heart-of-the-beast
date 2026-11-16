@@ -349,7 +349,8 @@ func (h *Handler) createRoom(w http.ResponseWriter, r *http.Request) {
 const maxRoomPlayers = 4
 
 type joinRoomRequest struct {
-	Code string `json:"code"`
+	Code   string `json:"code"`
+	RoomID string `json:"roomId"`
 }
 
 func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
@@ -358,15 +359,37 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "enter a valid room code")
 		return
 	}
-	code := strings.ToUpper(strings.TrimSpace(request.Code))
-	if len(code) != 6 {
-		writeError(w, http.StatusBadRequest, "room codes must be six characters")
-		return
-	}
-	room, err := h.rooms.GetByCode(r.Context(), code)
-	if errors.Is(err, store.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "room not found; check the code and try again")
-		return
+	var room *game.Room
+	var err error
+	if roomID := strings.TrimSpace(request.RoomID); roomID != "" {
+		// Room IDs are 128-bit cryptographically random values. They are safe to
+		// share as invitation capabilities; player credentials remain separate.
+		if len(roomID) != 32 {
+			writeError(w, http.StatusBadRequest, "invalid invitation link")
+			return
+		}
+		for _, character := range roomID {
+			if !((character >= '0' && character <= '9') || (character >= 'a' && character <= 'f')) {
+				writeError(w, http.StatusBadRequest, "invalid invitation link")
+				return
+			}
+		}
+		room, err = h.rooms.Get(r.Context(), roomID)
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "this invitation is no longer available")
+			return
+		}
+	} else {
+		code := strings.ToUpper(strings.TrimSpace(request.Code))
+		if len(code) != 6 {
+			writeError(w, http.StatusBadRequest, "enter a valid room code or invitation link")
+			return
+		}
+		room, err = h.rooms.GetByCode(r.Context(), code)
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "room not found; check the code and try again")
+			return
+		}
 	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not find room")

@@ -67,6 +67,58 @@ func TestRoomLifecycleAndReadOnlySpectator(t *testing.T) {
 	}
 }
 
+func TestJoinRoomByInvitationLink(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/rooms", nil))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create room: %d %s", create.Code, create.Body.String())
+	}
+	var host struct {
+		Room struct {
+			ID string `json:"id"`
+		} `json:"room"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &host); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(map[string]string{"roomId": host.Room.ID})
+	joined := httptest.NewRecorder()
+	handler.ServeHTTP(joined, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+	if joined.Code != http.StatusCreated {
+		t.Fatalf("join by invitation: %d %s", joined.Code, joined.Body.String())
+	}
+	var guest struct {
+		Room struct {
+			ID string `json:"id"`
+		} `json:"room"`
+		PlayerID string `json:"playerId"`
+		PlayerToken string `json:"playerToken"`
+	}
+	if err := json.Unmarshal(joined.Body.Bytes(), &guest); err != nil {
+		t.Fatal(err)
+	}
+	if guest.Room.ID != host.Room.ID || guest.PlayerID == "" || guest.PlayerToken == "" {
+		t.Fatalf("unexpected invitation join response: %+v", guest)
+	}
+}
+
+func TestJoinRoomRejectsMalformedInvitation(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	for _, roomID := range []string{"short", strings.Repeat("z", 32), strings.Repeat("0", 32)} {
+		body, _ := json.Marshal(map[string]string{"roomId": roomID})
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/rooms/join", bytes.NewReader(body)))
+		want := http.StatusBadRequest
+		if roomID == strings.Repeat("0", 32) {
+			want = http.StatusNotFound
+		}
+		if response.Code != want {
+			t.Errorf("roomId %q: got %d, want %d (%s)", roomID, response.Code, want, response.Body.String())
+		}
+	}
+}
+
 func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 	handler := NewHandler(store.NewMemory())
 	create := httptest.NewRecorder()
