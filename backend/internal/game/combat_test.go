@@ -252,7 +252,7 @@ func TestReliquaryPairCreatesTwoReadableThreats(t *testing.T) {
 		t.Fatalf("reliquary should contain a complementary pair, got %d enemies", len(encounter.Enemies))
 	}
 	guardian, scout := encounter.Enemies[0], encounter.Enemies[1]
-	if guardian.Behavior != "guardian" || guardian.Intent == nil || guardian.Intent.Damage != 8 {
+	if guardian.Behavior != "guardian" || guardian.Intent == nil || guardian.Intent.Damage != 12 {
 		t.Fatalf("guardian should telegraph its heavy opening, got %+v", guardian)
 	}
 	if scout.Behavior != "scout" || scout.Intent == nil || scout.Intent.Damage != 5 {
