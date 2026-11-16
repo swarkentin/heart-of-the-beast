@@ -29,7 +29,7 @@ type RunSimulationReport struct {
 	EncountersCleared  int                            `json:"encountersCleared"`
 	CombatRounds       int                            `json:"combatRounds"`
 	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
-	StrikeDamageAtEnd map[string]int                 `json:"strikeDamageAtEnd"`
+	StrikeDamageAtEnd  map[string]int                 `json:"strikeDamageAtEnd"`
 	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
 	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
 	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
