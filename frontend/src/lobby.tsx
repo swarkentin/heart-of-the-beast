@@ -94,7 +94,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
         <a href="https://github.com/swarkentin/heart-of-the-beast/issues/new" target="_blank" rel="noreferrer">REPORT AN ISSUE</a>
       </div>
     </details>
-  }>}
+  }>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
       <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
