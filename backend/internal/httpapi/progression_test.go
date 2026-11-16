@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
@@ -98,12 +99,13 @@ func TestProgressionCatalogIsPublicAndContainsThreeArchetypes(t *testing.T) {
 			ID       string `json:"id"`
 			Category string `json:"category"`
 		} `json:"profileRewards"`
+		ClassSkins game.ClassSkinCatalog `json:"classSkins"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &catalog); err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Archetypes) != 3 || len(catalog.Classes) != 9 || len(catalog.ClassAvailability) != 9 || len(catalog.Talents) != 12 || len(catalog.ProfileRewards) != 11 {
-		t.Fatalf("unexpected catalog size: %d archetypes, %d classes, %d availability entries, %d talents, %d profile rewards", len(catalog.Archetypes), len(catalog.Classes), len(catalog.ClassAvailability), len(catalog.Talents), len(catalog.ProfileRewards))
+	if len(catalog.Archetypes) != 3 || len(catalog.Classes) != 9 || len(catalog.ClassAvailability) != 9 || len(catalog.Talents) != 12 || len(catalog.ProfileRewards) != len(game.ProfileRewardCatalog()) || len(catalog.ClassSkins.Classes) != 9 {
+		t.Fatalf("unexpected catalog size: %d archetypes, %d classes, %d availability entries, %d talents, %d profile rewards, %d skin sets", len(catalog.Archetypes), len(catalog.Classes), len(catalog.ClassAvailability), len(catalog.Talents), len(catalog.ProfileRewards), len(catalog.ClassSkins.Classes))
 	}
 	for _, availability := range catalog.ClassAvailability {
 		if !availability.InitiallyAvailable {

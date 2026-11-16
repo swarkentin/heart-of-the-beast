@@ -2,7 +2,7 @@ import type { ApiCombatEvent } from "../api";
 import { EnemyStage, type PartyImpact } from "../monsters/EnemyStage";
 import type { StageEnemy } from "../monsters/types";
 import { RoomBackdrop, type BackdropRef } from "../scenes";
-import { Icon } from "../lobby";
+import { Icon, heroArt } from "../lobby";
 import type { PartyMember } from "./party";
 
 /** intentMove names the telegraphed move; intentEffect is what it does ("5 DMG · HEALS 2"), empty when no move is ready. */
@@ -27,7 +27,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
         return <g key={member.id}>
           <ellipse cx={x} cy={437} rx="46" ry="10" fill="#05030a" opacity=".6" />
           <svg x={x - 96} y={254} width="192" height="192" viewBox={"0 " + (member.alive ? 0 : 320) + " 64 64"}>
-            <image className="sprite-sheet" href={"/art/heroes/" + (member.classId || "empty") + ".png"} width={member.classId ? 384 : 256} height={member.classId ? 384 : 64} />
+            <image className="sprite-sheet" href={"/art/heroes/" + heroArt(member.classId, member.skin) + ".png"} width={member.classId ? 384 : 256} height={member.classId ? 384 : 64} />
           </svg>
         </g>;
       })}</g>}

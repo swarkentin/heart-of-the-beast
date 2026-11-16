@@ -78,13 +78,35 @@ monsters (`scripts/pixel-art/heroes.mjs`). Ids match the backend class catalog: 
 
 ```
 frontend/public/art/heroes/
-  manifest.json        # frame size, animations, hero list
-  <class>.png          # 384x384 sheet, 64x64 frames, one animation per row (see the table below)
-  <class>-bust.png     # 32x32 head-and-shoulders crop for roster portraits
-  empty.png            # 256x64 silhouette idle (4 frames) for open party slots; empty-bust.png to match
+  manifest.json                    # frame size, animations, hero list, skin tiers and variants
+  <class>/t<tier>-<variant>.png    # 384x384 sheet, 64x64 frames, one animation per row (see the table below)
+  <class>/t<tier>-<variant>-bust.png  # 32x32 head-and-shoulders crop for roster portraits
+  empty.png                        # 256x64 silhouette idle (4 frames) for open party slots; empty-bust.png to match
 ```
 
-Frames are 64x64 and anchor bottom-centre like monsters. `docs/art/heroes.png` shows every hero in every row.
+Frames are 64x64 and anchor bottom-centre like monsters. `docs/art/heroes.png` shows every hero in every row at tier 6.
+
+### Mastery tiers and colour variants
+
+Every class has six armour tiers, earned through class mastery. Every tier comes in every colour variant, and each
+combination has a full sheet with every animation row. `draw(c, p, s, tier)` in `heroes.mjs` escalates the look:
+
+| Tier | Rank | Mastery | Look |
+| --- | --- | --- | --- |
+| 1 | Recruit | 1 | Homespun and wood; drab, faded colours; nothing glows |
+| 2 | Journeyman | 2 | Plain iron and leather, first trims |
+| 3 | Veteran | 4 | The classic look of each class |
+| 4 | Champion | 7 | Layered pauldrons, trimmed capes, glowing emblems |
+| 5 | Exalted | 11 | Spikes, horns and helm wings, floating orbs, glowing weapon edges |
+| 6 | Ascendant | 16 | Crowns, halos, wings and spirit companions over a turning ground sigil with rising motes |
+
+Colour variants are dyes over each class's material roles (`roles` in `heroes.mjs`: primary, dark, secondary, metal)
+plus the shared gold trim and the glow. They are `heraldic` (the class's own colours, rank 1), `ember` (3), `frost` (6),
+`dusk` (9) and `voidstar` (20). Unlock levels and set names live in `backend/internal/game/class_skins.go`, which the
+server uses to validate a player's chosen look. Its tests check that the catalog matches the generated manifest.
+Every tier of a class is drawn at one scale, fitted to its tier 6 look, so the hero stands the same height at every
+tier. `docs/art/hero-tiers.png` shows each class across all six tiers, and `docs/art/hero-variants.png` shows every
+variant at tiers 3 and 6.
 
 | Row | Animation | Frames | Use |
 | --- | --- | --- | --- |
@@ -126,14 +148,14 @@ Creature definitions live in `scripts/pixel-art/themes/<theme>.mjs`.
 ```
 npm run art:build     # regenerate every monster sheet, manifest, index and preview, then heroes and the interface kit
 npm run art:verify    # fail if art is stale, a frame is empty or clipped, or a roster rule is broken
-npm run art:gallery   # regenerate docs/art/heroes.png and docs/art/bestiary.png
+npm run art:gallery   # regenerate docs/art/heroes.png, hero-tiers.png, hero-variants.png and bestiary.png
 ```
 
 `art:verify` enforces: unique creature ids, at least 5 monsters and 1-3 bosses per theme, sheets byte-identical
 to a fresh render, correct dimensions, no empty frames, no clipping of idle/hit frames, and an idle loop that
 actually animates. Oversized creatures are automatically scaled down (same pixel density) until their idle and
 hit frames fit their cell. It also checks that hero and interface
-files are not stale and that hero idle frames are unclipped and animate. Run `art:build` and commit the output after
+files are not stale and that hero idle frames are unclipped and animate for every tier and variant, and that each tier looks different from the one before it. Run `art:build` and commit the output after
 changing any theme, hero, or interface file.
 
 ## Backend registry

@@ -27,7 +27,7 @@ export type ApiCamp = { stage: "game" | "crossroads" | "shop"; nextMaxDepth?: nu
 export type ApiTheme = { id: string; name: string; tagline: string };
 export type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; generator?: number; dungeon?: number; dungeonsCleared?: number; floorsCleared?: number; rank?: string; floorModifiers?: ApiFloorModifier[]; camp?: ApiCamp; pendingInterFloorChoice?: boolean; interFloorVote?: ApiVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiVote; lastCombatEvents?: ApiCombatEvent[] };
 export type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
-export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
+export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; playerSkins?: Record<string, { tier: number; variant: string }>; presence?: Record<string, ApiPresence>; run?: ApiRun; version: number };
 export type ApiCommand = { type: string; round?: number; action?: string; mode?: string; targetId?: string; exitId?: string; choiceId?: string };
 export type ApiProfile = { id: string; displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; createdAt: string; updatedAt: string };
 export type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
@@ -57,7 +57,8 @@ export async function apiRequest<T>(path: string, token?: string, init: RequestI
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", "Bearer " + token);
-  if (path === "/rooms" || path === "/rooms/join") {
+  // Joining links the room seat to the profile; choosing a class reads its mastery to unlock armour tiers and dyes.
+  if (path === "/rooms" || path === "/rooms/join" || path.endsWith("/class")) {
     const profileCredential = guestProfileCredential();
     if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
   }

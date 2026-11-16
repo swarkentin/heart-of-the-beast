@@ -26,6 +26,7 @@ func TestRunXPUnlocksProfileAndClassMasteryRewards(t *testing.T) {
 	want := map[string]bool{
 		"title.catacomb-wayfinder": true,
 		"title.mastery.ranger":     true,
+		"armor.ranger.t2":          true, // mastery 2 also earns the second armour tier
 	}
 	for _, id := range updated.UnlockedCosmetics {
 		delete(want, id)
@@ -36,7 +37,7 @@ func TestRunXPUnlocksProfileAndClassMasteryRewards(t *testing.T) {
 	if updated.AdventurerLevel != 2 || updated.ClassMastery["ranger"].Level != 2 {
 		t.Fatalf("expected rank-two profile and ranger mastery: %+v", updated)
 	}
-	if len(updated.UnlockedCosmetics) != 2 {
+	if len(updated.UnlockedCosmetics) != 3 {
 		t.Fatalf("unexpected reward unlocks: %#v", updated.UnlockedCosmetics)
 	}
 
@@ -48,7 +49,7 @@ func TestRunXPUnlocksProfileAndClassMasteryRewards(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(updated.UnlockedCosmetics) != 2 {
+	if len(updated.UnlockedCosmetics) != 3 {
 		t.Fatalf("repeated run duplicated rewards: %#v", updated.UnlockedCosmetics)
 	}
 }

@@ -36,6 +36,12 @@ test("party members get a pose, statuses, threats and round state from the snaps
   assert.ok(fallen.statuses.some(status => status.id === "offline"));
 });
 
+test("each member wears the armour tier and colours they chose in the lobby", () => {
+  const [self, ally] = buildParty({ ...room(), playerSkins: { p1: { tier: 5, variant: "frost" } } }, run(), "p1", null, enemies);
+  assert.deepEqual(self.skin, { tier: 5, variant: "frost" });
+  assert.equal(ally.skin, undefined, "a member without a recorded look (a room from before looks existed) keeps the classic art");
+});
+
 test("an automatic defend stays on the card until that player acts again", () => {
   const auto = [{ round: 2, kind: "player_defend", message: "", actorId: "p1", auto: true }, { round: 2, kind: "player_defend", message: "", actorId: "p2", auto: true }];
   const [self, ally] = buildParty(room(), run({ lastCombatEvents: auto }), "p1", null, enemies);

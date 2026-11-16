@@ -15,7 +15,7 @@ import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
 import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
 import { renderInterface, renderHero } from "./build-interface.mjs";
-import { heroes } from "./heroes.mjs";
+import { heroes, TIERS, VARIANTS } from "./heroes.mjs";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art/monsters");
 const errors = [], warnings = [];
@@ -84,19 +84,27 @@ for (const [path, data] of Object.entries(a1)) {
   else if (sha(readFileSync(file)) !== sha(data)) fail(`[interface] ${path}: stale on disk - run npm run art:build`);
 }
 const heroIds = new Set();
-for (const h of heroes) {
-  if (heroIds.has(h.id)) fail(`[heroes] ${h.id}: duplicate hero id`); heroIds.add(h.id);
-  const { frames } = renderHero(h);
-  frames.idle.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${h.id}: idle[${i}] is empty`); if (touchesEdge(img)) fail(`[heroes] ${h.id}: idle[${i}] touches the frame edge (clipped)`); });
-  frames.flourish.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${h.id}: flourish[${i}] is empty`); if (touchesEdge(img)) warn(`[heroes] ${h.id}: flourish[${i}] touches the frame edge`); });
-  if (![1, 2, 3].some((i) => differs(frames.idle[0], frames.idle[i]))) fail(`[heroes] ${h.id}: idle loop does not animate`);
-  if (!differs(frames.idle[0], frames.flourish[3])) fail(`[heroes] ${h.id}: flourish peak identical to idle`);
+const heroSkins = heroes.flatMap((h) => TIERS.flatMap((tier) => VARIANTS.map((v) => [h, tier, v.id])));
+for (const h of heroes) { if (heroIds.has(h.id)) fail(`[heroes] ${h.id}: duplicate hero id`); heroIds.add(h.id); }
+for (const [h, tier, variant] of heroSkins) {
+  const id = `${h.id} t${tier} ${variant}`;
+  const { frames } = renderHero(h, tier, variant);
+  frames.idle.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${id}: idle[${i}] is empty`); if (touchesEdge(img)) fail(`[heroes] ${id}: idle[${i}] touches the frame edge (clipped)`); });
+  frames.flourish.forEach((img, i) => { if (opaque(img) === 0) fail(`[heroes] ${id}: flourish[${i}] is empty`); if (variant === "heraldic" && touchesEdge(img)) warn(`[heroes] ${id}: flourish[${i}] touches the frame edge`); });
+  if (![1, 2, 3].some((i) => differs(frames.idle[0], frames.idle[i]))) fail(`[heroes] ${id}: idle loop does not animate`);
+  if (!differs(frames.idle[0], frames.flourish[3])) fail(`[heroes] ${id}: flourish peak identical to idle`);
   for (const row of ["hurt", "injured", "poisoned", "down"]) {
-    if (!frames[row]?.length || frames[row].some((img) => opaque(img) === 0)) fail(`[heroes] ${h.id}: ${row} has an empty frame`);
-    else if (!differs(frames.idle[0], frames[row][0])) fail(`[heroes] ${h.id}: ${row} is identical to idle`);
-    else if (row !== "hurt" && frames[row].some((img) => touchesEdge(img))) fail(`[heroes] ${h.id}: ${row} touches the frame edge (clipped)`);
+    if (!frames[row]?.length || frames[row].some((img) => opaque(img) === 0)) fail(`[heroes] ${id}: ${row} has an empty frame`);
+    else if (!differs(frames.idle[0], frames[row][0])) fail(`[heroes] ${id}: ${row} is identical to idle`);
+    else if (row !== "hurt" && frames[row].some((img) => touchesEdge(img))) fail(`[heroes] ${id}: ${row} touches the frame edge (clipped)`);
   }
+}
+// Every tier must look different from the one before it, and every variant from the class colours.
+for (const h of heroes) for (const tier of TIERS) {
+  const base = renderHero(h, tier, "heraldic").frames.idle[0];
+  if (tier > TIERS[0] && !differs(renderHero(h, tier - 1, "heraldic").frames.idle[0], base)) fail(`[heroes] ${h.id}: tier ${tier} looks identical to tier ${tier - 1}`);
+  for (const v of VARIANTS.slice(1)) if (!differs(base, renderHero(h, tier, v.id).frames.idle[0])) fail(`[heroes] ${h.id}: tier ${tier} ${v.id} looks identical to heraldic`);
 }
 for (const w of warnings) console.warn("warn:", w);
 if (errors.length) { for (const e of errors) console.error("FAIL:", e); console.error(`\n${errors.length} problem(s) across ${total} creatures.`); process.exit(1); }
-console.log(`OK: ${themes.length} themes, ${total} creatures, ${heroes.length} heroes and ${Object.keys(a1).length} interface files verified (${warnings.length} warning${warnings.length === 1 ? "" : "s"}).`);
+console.log(`OK: ${themes.length} themes, ${total} creatures, ${heroes.length} heroes (${heroSkins.length} skins) and ${Object.keys(a1).length} interface files verified (${warnings.length} warning${warnings.length === 1 ? "" : "s"}).`);

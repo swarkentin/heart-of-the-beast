@@ -305,7 +305,8 @@ func TestPostgresProgressionAwardsPersistMilestoneUnlocks(t *testing.T) {
 	for _, id := range updated.UnlockedCosmetics {
 		unlocked[id] = true
 	}
-	if !unlocked["title.catacomb-wayfinder"] || !unlocked["title.mastery.ranger"] || len(unlocked) != 2 {
-		t.Fatalf("expected two persistent milestone rewards, got %#v", updated.UnlockedCosmetics)
+	// mastery rank two also earns the second armour tier
+	if !unlocked["title.catacomb-wayfinder"] || !unlocked["title.mastery.ranger"] || !unlocked["armor.ranger.t2"] || len(unlocked) != 3 {
+		t.Fatalf("expected three persistent milestone rewards, got %#v", updated.UnlockedCosmetics)
 	}
 }

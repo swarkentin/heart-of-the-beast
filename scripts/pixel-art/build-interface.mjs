@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { Img, Canvas, encodePNG, hex, mix } from "./engine.mjs";
 import { POSE0 } from "./anim.mjs";
 import { renderAnim, touchesEdge } from "./build.mjs";
-import { heroes, heroTheme } from "./heroes.mjs";
+import { heroes, heroTheme, applySkin, TIERS, VARIANTS } from "./heroes.mjs";
 import { panelFrame, insetFrame, viewFrame, buttons, wallTile, floorTile, torch, emblem, iconSheet, statusFx, STATUS_FX, ICON_ORDER, UI_COLORS } from "./ui.mjs";
 
 const ART = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art");
@@ -20,7 +20,7 @@ export const HERO_ANIMS = [["idle", 4, 6, true], ["flourish", 6, 10, false], ["h
 function renderPoses(cr, s, poses, post) {
   return poses.map((pose, i) => {
     const p = { ...POSE0, ...pose }, mats = {};
-    for (const [k, v] of Object.entries({ ...heroTheme.mats, ...cr.mats })) {
+    for (const [k, v] of Object.entries(cr.mats)) {
       const o = typeof v === "string" ? { color: v } : { ...v };
       if (o.pulse) { const bright = hex(o.color), dim = mix(bright, heroTheme.shadow, 0.55); o.color = "#" + mix(dim, bright, Math.max(0, Math.min(1, p.glow))).map((x) => x.toString(16).padStart(2, "0")).join(""); }
       mats[k] = o;
@@ -47,14 +47,26 @@ const STATUS_POST = {
   down: (img) => recolor(img, (r, g, b) => { const l = (r * 3 + g * 6 + b) / 10; return [Math.round((r + (l - r) * 0.72) * 0.74), Math.round((g + (l - g) * 0.72) * 0.74), Math.round((b + (l - b) * 0.72) * 0.82)]; }),
 };
 
-const asCreature = (h) => ({ ...h, attack: h.move, fx: { attack: h.fx } });
-/** Same fit rule as monsters: shrink (never below pixel density) until the resting pose clears the cell. */
-export function renderHero(h) {
-  const cr = asCreature(h);
+/** A hero at one mastery tier and colour variant, shaped like a bestiary creature so the shared animator can draw it. */
+const asCreature = (h, tier, variant) => { const { mats, fxc } = applySkin(h, tier, variant); return { ...h, mats, fxc, attack: h.move, fx: { attack: h.fx }, draw: (c, p, s) => h.draw(c, p, s, tier) }; };
+export const skinPath = (id, tier, variant) => `heroes/${id}/t${tier}-${variant}`;
+const scales = new Map();
+/**
+ * Same fit rule as monsters - shrink (never below pixel density) until the resting pose clears the cell - but
+ * fitted once per class on its grandest tier, so every tier of a class stands at the same height.
+ */
+export function heroScale(h) {
+  if (scales.has(h.id)) return scales.get(h.id);
+  const cr = asCreature(h, TIERS[TIERS.length - 1], "heraldic");
   let s = 1;
   for (let k = 0; k < 12; k++, s = 1 - 0.04 * k) if (renderAnim(heroTheme, cr, "idle", 4, HERO_SIZE, s).every((f) => !touchesEdge(f))) break;
+  scales.set(h.id, s);
+  return s;
+}
+export function renderHero(h, tier = 3, variant = "heraldic") {
+  const cr = asCreature(h, tier, variant), s = heroScale(h);
   let head = null;
-  const probe = { ...cr, draw: (c, p, sc) => { const A = h.draw(c, p, sc); head ??= A.head; return A; } };
+  const probe = { ...cr, draw: (c, p, sc) => { const A = cr.draw(c, p, sc); head ??= A.head; return A; } };
   const frames = { idle: renderAnim(heroTheme, probe, "idle", 4, HERO_SIZE, s), flourish: renderAnim(heroTheme, cr, "attack", 6, HERO_SIZE, s), hurt: renderAnim(heroTheme, cr, "hit", 4, HERO_SIZE, s) };
   for (const name of Object.keys(STATUS_POSES)) frames[name] = renderPoses(cr, s, STATUS_POSES[name], STATUS_POST[name]);
   return { frames, head, scale: s };
@@ -81,11 +93,15 @@ function silhouette(img) {
 export function renderInterface() {
   const files = {}, manifest = { version: 1, frame: { w: HERO_SIZE, h: HERO_SIZE }, columns: HERO_COLS, bust: { w: BUST, h: BUST }, anchor: { x: HERO_SIZE / 2, y: HERO_SIZE - 3 }, animations: Object.fromEntries(HERO_ANIMS.map(([a, n, fps, loop], row) => [a, { row, frames: n, fps, loop }])), heroes: [] };
   const png = (path, img) => { files[path] = encodePNG(img); };
+  // Skins: every class at every mastery tier in every colour variant. Sheet paths follow skinPath().
+  manifest.skins = { tiers: TIERS, variants: VARIANTS.map((v) => v.id), sheet: "heroes/{id}/t{tier}-{variant}.png", bust: "heroes/{id}/t{tier}-{variant}-bust.png" };
   for (const h of heroes) {
-    const { frames, head } = renderHero(h);
-    png(`heroes/${h.id}.png`, sheetOf(frames)); png(`heroes/${h.id}-bust.png`, bustOf(frames.idle[0], head));
-    manifest.heroes.push({ id: h.id, name: h.name, sheet: `heroes/${h.id}.png`, bust: `heroes/${h.id}-bust.png`, flourish: h.move });
-    if (h.id === "tactician") { const empty = new Img(4 * HERO_SIZE, HERO_SIZE); frames.idle.forEach((f, i) => empty.blit(silhouette(f), i * HERO_SIZE, 0)); png("heroes/empty.png", empty); png("heroes/empty-bust.png", bustOf(silhouette(frames.idle[0]), head)); }
+    for (const tier of TIERS) for (const { id: variant } of VARIANTS) {
+      const { frames, head } = renderHero(h, tier, variant), base = skinPath(h.id, tier, variant);
+      png(base + ".png", sheetOf(frames)); png(base + "-bust.png", bustOf(frames.idle[0], head));
+      if (h.id === "tactician" && tier === 3 && variant === "heraldic") { const empty = new Img(4 * HERO_SIZE, HERO_SIZE); frames.idle.forEach((f, i) => empty.blit(silhouette(f), i * HERO_SIZE, 0)); png("heroes/empty.png", empty); png("heroes/empty-bust.png", bustOf(silhouette(frames.idle[0]), head)); }
+    }
+    manifest.heroes.push({ id: h.id, name: h.name, flourish: h.move, scale: heroScale(h) });
   }
   files["heroes/manifest.json"] = Buffer.from(JSON.stringify(manifest, null, 2) + "\n");
   png("ui/frame-panel.png", panelFrame()); png("ui/frame-view.png", viewFrame()); png("ui/status-fx.png", statusFx()); png("ui/frame-inset.png", insetFrame()); png("ui/frame-selected.png", insetFrame(true));
@@ -98,18 +114,32 @@ export function renderInterface() {
 export function buildInterface() {
   const files = renderInterface();
   for (const [path, data] of Object.entries(files)) { const out = resolve(ART, path); mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, data); }
-  console.log(`interface: ${heroes.length} heroes, ${Object.keys(files).filter((f) => f.startsWith("ui/")).length} ui files`);
+  console.log(`interface: ${heroes.length} heroes x ${TIERS.length} tiers x ${VARIANTS.length} variants, ${Object.keys(files).filter((f) => f.startsWith("ui/")).length} ui files`);
 }
 
+const fill = (img, bg) => { for (let i = 0; i < img.d.length; i += 4) { img.d[i] = bg[0]; img.d[i + 1] = bg[1]; img.d[i + 2] = bg[2]; img.d[i + 3] = 255; } return img; };
+const enlarge = (img, K) => { const o = new Img(img.w * K, img.h * K); for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) for (let k = 0; k < 4; k++) o.d[(y * o.w + x) * 4 + k] = img.d[(((y / K) | 0) * img.w + ((x / K) | 0)) * 4 + k]; return o; };
+/** docs/art/hero-tiers.png: every hero (rows) at every mastery tier (columns), resting pose. */
+export function tierGallery() {
+  const K = 3, cell = HERO_SIZE * K, sheet = fill(new Img(TIERS.length * cell, heroes.length * cell), [22, 17, 38]);
+  heroes.forEach((h, row) => TIERS.forEach((t, col) => sheet.blit(enlarge(renderHero(h, t, "heraldic").frames.idle[0], K), col * cell, row * cell)));
+  return sheet;
+}
+/** docs/art/hero-variants.png: every hero (rows) in every colour variant (columns) at tiers 3 and 6. */
+export function variantGallery() {
+  const K = 2, cell = HERO_SIZE * K, cols = VARIANTS.length * 2, sheet = fill(new Img(cols * cell, heroes.length * cell), [22, 17, 38]);
+  heroes.forEach((h, row) => [3, 6].forEach((t, half) => VARIANTS.forEach((v, i) => sheet.blit(enlarge(renderHero(h, t, v.id).frames.idle[0], K), (half * VARIANTS.length + i) * cell, row * cell))));
+  return sheet;
+}
 /** docs/art/heroes.png: every hero in every row (first frame; the flourish at its peak), with status overlays last. */
-export function heroGallery() {
+export function heroGallery(tier = 6) {
   const K = 3, cell = HERO_SIZE * K, cols = HERO_ANIMS.length + 1, bg = [22, 17, 38];
   const sheet = new Img(cols * cell, heroes.length * cell), fx = statusFx();
   for (let i = 0; i < sheet.d.length; i += 4) { sheet.d[i] = bg[0]; sheet.d[i + 1] = bg[1]; sheet.d[i + 2] = bg[2]; sheet.d[i + 3] = 255; }
   const big = (img) => { const o = new Img(img.w * K, img.h * K); for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) for (let k = 0; k < 4; k++) o.d[(y * o.w + x) * 4 + k] = img.d[(((y / K) | 0) * img.w + ((x / K) | 0)) * 4 + k]; return o; };
   const cut = (img, col, row) => { const o = new Img(64, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) for (let k = 0; k < 4; k++) o.d[(y * 64 + x) * 4 + k] = img.d[((y + row * 64) * img.w + x + col * 64) * 4 + k]; return o; };
   heroes.forEach((h, row) => {
-    const { frames } = renderHero(h);
+    const { frames } = renderHero(h, tier);
     HERO_ANIMS.forEach(([name], col) => sheet.blit(big(frames[name][name === "flourish" ? 3 : 0]), col * cell, row * cell));
     sheet.blit(big(frames.idle[0]), HERO_ANIMS.length * cell, row * cell);
     sheet.blit(big(cut(fx, 1, row % STATUS_FX.length)), HERO_ANIMS.length * cell, row * cell);
@@ -118,6 +148,9 @@ export function heroGallery() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  if (process.argv.includes("--gallery")) { const out = resolve(ART, "../../../docs/art/heroes.png"); writeFileSync(out, encodePNG(heroGallery())); console.log("wrote", out); }
+  if (process.argv.includes("--gallery")) {
+    const docs = resolve(ART, "../../../docs/art");
+    for (const [name, img] of [["heroes.png", heroGallery()], ["hero-tiers.png", tierGallery()], ["hero-variants.png", variantGallery()]]) { writeFileSync(resolve(docs, name), encodePNG(img)); console.log("wrote", resolve(docs, name)); }
+  }
   else buildInterface();
 }

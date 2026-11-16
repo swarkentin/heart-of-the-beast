@@ -296,3 +296,38 @@
 .px-dungeon { display: grid; gap: 4px; margin: 6px 0; }
 .px-dungeon select { width: 100%; padding: 6px 8px; border: 0; background: #2a2440; box-shadow: inset 0 3px 0 #3d3658, inset 0 -4px 0 #17132a, 0 0 0 2px var(--edge); color: var(--bone); font: inherit; font-size: 20px; cursor: pointer; }
 .px-dungeon small { color: #cfc6dc; font-size: 18px; line-height: 1.1; }
+
+/* ---------- class looks: armour tiers and colours earned through mastery ---------- */
+.px-mastery-item { grid-template-columns: auto minmax(0, 1fr) auto; }
+.px-mastery-item > .px-bust { --bs: 1.5; grid-row: span 2; }
+.px-mastery-item .px-mastery-meta { grid-column: 2 / -1; }
+/* locked looks preview in full glory: the badge says what earns them */
+.px-skin-tier.px-skin-locked .px-bust { filter: saturate(.35) brightness(.55); }
+.px-skin-tier.px-skin-locked:hover .px-bust, .px-skin-tier.px-skin-locked.px-skin-on .px-bust { filter: saturate(.7) brightness(.85); }
+.px-showcase-lock { position: absolute; top: 6px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 5px; padding: 3px 7px; background: #0f0c1ce6; box-shadow: 0 0 0 2px #51466d; color: var(--gold); font: 8px/1.3 var(--display); white-space: nowrap; }
+.px-skins { grid-column: 1 / -1; display: grid; gap: 8px; padding: 8px 10px 10px; background: var(--pit); box-shadow: inset 0 3px 0 #05030a, inset 0 -3px 0 #2a2440; }
+.px-skins-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.px-skins-count { color: var(--muted); font: 8px/1.3 var(--display); letter-spacing: .06em; }
+.px-skin-tiers { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.px-skin-tier { position: relative; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 4px 2px 3px; border: 0; background: #1b1630; box-shadow: inset 0 0 0 2px #3d3658; color: var(--muted); cursor: pointer; }
+.px-skin-tier .px-bust { --bs: 1.5; }
+.px-skin-tier b { display: flex; align-items: center; gap: 3px; font: 400 8px/1.3 var(--display); }
+.px-skin-tier b .px-icon { --s: 1 !important; }
+.px-skin-tier:hover { filter: brightness(1.25); }
+.px-skin-worn { box-shadow: inset 0 0 0 2px var(--accent); }
+.px-skin-worn b { color: var(--accent); }
+.px-skin-on { box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 2px var(--gold); background: #2a2440; }
+.px-skin-locked b { color: #6d6488; }
+.px-skin-variants { display: flex; gap: 8px; flex-wrap: wrap; }
+.px-swatch { position: relative; display: grid; place-items: center; width: 34px; height: 26px; padding: 0; border: 0; background: #1b1630; box-shadow: inset 0 0 0 2px #3d3658; cursor: pointer; }
+.px-swatch > i { width: 22px; height: 14px; background: linear-gradient(135deg, var(--sw-a) 0 50%, var(--sw-b) 50% 100%); box-shadow: inset 0 2px 0 #fff4, inset 0 -2px 0 #0006; }
+.px-swatch.px-skin-locked > i { filter: saturate(.25) brightness(.45); }
+.px-swatch > .px-icon { position: absolute; --s: 1 !important; }
+.px-swatch:hover { filter: brightness(1.25); }
+.px-skin-name { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+.px-skin-name strong { color: var(--accent); font: 400 11px/1.5 var(--display); }
+.px-skin-name span { color: var(--muted); font: 8px/1.3 var(--display); letter-spacing: .06em; }
+.px-skin-desc { color: #cfc6dc; line-height: 1.05; }
+.px-skin-next { display: flex; align-items: center; gap: 6px; color: var(--gold); font: 8px/1.5 var(--display); }
+.px-skin-done { color: var(--good); }
+@media (max-width: 760px) { .px-skin-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

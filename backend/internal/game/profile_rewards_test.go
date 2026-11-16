@@ -4,8 +4,10 @@ import "testing"
 
 func TestProfileRewardCatalogHasStableUniqueIDsAndValidMilestones(t *testing.T) {
 	catalog := ProfileRewardCatalog()
-	if len(catalog) != 11 {
-		t.Fatalf("expected 11 initial profile rewards, got %d", len(catalog))
+	skins := ClassSkinCatalogSnapshot()
+	want := 11 + len(skins.Classes)*((MaxSkinTier-1)+(len(skins.Variants)-1))
+	if len(catalog) != want {
+		t.Fatalf("expected %d profile rewards (11 titles and badges plus armour and dyes), got %d", want, len(catalog))
 	}
 	seen := make(map[string]bool, len(catalog))
 	for _, reward := range catalog {
@@ -13,7 +15,7 @@ func TestProfileRewardCatalogHasStableUniqueIDsAndValidMilestones(t *testing.T) 
 			t.Fatalf("empty or duplicate profile reward ID %q", reward.ID)
 		}
 		seen[reward.ID] = true
-		if reward.Name == "" || reward.Description == "" || (reward.Category != "title" && reward.Category != "badge") {
+		if reward.Name == "" || reward.Description == "" || (reward.Category != "title" && reward.Category != "badge" && reward.Category != "armor" && reward.Category != "dye") {
 			t.Fatalf("invalid profile reward definition: %+v", reward)
 		}
 		if reward.ProfileLevel == 0 && (reward.ClassID == "" || reward.ClassMasteryLevel == 0) {
@@ -25,7 +27,7 @@ func TestProfileRewardCatalogHasStableUniqueIDsAndValidMilestones(t *testing.T) 
 func TestProfileRewardUnlocksAreMilestoneBasedAndIdempotent(t *testing.T) {
 	mastery := map[string]int{ClassRanger: 2}
 	first := ProfileRewardUnlocks(2, mastery, nil)
-	if len(first) != 2 || first[0] != "title.catacomb-wayfinder" || first[1] != "title.mastery.ranger" {
+	if len(first) != 3 || first[0] != "title.catacomb-wayfinder" || first[1] != "title.mastery.ranger" || first[2] != "armor.ranger.t2" {
 		t.Fatalf("unexpected newly unlocked rewards: %#v", first)
 	}
 	repeated := ProfileRewardUnlocks(2, mastery, append([]string(nil), first...))

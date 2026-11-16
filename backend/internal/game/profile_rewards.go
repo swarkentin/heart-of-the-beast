@@ -26,6 +26,11 @@ var profileRewardCatalog = []ProfileRewardDefinition{
 	{ID: "title.mastery.beastcaller", Name: "Beastcaller Adept", Description: "Master the Beastcaller class.", Category: "title", ClassID: ClassBeastcaller, ClassMasteryLevel: 2},
 }
 
+// Armour tiers and dyes for every class join the catalog after the hand-written rewards.
+func init() {
+	profileRewardCatalog = append(profileRewardCatalog, classSkinRewards()...)
+}
+
 func ProfileRewardCatalog() []ProfileRewardDefinition {
 	return append([]ProfileRewardDefinition(nil), profileRewardCatalog...)
 }
