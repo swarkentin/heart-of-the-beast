@@ -189,3 +189,19 @@ func TestRandomCampPolicySkipsWhetstoneAtStrikeCap(t *testing.T) {
 		t.Fatalf("random policy should skip a capped Whetstone and ready up, got %+v, ok=%v", command, ok)
 	}
 }
+
+func TestTacticalShopPrioritizesUrgentHealingOverWhetstone(t *testing.T) {
+	room := openTestShop(t, 1, "tactical-heal-before-strike")
+	player := room.Run.Players["player-1"]
+	player.Gold = 1000
+	player.Health = player.MaxHealth - 15
+	room.Run.Camp.Offers = []ShopItem{
+		{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30},
+		{ID: "healing-draught", Name: "Healing Draught", Kind: ShopHeal, Amount: 12, Price: 12, Repeatable: true},
+	}
+
+	command, ok := tacticalShopCommand(room, "player-1")
+	if !ok || command.Type != "buy" || command.ChoiceID != "healing-draught" {
+		t.Fatalf("tactical policy should buy urgent healing before a Whetstone, got %+v, ok=%v", command, ok)
+	}
+}
