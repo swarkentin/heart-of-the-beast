@@ -78,3 +78,53 @@ func TestGuestProfileRequiresCredentialAndDoesNotExposeHash(t *testing.T) {
 		t.Fatalf("profile response leaked credential material: %s", response.Body.String())
 	}
 }
+
+func TestGuestProfileNameIsValidatedAndPersisted(t *testing.T) {
+	handler := NewHandler(store.NewMemory())
+	credential := "0123456789abcdef0123456789abcdef"
+	bootstrap := httptest.NewRequest(http.MethodPost, "/profile", nil)
+	bootstrap.Header.Set("Authorization", "Bearer "+credential)
+	created := httptest.NewRecorder()
+	handler.ServeHTTP(created, bootstrap)
+	if created.Code != http.StatusOK {
+		t.Fatalf("create profile: %d %s", created.Code, created.Body.String())
+	}
+
+	for _, invalid := range []string{"", "1234567890123456789", "bad\nname"} {
+		body := `{"displayName":` + `"` + invalid + `"}`
+		req := httptest.NewRequest(http.MethodPatch, "/profile", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+credential)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		if response.Code != http.StatusBadRequest {
+			t.Errorf("invalid name %q: got %d %s", invalid, response.Code, response.Body.String())
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodPatch, "/profile", strings.NewReader(`{"displayName":"  Crypt Keeper  "}`))
+	req.Header.Set("Authorization", "Bearer "+credential)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("update name: %d %s", response.Code, response.Body.String())
+	}
+	var updated store.Profile
+	if err := json.Unmarshal(response.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.DisplayName != "Crypt Keeper" {
+		t.Fatalf("name was not trimmed: %q", updated.DisplayName)
+	}
+
+	get := httptest.NewRequest(http.MethodGet, "/profile", nil)
+	get.Header.Set("Authorization", "Bearer "+credential)
+	loaded := httptest.NewRecorder()
+	handler.ServeHTTP(loaded, get)
+	var persisted store.Profile
+	if err := json.Unmarshal(loaded.Body.Bytes(), &persisted); err != nil {
+		t.Fatal(err)
+	}
+	if persisted.DisplayName != "Crypt Keeper" {
+		t.Fatalf("name was not persisted: %q", persisted.DisplayName)
+	}
+}

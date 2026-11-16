@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiRoom, ApiRun, ApiVote, PlayerSession, TalentChoice } from "../api";
+import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, ApiRoom, ApiRun, ApiVote, PlayerSession, TalentChoice } from "../api";
 import { getSignatureAbility, partySupportCommand, signatureCommand, type SignatureMode } from "../combatAbilities";
-import { GameShell, Icon, type IconId, type LobbyCatalog } from "../lobby";
+import { GameShell, Icon, SharedMenu, type IconId, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
 import { backdropRef, themeTitle } from "../scenes";
 import { relabel, useCombatLog, type LogLine } from "./log";
@@ -18,7 +18,7 @@ import "./run.css";
 
 type Props = {
   snapshot: ApiRoom; run: ApiRun; room: ApiDungeonRoom; session: PlayerSession | null; spectator: boolean;
-  catalog: LobbyCatalog | null; talents: TalentChoice[]; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode;
+  catalog: LobbyCatalog | null; profile: ApiProfile | null; talents: TalentChoice[]; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>;
   onCommand: (command: ApiCommand) => Promise<boolean>; onChooseTalent: (talentId: string) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
 };
 type ActionDef = { key: string; label: string; hint: string; details: string; icon: IconId; tone: "strike" | "guard" | "control" | "signature"; disabled: boolean; command: ApiCommand };
@@ -63,7 +63,7 @@ function LogText({ line, labels }: { line: LogLine; labels: Record<number, strin
   return <li className={"rn-log-line rn-log-" + line.tone}>{line.tone === "auto" ? <Icon id="waiting" size={1} /> : null}<span>{parts.map((part, index) => index % 2 ? <b key={index}>{part}</b> : part)}</span></li>;
 }
 
-export function RunScreen({ snapshot, run, room, session, spectator, catalog, talents, busy, error, isHost, audioControls, onCommand, onChooseTalent, onLeave, onReturnToLobby }: Props) {
+export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, talents, busy, error, isHost, audioControls, onSaveName, onCommand, onChooseTalent, onLeave, onReturnToLobby }: Props) {
   const selfId = spectator ? "" : session?.playerId ?? "";
   const [view, setView] = useState<"player" | "cast">(spectator ? "cast" : "player");
   const [target, setTarget] = useState("");
@@ -263,19 +263,18 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, ta
     return [catalog?.classAbilities.find(item => item.id === definition.signatureAbilityId), catalog?.classPassives.find(item => item.id === definition.passiveId)].filter(item => item !== undefined).map(item => ({ name: item.name, description: item.description }));
   };
   // A card that has a whole border to itself also explains the class kit.
-  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: aidLabel ? { label: aidLabel, disabled: !canAct } : undefined, onAid: aid });
+  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: aidLabel ? { label: aidLabel, disabled: !canAct } : undefined, onAid: aid });
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}
     center={<div className="rn-location"><b>{room.name}</b><span>FLOOR {String(run.depth ?? 1).padStart(2, "0")} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
     tools={<>
-      {audioControls}
       {!spectator ? <button type="button" className="px-button px-button-small rn-view-switch" onClick={() => setView(view === "player" ? "cast" : "player")} aria-pressed={view === "cast"}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}
-      {!spectator ? <details className="rn-menu"><summary className="px-button px-button-small">MENU</summary><div className="px-panel rn-menu-panel">
-        <button type="button" className="px-button px-button-small rn-menu-view" onClick={() => setView(view === "player" ? "cast" : "player")}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button>
+      <SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<>
+        {!spectator ? <button type="button" className="px-button px-button-small" onClick={() => setView(view === "player" ? "cast" : "player")}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}
         {spectatorLink ? <><button type="button" className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(spectatorLink).then(() => setCopied(true)).catch(() => undefined); }}>{copied ? "LINK COPIED" : "COPY SPECTATOR LINK"}</button><a className="px-button px-button-small" href={spectatorLink} target="_blank" rel="noreferrer">OPEN SPECTATOR VIEW</a></> : null}
-        <button type="button" className="px-button px-button-small px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>
-      </div></details> : null}
+        {!spectator ? <button type="button" className="px-button px-button-small px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button> : null}
+      </>} />
     </>}>
     <div className="rn-board">
       <aside className="rn-side rn-side-left" aria-label="Party">{seats.left.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside>

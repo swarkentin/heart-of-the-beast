@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
@@ -51,6 +52,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("GET /progression", progressionCatalog)
 	mux.HandleFunc("POST /profile", h.createOrGetProfile)
 	mux.HandleFunc("GET /profile", h.getProfile)
+	mux.HandleFunc("PATCH /profile", h.updateProfile)
 	mux.HandleFunc("GET /themes", playableThemes)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
@@ -102,6 +104,48 @@ func (h *Handler) getProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not load profile")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, profile)
+}
+
+func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
+	credential := bearer(r)
+	if len(credential) < 32 || len(credential) > 256 {
+		writeError(w, http.StatusUnauthorized, "a valid guest profile credential is required")
+		return
+	}
+	var request struct {
+		DisplayName string `json:"displayName"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "a display name is required")
+		return
+	}
+	name := strings.TrimSpace(request.DisplayName)
+	if name == "" || len([]rune(name)) > 18 {
+		writeError(w, http.StatusBadRequest, "name must be between 1 and 18 characters")
+		return
+	}
+	for _, character := range name {
+		if unicode.IsControl(character) {
+			writeError(w, http.StatusBadRequest, "name contains invalid characters")
+			return
+		}
+	}
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok {
+		writeError(w, http.StatusServiceUnavailable, "profile persistence is unavailable")
+		return
+	}
+	profile, err := profiles.UpdateProfileName(r.Context(), tokenHash(credential), name, h.now().UTC())
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "guest profile not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not update profile")
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
@@ -579,6 +623,7 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 		"classAvailability": game.ClassAvailabilityCatalog(),
 		"talents":           game.TalentCatalog(),
 		"levelThresholds":   []int{50, 100, 200, 325},
+		"profileRewards":    game.ProfileRewardCatalog(),
 	})
 }
 
