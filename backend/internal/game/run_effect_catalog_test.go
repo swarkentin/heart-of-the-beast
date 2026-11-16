@@ -44,3 +44,17 @@ func TestStudyWeaknessEffectProvidesWardenOnlyStrikeBonus(t *testing.T) {
 		t.Fatalf("bonus outside Warden room = %d, want 0", got)
 	}
 }
+
+
+func TestPermanentStrikeBonusHasSharedRunCap(t *testing.T) {
+	player := &PlayerState{StrikeDamage: PlayerStrikeDamage}
+	applyPermanentStrikeBonus(player, 3)
+	applyPermanentStrikeBonus(player, 3)
+	if got, want := player.StrikeDamage, PlayerStrikeDamage+MaxPermanentStrikeBonus; got != want {
+		t.Fatalf("permanent Strike damage = %d, want cap %d", got, want)
+	}
+	applyPermanentStrikeBonus(player, -1)
+	if got, want := player.StrikeDamage, PlayerStrikeDamage+MaxPermanentStrikeBonus-1; got != want {
+		t.Fatalf("negative Strike trade-off = %d, want %d", got, want)
+	}
+}
