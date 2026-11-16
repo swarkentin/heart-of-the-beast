@@ -88,7 +88,7 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 		tuning.PlayerDamage = 10
 	}
 	report := BalanceReport{
-		Tuning: tuning,
+		Tuning:    tuning,
 		Version:   BalanceReportVersion,
 		SeedCount: seedCount,
 		FirstSeed: firstSeed,
@@ -112,7 +112,9 @@ func GenerateBalanceReportWithTuning(seedCount int, firstSeed int64, tuning Bala
 				partyClasses[i] = classes[i%len(classes)]
 			}
 			players, classIDs, err := balancePlayers(partyClasses)
-			if err != nil { return BalanceReport{}, err }
+			if err != nil {
+				return BalanceReport{}, err
+			}
 			applyBalanceTuning(players, nil, tuning)
 			if err := appendBalanceScenario(&report, encounterID, partySize, players, classIDs, seedCount, firstSeed, tuning); err != nil {
 				return BalanceReport{}, err
