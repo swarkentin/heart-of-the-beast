@@ -22,3 +22,13 @@ The project needs a repeatable local feedback loop for the React/Vite client and
 - The frontend and backend remain independently runnable; the orchestration script is convenience tooling, not a runtime dependency.
 - Local development uses PostgreSQL rather than SQLite, reducing differences between development and production.
 - Docker is required for the standard local stack, but not for building or testing the frontend or Go domain packages independently.
+
+## Amendment 2026-11-15: observable, fail-fast startup
+
+`npm run dev:up` was hard to diagnose: the backend ran through `go run`, so compile time counted against a 60-second health timeout with no output, a service that crashed on startup was only noticed when that timeout expired, a stale process on port 8080 could satisfy the health check, and a child process that exited before reading stdin could crash the script with an unhandled `EPIPE`.
+
+- Startup is a numbered sequence (prerequisites, PostgreSQL, migrations, backend build, backend start, frontend start) with per-step timing and a heartbeat line every 5 seconds during long steps.
+- Preflight checks report every problem at once: Docker engine not running, Go missing, `npm install` not run, ports 8080 or 5173 already in use.
+- The backend is compiled with `go build` into `.dev/bin/` and that binary is run, so build errors and slow builds are separated from startup and health waits. The backend health timeout no longer includes compilation.
+- The script tracks child exit and fails immediately with the tail of that service's logs; it also streams new log lines while waiting. Logs are truncated on each start so failures never show output from an earlier run.
+- `--verbose` adds Go compiler package output. The command surface (`dev:up`, `dev:down`, `dev:status`, `db:migrate`, `db:reset`) and the one-command contract are unchanged.
