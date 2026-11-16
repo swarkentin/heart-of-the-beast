@@ -105,6 +105,17 @@ export default function App() {
   }, [roomId, token, spectator, pollMs]);
 
   useEffect(() => {
+    if (spectator || (run?.phase !== "completed" && run?.phase !== "failed")) return;
+    let active = true;
+    const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) return;
+    void apiRequest<ApiProfile>("/profile", credential)
+      .then(value => { if (active) setProfile(value); })
+      .catch(() => { /* A later visit can retry loading the profile. */ });
+    return () => { active = false; };
+  }, [run?.id, run?.phase, spectator]);
+
+  useEffect(() => {
     if (!snapshot || classCatalog) return;
     let active = true;
     void apiRequest<LobbyCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
