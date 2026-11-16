@@ -12,33 +12,33 @@ import (
 // random-decision policy. The simulation executes the same domain commands as
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
-	Seed               int64          `json:"seed"`
-	ThemeID            string         `json:"themeId"`
-	Floors             int            `json:"floors"`
-	GoldEarned         int            `json:"goldEarned"`
-	ItemsBought        int            `json:"itemsBought"`
-	DungeonsCleared    int            `json:"dungeonsCleared"`
-	Rank               string         `json:"rank"`
-	PartyClasses       []string       `json:"partyClasses"`
-	PartySize          int            `json:"partySize"`
-	Outcome            string         `json:"outcome"`
-	Completed          bool           `json:"completed"`
-	Wiped              bool           `json:"wiped"`
-	ReachedDepth       int            `json:"reachedDepth"`
-	RoomsVisited       int            `json:"roomsVisited"`
-	EncountersCleared  int            `json:"encountersCleared"`
-	CombatRounds       int            `json:"combatRounds"`
+	Seed               int64                          `json:"seed"`
+	ThemeID            string                         `json:"themeId"`
+	Floors             int                            `json:"floors"`
+	GoldEarned         int                            `json:"goldEarned"`
+	ItemsBought        int                            `json:"itemsBought"`
+	DungeonsCleared    int                            `json:"dungeonsCleared"`
+	Rank               string                         `json:"rank"`
+	PartyClasses       []string                       `json:"partyClasses"`
+	PartySize          int                            `json:"partySize"`
+	Outcome            string                         `json:"outcome"`
+	Completed          bool                           `json:"completed"`
+	Wiped              bool                           `json:"wiped"`
+	ReachedDepth       int                            `json:"reachedDepth"`
+	RoomsVisited       int                            `json:"roomsVisited"`
+	EncountersCleared  int                            `json:"encountersCleared"`
+	CombatRounds       int                            `json:"combatRounds"`
 	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
-	NetPartyHealthLoss int            `json:"netPartyHealthLoss"`
-	EndEnemyHealth     int            `json:"endEnemyHealth,omitempty"`
-	EndEnemyMaxHealth  int            `json:"endEnemyMaxHealth,omitempty"`
-	EndEnemiesAlive    int            `json:"endEnemiesAlive,omitempty"`
-	PlayersDownAtEnd   int            `json:"playersDownAtEnd"`
-	RemainingHealth    int            `json:"remainingHealth"`
-	RemainingMaxHealth int            `json:"remainingMaxHealth"`
-	RemainingHealthPct int            `json:"remainingHealthPct"`
-	Levels             map[string]int `json:"levels"`
-	Steps              int            `json:"steps"`
+	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
+	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
+	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
+	EndEnemiesAlive    int                            `json:"endEnemiesAlive,omitempty"`
+	PlayersDownAtEnd   int                            `json:"playersDownAtEnd"`
+	RemainingHealth    int                            `json:"remainingHealth"`
+	RemainingMaxHealth int                            `json:"remainingMaxHealth"`
+	RemainingHealthPct int                            `json:"remainingHealthPct"`
+	Levels             map[string]int                 `json:"levels"`
+	Steps              int                            `json:"steps"`
 	// EndRoomType and EndDepth say where the run ended: the room type (encounter, miniboss, boss) a wipe happened in.
 	EndRoomType string `json:"endRoomType,omitempty"`
 	EndDepth    int    `json:"endDepth,omitempty"`
@@ -46,11 +46,11 @@ type RunSimulationReport struct {
 
 // PlayerCombatMetrics records combat contribution for one simulated adventurer.
 type PlayerCombatMetrics struct {
-	DamageDealt    int `json:"damageDealt"`
-	Attacks        int `json:"attacks"`
-	Abilities      int `json:"abilities"`
-	Interrupts     int `json:"interrupts"`
-	Defends        int `json:"defends"`
+	DamageDealt int `json:"damageDealt"`
+	Attacks     int `json:"attacks"`
+	Abilities   int `json:"abilities"`
+	Interrupts  int `json:"interrupts"`
+	Defends     int `json:"defends"`
 }
 
 // RunSimulationBatchReport summarizes a reproducible collection of full runs.
