@@ -21,6 +21,7 @@ type BalanceScenarioReport struct {
 	ID                       string                    `json:"id"`
 	EncounterID              string                    `json:"encounterId"`
 	PartySize                int                       `json:"partySize"`
+	EncounterBudget          int                       `json:"encounterBudget"`
 	ClassIDs                 []string                  `json:"classIds"`
 	Summary                  CombatSimulationBatchReport `json:"summary"`
 	WipeRate                 float64                   `json:"wipeRate"`
@@ -77,7 +78,7 @@ func GenerateBalanceReport(seedCount int, firstSeed int64) (BalanceReport, error
 		}
 		for _, partySize := range []int{2, 4} {
 			partyClasses := make([]ClassDefinition, partySize)
-			for i := range partyClasses { partyClasses[i] = classes[(i+len(report.Scenarios))%len(classes)] }
+			for i := range partyClasses { partyClasses[i] = classes[i%len(classes)] }
 			players, classIDs, err := balancePlayers(partyClasses)
 			if err != nil { return BalanceReport{}, err }
 			if err := appendBalanceScenario(&report, encounterID, partySize, players, classIDs, seedCount, firstSeed); err != nil { return BalanceReport{}, err }
@@ -128,7 +129,7 @@ func appendBalanceScenario(report *BalanceReport, encounterID string, partySize 
 	id := fmt.Sprintf("%s/party-%d/%s", encounterID, partySize, joinClassIDs(classIDs))
 	wipeRate := float64(summary.Wipes) / float64(summary.Runs)
 	report.Scenarios = append(report.Scenarios, BalanceScenarioReport{
-		ID: id, EncounterID: encounterID, PartySize: partySize, ClassIDs: classIDs,
+		ID: id, EncounterID: encounterID, PartySize: partySize, EncounterBudget: encounter.Budget, ClassIDs: classIDs,
 		Summary: summary, WipeRate: wipeRate,
 		MedianRemainingHealthPct: median(remaining), MedianHealing: median(healing), MedianPlayersDowned: median(downed),
 	})
@@ -165,7 +166,7 @@ func CompareBalanceReports(baseline, current BalanceReport) BalanceComparison {
 			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "warning", Metric: "p90Rounds", Delta: float64(now.Summary.P90Rounds-before.Summary.P90Rounds), Message: "90th-percentile encounter length grew by at least 30%; inspect damage throughput and enemy healing."})
 		}
 		}
-		if now.Summary.WinRate >= 0.99 && now.WipeRate == 0 {
+		if now.EncounterBudget >= 3 && now.Summary.WinRate >= 0.99 && now.WipeRate == 0 {
 			comparison.Findings = append(comparison.Findings, BalanceFinding{ScenarioID: now.ID, Severity: "suggestion", Metric: "winRate", Message: "Baseline policy wins almost every run; consider whether this encounter offers enough pressure or meaningful decisions."})
 		}
 		if now.Summary.WinRate < 0.60 || now.WipeRate >= 0.30 {
