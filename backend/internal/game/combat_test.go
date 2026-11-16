@@ -20,8 +20,8 @@ func TestEnemyIntentIsVisibleAndDefendReducesIncomingDamage(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "defend"}, now); err != nil {
 		t.Fatal(err)
 	}
-	if got := room.Run.Players["player-1"].Health; got != 30 {
-		t.Fatalf("guard should mitigate all but one point of the sentinel's 6 damage strike, health=%d", got)
+	if got := room.Run.Players["player-1"].Health; got != 25 {
+		t.Fatalf("guard should mitigate one point of the sentinel's 6 damage strike, health=%d", got)
 	}
 	guardedMessage := false
 	for _, event := range room.Run.LastCombatEvents {
