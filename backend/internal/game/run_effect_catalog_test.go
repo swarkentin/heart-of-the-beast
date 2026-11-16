@@ -34,7 +34,7 @@ func TestStudyWeaknessEffectProvidesWardenOnlyStrikeBonus(t *testing.T) {
 	if got := defaultRunEffectCatalog.StrikeBonus(run, "warden"); got != 0 {
 		t.Fatalf("unearned Warden bonus = %d, want 0", got)
 	}
-	if !applyRoomEventEffect(&Room{Run: run}, "study_weakness") {
+	if applied, _ := applyRoomEventEffect(&Room{Run: run}, "study_weakness"); !applied {
 		t.Fatal("study weakness effect should resolve")
 	}
 	if got := defaultRunEffectCatalog.StrikeBonus(run, "warden"); got != 2 {

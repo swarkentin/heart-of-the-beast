@@ -4,6 +4,7 @@ import { getSignatureAbility, partySupportCommand, signatureCommand, type Signat
 import { GameShell, Icon, SharedMenu, type IconId, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
 import { backdropRef, themeTitle } from "../scenes";
+import { Camp, ExpeditionResult, FloorStatus } from "./Camp";
 import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { archetypeName, buildParty, partyLabels, seatParty } from "./party";
@@ -27,7 +28,7 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
   const intent = enemy.intent;
   const targetIndex = intent?.targetPlayerId ? playerIds.indexOf(intent.targetPlayerId) + 1 : 0;
   return {
-    id: enemy.id, name: enemy.name, hp: enemy.health, maxHp: enemy.maxHealth, sprite: enemy.sprite, rawIntent: intent,
+    id: enemy.id, name: enemy.name + (enemy.enraged ? " · ENRAGED" : "") + ((enemy.barrier ?? 0) > 0 ? " · BARRIER " + enemy.barrier : ""), hp: enemy.health, maxHp: enemy.maxHealth, sprite: enemy.sprite, rawIntent: intent,
     x: count === 1 ? 550 : 550 + (index - (count - 1) / 2) * (count === 2 ? 240 : 220),
     intent: intent ? intent.label + " · " + intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "No move ready",
     intentTarget: intent?.targetAll ? "→ WHOLE PARTY" : intent?.targetPlayerId && intent.targetPlayerId === selfId ? "→ YOU" : targetIndex > 0 ? "→ P" + targetIndex : "",
@@ -98,7 +99,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const round = combat ? run.combatRound : undefined;
   const navigationVote = exploring ? run.navigationVote : undefined;
   const descentVote = run.phase === "intermission" ? run.interFloorVote : undefined;
-  const now = useNow(Boolean(round || navigationVote || descentVote), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (descentVote?.deadline ?? ""));
+  const camp = run.phase === "intermission" ? run.camp : undefined;
+  const now = useNow(Boolean(round || navigationVote || descentVote || camp?.deadline), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (descentVote?.deadline ?? "") + (camp?.deadline ?? ""));
   const roundDeadline = round ? new Date(round.deadline).getTime() : 0;
   const roundTotal = round ? Math.max(1, Math.round((roundDeadline - new Date(round.startedAt).getTime()) / 1000)) : 8;
   const remainingMs = round ? Math.max(0, roundDeadline - now) : 0;
@@ -200,6 +202,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     command = <div className="rn-context">
       <p className="px-eyebrow">{run.phase === "completed" ? "RUN COMPLETE" : "RUN OVER"}</p>
       <h2>{run.phase === "completed" ? "The dungeon is cleared" : "The party has fallen"}</h2>
+      {run.generator ? <ExpeditionResult run={run} /> : null}
       <p className="px-copy">{spectator ? "The host can take the party back to the lobby." : isHost ? "Take the party back to the lobby to choose classes and go again." : "Waiting for the host to return the party to the lobby."}</p>
       {!spectator && isHost ? <div className="rn-choices"><button className="px-button px-button-primary" onClick={onReturnToLobby} disabled={busy}>{busy ? "RETURNING…" : "RETURN TO LOBBY"}</button></div> : null}
     </div>;
@@ -227,6 +230,12 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
         <p className="rn-inspect" aria-live="polite">{focusedAction ? focusedAction.details : aidLabel ? "Keys 1–" + actions.length + " choose · ◀ ▶ change target · select a portrait to " + aidLabel.toLowerCase() + " an ally" : "Keys 1–" + actions.length + " choose · ◀ ▶ change target · one action per round"}</p>
       </> : <p className="px-copy">{spectator ? "Spectating. The party is choosing its actions." : "Cast view is read-only. Switch to the player view to act."}</p>}
     </div>;
+  } else if (camp) {
+    const campSeconds = camp.deadline ? Math.max(0, Math.ceil((new Date(camp.deadline).getTime() - now) / 1000)) : 0;
+    const campTotal = camp.deadline ? Math.max(1, Math.round((new Date(camp.deadline).getTime() - new Date(camp.startedAt).getTime()) / 1000)) : 0;
+    const campDone = eligible.filter(member => camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.stage === "crossroads" ? camp.votes?.[member.id] : camp.ready?.[member.id]).length;
+    command = <Camp camp={camp} run={run} selfId={selfId} acting={acting && Boolean(self?.alive)} spectator={spectator} busy={busy} onCommand={onCommand}
+      timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "game" ? "CAMP GAME" : camp.stage === "crossroads" ? "DUNGEON VOTE" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "game" ? "DONE" : camp.stage === "crossroads" ? "IN" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
   } else if (run.phase === "intermission") {
     const mine = descentVote?.votes?.[selfId];
     command = <div className="rn-context">
@@ -267,7 +276,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}
-    center={<div className="rn-location"><b>{room.name}</b><span>FLOOR {String(run.depth ?? 1).padStart(2, "0")} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
+    center={<div className="rn-location"><b>{room.name}</b><span>{(run.dungeon ?? 1) > 1 ? "DUNGEON " + run.dungeon + " · " : ""}{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
     tools={<>
       {!spectator ? <button type="button" className="px-button px-button-small rn-view-switch" onClick={() => setView(view === "player" ? "cast" : "player")} aria-pressed={view === "cast"}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}
       <SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<>
@@ -285,7 +294,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
         <section className="px-panel rn-log" aria-label="Combat log"><h2 className="px-label">LOG</h2><ol ref={logRef} role="log" aria-live="polite" tabIndex={0}>{log.length === 0 ? <li className="rn-log-line rn-log-system"><span>Nothing has happened yet.</span></li> : log.map(line => <LogText key={line.key} line={line} labels={labels} />)}</ol></section>
-        <section className="px-panel rn-command" aria-label="Your options">{command}{error ? <p className="px-error" role="alert">{error}</p> : null}</section>
+        <section className="px-panel rn-command" aria-label="Your options">
+          {!gameOver && (player?.gold !== undefined || (run.floorModifiers?.length ?? 0) > 0) ? <FloorStatus gold={spectator ? undefined : player?.gold ?? 0} modifiers={camp ? [] : run.floorModifiers ?? []} /> : null}
+          {command}{error ? <p className="px-error" role="alert">{error}</p> : null}</section>
       </div>
     </div>
 

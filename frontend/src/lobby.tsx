@@ -203,7 +203,7 @@ function Pips({ value, max = 4 }: { value: number; max?: number }) {
   return <span className="px-pips" aria-hidden="true">{Array.from({ length: Math.max(max, value) }, (_, index) => <i key={index} className={index < value ? "on" : ""} />)}</span>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, profile, audioControls, onSaveName, onSelectClass, onStart, onLeave }: { room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string) => void; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
   const [treeOpen, setTreeOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -325,8 +325,15 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
 
       <div className="px-panel px-depart">
         <p className="px-copy" role="status">{isHost
-          ? undecided > 0 ? (undecided === 1 ? "One adventurer is" : undecided + " adventurers are") + " still choosing a class." : "Everyone is ready. The catacombs await."
+          ? undecided > 0 ? (undecided === 1 ? "One adventurer is" : undecided + " adventurers are") + " still choosing a class." : "Everyone is ready. Choose a dungeon and begin."
           : selectedClassId ? "You are ready. Waiting for the host to begin." : "Choose your class. The host can begin once everyone is ready."}</p>
+        {isHost && themes.length > 0 ? <label className="px-dungeon"><span className="px-label">DUNGEON</span>
+          <select value={themeId} onChange={event => onTheme?.(event.target.value)} disabled={busy}>
+            <option value="random">Surprise us (random dungeon)</option>
+            {themes.map(theme => <option key={theme.id} value={theme.id}>{theme.name}</option>)}
+          </select>
+          <small>{themes.find(theme => theme.id === themeId)?.tagline ?? "Four to six floors, a camp between each, and a boss at the bottom."}</small>
+        </label> : null}
         <div className="px-depart-actions">
           <button className="px-button px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>
           {isHost ? <button className="px-button px-button-primary px-button-large" onClick={onStart} disabled={busy || undecided > 0}>{busy ? "PLEASE WAIT…" : "BEGIN THE ADVENTURE"}</button> : null}

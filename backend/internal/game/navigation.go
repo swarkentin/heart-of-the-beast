@@ -162,6 +162,10 @@ func transitionToExit(room *Room, exitID string, now time.Time) {
 		if exit.ID != exitID {
 			continue
 		}
+		if exit.Destination == DescendDestination && run.Generator >= ExpeditionGenerator {
+			descendExpedition(room, now)
+			return
+		}
 		next := run.Rooms[exit.Destination]
 		if next == nil {
 			return
@@ -171,6 +175,7 @@ func transitionToExit(room *Room, exitID string, now time.Time) {
 		run.CombatRound = nil
 		if next.Encounter != nil && next.Encounter.Status == EncounterActive {
 			run.Phase = PhaseCombat
+			applyFloorEntryDamage(room)
 			startCombatRound(room, now)
 		} else {
 			run.Phase = PhaseExploring

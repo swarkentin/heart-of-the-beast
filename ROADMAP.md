@@ -129,13 +129,17 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 - [ ] Reusable optional side-mission framework.
 - [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
 - [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
-- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; give the nine remaining themes floor templates so their encounters can appear in runs; add a dedicated miniboss sprite.
-- [ ] Run modifiers and varied dungeon themes.
+- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; add a dedicated miniboss sprite. (All eleven themes are now playable; see ADR 0029.)
+- [x] Dungeon expeditions (ADR 0029): an endless chain of dungeons, each 4–6 generated floors in one of eleven themes, ended only by a wipe; a two-option theme vote with per-dungeon modifiers after every dungeon boss; camps (mini-game and shop) only at a dungeon's midpoint and between dungeons; floor debuffs and perks that grow with depth; dungeon bosses with enrage, summon, barrier and cataclysm mechanics; discovery and vault rooms whose choices are trade-offs or gambles; a rank and personal best for how far the party got; lobby dungeon picker.
+- [x] Feed expedition distance into persistent progression (ADR 0028): profile and class-mastery XP now come from fights won, floors cleared and dungeons conquered across the whole expedition.
+- [ ] Keep each profile's best expedition distance and rank on the server and show them in the Profile menu (today the personal best is browser-only).
+- [ ] Tune the expedition by play: gold income and shop prices, modifier strength, boss thresholds, floor length against the 3–5 minute target, and the difficulty of floors 4–6. Give floor guardians (not only dungeon bosses) a mechanic each.
+- [ ] Grow the camp: co-operative or head-to-head mini-games, consumables that are used as combat actions, and theme-flavoured modifiers, shopkeepers and camp backdrops.
 
 ## Phase 4 — Open-world intermissions
 
 - [ ] Safe hub between dungeon levels.
-- [ ] Rest, shop, repair, upgrade, and resupply activities.
+- [ ] Repair, upgrade, and resupply activities beyond the camp rest and shop of ADR 0029.
 - [ ] NPCs, ambience, music, and environmental storytelling.
 - [ ] Safe join checkpoint and party ready-up flow.
 
@@ -143,7 +147,7 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 
 - [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
 - [x] Pixel-art room backdrops (first-person and cinematic; entry, corridor, event, boss, vault) for all eleven themes, registered in Go so a missing background fails CI (ADR 0025)
-- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi; a lobby theme picker; encounter tables for the nine non-playable themes.
+- [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi. (Lobby theme picker and content for all themes shipped with ADR 0029.)
 - [ ] More enemy families, bosses, side missions, items, and abilities.
 - [ ] Cinematic spectator camera movement, animation, audio, accessibility, and localization polish.
 - [ ] Content authoring conventions and validation tools.

@@ -37,12 +37,6 @@ func TestFloorTemplateCatalogRejectsInconsistentContent(t *testing.T) {
 			}
 		})
 	}
-	t.Run("playable theme without a template", func(t *testing.T) {
-		catalog := FloorTemplateCatalog{Templates: map[string]FloorTemplate{"catacombs": catacombsFloorTemplate()}}
-		if err := catalog.Validate(defaultDungeonThemeCatalog, defaultEncounterCatalog, defaultMonsterCatalog); err == nil {
-			t.Fatal("expected a playable theme without a template to be rejected")
-		}
-	})
 }
 
 // Floors for the original theme must stay exactly as they were before floor generation became data-driven.
@@ -74,20 +68,14 @@ func TestCatacombsFloorsAreUnchangedByThemedGeneration(t *testing.T) {
 	}
 }
 
-func playableThemeIDs() []string {
-	var ids []string
-	for _, id := range defaultDungeonThemeCatalog.IDs() {
-		if theme, _ := defaultDungeonThemeCatalog.Theme(id); theme.Playable {
-			ids = append(ids, id)
-		}
-	}
-	return ids
-}
+// legacyTemplateThemeIDs are the themes that had a FloorTemplate before expeditions. Rooms persisted then still
+// generate their remaining floors from these templates.
+func legacyTemplateThemeIDs() []string { return []string{"catacombs", "scifi"} }
 
-// Every playable theme must produce small, fully connected, deterministic floors with the right boss, whatever
+// Every legacy template must produce small, fully connected, deterministic floors with the right boss, whatever
 // the seed, depth and party size.
 func TestThemedFloorsAreConnectedBoundedDeterministicAndThemed(t *testing.T) {
-	for _, themeID := range playableThemeIDs() {
+	for _, themeID := range legacyTemplateThemeIDs() {
 		template, err := defaultFloorTemplateCatalog.Template(themeID)
 		if err != nil {
 			t.Fatal(err)
@@ -197,7 +185,7 @@ func TestStartRunInAThemeUsesItsFirstFloorAndRecordsTheTheme(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 
 	room := newTestRoom()
-	if err := StartMultiLevelRunForTheme(room, "scifi-run", "scifi", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "scifi-run", "scifi", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run
@@ -219,7 +207,7 @@ func TestStartRunInAThemeUsesItsFirstFloorAndRecordsTheTheme(t *testing.T) {
 
 	for _, themeID := range []string{"", "catacombs"} {
 		room := newTestRoom()
-		if err := StartMultiLevelRunForTheme(room, "default-run", themeID, now); err != nil {
+		if err := startLegacyMultiLevelRun(room, "default-run", themeID, now); err != nil {
 			t.Fatal(err)
 		}
 		if room.Run.Theme() != "catacombs" || room.Run.ThemeID != "catacombs" || room.Run.CurrentRoomID != "entry" || room.Run.Rooms["warden"].ThemeID != "catacombs" {
@@ -232,16 +220,16 @@ func TestStartRunRejectsUnknownAndUnplayableThemes(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	for themeID, want := range map[string]error{"atlantis": ErrUnknownDungeonTheme, "sunken": ErrThemeNotPlayable} {
 		room := newTestRoom()
-		err := StartMultiLevelRunForTheme(room, "run", themeID, now)
+		err := startLegacyMultiLevelRun(room, "run", themeID, now)
 		if !errors.Is(err, want) || room.Run != nil {
 			t.Errorf("theme %q: err=%v run=%v, want %v and no run", themeID, err, room.Run, want)
 		}
 	}
 	room := newTestRoom()
-	if err := StartMultiLevelRunForTheme(room, "run", "scifi", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "run", "scifi", now); err != nil {
 		t.Fatal(err)
 	}
-	if err := StartMultiLevelRunForTheme(room, "run-2", "scifi", now); !errors.Is(err, ErrRunAlreadyStarted) {
+	if err := startLegacyMultiLevelRun(room, "run-2", "scifi", now); !errors.Is(err, ErrRunAlreadyStarted) {
 		t.Fatalf("starting twice: %v", err)
 	}
 }
@@ -264,7 +252,7 @@ func TestRunsPersistedWithoutAThemeAreCatacombs(t *testing.T) {
 func TestSciFiRunDescendsThroughThemedFloorsToVictory(t *testing.T) {
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
-	if err := StartMultiLevelRunForTheme(room, "scifi-descent", "scifi", now); err != nil {
+	if err := startLegacyMultiLevelRun(room, "scifi-descent", "scifi", now); err != nil {
 		t.Fatal(err)
 	}
 	run := room.Run

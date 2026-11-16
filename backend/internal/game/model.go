@@ -46,11 +46,31 @@ type Run struct {
 	ID string `json:"id"`
 	// ThemeID is the dungeon theme (see DungeonThemeCatalog) of the whole run. Runs persisted before themes
 	// existed lack it and are Forgotten Catacombs; use Theme() rather than reading the field directly.
-	ThemeID                 string                  `json:"themeId,omitempty"`
-	Seed                    uint64                  `json:"seed,omitempty"`
-	Depth                   int                     `json:"depth,omitempty"`
-	MaxDepth                int                     `json:"maxDepth,omitempty"`
-	MusicIntensity          int                     `json:"musicIntensity,omitempty"`
+	ThemeID        string `json:"themeId,omitempty"`
+	Seed           uint64 `json:"seed,omitempty"`
+	Depth          int    `json:"depth,omitempty"`
+	MaxDepth       int    `json:"maxDepth,omitempty"`
+	MusicIntensity int    `json:"musicIntensity,omitempty"`
+	// Generator is the version of the rules the run was started under. Zero is a run persisted before
+	// expeditions (three floors, a restore-or-perk choice between them); ExpeditionGenerator runs have four to
+	// six generated floors, floor modifiers, gold, and a camp between floors.
+	Generator int `json:"generator,omitempty"`
+	// Dungeon counts the dungeons of the expedition, starting at 1 (0 on a run that has only seen its first).
+	// DungeonsCleared is how many dungeon bosses the party has beaten.
+	Dungeon         int `json:"dungeon,omitempty"`
+	DungeonsCleared int `json:"dungeonsCleared,omitempty"`
+	// FloorsCleared counts floor bosses beaten across the whole expedition: how far the party got. Rank is the
+	// title that distance earned, set when the expedition ends.
+	FloorsCleared int `json:"floorsCleared,omitempty"`
+	// EncountersCleared counts every fight won. Rooms of finished dungeons are dropped, so this is the record.
+	EncountersCleared int    `json:"encountersCleared,omitempty"`
+	Rank              string `json:"rank,omitempty"`
+	// DungeonModifiers came with the dungeon the party voted for and hold on every one of its floors.
+	DungeonModifiers []ActiveFloorModifier `json:"dungeonModifiers,omitempty"`
+	// FloorModifiers are the level-wide debuffs and perks in force on the current floor.
+	FloorModifiers []ActiveFloorModifier `json:"floorModifiers,omitempty"`
+	// Camp is the respite between two floors of an expedition: a mini-game, then a shop.
+	Camp                    *Camp                   `json:"camp,omitempty"`
 	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`
 	InterFloorVote          *NavigationVote         `json:"interFloorVote,omitempty"`
 	Phase                   RunPhase                `json:"phase"`
@@ -97,6 +117,10 @@ type PlayerState struct {
 	TalentPoints   int                 `json:"talentPoints"`
 	Talents        []string            `json:"talents"`
 	Stats          PlayerStats         `json:"stats"`
+	// Gold is earned by clearing encounters and playing camp mini-games, and spent at the camp shop.
+	Gold int `json:"gold,omitempty"`
+	// Items are the IDs of the shop items the player has bought this run, in order.
+	Items []string `json:"items,omitempty"`
 }
 
 type DungeonRoom struct {
@@ -166,6 +190,20 @@ type Enemy struct {
 	MaxHealth    int          `json:"maxHealth"`
 	MarkedDamage int          `json:"markedDamage,omitempty"`
 	Intent       *EnemyIntent `json:"intent,omitempty"`
+	// Mechanics are the boss mechanics (see boss_mechanics.go) this enemy uses. Only dungeon bosses have any.
+	Mechanics []string `json:"mechanics,omitempty"`
+	// Barrier absorbs Strike damage before health. Signature abilities and interrupts pierce it.
+	Barrier int `json:"barrier,omitempty"`
+	// Enraged is set once, when an enraging boss falls to low health. DamageBonus then raises every hit.
+	Enraged     bool `json:"enraged,omitempty"`
+	DamageBonus int  `json:"damageBonus,omitempty"`
+	// SummonMonsterID and SummonsLeft drive the summon mechanic. Summoned marks the reinforcements themselves.
+	SummonMonsterID string `json:"summonMonsterId,omitempty"`
+	SummonsLeft     int    `json:"summonsLeft,omitempty"`
+	Summoned        bool   `json:"summoned,omitempty"`
+	// BarrierLabel and CataclysmLabel name the boss's barrier and cataclysm in telegraphs and the log.
+	BarrierLabel   string `json:"barrierLabel,omitempty"`
+	CataclysmLabel string `json:"cataclysmLabel,omitempty"`
 }
 
 type CombatEvent struct {

@@ -255,3 +255,29 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-act-auto { animation: none; outline-color: var(--ember); }
   .rn-act:active:not(:disabled), .rn-card-aid:active:not(:disabled) { translate: none; }
 }
+
+/* ---------- expedition: floor status, camp, mini-games, shop ---------- */
+.rn-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: none; margin-bottom: 4px; }
+.rn-gold { color: var(--gold); font: 400 10px/1.6 var(--display); white-space: nowrap; }
+.rn-mod { padding: 1px 6px 2px; background: var(--pit); box-shadow: 0 0 0 2px var(--edge); font-size: 16px; letter-spacing: .06em; line-height: 1.1; cursor: help; }
+.rn-mod-debuff { color: var(--ember); }
+.rn-mod-perk { color: var(--good); }
+.rn-camp { display: grid; gap: 6px; align-content: start; min-height: 0; overflow-y: auto; }
+.rn-camp h2 { font-size: 14px; }
+.rn-camp-next { display: grid; gap: 2px; padding: 5px 8px; background: var(--pit); box-shadow: 0 0 0 2px var(--edge); }
+.rn-camp-next li { list-style: none; font-size: 18px; line-height: 1.1; }
+.rn-camp-next ul { margin: 0; padding: 0; display: grid; gap: 2px; }
+.rn-camp-next b { font-weight: 400; }
+.rn-game-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rn-tile { display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 6px; border: 0; background: #2a2440; box-shadow: inset 0 3px 0 #3d3658, inset 0 -4px 0 #17132a, 0 0 0 2px var(--edge); color: var(--bone); font: 400 12px/1 var(--display); }
+button.rn-tile { cursor: pointer; }
+button.rn-tile:hover:not(:disabled) { background: #3d3658; }
+button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
+.rn-tile-bad { color: var(--ember); box-shadow: inset 0 3px 0 #3d3658, inset 0 -4px 0 #17132a, 0 0 0 2px var(--ember); }
+.rn-tile-good { color: var(--gold); }
+.rn-tile-lit { background: var(--gold); color: var(--pit); box-shadow: inset 0 3px 0 #f3d38c, 0 0 0 2px var(--edge); }
+.rn-rune-sun { color: #f3d38c; } .rn-rune-moon { color: #b9c4ff; } .rn-rune-star { color: #ff9ad5; } .rn-rune-wave { color: #7fe0d0; }
+.rn-tile-lit.rn-rune-sun, .rn-tile-lit.rn-rune-moon, .rn-tile-lit.rn-rune-star, .rn-tile-lit.rn-rune-wave { color: var(--pit); }
+.rn-pot { color: var(--gold); font: 400 10px/1.6 var(--display); }
+.rn-dungeon small { display: block; }
+.rn-result { display: grid; gap: 4px; padding: 6px 8px; background: var(--pit); box-shadow: 0 0 0 2px var(--edge); }

@@ -9,13 +9,14 @@ import (
 )
 
 const InitialDungeonDepth = 1
+
+// MaximumDungeonDepth is the number of floors in a run persisted before expeditions, and the number of
+// intensity levels the soundtrack has. Expeditions have MinimumExpeditionDepth to MaximumExpeditionDepth floors.
 const MaximumDungeonDepth = 3
 
 var ErrInvalidInterFloorChoice = errors.New("choose either health restoration or a run perk")
 
-// StartMultiLevelRun starts the existing authored Catacombs floor as the first
-// floor of a seeded three-floor expedition. Later floors are generated from
-// the persisted run seed and depth.
+// StartMultiLevelRun starts an expedition in the default theme, Forgotten Catacombs.
 func StartMultiLevelRun(room *Room, runID string, now time.Time) error {
 	return StartMultiLevelRunForTheme(room, runID, "", now)
 }
@@ -36,10 +37,10 @@ func (run *Run) Theme() string {
 	return run.ThemeID
 }
 
-// StartMultiLevelRunForTheme starts a seeded three-floor expedition in a playable dungeon theme; an empty
-// themeID means Forgotten Catacombs. Catacombs keeps its authored first floor. Every other theme generates all
-// of its floors from the run seed.
-func StartMultiLevelRunForTheme(room *Room, runID, themeID string, now time.Time) error {
+// startLegacyMultiLevelRun starts a run under the rules that predate expeditions: three floors from the
+// per-theme FloorTemplate, with a restore-or-perk choice between them. New runs never use it; it exists so the
+// rules that rooms persisted before expeditions still follow stay covered by tests.
+func startLegacyMultiLevelRun(room *Room, runID, themeID string, now time.Time) error {
 	if themeID == "" {
 		themeID = DefaultDungeonThemeID
 	}
@@ -47,7 +48,7 @@ func StartMultiLevelRunForTheme(room *Room, runID, themeID string, now time.Time
 	if err != nil {
 		return fmt.Errorf("%w: %q", ErrUnknownDungeonTheme, themeID)
 	}
-	if !theme.Playable {
+	if _, err := defaultFloorTemplateCatalog.Template(theme.ID); err != nil {
 		return fmt.Errorf("%w: %q", ErrThemeNotPlayable, themeID)
 	}
 	hash := fnv.New64a()

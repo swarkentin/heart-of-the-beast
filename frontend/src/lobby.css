@@ -291,3 +291,8 @@
 .px-build-footer { width: min(920px, 100%); margin: 12px auto 8px; color: #625a76; font: 9px/1.4 var(--display); letter-spacing: .08em; text-align: right; }
 .px-build-footer a { color: inherit; font: inherit; }
 @media (max-width: 760px) { .px-shared-menu-panel { width: min(300px, calc(100vw - 20px)); } .px-selected-mastery { grid-template-columns: 1fr; } .px-build-footer { padding-right: 4px; } }
+
+/* ---------- dungeon picker ---------- */
+.px-dungeon { display: grid; gap: 4px; margin: 6px 0; }
+.px-dungeon select { width: 100%; padding: 6px 8px; border: 0; background: #2a2440; box-shadow: inset 0 3px 0 #3d3658, inset 0 -4px 0 #17132a, 0 0 0 2px var(--edge); color: var(--bone); font: inherit; font-size: 20px; cursor: pointer; }
+.px-dungeon small { color: #cfc6dc; font-size: 18px; line-height: 1.1; }

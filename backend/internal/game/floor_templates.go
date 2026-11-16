@@ -115,15 +115,10 @@ func (template FloorTemplate) encounterIDs() []string {
 	return ids
 }
 
-// Validate checks every playable theme has a template, and every template only places encounters that exist,
-// belong to its theme, and (for bosses) spawn a boss monster.
+// Validate checks every template only places encounters that exist, belong to its theme, and (for bosses) spawn a
+// boss monster. Templates are the content of runs persisted before expeditions; ExpeditionThemeCatalog.Validate
+// covers the content new runs use.
 func (catalog FloorTemplateCatalog) Validate(themes DungeonThemeCatalog, encounters EncounterCatalog, monsters MonsterCatalog) error {
-	for _, themeID := range themes.IDs() {
-		theme, _ := themes.Theme(themeID)
-		if _, ok := catalog.Templates[themeID]; theme.Playable && !ok {
-			return fmt.Errorf("playable dungeon theme %q has no floor template", themeID)
-		}
-	}
 	for themeID, template := range catalog.Templates {
 		theme, err := themes.Theme(themeID)
 		if err != nil || template.ThemeID != themeID {
@@ -178,6 +173,9 @@ func (catalog FloorTemplateCatalog) Validate(themes DungeonThemeCatalog, encount
 
 // clearedText is the victory message for a theme's final boss.
 func clearedText(themeID string) string {
+	if theme, err := defaultExpeditionThemeCatalog.Theme(themeID); err == nil {
+		return theme.ClearedText
+	}
 	if template, err := defaultFloorTemplateCatalog.Template(themeID); err == nil {
 		return template.ClearedText
 	}

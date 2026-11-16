@@ -40,12 +40,16 @@ func ChooseRoomEvent(room *Room, actorID, choiceID string, now time.Time) error 
 	}
 
 	run.LastCombatEvents = make([]CombatEvent, 0, len(run.Players))
-	if !applyRoomEventEffect(room, choice.Effect) {
+	applied, outcome := applyRoomEventEffect(room, choice.Effect)
+	if !applied {
 		return ErrInvalidEventChoice
 	}
 
 	current.Event.Resolved = true
 	current.Event.Result = choice.Description
+	if outcome != "" {
+		current.Event.Result = outcome
+	}
 	current.Cleared = true
 	startNavigationVote(room, now)
 	return nil

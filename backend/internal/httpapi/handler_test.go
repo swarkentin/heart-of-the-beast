@@ -123,7 +123,7 @@ func TestPlayersCanJoinLobbyAndShareRun(t *testing.T) {
 		t.Fatalf("guest snapshot: %d %s", guestSnapshot.Code, guestSnapshot.Body.String())
 	}
 
-	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
+	command := httptest.NewRequest(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", bytes.NewBufferString(attackEntryEnemy(t, started.Body.Bytes(), 1)))
 	command.Header.Set("Authorization", "Bearer "+guest.PlayerToken)
 	acted := httptest.NewRecorder()
 	handler.ServeHTTP(acted, command)
@@ -339,7 +339,9 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 		t.Fatalf("start: %d %s", started.Code, started.Body.String())
 	}
 
-	guestAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", guest.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
+	entryEnemy := entryRoom(t, started.Body.Bytes()).Encounter.Enemies[0]
+	attack := attackEntryEnemy(t, started.Body.Bytes(), 1)
+	guestAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", guest.PlayerToken, attack)
 	if guestAction.Code != http.StatusOK {
 		t.Fatalf("guest action: %d %s", guestAction.Code, guestAction.Body.String())
 	}
@@ -355,11 +357,11 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if err := json.Unmarshal(guestAction.Body.Bytes(), &pending); err != nil {
 		t.Fatal(err)
 	}
-	if got := pending.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 19 {
+	if got := pending.Run.Rooms["d1-entry"].Encounter.Enemies[0].Health; got != entryEnemy.Health {
 		t.Fatalf("guest action resolved before host action: enemy health=%d", got)
 	}
 
-	hostAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, `{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`)
+	hostAction := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.PlayerToken, attack)
 	if hostAction.Code != http.StatusOK {
 		t.Fatalf("host action: %d %s", hostAction.Code, hostAction.Body.String())
 	}
@@ -369,8 +371,13 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if err := json.Unmarshal(hostAction.Body.Bytes(), &resolved); err != nil {
 		t.Fatal(err)
 	}
-	if resolved.Run.Phase != game.PhaseCombat || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 7 {
-		t.Fatal("both party actions should resolve together and clear the encounter")
+	// Two Strikes land together. The entry guard of a two-player party survives them, so the fight goes on.
+	want := entryEnemy.Health - 2*game.PlayerStrikeDamage
+	if want <= 0 {
+		t.Fatalf("test assumes the entry enemy survives two strikes, health=%d", entryEnemy.Health)
+	}
+	if got := resolved.Run.Rooms["d1-entry"].Encounter.Enemies[0].Health; resolved.Run.Phase != game.PhaseCombat || got != want || resolved.Run.CombatRound.Number != 2 {
+		t.Fatalf("both party actions should resolve together: phase=%s enemy health=%d want %d", resolved.Run.Phase, got, want)
 	}
 }
 
@@ -465,4 +472,27 @@ func TestHostCanReturnEndedRunToSameLobby(t *testing.T) {
 	if restarted.Code != http.StatusOK {
 		t.Fatalf("same party should be able to start another run: %d %s", restarted.Code, restarted.Body.String())
 	}
+}
+
+// entryRoom returns the first room of the expedition in a start-run response.
+func entryRoom(t *testing.T, startBody []byte) *game.DungeonRoom {
+	t.Helper()
+	var started struct {
+		Run *game.Run `json:"run"`
+	}
+	if err := json.Unmarshal(startBody, &started); err != nil || started.Run == nil {
+		t.Fatalf("decode started run: %v %s", err, startBody)
+	}
+	room := started.Run.Rooms[started.Run.CurrentRoomID]
+	if room == nil || room.Encounter == nil || len(room.Encounter.Enemies) == 0 || len(room.Exits) < 2 {
+		t.Fatalf("an expedition should start in a fight with a choice of routes: %+v", room)
+	}
+	return room
+}
+
+// attackEntryEnemy is a Strike command against the first enemy of the expedition's entry room.
+func attackEntryEnemy(t *testing.T, startBody []byte, round int) string {
+	t.Helper()
+	body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": entryRoom(t, startBody).Encounter.Enemies[0].ID})
+	return string(body)
 }

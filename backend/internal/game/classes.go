@@ -281,6 +281,18 @@ func ValidateCatalog() error {
 	if err := defaultRunRewardCatalog.Validate(); err != nil {
 		return err
 	}
+	if err := defaultFloorModifierCatalog.Validate(); err != nil {
+		return err
+	}
+	if err := defaultRunEffectCatalog.Validate(); err != nil {
+		return err
+	}
+	if err := validateShopCatalog(); err != nil {
+		return err
+	}
+	if err := defaultExpeditionThemeCatalog.Validate(defaultDungeonThemeCatalog, defaultEncounterCatalog, defaultMonsterCatalog); err != nil {
+		return err
+	}
 	return validateRegisteredClassEffects()
 }
 

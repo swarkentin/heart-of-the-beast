@@ -60,6 +60,9 @@ test("log lines use the labels on the portraits and read naturally for the reade
   assert.equal(relabel("Crypt Warden uses Soul Drain on Adventurer 1 for 2 damage. Guarded.", labels), "Crypt Warden uses Soul Drain on you for 2 damage. Guarded.");
   assert.equal(relabel("Adventurer 2 uses Renewal on Adventurer 1 for 4 health.", labels), "P2 Arcanist uses Renewal on you for 4 health.");
   assert.equal(relabel("Adventurer 1's companion guards Adventurer 2.", labels), "Your companion guards P2 Arcanist.");
+  assert.equal(relabel("Adventurer 1 wins 12 gold at Bone Dice.", labels), "You win 12 gold at Bone Dice.");
+  assert.equal(relabel("Adventurer 1 buys Revival Draught. Adventurer 2 is back on their feet!", labels), "You buy Revival Draught. P2 Arcanist is back on their feet!");
+  assert.equal(relabel("Adventurer 1 loses 2 health to the floor's hazards.", labels), "You lose 2 health to the floor's hazards.");
   assert.equal(relabel("Adventurer 1 ran out of time and defends automatically, blocking up to 6 damage from the next hit.", labels), "You ran out of time and defend automatically, blocking up to 6 damage from the next hit.");
   assert.equal(relabel("Adventurer 1 is down!", labels), "You are down!");
   assert.equal(relabel("Adventurer 4 braces.", labels), "Adventurer 4 braces.", "unknown seats are left alone");

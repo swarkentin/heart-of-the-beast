@@ -267,21 +267,11 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 	if !ok {
 		return nil
 	}
-	clearedEncounters := 0
-	for _, dungeonRoom := range room.Run.Rooms {
-		if dungeonRoom != nil && dungeonRoom.Encounter != nil && dungeonRoom.Encounter.Status == game.EncounterCleared {
-			clearedEncounters++
-		}
-	}
-	// A cleared encounter is the minimum meaningful accomplishment. Failed
-	// runs still earn progress for encounters cleared before the party fell.
-	// Completing the expedition adds a one-time milestone bonus.
-	if clearedEncounters == 0 {
+	// Failed runs still earn progress for what the party achieved before it fell, and an expedition that got
+	// further earns more: see game.RunProgressXP.
+	xp := game.RunProgressXP(room.Run)
+	if xp == 0 {
 		return nil
-	}
-	xp := int64(clearedEncounters * 10)
-	if room.Run.Phase == game.PhaseCompleted {
-		xp += 20
 	}
 	for playerID, profileID := range room.PlayerProfileIDs {
 		if profileID == "" || room.Presence[playerID].LeftAt != nil {
@@ -544,6 +534,9 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	if game.AdvanceInterFloorChoice(room, now) {
 		changed = true
 	}
+	if game.AdvanceCamp(room, now) {
+		changed = true
+	}
 	if !changed {
 		return room, h.awardRunProgress(r.Context(), room)
 	}
@@ -713,14 +706,15 @@ type themeResponse struct {
 	Tagline string `json:"tagline"`
 }
 
-// playableThemes lists the dungeon themes a host can choose when starting a run, default first.
+// playableThemes lists the dungeon themes a host can choose when starting a run, default first. randomThemeId is
+// the value to send to let the server pick one.
 func playableThemes(w http.ResponseWriter, _ *http.Request) {
 	themes := game.PlayableDungeonThemes()
 	response := make([]themeResponse, 0, len(themes))
 	for _, theme := range themes {
 		response = append(response, themeResponse{ID: theme.ID, Name: theme.Name, Tagline: theme.Tagline})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"defaultThemeId": game.DefaultDungeonThemeID, "themes": response})
+	writeJSON(w, http.StatusOK, map[string]any{"defaultThemeId": game.DefaultDungeonThemeID, "randomThemeId": game.RandomDungeonThemeID, "themes": response})
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
@@ -732,7 +726,7 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "only the room host can start the run")
 		return
 	}
-	// The body is optional: an empty body starts the default theme.
+	// The body is optional: an empty body starts the default theme, and "random" lets the run seed choose.
 	var request struct {
 		ThemeID string `json:"themeId"`
 	}

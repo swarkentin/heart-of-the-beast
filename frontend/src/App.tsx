@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
+import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
 import { AudioControls, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -54,6 +54,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [classCatalog, setClassCatalog] = useState<LobbyCatalog | null>(null);
+  const [themes, setThemes] = useState<ApiTheme[]>([]);
+  const [chosenTheme, setChosenTheme] = useState("random");
+  useEffect(() => { void apiRequest<{ themes: ApiTheme[] }>("/themes").then(result => setThemes(result.themes ?? [])).catch(() => undefined); }, []);
   const [profile, setProfile] = useState<ApiProfile | null>(null);
 
   useEffect(() => {
@@ -200,7 +203,7 @@ export default function App() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
     try {
-      const themeId = new URLSearchParams(window.location.search).get("theme");
+      const themeId = new URLSearchParams(window.location.search).get("theme") || chosenTheme;
       const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, {
         method: "POST",
         body: themeId ? JSON.stringify({ themeId }) : undefined,
@@ -257,7 +260,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
   return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}

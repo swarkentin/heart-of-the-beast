@@ -30,8 +30,8 @@ func RoomBackdropKind(room *DungeonRoom) art.RoomKind {
 	}
 }
 
-// floorRoomKinds are the kinds the shared floor topology produces; every playable theme needs a backdrop for each.
-var floorRoomKinds = []art.RoomKind{art.RoomKindEntry, art.RoomKindCorridor, art.RoomKindEvent, art.RoomKindBoss}
+// floorRoomKinds are the kinds generated floors produce; every playable theme needs a backdrop for each.
+var floorRoomKinds = []art.RoomKind{art.RoomKindEntry, art.RoomKindCorridor, art.RoomKindEvent, art.RoomKindBoss, art.RoomKindVault}
 
 // validateBackdrops checks that the theme has pixel-art backgrounds for every kind of room its floors contain.
 func validateBackdrops(theme DungeonThemeDefinition) error {

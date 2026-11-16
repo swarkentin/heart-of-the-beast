@@ -1,5 +1,10 @@
 # Multi-level procedural dungeon spike
 
+> **Superseded in part by [ADR 0029](../decisions/0029-dungeon-expeditions.md) (2026-11-16).** A run is now an
+> endless expedition: dungeons of four to six generated floors in any of eleven themes, a vote between two
+> themes after each dungeon boss, floor and dungeon modifiers, gold, and a camp (mini-game and shop) at each
+> dungeon's midpoint and between dungeons in place of the restore-or-perk vote. The notes below record the original three-floor spike and still apply to runs saved before then.
+
 Status: playable spike under iteration in PR #39. The initial implementation exists; playtest follow-ups below must be addressed and revalidated before the spike is considered ready to merge.
 
 ## Problem
