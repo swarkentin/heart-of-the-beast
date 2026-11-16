@@ -330,6 +330,47 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	return report, nil
 }
 
+// totalPartyHealth returns the party's combined current health.
+func totalPartyHealth(room *Room) int {
+	total := 0
+	for _, player := range room.Run.Players {
+		if player != nil && player.Health > 0 {
+			total += player.Health
+		}
+	}
+	return total
+}
+
+// currentEncounterHealth returns the combined remaining health of enemies in the current room.
+func currentEncounterHealth(room *Room) int {
+	if room == nil || room.Run == nil {
+		return 0
+	}
+	current := room.Run.Rooms[room.Run.CurrentRoomID]
+	if current == nil || current.Encounter == nil {
+		return 0
+	}
+	total := 0
+	for _, enemy := range current.Encounter.Enemies {
+		if enemy.Health > 0 {
+			total += enemy.Health
+		}
+	}
+	return total
+}
+
+// encounterMaxHealth returns the combined maximum health of an encounter's enemies.
+func encounterMaxHealth(encounter *Encounter) int {
+	if encounter == nil {
+		return 0
+	}
+	total := 0
+	for _, enemy := range encounter.Enemies {
+		total += enemy.MaxHealth
+	}
+	return total
+}
+
 // randomCampCommand chooses one legal camp move for a player: a mini-game move while the game is on, and at the
 // shop either a purchase they can afford or readying up.
 func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bool) {
