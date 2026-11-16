@@ -57,7 +57,7 @@ jobs:
             args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
-          for variant in '1 1.00 10' '6 1.75 10' '6 1.00 6' '1 1.75 6'; do
+          for variant in '6 1.00 10' '1 1.00 10' '6 1.75 10' '6 1.00 6'; do
             read -r block enemy_health player_damage <<< "$variant"
             name="block-${block}-enemy-${enemy_health}-damage-${player_damage}"
             go run ./cmd/balance-report -seeds 30 -first-seed 1 -block "$block" -enemy-health "$enemy_health" -player-damage "$player_damage" -json "${name}.json" -markdown "${name}.md" | tee -a "$GITHUB_STEP_SUMMARY"
