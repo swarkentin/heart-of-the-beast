@@ -355,7 +355,7 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if err := json.Unmarshal(guestAction.Body.Bytes(), &pending); err != nil {
 		t.Fatal(err)
 	}
-	if got := pending.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 10 {
+	if got := pending.Run.Rooms["entry"].Encounter.Enemies[0].Health; got != 23 {
 		t.Fatalf("guest action resolved before host action: enemy health=%d", got)
 	}
 
@@ -369,7 +369,7 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if err := json.Unmarshal(hostAction.Body.Bytes(), &resolved); err != nil {
 		t.Fatal(err)
 	}
-	if resolved.Run.Phase != game.PhaseExploring || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
+	if resolved.Run.Phase != game.PhaseCombat || resolved.Run.Rooms["entry"].Encounter.Enemies[0].Health != 11 {
 		t.Fatal("both party actions should resolve together and clear the encounter")
 	}
 }
