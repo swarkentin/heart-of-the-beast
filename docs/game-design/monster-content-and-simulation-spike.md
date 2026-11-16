@@ -232,7 +232,7 @@ The seeded simulator now recognizes each player's registered signature ability a
 
 Ability applications mutate only the simulator's copied player/enemy state through a minimal in-memory room/run adapter; no persistence, clock, websocket, or live room is involved. Ability use counts are included in the existing report. The simulator also now carries damage taken across rounds so Reckoning's live trigger can be represented. These policies are intentionally baseline heuristics, not an optimal-play solver.
 
-Consumables, room/run effects, and inter-floor choices remain uncovered. Before broad balance tuning, add parity fixtures that compare live transition outcomes with simulator outcomes for each ability and representative party compositions.
+At that stage, the encounter-only simulator did not cover consumables, room/run effects, or inter-floor choices. The full-run runner now exercises existing room events and inter-floor choices through live domain commands; consumables remain out of scope because there is no consumable command/system to execute. Before broad balance tuning, add parity fixtures that compare simulator outcomes with live transition outcomes for representative abilities and party compositions.
 
 
 ## Follow-up slice: random full-run simulation baseline
