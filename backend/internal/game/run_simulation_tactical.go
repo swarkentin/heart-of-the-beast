@@ -46,7 +46,15 @@ func tacticalCombatCommand(room *Room, playerID string, round int, rng *rand.Ran
 	longFight := enemies[targetIndex].TurnsTaken > 12
 	danger := incoming > 0 && incoming >= player.Health && !finishing && !longFight
 	brace := danger || heaviestHitOn(playerID, enemies) >= 7 && !finishing && !longFight && rng.Intn(2) == 0
-	if command, ok := simulationClassAbilityCommand(player, run.Players, enemies, targetIndex, playerID); ok && tacticalSignatureFits(player, run.Players, command, brace) {
+	// Runic Ward absorbs up to 7 damage and reflects 2, so use it against a moderate incoming hit
+	// rather than waiting for the lethal/heavy-hit threshold used by a one-hit guard.
+	warding := false
+	if player.ClassBuild != nil {
+		if ability, ok := findClassAbility(player.ClassBuild.SignatureAbilityID); ok && ability.EffectID == "combat.ward" {
+			warding = incoming >= 4 && !finishing && !longFight
+		}
+	}
+	if command, ok := simulationClassAbilityCommand(player, run.Players, enemies, targetIndex, playerID); ok && tacticalSignatureFits(player, run.Players, command, brace || warding) {
 		command.Type, command.Round = "combat", round
 		if validateClassAbilityCommand(player, current.Encounter, command, run.Players) == nil {
 			return command

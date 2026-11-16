@@ -12,31 +12,45 @@ import (
 // random-decision policy. The simulation executes the same domain commands as
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
-	Seed               int64          `json:"seed"`
-	ThemeID            string         `json:"themeId"`
-	Floors             int            `json:"floors"`
-	GoldEarned         int            `json:"goldEarned"`
-	ItemsBought        int            `json:"itemsBought"`
-	DungeonsCleared    int            `json:"dungeonsCleared"`
-	Rank               string         `json:"rank"`
-	PartyClasses       []string       `json:"partyClasses"`
-	PartySize          int            `json:"partySize"`
-	Outcome            string         `json:"outcome"`
-	Completed          bool           `json:"completed"`
-	Wiped              bool           `json:"wiped"`
-	ReachedDepth       int            `json:"reachedDepth"`
-	RoomsVisited       int            `json:"roomsVisited"`
-	EncountersCleared  int            `json:"encountersCleared"`
-	CombatRounds       int            `json:"combatRounds"`
-	PlayersDownAtEnd   int            `json:"playersDownAtEnd"`
-	RemainingHealth    int            `json:"remainingHealth"`
-	RemainingMaxHealth int            `json:"remainingMaxHealth"`
-	RemainingHealthPct int            `json:"remainingHealthPct"`
-	Levels             map[string]int `json:"levels"`
-	Steps              int            `json:"steps"`
+	Seed               int64                          `json:"seed"`
+	ThemeID            string                         `json:"themeId"`
+	Floors             int                            `json:"floors"`
+	GoldEarned         int                            `json:"goldEarned"`
+	ItemsBought        int                            `json:"itemsBought"`
+	DungeonsCleared    int                            `json:"dungeonsCleared"`
+	Rank               string                         `json:"rank"`
+	PartyClasses       []string                       `json:"partyClasses"`
+	PartySize          int                            `json:"partySize"`
+	Outcome            string                         `json:"outcome"`
+	Completed          bool                           `json:"completed"`
+	Wiped              bool                           `json:"wiped"`
+	ReachedDepth       int                            `json:"reachedDepth"`
+	RoomsVisited       int                            `json:"roomsVisited"`
+	EncountersCleared  int                            `json:"encountersCleared"`
+	CombatRounds       int                            `json:"combatRounds"`
+	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
+	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
+	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
+	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
+	EndEnemiesAlive    int                            `json:"endEnemiesAlive,omitempty"`
+	PlayersDownAtEnd   int                            `json:"playersDownAtEnd"`
+	RemainingHealth    int                            `json:"remainingHealth"`
+	RemainingMaxHealth int                            `json:"remainingMaxHealth"`
+	RemainingHealthPct int                            `json:"remainingHealthPct"`
+	Levels             map[string]int                 `json:"levels"`
+	Steps              int                            `json:"steps"`
 	// EndRoomType and EndDepth say where the run ended: the room type (encounter, miniboss, boss) a wipe happened in.
 	EndRoomType string `json:"endRoomType,omitempty"`
 	EndDepth    int    `json:"endDepth,omitempty"`
+}
+
+// PlayerCombatMetrics records combat contribution for one simulated adventurer.
+type PlayerCombatMetrics struct {
+	DamageDealt int `json:"damageDealt"`
+	Attacks     int `json:"attacks"`
+	Abilities   int `json:"abilities"`
+	Interrupts  int `json:"interrupts"`
+	Defends     int `json:"defends"`
 }
 
 // RunSimulationBatchReport summarizes a reproducible collection of full runs.
@@ -137,10 +151,13 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
 	steps, itemsBought := 0, 0
+	combatMetrics := make(map[string]PlayerCombatMetrics, len(classIDs))
+	netPartyHealthLoss := 0
 	for room.Run.Phase != PhaseCompleted && room.Run.Phase != PhaseFailed && steps < maxSteps {
 		steps++
 		switch room.Run.Phase {
 		case PhaseCombat:
+			roundPartyHealth := totalPartyHealth(room)
 			if room.Run.CombatRound == nil {
 				startCombatRound(room, now)
 			}
@@ -160,9 +177,29 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					}
 					command = candidates[rng.Intn(len(candidates))]
 				}
+				beforeEnemyHealth := currentEncounterHealth(room)
 				if err := ApplyCommand(room, playerID, command, now); err != nil {
 					return RunSimulationReport{}, fmt.Errorf("seed %d player %s combat action: %w", seed, playerID, err)
 				}
+				metrics := combatMetrics[playerID]
+				damage := beforeEnemyHealth - currentEncounterHealth(room)
+				if damage > 0 {
+					metrics.DamageDealt += damage
+				}
+				switch command.Action {
+				case "attack":
+					metrics.Attacks++
+				case "ability":
+					metrics.Abilities++
+				case "interrupt":
+					metrics.Interrupts++
+				case "defend":
+					metrics.Defends++
+				}
+				combatMetrics[playerID] = metrics
+			}
+			if loss := roundPartyHealth - totalPartyHealth(room); loss > 0 {
+				netPartyHealthLoss += loss
 			}
 		case PhaseExploring:
 			current := room.Run.Rooms[room.Run.CurrentRoomID]
@@ -243,7 +280,8 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		Completed: room.Run.DungeonsCleared > 0, Wiped: room.Run.Phase == PhaseFailed,
 		DungeonsCleared: room.Run.DungeonsCleared, Rank: ExpeditionRank(room.Run.FloorsCleared),
 		ReachedDepth: room.Run.FloorsCleared + 1, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
-		Levels: make(map[string]int), Steps: steps,
+		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics,
+		NetPartyHealthLoss: netPartyHealthLoss,
 	}
 	switch {
 	case report.Completed:
@@ -275,12 +313,62 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	if report.RemainingMaxHealth > 0 {
 		report.RemainingHealthPct = report.RemainingHealth * 100 / report.RemainingMaxHealth
 	}
+	if current := room.Run.Rooms[room.Run.CurrentRoomID]; current != nil && current.Encounter != nil {
+		report.EndEnemyMaxHealth = encounterMaxHealth(current.Encounter)
+		report.EndEnemyHealth = currentEncounterHealth(room)
+		for _, enemy := range current.Encounter.Enemies {
+			if enemy.Health > 0 {
+				report.EndEnemiesAlive++
+			}
+		}
+	}
 	for _, dungeonRoom := range room.Run.Rooms {
 		if dungeonRoom.Encounter != nil && dungeonRoom.Encounter.Status == EncounterCleared {
 			report.EncountersCleared++
 		}
 	}
 	return report, nil
+}
+
+// totalPartyHealth returns the party's combined current health.
+func totalPartyHealth(room *Room) int {
+	total := 0
+	for _, player := range room.Run.Players {
+		if player != nil && player.Health > 0 {
+			total += player.Health
+		}
+	}
+	return total
+}
+
+// currentEncounterHealth returns the combined remaining health of enemies in the current room.
+func currentEncounterHealth(room *Room) int {
+	if room == nil || room.Run == nil {
+		return 0
+	}
+	current := room.Run.Rooms[room.Run.CurrentRoomID]
+	if current == nil || current.Encounter == nil {
+		return 0
+	}
+	total := 0
+	for _, enemy := range current.Encounter.Enemies {
+		if enemy.Health > 0 {
+			total += enemy.Health
+		}
+	}
+	return total
+}
+
+// encounterMaxHealth returns the combined maximum health of an encounter's enemies.
+func encounterMaxHealth(encounter *Encounter) int {
+	if encounter == nil {
+		return 0
+	}
+	total := 0
+	for _, enemy := range encounter.Enemies {
+		total += enemy.MaxHealth
+	}
+	return total
 }
 
 // randomCampCommand chooses one legal camp move for a player: a mini-game move while the game is on, and at the

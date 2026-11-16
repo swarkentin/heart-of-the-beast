@@ -49,16 +49,25 @@ jobs:
             echo "No accepted main-branch balance baseline exists yet; this run will establish the first report."
           fi
 
-      - name: Run deterministic balance suite
+      - name: Run deterministic encounter regression suite
         working-directory: backend
         run: |
+          set -o pipefail
           args=(-seeds 30 -first-seed 1 -json balance-report.json -markdown balance-report.md)
           if [ -n "${BALANCE_BASELINE:-}" ]; then
             args+=(-baseline "$BALANCE_BASELINE" -fail-on-regression)
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload PR balance report
+      - name: Run endless expedition composition matrix
+        working-directory: backend
+        run: |
+          set -o pipefail
+          go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
+            -json endless-balance-report.json -markdown endless-balance-report.md \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload PR balance reports
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
@@ -66,6 +75,8 @@ jobs:
           path: |
             backend/balance-report.json
             backend/balance-report.md
+            backend/endless-balance-report.json
+            backend/endless-balance-report.md
           if-no-files-found: error
           retention-days: 30
 
@@ -77,5 +88,7 @@ jobs:
           path: |
             backend/balance-report.json
             backend/balance-report.md
+            backend/endless-balance-report.json
+            backend/endless-balance-report.md
           if-no-files-found: error
           retention-days: 90
