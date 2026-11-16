@@ -183,6 +183,7 @@ func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, class
 				mastery.Level = int(mastery.Experience/100) + 1
 				profile.ClassMastery[classID] = mastery
 			}
+			applyProfileRewardUnlocks(profile)
 			profile.UpdatedAt = now.UTC()
 			m.awards[key] = true
 		}
