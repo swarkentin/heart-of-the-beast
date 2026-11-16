@@ -105,7 +105,7 @@ func TestMinibossAndFloorRewardsPreserveTheirDistinctTargetPolicies(t *testing.T
 		}
 	}
 	applyRunReward(room, miniboss, 2, "miniboss-d2-mini")
-	if room.Run.Players["player-1"].StrikeDamage != 11 {
+	if room.Run.Players["player-1"].StrikeDamage != PlayerStrikeDamage+1 {
 		t.Fatal("miniboss reward must be idempotent")
 	}
 
