@@ -541,6 +541,10 @@ func shopItemPriceAtDepth(item ShopItem, depth int) int {
 	if steps < 0 {
 		steps = 0
 	}
+	// Keep the endless-run price representable even at extreme expedition depths.
+	if steps > 1000 {
+		steps = 1000
+	}
 	switch item.Kind {
 	case ShopStrike:
 		return item.Price + 8*steps + 4*steps*steps
