@@ -29,6 +29,7 @@ type RunSimulationReport struct {
 	EncountersCleared  int                            `json:"encountersCleared"`
 	CombatRounds       int                            `json:"combatRounds"`
 	CombatMetrics      map[string]PlayerCombatMetrics `json:"combatMetrics"`
+	StrikeDamageAtEnd  map[string]int                `json:"strikeDamageAtEnd"`
 	NetPartyHealthLoss int                            `json:"netPartyHealthLoss"`
 	EndEnemyHealth     int                            `json:"endEnemyHealth,omitempty"`
 	EndEnemyMaxHealth  int                            `json:"endEnemyMaxHealth,omitempty"`
@@ -280,7 +281,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		Completed: room.Run.DungeonsCleared > 0, Wiped: room.Run.Phase == PhaseFailed,
 		DungeonsCleared: room.Run.DungeonsCleared, Rank: ExpeditionRank(room.Run.FloorsCleared),
 		ReachedDepth: room.Run.FloorsCleared + 1, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
-		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics,
+		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics, StrikeDamageAtEnd: make(map[string]int),
 		NetPartyHealthLoss: netPartyHealthLoss,
 	}
 	switch {
@@ -298,6 +299,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		report.RemainingHealth += player.Health
 		report.RemainingMaxHealth += player.MaxHealth
 		report.Levels[player.ID] = player.Level
+		report.StrikeDamageAtEnd[player.ID] = player.StrikeDamage
 		report.GoldEarned += player.Gold
 		for _, itemID := range player.Items {
 			for _, item := range shopCatalog {
