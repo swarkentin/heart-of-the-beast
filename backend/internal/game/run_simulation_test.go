@@ -69,6 +69,30 @@ func TestSimulateRunBatchSummarizesDepthReachProbability(t *testing.T) {
 	}
 }
 
+func TestSimulateRunCapturesCombatDiagnostics(t *testing.T) {
+	report, err := SimulateRunWithPolicy(41, DefaultDungeonThemeID, []string{ClassBulwark, ClassCleric}, 2000, RunPolicyTactical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.CombatMetrics) != 2 {
+		t.Fatalf("got combat metrics for %d players, want 2: %+v", len(report.CombatMetrics), report.CombatMetrics)
+	}
+	damage, actions := 0, 0
+	for _, metrics := range report.CombatMetrics {
+		damage += metrics.DamageDealt
+		actions += metrics.Attacks + metrics.Abilities + metrics.Interrupts + metrics.Defends
+	}
+	if damage <= 0 || actions <= 0 {
+		t.Fatalf("expected combat contribution metrics, got damage=%d actions=%d", damage, actions)
+	}
+	if report.NetPartyHealthLoss < 0 {
+		t.Fatalf("net party health loss cannot be negative: %d", report.NetPartyHealthLoss)
+	}
+	if report.EndEnemyHealth > report.EndEnemyMaxHealth {
+		t.Fatalf("end encounter health exceeds maximum: %+v", report)
+	}
+}
+
 func TestSimulateRunRejectsInvalidPartyAndSeedCount(t *testing.T) {
 	if _, err := SimulateRun(1, nil, 10); err == nil {
 		t.Fatal("expected empty party to be rejected")
