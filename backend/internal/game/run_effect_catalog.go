@@ -304,11 +304,11 @@ func discoveryEffects() []RunEffectDefinition {
 	}
 	effects := []RunEffectDefinition{
 		{ID: "blood_pact", Summary: "Each adventurer loses up to 6 health. +2 Strike for the rest of the run, up to the +4 permanent cap.", Operations: []RunEffectOperation{op(RunEffectPartyDamage, 6), op(RunEffectPartyStrike, 2)},
-			Outcome: "The price is paid in blood. Every adventurer loses up to 6 health and gains +2 Strike for the rest of the run."},
+			Outcome: "The price is paid in blood. Every adventurer loses up to 6 health and gains up to +2 Strike, subject to the permanent upgrade cap."},
 		{ID: "heavy_plate", Summary: "+2 Guard and -1 Strike for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyGuard, 2), op(RunEffectPartyStrike, -1)},
 			Outcome: "The weight slows every swing. Defend blocks 2 more, and Strike deals 1 less, for the rest of the run."},
 		{ID: "glass_edge", Summary: "+2 Strike and -1 Guard for the rest of the run, up to the +4 permanent cap.", Operations: []RunEffectOperation{op(RunEffectPartyStrike, 2), op(RunEffectPartyGuard, -1)},
-			Outcome: "Sharper, and more fragile. Strike deals 2 more, and Defend blocks 1 less, for the rest of the run."},
+			Outcome: "Sharper, and more fragile. Strike gains up to 2 damage subject to the permanent upgrade cap, and Defend blocks 1 less."},
 		{ID: "vital_tithe", Summary: "-4 maximum health. +2 Guard for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyMaxHealth, -4), op(RunEffectPartyGuard, 2)},
 			Outcome: "Something is taken and something is given. Maximum health falls by 4 and Defend blocks 2 more for the rest of the run."},
 		{ID: "greedy_haul", Summary: "25 gold each. -3 maximum health for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyGold, 25), op(RunEffectPartyMaxHealth, -3)},
@@ -316,7 +316,7 @@ func discoveryEffects() []RunEffectDefinition {
 		{ID: "uneasy_rest", Summary: "Recover up to 10 health each. Enemies on this floor deal +1 damage.", Operations: []RunEffectOperation{op(RunEffectPartyHeal, 10), curse("alerted")},
 			Outcome: "The party rests and recovers up to 10 health each, but the floor has heard them."},
 		{ID: "cursed_boon", Summary: "+1 Strike and +1 Guard for the run, up to the +4 permanent Strike cap. Every fight left on this floor opens with 2 damage.", Operations: []RunEffectOperation{op(RunEffectPartyStrike, 1), op(RunEffectPartyGuard, 1), curse("cursed")},
-			Outcome: "Power answers, and so does a curse. +1 Strike and +1 Guard for the rest of the run."},
+			Outcome: "Power answers, and so does a curse. Strike gains up to 1 damage subject to the permanent upgrade cap, and Defend blocks 1 more."},
 		{ID: "risky_draught", Summary: "60% chance: recover up to 12 health each. Otherwise each loses up to 5.", Chance: 60,
 			Operations: []RunEffectOperation{op(RunEffectPartyHeal, 12)}, Outcome: "It was safe. Every living adventurer recovers up to 12 health.",
 			FailOperations: []RunEffectOperation{op(RunEffectPartyDamage, 5)}, FailOutcome: "It was not safe. Every adventurer loses up to 5 health."},
@@ -326,7 +326,7 @@ func discoveryEffects() []RunEffectDefinition {
 		{ID: "vault_coin", Summary: "18 gold each. No risk.", Operations: []RunEffectOperation{op(RunEffectPartyGold, 18)},
 			Outcome: "The party takes what is safe to carry: 18 gold each."},
 		{ID: "vault_relic", Summary: "60% chance: +1 Strike and +1 Guard for the run, up to the +4 permanent Strike cap. Otherwise each loses up to 6 health and this floor is cursed.", Chance: 60,
-			Operations: []RunEffectOperation{op(RunEffectPartyStrike, 1), op(RunEffectPartyGuard, 1)}, Outcome: "The relic accepts the party. +1 Strike and +1 Guard for the rest of the run.",
+			Operations: []RunEffectOperation{op(RunEffectPartyStrike, 1), op(RunEffectPartyGuard, 1)}, Outcome: "The relic accepts the party. Strike gains up to 1 damage subject to the permanent upgrade cap, and Defend blocks 1 more.",
 			FailOperations: []RunEffectOperation{op(RunEffectPartyDamage, 6), curse("cursed")}, FailOutcome: "The relic rejects the party. Every adventurer loses up to 6 health and a curse follows them through this floor."},
 	}
 	for i := range effects {
