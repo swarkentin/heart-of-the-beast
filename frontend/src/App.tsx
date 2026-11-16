@@ -497,7 +497,7 @@ export default function App() {
       {view === "player" && !spectator
         ? <PlayerView enemies={enemies} target={livingTarget?.id || target} onTarget={setTarget} room={room} exits={availableExits} onNavigate={(exitId: string) => void sendCommand({ type: "choose_exit", exitId })} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} playerId={playerId || ""} />
         : <CastView enemies={enemies} playerHp={playerHp} playerMaxHp={playerMaxHp} depth={run.depth ?? 1} room={room} exits={availableExits} voteStatus={voteStatus} impacts={run?.lastCombatEvents || []} />}
-      {serverRoom?.event ? <section className="room-event-panel" aria-live="polite">
+      {serverRoom?.event ? <section className={"room-event-panel" + (serverRoom.event.resolved ? " room-event-resolved" : "")} aria-live="polite">
         <div className="room-event-heading"><span>{serverRoom.event.resolved ? "DECISION RECORDED" : serverRoom.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</span><h2>{serverRoom.event.title}</h2></div>
         <p>{serverRoom.event.description}</p>
         {serverRoom.event.resolved
