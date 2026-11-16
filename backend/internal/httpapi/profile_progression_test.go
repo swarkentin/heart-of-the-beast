@@ -57,7 +57,7 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 		ID: "run-progression-test", Phase: game.PhaseCompleted,
 		Players: map[string]*game.PlayerState{
 			created.Room.OwnerPlayerID: {
-				ID: created.Room.OwnerPlayerID,
+				ID:         created.Room.OwnerPlayerID,
 				ClassBuild: &game.ClassBuildSnapshot{ClassID: game.ClassRanger},
 			},
 		},
