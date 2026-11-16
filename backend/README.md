@@ -32,6 +32,7 @@ The service listens on port 8080 by default; set PORT to override it. GET /healt
 
 - POST /profile creates or resumes the browser's persistent guest profile. Supply a browser-generated bearer credential in Authorization; the service stores only its SHA-256 hash and returns the same profile on repeated bootstrap requests.
 - GET /profile returns the profile associated with that credential. Profile identity is independent of room/player tokens and survives room changes and backend restarts.
+- GET /progression includes the data-driven profile title and badge catalog. Run XP awards unlock eligible rewards for Adventurer Rank and class mastery milestones; the unlocked IDs are persisted with the profile.
 - POST /rooms and POST /rooms/join also accept the optional X-Guest-Profile-Credential header. When valid, the server links that room player to the guest profile without exposing the profile ID in room snapshots.
 - At run completion or party defeat, the server awards Adventurer XP and mastery XP for the class played. A cleared encounter is required; completed expeditions receive an additional milestone award. A persistent award ledger makes each player's run award idempotent.
 - Profile state is stored in PostgreSQL. The browser retains only the opaque credential; it is not authoritative for progression values.
