@@ -54,6 +54,7 @@ export function biped(c, p, o) {
     const k = side === "L" ? -1 : 1, h = G.hands[side], at = (o.armT ?? 3.2) * u + p.reach * 0.6, l1 = (o.arm1 ?? 9) * u, l2 = (o.arm2 ?? 9) * u;
     c.part(); c.limb(cx + tw + k * sh, shY, h.x, h.y, l1, l2, o.armMat || o.legMat || "cloth", at, at * 0.85, -k * (o.elbow ?? 1), at * 0.9);
   }
+  o.shoulders?.(c, G, p); // over the arms, under the head: pauldrons and mantles
   o.head?.(c, G.head, p, G);
   o.front?.(c, G, p);
   o.handL?.(c, G.hL.x, G.hL.y, "L", p, G); o.handR?.(c, G.hR.x, G.hR.y, "R", p, G);

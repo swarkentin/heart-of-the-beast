@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
 import { AudioControls, useGameAudio } from "./audio";
-import { ConnectingScreen, PartyLobby, TitleScreen, type LobbyCatalog } from "./lobby";
+import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
 import { RunScreen } from "./run/RunScreen";
 
@@ -176,11 +176,11 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-  async function selectClass(classId: string) {
+  async function selectClass(classId: string, skin?: HeroSkin) {
     if (!session || busy || run) return;
     setBusy(true); setError("");
     try {
-      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class", session.playerToken, { method: "POST", body: JSON.stringify({ classId }) });
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class", session.playerToken, { method: "POST", body: JSON.stringify(skin ? { classId, tier: skin.tier, variant: skin.variant } : { classId }) });
       setSnapshot(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not select class");
@@ -260,7 +260,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={classId => void selectClass(classId)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin) => void selectClass(classId, skin)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
   return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}

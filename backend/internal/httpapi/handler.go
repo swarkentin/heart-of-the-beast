@@ -171,6 +171,7 @@ type roomResponse struct {
 	OwnerPlayerID string                            `json:"ownerPlayerId"`
 	PlayerIDs     []string                          `json:"playerIds"`
 	PlayerClasses map[string]string                 `json:"playerClasses,omitempty"`
+	PlayerSkins   map[string]game.PlayerSkin        `json:"playerSkins,omitempty"`
 	Presence      map[string]playerPresenceResponse `json:"presence"`
 	Run           *game.Run                         `json:"run,omitempty"`
 	Version       int64                             `json:"version"`
@@ -195,7 +196,7 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 	}
 	return roomResponse{
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, Presence: presence, Run: room.Run,
+		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerSkins: room.PlayerSkins, Presence: presence, Run: room.Run,
 		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
@@ -235,6 +236,25 @@ func (h *Handler) authorizedPlayer(w http.ResponseWriter, r *http.Request) (*gam
 	}
 	writeError(w, http.StatusUnauthorized, "invalid player token")
 	return nil, "", false
+}
+
+// classMasteryLevel is the authoritative mastery level the caller has in a class.
+// The profile must be the one this player joined the room with; without a
+// profile every class is at level 1, so only the starting look is available.
+func (h *Handler) classMasteryLevel(r *http.Request, room *game.Room, playerID, classID string) int {
+	credential := r.Header.Get("X-Guest-Profile-Credential")
+	profiles, ok := h.rooms.(store.ProfileRepository)
+	if !ok || len(credential) < 32 || len(credential) > 256 {
+		return 1
+	}
+	profile, err := profiles.GetProfile(r.Context(), tokenHash(credential))
+	if err != nil || profile.ID != room.PlayerProfileIDs[playerID] {
+		return 1
+	}
+	if level := profile.ClassMastery[classID].Level; level > 1 {
+		return level
+	}
+	return 1
 }
 
 // guestProfileID resolves the browser-held profile credential to a server-owned
@@ -562,6 +582,9 @@ type talentRequest struct {
 
 type classRequest struct {
 	ClassID string `json:"classId"`
+	// Tier and Variant choose the look; omitted, the best unlocked armour in the class colours is worn.
+	Tier    int    `json:"tier,omitempty"`
+	Variant string `json:"variant,omitempty"`
 }
 
 // selectClass validates the stable content ID and availability on the server;
@@ -591,6 +614,18 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusConflict, err.Error())
 			return
 		}
+		mastery := h.classMasteryLevel(r, room, actor, request.ClassID)
+		skin := game.PlayerSkin{Tier: request.Tier, Variant: request.Variant}
+		if skin.Tier == 0 {
+			skin.Tier = game.HighestUnlockedSkinTier(mastery)
+		}
+		if skin.Variant == "" {
+			skin.Variant = game.DefaultSkinColour
+		}
+		if err := game.SelectPlayerSkin(room, actor, skin, mastery); err != nil {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
 		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
@@ -617,6 +652,7 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 		"talents":           game.TalentCatalog(),
 		"levelThresholds":   []int{50, 100, 200, 325},
 		"profileRewards":    game.ProfileRewardCatalog(),
+		"classSkins":        game.ClassSkinCatalogSnapshot(),
 	})
 }
 

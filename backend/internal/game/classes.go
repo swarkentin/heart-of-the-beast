@@ -334,6 +334,10 @@ func SelectClassWithUnlocks(room *Room, playerID, classID string, unlockedClassI
 		room.PlayerArchetypes = make(map[string]string)
 	}
 	definition, _ := findClass(classID)
+	if room.PlayerClasses[playerID] != classID && room.PlayerSkins != nil {
+		// a look belongs to a class: a new class starts from its own default
+		delete(room.PlayerSkins, playerID)
+	}
 	room.PlayerClasses[playerID] = classID
 	room.PlayerArchetypes[playerID] = definition.ArchetypeID
 	return nil

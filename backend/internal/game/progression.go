@@ -98,6 +98,9 @@ func SelectArchetype(room *Room, playerID, archetypeID string) error {
 	if room.PlayerClasses != nil {
 		delete(room.PlayerClasses, playerID)
 	}
+	if room.PlayerSkins != nil {
+		delete(room.PlayerSkins, playerID)
+	}
 	return nil
 }
 
