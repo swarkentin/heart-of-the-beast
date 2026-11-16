@@ -113,8 +113,15 @@ func TestTacticalPlayUsuallyClearsTheFirstFloor(t *testing.T) {
 		t.Skip("simulates whole runs")
 	}
 	parties := [][]string{
-		{ClassRanger},
+		{ClassArcanist},
+		{ClassAssassin},
+		{ClassBeastcaller},
 		{ClassBulwark},
+		{ClassCleric},
+		{ClassJuggernaut},
+		{ClassRanger},
+		{ClassSpellguard},
+		{ClassTactician},
 		{ClassRanger, ClassAssassin},
 		{ClassJuggernaut, ClassAssassin, ClassTactician},
 		{ClassSpellguard, ClassAssassin, ClassRanger, ClassTactician},
