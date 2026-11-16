@@ -13,30 +13,30 @@ import (
 )
 
 type Scenario struct {
-	ID         string                       `json:"id"`
-	Party      []string                     `json:"party"`
-	PartySize  int                          `json:"partySize"`
-	Policy     game.RunPolicy               `json:"policy"`
-	Runs       int                          `json:"runs"`
-	Wiped      int                          `json:"wiped"`
-	Stalled    int                          `json:"stalled"`
-	Completed  int                          `json:"completed"`
-	WipeRate   float64                      `json:"wipeRate"`
-	Median     int                          `json:"medianDepth"`
-	P10        int                          `json:"p10Depth"`
-	P90        int                          `json:"p90Depth"`
-	DepthReach map[int]float64              `json:"depthReachRates"`
-	Results    []game.RunSimulationReport   `json:"results"`
+	ID         string                     `json:"id"`
+	Party      []string                   `json:"party"`
+	PartySize  int                        `json:"partySize"`
+	Policy     game.RunPolicy             `json:"policy"`
+	Runs       int                        `json:"runs"`
+	Wiped      int                        `json:"wiped"`
+	Stalled    int                        `json:"stalled"`
+	Completed  int                        `json:"completed"`
+	WipeRate   float64                    `json:"wipeRate"`
+	Median     int                        `json:"medianDepth"`
+	P10        int                        `json:"p10Depth"`
+	P90        int                        `json:"p90Depth"`
+	DepthReach map[int]float64            `json:"depthReachRates"`
+	Results    []game.RunSimulationReport `json:"results"`
 }
 
 type Report struct {
-	Version       int        `json:"version"`
-	Theme         string     `json:"theme"`
-	FirstSeed     int64      `json:"firstSeed"`
-	RunsPerCase   int        `json:"runsPerCase"`
-	CompositionCount int     `json:"compositionCount"`
-	Policies      []string   `json:"policies"`
-	Scenarios     []Scenario `json:"scenarios"`
+	Version          int        `json:"version"`
+	Theme            string     `json:"theme"`
+	FirstSeed        int64      `json:"firstSeed"`
+	RunsPerCase      int        `json:"runsPerCase"`
+	CompositionCount int        `json:"compositionCount"`
+	Policies         []string   `json:"policies"`
+	Scenarios        []Scenario `json:"scenarios"`
 }
 
 func main() {
@@ -56,8 +56,8 @@ func main() {
 	report := Report{
 		Version: 1, Theme: *theme, FirstSeed: *firstSeed, RunsPerCase: *runs,
 		CompositionCount: len(compositions),
-		Policies: []string{string(game.RunPolicyRandom), string(game.RunPolicyTactical)},
-		Scenarios: make([]Scenario, 0, len(compositions)*len(policies)),
+		Policies:         []string{string(game.RunPolicyRandom), string(game.RunPolicyTactical)},
+		Scenarios:        make([]Scenario, 0, len(compositions)*len(policies)),
 	}
 	for _, party := range compositions {
 		for _, policy := range policies {
