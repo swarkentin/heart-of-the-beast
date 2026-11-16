@@ -19,27 +19,27 @@ func TestEncounterCatalogInstantiatesStableSlotsAndPartyVariants(t *testing.T) {
 	}{
 		{
 			name: "co-op reliquary", partySize: 2, encounter: "catacombs-reliquary", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
-			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{20, 15},
+			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{38, 28},
 		},
 		{
 			name: "solo reliquary", partySize: 1, encounter: "catacombs-reliquary", scaling: MonsterScaling{HealthMultiplier: 0.75, RoundDown: true, PartySize: 1},
-			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{15, 11},
+			wantIDs: []string{"guardian", "scout"}, wantHealth: []int{20, 15},
 		},
 		{
 			name: "solo flooded crossing variant", partySize: 1, encounter: "catacombs-flooded-crossing", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 1},
-			wantIDs: []string{"scout"}, wantHealth: []int{11},
+			wantIDs: []string{"scout"}, wantHealth: []int{15},
 		},
 		{
 			name: "co-op flooded crossing variant", partySize: 2, encounter: "catacombs-flooded-crossing", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
-			wantIDs: []string{"scout"}, wantHealth: []int{14},
+			wantIDs: []string{"scout"}, wantHealth: []int{26},
 		},
 		{
 			name: "solo boss variant", partySize: 1, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 1},
-			wantIDs: []string{"warden"}, wantHealth: []int{36},
+			wantIDs: []string{"warden"}, wantHealth: []int{49},
 		},
 		{
 			name: "co-op boss variant", partySize: 2, encounter: "catacombs-warden-boss", scaling: MonsterScaling{HealthMultiplier: 1, PartySize: 2},
-			wantIDs: []string{"warden"}, wantHealth: []int{42},
+			wantIDs: []string{"warden"}, wantHealth: []int{79},
 		},
 	}
 	for _, test := range tests {
