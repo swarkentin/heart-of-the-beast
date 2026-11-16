@@ -259,7 +259,6 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			mitigation := resolveIncomingDamage(IncomingDamageInput{
 				IntentDamage:          intent.Damage,
-				AgilityReduction:      player.Stats.Agility,
 				TalentReduction:       bonusesFor(player).DamageReduction,
 				PassiveReduction:      classPassiveEffects(player, enemy, &intent).DamageReduction,
 				Ward:                  player.ClassCombat.Ward,

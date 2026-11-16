@@ -138,11 +138,13 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	base.Players[0].MaxHealth = 30
 	base.Enemies[0].Behavior = "warden"
 	base.Players[0].Stats.Focus = 0
+	base.Players[0].GuardReduction = 10
 	base.Enemies[0].Health = 100
 	base.Enemies[0].MaxHealth = 100
 
 	passiveBuild := base
 	passiveBuild.Players = append([]PlayerState(nil), base.Players...)
+	passiveBuild.Enemies = append([]Enemy(nil), base.Enemies...)
 	passiveBuild.Players[0].ClassBuild = &ClassBuildSnapshot{PassiveID: "passive.arcane-resistance"}
 
 	baseReport, err := SimulateCombat(base, 11, 1)
