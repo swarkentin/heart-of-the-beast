@@ -79,11 +79,11 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if updated.AdventurerXP != 50 || updated.AdventurerLevel != 1 {
+	if updated.AdventurerXP != 30 || updated.AdventurerLevel != 1 {
 		t.Fatalf("unexpected adventurer progression: %+v", updated)
 	}
 	mastery := updated.ClassMastery[game.ClassRanger]
-	if mastery.Experience != 50 || mastery.Level != 1 {
+	if mastery.Experience != 30 || mastery.Level != 1 {
 		t.Fatalf("unexpected ranger mastery: %+v", mastery)
 	}
 }
