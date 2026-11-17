@@ -232,6 +232,7 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 		return nil, err
 	}
 	if rows > 0 {
+		// The "/ 100" below is game.ProfileXPPerLevel.
 		if classID == "" {
 			_, err = tx.ExecContext(ctx, `
 				UPDATE player_profiles

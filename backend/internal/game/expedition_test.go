@@ -1442,6 +1442,22 @@ func TestRunProgressXPRewardsDistance(t *testing.T) {
 	}
 }
 
+func TestRunProgressOfBreaksTheXPDown(t *testing.T) {
+	run := &Run{Phase: PhaseCompleted, Rooms: map[string]*DungeonRoom{}, EncountersCleared: 7, FloorsCleared: 3, DungeonsCleared: 1}
+	got := RunProgressOf(run)
+	want := RunProgress{XP: int64(7*RunXPPerEncounter + 3*RunXPPerFloor + RunXPPerDungeon + RunXPCompletionBonus), Encounters: 7, Floors: 3, Dungeons: 1, CompletionBonus: RunXPCompletionBonus}
+	if got == nil || *got != want {
+		t.Fatalf("breakdown = %+v, want %+v", got, want)
+	}
+	if got.XP != RunProgressXP(run) {
+		t.Fatal("the breakdown must add up to what is awarded")
+	}
+	run.Phase = PhaseExploring
+	if RunProgressOf(run) != nil {
+		t.Fatal("a run in progress has no breakdown yet")
+	}
+}
+
 func TestShopStillWorksAfterTheCampIsSavedAndReloaded(t *testing.T) {
 	room := openTestShop(t, 2, "shop-reload")
 	data, err := json.Marshal(room.Run.Camp)

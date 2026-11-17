@@ -251,5 +251,5 @@ export interface Layers {
   fx: number;
 }
 
-export type EffectKind = "impact" | "block" | "magic" | "heal" | "defeat" | "door" | "encounter" | "victory" | "failure";
-export const EFFECT_KINDS: readonly EffectKind[] = ["impact", "block", "magic", "heal", "defeat", "door", "encounter", "victory", "failure"];
+export type EffectKind = "impact" | "block" | "magic" | "heal" | "defeat" | "door" | "encounter" | "victory" | "failure" | "rankUp" | "masteryUp";
+export const EFFECT_KINDS: readonly EffectKind[] = ["impact", "block", "magic", "heal", "defeat", "door", "encounter", "victory", "failure", "rankUp", "masteryUp"];

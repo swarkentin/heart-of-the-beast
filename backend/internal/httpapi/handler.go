@@ -176,9 +176,11 @@ type roomResponse struct {
 	PlayerMastery  map[string]int                    `json:"playerMastery,omitempty"`
 	Presence       map[string]playerPresenceResponse `json:"presence"`
 	Run            *game.Run                         `json:"run,omitempty"`
-	Version        int64                             `json:"version"`
-	CreatedAt      time.Time                         `json:"createdAt"`
-	UpdatedAt      time.Time                         `json:"updatedAt"`
+	// RunProgress is the persistent experience a finished run earned each adventurer who stayed to its end.
+	RunProgress *game.RunProgress `json:"runProgress,omitempty"`
+	Version     int64             `json:"version"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
 }
 
 const presenceTimeout = 30 * time.Second
@@ -199,7 +201,8 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 	return roomResponse{
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
 		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerSkins: room.PlayerSkins, PlayerLoadouts: room.PlayerLoadouts, PlayerMastery: room.PlayerMastery, Presence: presence, Run: room.Run,
-		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
+		RunProgress: game.RunProgressOf(room.Run),
+		Version:     room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
 
@@ -661,6 +664,7 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 		"classAvailability": game.ClassAvailabilityCatalog(),
 		"levelThresholds":   []int{50, 100, 200, 325},
 		"profileRewards":    game.ProfileRewardCatalog(),
+		"profileXpPerLevel": game.ProfileXPPerLevel,
 		"classSkins":        game.ClassSkinCatalogSnapshot(),
 	})
 }

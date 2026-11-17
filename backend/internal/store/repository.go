@@ -188,11 +188,11 @@ func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, class
 		}
 		if !m.awards[key] {
 			profile.AdventurerXP += xp
-			profile.AdventurerLevel = int(profile.AdventurerXP/100) + 1
+			profile.AdventurerLevel = game.ProfileLevelFor(profile.AdventurerXP)
 			if classID != "" {
 				mastery := profile.ClassMastery[classID]
 				mastery.Experience += xp
-				mastery.Level = int(mastery.Experience/100) + 1
+				mastery.Level = game.ProfileLevelFor(mastery.Experience)
 				profile.ClassMastery[classID] = mastery
 			}
 			applyProfileRewardUnlocks(profile)

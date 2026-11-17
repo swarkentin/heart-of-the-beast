@@ -321,3 +321,27 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-pot { color: var(--gold); font: 400 10px/1.6 var(--display); }
 .rn-dungeon small { display: block; }
 .rn-result { display: grid; gap: 4px; padding: 6px 8px; background: var(--pit); box-shadow: 0 0 0 2px var(--edge); }
+
+/* ---------- end of run: rank-up and mastery-up fanfare ---------- */
+.rn-celebrate { --glow: var(--gold); position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; padding: 16px; overflow: hidden; cursor: pointer; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--glow) 28%, transparent) 0, #05030ad9 58%); animation: rn-cel-fade .3s ease-out; }
+.rn-celebrate-mastery { --glow: #9fd8ff; }
+.rn-celebrate-rays { position: absolute; left: 50%; top: 45%; width: 160vmax; aspect-ratio: 1; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--glow) 22%, transparent) 0 6deg, transparent 6deg 18deg); mask: radial-gradient(circle, #000 0, transparent 55%); animation: rn-cel-spin 14s linear infinite, rn-cel-fade .6s ease-out; }
+.rn-celebrate-confetti i { position: absolute; top: -12px; left: var(--x); width: calc(4px * var(--px, 1)); height: calc(6px * var(--px, 1)); background: hsl(calc(var(--i) * 47) 90% 65%); animation: rn-cel-fall 2.6s calc(.25s + var(--d)) cubic-bezier(.3, .6, .6, 1) both; }
+.rn-celebrate-card { position: relative; display: grid; justify-items: center; gap: 6px; max-width: min(420px, 100%); padding: 18px 26px 16px; background: var(--edge); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--glow), 0 0 40px color-mix(in srgb, var(--glow) 60%, transparent); color: var(--bone); text-align: center; animation: rn-cel-card .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.rn-celebrate-eyebrow { margin: 0; color: var(--glow); font: 400 18px/1.4 var(--display); letter-spacing: .08em; animation: rn-cel-pulse 1s ease-in-out .5s infinite alternate; }
+.rn-celebrate-level { margin: 0; color: var(--glow); font: 400 64px/1 var(--display); text-shadow: 0 4px 0 var(--pit), 0 0 18px var(--glow); animation: rn-cel-level .7s cubic-bezier(.2, 1.8, .4, 1) .25s both; }
+.rn-celebrate-title { margin: 0; font: 400 13px/1.6 var(--display); }
+.rn-celebrate-unlocks { display: grid; gap: 3px; margin: 4px 0 0; padding: 0; list-style: none; color: var(--good, #b6e87a); font: 400 10px/1.6 var(--display); }
+.rn-celebrate-unlocks li { animation: rn-cel-rise .35s ease-out calc(.7s + var(--i) * .15s) both; }
+.rn-celebrate-hint { margin: 6px 0 0; color: var(--muted); font: 400 8px/1.6 var(--display); animation: rn-cel-rise .4s ease-out 1.4s both; }
+@keyframes rn-cel-fade { from { opacity: 0; } }
+@keyframes rn-cel-spin { to { rotate: 360deg; } }
+@keyframes rn-cel-fall { 0% { translate: 0 0; rotate: 0deg; opacity: 1; } 100% { translate: calc((var(--i) - 14) * 5px) 110vh; rotate: calc(var(--i) * 90deg + 360deg); opacity: .8; } }
+@keyframes rn-cel-card { from { scale: .3; opacity: 0; } }
+@keyframes rn-cel-level { 0% { scale: 0; } 60% { scale: 1.4; } 100% { scale: 1; } }
+@keyframes rn-cel-pulse { to { scale: 1.08; filter: brightness(1.3); } }
+@keyframes rn-cel-rise { from { opacity: 0; translate: 0 8px; } }
+@media (prefers-reduced-motion: reduce) {
+  .rn-celebrate, .rn-celebrate-rays, .rn-celebrate-card, .rn-celebrate-eyebrow, .rn-celebrate-level, .rn-celebrate-unlocks li, .rn-celebrate-hint { animation: none; }
+  .rn-celebrate-confetti { display: none; }
+}

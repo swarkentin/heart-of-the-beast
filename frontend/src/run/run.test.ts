@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
 import { traitTags } from "./traits.ts";
+import { progressReport } from "./progress.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -105,4 +106,41 @@ test("monster traits become tags that track their live state", () => {
   assert.equal(traitTags({ ...base, traits: [{ kind: "avenger", amount: 2 }], avenged: true })[0].label, "VENGEFUL +2");
   assert.deepEqual(traitTags({ ...base, shield: 3 }).map(t => t.label), ["SHIELD 3"]);
   assert.equal(toneOf({ round: 1, kind: "trait_split", message: "x" } as never), "bad");
+});
+
+test("the end of a run reports the XP earned, where it came from and how far to the next rank", () => {
+  const progress = { xp: 145, encounters: 6, floors: 2, dungeons: 1, completionBonus: 20 };
+  const before = { adventurerXp: 120, classMastery: { arcanist: { experience: 30, level: 1 } } };
+  const after = { adventurerXp: 265, classMastery: { arcanist: { experience: 175, level: 2 } } };
+  const rewards = [
+    { id: "title.r3", name: "Delver", category: "title", profileLevel: 3 },
+    { id: "skin.arcanist.2", name: "Robes of Ash", category: "armor", classId: "arcanist", classMasteryLevel: 2 },
+    { id: "skin.ranger.2", name: "Leaf Cloak", category: "armor", classId: "ranger", classMasteryLevel: 2 },
+  ];
+  const skills = [{ id: "s.nova", name: "Nova", classId: "arcanist", masteryLevel: 2 }, { id: "s.bolt", name: "Bolt", classId: "arcanist", masteryLevel: 1 }];
+  const report = progressReport({ runId: "r", progress, before, after, classId: "arcanist", className: "Arcanist", rewards, skills, xpPerLevel: 100 });
+  const text = report.lines.map(line => line.text);
+  assert.equal(text[0], "You earn 145 XP for 6 fights won, 2 floors cleared, 1 dungeon conquered and the victory bonus.");
+  assert.ok(text.includes("RANK UP! Adventurer Rank 3."));
+  assert.ok(text.includes("Adventurer Rank 3: 35 XP to Rank 4."));
+  assert.ok(text.includes("MASTERY UP! Arcanist Mastery 2."));
+  assert.ok(text.includes("Arcanist Mastery 2: 25 XP to Mastery 3."));
+  assert.ok(text.includes("New skill to put on your bar: Nova."));
+  assert.ok(text.includes("Unlocked armour: Robes of Ash."));
+  assert.ok(text.includes("Unlocked: Delver."));
+  assert.ok(!text.some(line => line.includes("Leaf Cloak")), "another class's rewards stay out");
+  assert.deepEqual(report.celebrations.map(item => [item.kind, item.level]), [["rank", 3], ["mastery", 2]]);
+  assert.deepEqual(report.celebrations[1].unlocks, ["Skill: Nova", "Robes of Ash"]);
+});
+
+test("the run report waits for the updated profile and celebrates nothing without a level gained", () => {
+  const progress = { xp: 10, encounters: 1, floors: 0, dungeons: 0 };
+  const before = { adventurerXp: 120, classMastery: {} };
+  const stale = progressReport({ runId: "r", progress, before, after: before, rewards: [], skills: [] });
+  assert.deepEqual(stale.lines.map(line => line.text), ["You earn 10 XP for 1 fight won."]);
+  const updated = progressReport({ runId: "r", progress, before, after: { adventurerXp: 130, classMastery: {} }, rewards: [], skills: [] });
+  assert.deepEqual(updated.lines.map(line => line.text), ["You earn 10 XP for 1 fight won.", "Adventurer Rank 2: 70 XP to Rank 3."]);
+  assert.equal(updated.celebrations.length, 0);
+  assert.equal(progressReport({ runId: "r", before: null, after: null, rewards: [], skills: [] }).lines[0].tone, "system");
+  assert.match(progressReport({ runId: "r", progress, before: null, after: null, rewards: [], skills: [], spectator: true }).lines[0].text, /^Each adventurer earns 10 XP/);
 });
