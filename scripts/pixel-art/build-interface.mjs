@@ -301,6 +301,13 @@ export function buildInterface() {
 
 const fill = (img, bg) => { for (let i = 0; i < img.d.length; i += 4) { img.d[i] = bg[0]; img.d[i + 1] = bg[1]; img.d[i + 2] = bg[2]; img.d[i + 3] = 255; } return img; };
 const enlarge = (img, K) => { const o = new Img(img.w * K, img.h * K); for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) for (let k = 0; k < 4; k++) o.d[(y * o.w + x) * 4 + k] = img.d[(((y / K) | 0) * img.w + ((x / K) | 0)) * 4 + k]; return o; };
+/** docs/art/first-person-hands.png: all classes at recruit, veteran and ascendant mastery tiers. */
+export function firstPersonGallery() {
+  const K = 3, cellW = 128 * K, cellH = 64 * K, tiers = [1, 3, 6];
+  const sheet = fill(new Img(tiers.length * cellW, heroes.length * cellH), [22, 17, 38]);
+  heroes.forEach((h, row) => tiers.forEach((tier, col) => sheet.blit(enlarge(renderFirstPerson(h, tier, "heraldic"), K), col * cellW, row * cellH)));
+  return sheet;
+}
 /** docs/art/hero-tiers.png: every hero (rows) at every mastery tier (columns), resting pose. */
 export function tierGallery() {
   const K = 3, cell = HERO_SIZE * K, sheet = fill(new Img(TIERS.length * cell, heroes.length * cell), [22, 17, 38]);
@@ -332,7 +339,7 @@ export function heroGallery(tier = 6) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.argv.includes("--gallery")) {
     const docs = resolve(ART, "../../../docs/art");
-    for (const [name, img] of [["heroes.png", heroGallery()], ["hero-tiers.png", tierGallery()], ["hero-variants.png", variantGallery()]]) { writeFileSync(resolve(docs, name), encodePNG(img)); console.log("wrote", resolve(docs, name)); }
+    for (const [name, img] of [["heroes.png", heroGallery()], ["hero-tiers.png", tierGallery()], ["hero-variants.png", variantGallery()], ["first-person-hands.png", firstPersonGallery()]]) { writeFileSync(resolve(docs, name), encodePNG(img)); console.log("wrote", resolve(docs, name)); }
   }
   else buildInterface();
 }
