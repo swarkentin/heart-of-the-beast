@@ -113,9 +113,10 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   // ---- deadlines -------------------------------------------------------------------------------------------------
   const round = combat ? run.combatRound : undefined;
   const navigationVote = exploring ? run.navigationVote : undefined;
+  const eventVote = exploring ? run.eventVote : undefined;
   const descentVote = run.phase === "intermission" ? run.interFloorVote : undefined;
   const camp = run.phase === "intermission" ? run.camp : undefined;
-  const now = useNow(Boolean(round || navigationVote || descentVote || camp?.deadline), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (descentVote?.deadline ?? "") + (camp?.deadline ?? ""));
+  const now = useNow(Boolean(round || navigationVote || eventVote || descentVote || camp?.deadline), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (eventVote?.deadline ?? "") + (descentVote?.deadline ?? "") + (camp?.deadline ?? ""));
   const roundDeadline = round ? new Date(round.deadline).getTime() : 0;
   const roundTotal = round ? Math.max(1, Math.round((roundDeadline - new Date(round.startedAt).getTime()) / 1000)) : 8;
   const remainingMs = round ? Math.max(0, roundDeadline - now) : 0;
@@ -258,6 +259,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   // ---- votes -------------------------------------------------------------------------------------------------------
   const exitsOpen = exploring && (!room.event || room.event.resolved);
   const navigation = voteState(navigationVote, now);
+  const eventDecision = voteState(eventVote, now);
   const descent = voteState(descentVote, now);
   const votesFor = (vote: ApiVote | undefined, choice: string) => eligible.filter(member => vote?.votes?.[member.id] === choice).length;
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
@@ -318,11 +320,14 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       </div>
     </div>;
   } else if (room.event && !room.event.resolved) {
+    const mine = eventVote?.votes?.[selfId];
+    const cast = eligible.filter(member => eventVote?.votes?.[member.id]).length;
     command = <div className="rn-context">
       <p className="px-eyebrow">{room.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</p>
       <h2>{room.event.title}</h2>
       <p className="px-copy">{room.event.description}</p>
-      {acting ? <div className="rn-choices">{room.event.choices.map(choice => <button key={choice.id} className="rn-choice" onClick={() => void onCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy}><Icon id="focus" size={2} /><span><strong>{choice.label}</strong><small>{choice.description}</small></span></button>)}</div> : <p className="px-label">THE PARTY IS DECIDING</p>}
+      {eventDecision ? <div className="rn-timer" role="timer"><strong>PARTY DECISION · {cast}/{eligible.length} VOTED · TIES RANDOM</strong><TimerBar seconds={Math.min(15, eventDecision.seconds)} total={15} urgent={eventDecision.seconds <= 3} /><b>{eventDecision.seconds}s</b></div> : null}
+      {acting ? <div className="rn-choices">{room.event.choices.map(choice => <button key={choice.id} className={"rn-choice" + (mine === choice.id ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy || Boolean(eventDecision && eventDecision.remainingMs <= 0)}><Icon id="focus" size={2} /><span><strong>{choice.label}</strong><small>{choice.description}</small></span>{eventVote ? <em>{votesFor(eventVote, choice.id)} {mine === choice.id ? "· YOURS" : ""}</em> : null}</button>)}</div> : <p className="px-label">THE PARTY IS DECIDING</p>}
     </div>;
   } else {
     const mine = navigationVote?.votes?.[selfId];
