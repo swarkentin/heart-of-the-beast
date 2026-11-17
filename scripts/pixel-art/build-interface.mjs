@@ -85,14 +85,18 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     fpVoid: source.void,
   };
   const c = new Canvas(128, 64, palette, { shadow: heroTheme.shadow, light: heroTheme.light });
+  // Keep the forearm fabric subtly translucent so the room shows through it, while
+  // leaving the gloves, cuffs, shield and class implements crisp and fully opaque.
+  const sleeveParts = new Set();
+  const sleevePart = () => { c.part(); sleeveParts.add(c.pid); return c; };
   const plate = ["bulwark", "spellguard", "cleric"].includes(h.id);
   const wild = ["juggernaut", "beastcaller"].includes(h.id);
   // Sleeves taper into the frame from both lower corners; overlapping material parts create
   // the same hard-edged, shaded pixel construction used by the bestiary and hero rigs.
-  c.part().poly([[0, 63], [0, 47], [12, 43], [28, 32], [42, 30], [51, 37], [48, 48], [35, 63]], "fpSleeve");
-  c.part().poly([[128, 63], [128, 47], [116, 43], [100, 32], [86, 30], [77, 37], [80, 48], [93, 63]], "fpSleeve");
-  c.part().poly([[0, 63], [0, 53], [15, 48], [32, 37], [40, 37], [32, 48], [22, 63]], "fpSecondary");
-  c.part().poly([[128, 63], [128, 53], [113, 48], [96, 37], [88, 37], [96, 48], [106, 63]], "fpSecondary");
+  sleevePart().poly([[0, 63], [0, 47], [12, 43], [28, 32], [42, 30], [51, 37], [48, 48], [35, 63]], "fpSleeve");
+  sleevePart().poly([[128, 63], [128, 47], [116, 43], [100, 32], [86, 30], [77, 37], [80, 48], [93, 63]], "fpSleeve");
+  sleevePart().poly([[0, 63], [0, 53], [15, 48], [32, 37], [40, 37], [32, 48], [22, 63]], "fpSecondary");
+  sleevePart().poly([[128, 63], [128, 53], [113, 48], [96, 37], [88, 37], [96, 48], [106, 63]], "fpSecondary");
   // Wrist cuffs differ by silhouette, not merely by dye colour.
   if (plate) {
     c.part().poly([[28, 34], [39, 27], [51, 29], [56, 38], [50, 47], [35, 45]], "fpMetal");
@@ -205,7 +209,19 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     c.part().poly([[30, 31], [24, 20], [27, 33]], "fpMetal");
     c.part().poly([[98, 31], [104, 20], [101, 33]], "fpMetal");
   }
-  return c.render({ glowR: 2 });
+  const img = c.render({ glowR: 2 });
+  // Alpha is applied only to the original sleeve polygons. Later-drawn details naturally
+  // overwrite their pixels, so skin, armour, outlines and equipment stay solid.
+  for ( (let i = 0; i < c.p.length; i++) {
+    if (!sleeveParts.has(c.p[i])) continue;
+    const x = i % 128, y = Math.floor(i / 128);
+    const lowerFade = Math.max(0, Math.min(1, (y - 42) / 21));
+    const outerFade = Math.max(0, Math.min(1, (Math.min(x, 127 - x) - 2) / 13));
+    const alpha = 0.88 - lowerFade * 0.12 - (1 - outerFade) * 0.08;
+    const a = i * 4 + 3;
+    img.d[a] = Math.round(img.d[a] * alpha);
+  }
+  return img;
 }
 
 export function renderHero(h, tier = 3, variant = "heraldic") {
