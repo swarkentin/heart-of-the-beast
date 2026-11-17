@@ -85,6 +85,34 @@
       "manifest": "wasteland/manifest.json",
       "creatures": 11,
       "bosses": 4
+    },
+    {
+      "id": "noir",
+      "name": "Noir City",
+      "manifest": "noir/manifest.json",
+      "creatures": 11,
+      "bosses": 4
+    },
+    {
+      "id": "arcade",
+      "name": "8-Bit Arcade",
+      "manifest": "arcade/manifest.json",
+      "creatures": 11,
+      "bosses": 4
+    },
+    {
+      "id": "eldritch",
+      "name": "The Eldritch Castle",
+      "manifest": "eldritch/manifest.json",
+      "creatures": 11,
+      "bosses": 4
+    },
+    {
+      "id": "infernal",
+      "name": "The Infernal Citadel",
+      "manifest": "infernal/manifest.json",
+      "creatures": 11,
+      "bosses": 4
     }
   ]
 }

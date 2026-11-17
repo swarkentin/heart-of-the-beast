@@ -43,6 +43,9 @@ type RunSimulationReport struct {
 	// EndRoomType and EndDepth say where the run ended: the room type (encounter, miniboss, boss) a wipe happened in.
 	EndRoomType string `json:"endRoomType,omitempty"`
 	EndDepth    int    `json:"endDepth,omitempty"`
+	// EndDungeon and EndThemeID name the dungeon of the expedition the party fell in.
+	EndDungeon int    `json:"endDungeon,omitempty"`
+	EndThemeID string `json:"endThemeId,omitempty"`
 }
 
 // PlayerCombatMetrics records combat contribution for one simulated adventurer.
@@ -75,7 +78,7 @@ type RunSimulationBatchReport struct {
 	Runs            []RunSimulationReport `json:"runs"`
 }
 
-const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
+const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves, capstone boons and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
 const TacticalRunPolicyDescription = "tactical combat (the shared skill policy: interrupt dangerous telegraphs while interrupts are off cooldown, revive and heal the wounded, protect against killing blows, otherwise the most valuable ready skill on the weakest enemy) with starting loadouts, and invests in affordable permanent Strike upgrades up to the run cap, then buys healing or revival when needed; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
 
@@ -296,11 +299,15 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		report.Outcome = "completed"
 	case report.Wiped:
 		report.Outcome = "wiped"
+	default:
+		report.Outcome = "step_limit"
+	}
+	if report.Wiped {
+		// Where the party fell, for every wipe, so later dungeons (and capstone castles) can be read too.
+		report.EndDungeon, report.EndThemeID = dungeonNumber(room.Run), room.Run.Theme()
 		if current := room.Run.Rooms[room.Run.CurrentRoomID]; current != nil {
 			report.EndRoomType, report.EndDepth = current.RoomType, room.Run.Depth
 		}
-	default:
-		report.Outcome = "step_limit"
 	}
 	for _, player := range room.Run.Players {
 		report.RemainingHealth += player.Health
@@ -406,6 +413,13 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 			return Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, true
 		}
 		return Command{Type: "minigame", Action: "bank"}, true
+	}
+	if camp.Stage == CampStageBoon {
+		offers := camp.BoonOffers[playerID]
+		if camp.BoonChoices[playerID] != "" || len(offers) == 0 {
+			return Command{}, false
+		}
+		return Command{Type: "choose_boon", ChoiceID: offers[rng.Intn(len(offers))].ID}, true
 	}
 	if camp.Stage == CampStageCrossroads {
 		if camp.Votes[playerID] != "" {

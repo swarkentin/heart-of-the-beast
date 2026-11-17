@@ -49,6 +49,9 @@ func startCombatRound(room *Room, now time.Time) {
 	}
 	applyBossMechanics(room, current, run.CombatRoundNumber)
 	applyTraitRoundStart(room, current.Encounter, run.CombatRoundNumber)
+	if fightOpening(current.Encounter) {
+		applyBoonFightOpening(room, run.CombatRoundNumber)
+	}
 	rules := floorRulesFor(run)
 	for enemyIndex := range current.Encounter.Enemies {
 		enemy := &current.Encounter.Enemies[enemyIndex]
@@ -224,6 +227,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				addCombatImpact(run, roundNumber, "runic_ward", "A Runic Ward absorbs "+itoa(mitigation.WardAbsorbed)+" damage.", "block", playerID, "player", mitigation.WardAbsorbed)
 			}
 			onClassGuardBlocked(player, intent, guarded, guardBlocked)
+			damage = boonIncomingDamage(room, player, damage, roundNumber)
 			transition := resolveHealthDamage(player.Health, damage)
 			player.Health = transition.Health
 			actualDamage := transition.Applied
@@ -241,6 +245,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 				addCombatEvent(run, roundNumber, "enemy_attack", message)
 			}
 			reflectDamage := player.ClassCombat.Thorns + wardReflect
+			if intent.Damage > 0 {
+				reflectDamage += boonReflect(player)
+			}
 			if reflectDamage > 0 && enemy.Health > 0 {
 				transition := resolveHealthDamage(enemy.Health, reflectDamage)
 				enemy.Health = transition.Health
@@ -273,6 +280,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 
 	applyCompanionInstinct(room, roundNumber)
 	endCombatRound(room, current.Encounter, roundNumber)
+	applyBossRebirths(run, current.Encounter, roundNumber)
 
 	if allEnemiesDefeated(current.Encounter) {
 		current.Encounter.Status = EncounterCleared
@@ -297,6 +305,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 			recovery := 0
 			if run.Generator >= ExpeditionGenerator {
 				recovery = player.MaxHealth * EncounterRecoveryPercent / 100
+			}
+			if run.Generator >= ExpeditionGenerator {
+				recovery += boonFightRecovery(player)
 			}
 			heal := rules.healing(recovery + classPassiveEffects(player, nil, nil).EncounterHeal + rules.EncounterHeal)
 			if heal > 0 {

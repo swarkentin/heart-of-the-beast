@@ -64,6 +64,9 @@ type Run struct {
 	// DungeonsCleared is how many dungeon bosses the party has beaten.
 	Dungeon         int `json:"dungeon,omitempty"`
 	DungeonsCleared int `json:"dungeonsCleared,omitempty"`
+	// DungeonThemes lists the theme of every dungeon the expedition has entered, in order, for the expedition
+	// map. Runs saved before it existed lack the dungeons they had already entered.
+	DungeonThemes []string `json:"dungeonThemes,omitempty"`
 	// FloorsCleared counts floor bosses beaten across the whole expedition: how far the party got. Rank is the
 	// title that distance earned, set when the expedition ends.
 	FloorsCleared int `json:"floorsCleared,omitempty"`
@@ -115,6 +118,8 @@ type ClassCombatState struct {
 	// Regen heals at the end of each of the next RegenRounds rounds.
 	Regen       int `json:"regen,omitempty"`
 	RegenRounds int `json:"regenRounds,omitempty"`
+	// OathSpent records that the Undying Oath boon has saved its owner this fight.
+	OathSpent bool `json:"oathSpent,omitempty"`
 }
 
 type PlayerState struct {
@@ -136,6 +141,8 @@ type PlayerState struct {
 	Gold int `json:"gold,omitempty"`
 	// Items are the IDs of the shop items the player has bought this run, in order.
 	Items []string `json:"items,omitempty"`
+	// Boons are the IDs of the boons (boons.go) the player has claimed from capstone bosses, in order.
+	Boons []string `json:"boons,omitempty"`
 }
 
 type DungeonRoom struct {
@@ -219,6 +226,20 @@ type Enemy struct {
 	// BarrierLabel and CataclysmLabel name the boss's barrier and cataclysm in telegraphs and the log.
 	BarrierLabel   string `json:"barrierLabel,omitempty"`
 	CataclysmLabel string `json:"cataclysmLabel,omitempty"`
+	// Capstone mechanics (capstone.go). AnchorMonsterID and AnchorWavesLeft drive the anchor mechanic, and Anchor
+	// marks the anchors themselves; Anchored is set while a living anchor protects the boss. RebirthLabel names a
+	// boss's second life and Reborn records that it has used it. LegionMonsterID is the servant a legion boss
+	// calls, Calls counts the servants it has called, and DevourIn is how many turns until it next feeds on them.
+	AnchorMonsterID string `json:"anchorMonsterId,omitempty"`
+	AnchorWavesLeft int    `json:"anchorWavesLeft,omitempty"`
+	Anchor          bool   `json:"anchor,omitempty"`
+	Anchored        bool   `json:"anchored,omitempty"`
+	RebirthLabel    string `json:"rebirthLabel,omitempty"`
+	Reborn          bool   `json:"reborn,omitempty"`
+	LegionMonsterID string `json:"legionMonsterId,omitempty"`
+	Calls           int    `json:"calls,omitempty"`
+	DevourIn        int    `json:"devourIn,omitempty"`
+	Devoured        int    `json:"devoured,omitempty"`
 	// Stun is how many coming turns the enemy loses (a boss is staggered instead and hits for half).
 	Stun int `json:"stun,omitempty"`
 	// Bleed is damage taken at the end of each of the next BleedRounds rounds.

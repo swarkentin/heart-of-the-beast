@@ -255,6 +255,9 @@ func ValidateCatalog() error {
 	if err := defaultRunEffectCatalog.Validate(); err != nil {
 		return err
 	}
+	if err := validateBoonCatalog(); err != nil {
+		return err
+	}
 	if err := validateShopCatalog(); err != nil {
 		return err
 	}

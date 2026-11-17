@@ -161,8 +161,9 @@ func applySkill(room *Room, player *PlayerState, command Command, round int) err
 			player.ClassCombat.Cooldowns = make(map[string]int)
 		}
 		// Counted down at the end of every round, this one included.
-		player.ClassCombat.Cooldowns[definition.ID] = definition.Cooldown + 1
+		player.ClassCombat.Cooldowns[definition.ID] = boonCooldown(player, definition.Cooldown+1)
 	}
+	boonAfterSkill(cast)
 	for i := first; i < len(run.LastCombatEvents); i++ {
 		run.LastCombatEvents[i].ActorID = player.ID
 	}
@@ -356,7 +357,7 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 		}
 	}
 	passive := classPassiveEffects(player, enemy, nil)
-	bonus += passive.AttackDamage + player.ClassCombat.Empower
+	bonus += passive.AttackDamage + player.ClassCombat.Empower + boonStrikeBonus(player, cast.encounter)
 	if cast.definition.Elemental {
 		bonus += passive.ElementalDamage
 	}
@@ -374,7 +375,7 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	enemy.MarkedDamage = attack.RemainingMarkedDamage
 	player.ClassCombat.ResolveReady = attack.ResolveReady
 	cast.struck = true
-	damage := attack.Damage
+	damage := boonDamageMultiplier(player, enemy, attack.Damage)
 	if damage < 1 {
 		damage = 1
 	}
@@ -610,6 +611,7 @@ func resetFightStatuses(run *Run) {
 		player.ClassCombat.Regen = 0
 		player.ClassCombat.RegenRounds = 0
 		player.ClassCombat.ArcaneCharges = 0
+		player.ClassCombat.OathSpent = false
 	}
 }
 

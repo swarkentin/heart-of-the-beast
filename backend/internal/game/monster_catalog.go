@@ -115,6 +115,8 @@ func newMonsterCatalog() MonsterCatalog {
 	themedAbilities, themedMonsters := themedMonsterContent()
 	varietyAbilities, varietyMonsters := varietyMonsterContent()
 	themedAbilities, themedMonsters = append(themedAbilities, varietyAbilities...), append(themedMonsters, varietyMonsters...)
+	newAbilities, newMonsters := newThemeMonsterContent()
+	themedAbilities, themedMonsters = append(themedAbilities, newAbilities...), append(themedMonsters, newMonsters...)
 	for _, ability := range themedAbilities {
 		if _, duplicate := abilityMap[ability.ID]; duplicate {
 			panic(fmt.Sprintf("duplicate built-in monster ability %q", ability.ID))

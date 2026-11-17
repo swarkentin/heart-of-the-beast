@@ -26,6 +26,10 @@ const THEME_ELEMENT: Record<string, Element> = {
   arctic: "frost",
   ghosttown: "spectral",
   wasteland: "fire",
+  noir: "physical",
+  arcade: "shock",
+  eldritch: "arcane",
+  infernal: "fire",
 };
 
 const KEYWORDS: [RegExp, Element][] = [

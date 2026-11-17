@@ -345,3 +345,16 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
   .rn-celebrate, .rn-celebrate-rays, .rn-celebrate-card, .rn-celebrate-eyebrow, .rn-celebrate-level, .rn-celebrate-unlocks li, .rn-celebrate-hint { animation: none; }
   .rn-celebrate-confetti { display: none; }
 }
+
+/* Expedition map between dungeons: the group of four and the castle that crowns it. */
+.rn-map { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.rn-map-stop { position: relative; display: grid; justify-items: center; gap: 2px; text-align: center; }
+.rn-map-stop:not(:last-child)::after { content: ""; position: absolute; top: 11px; left: calc(50% + 14px); right: calc(-50% + 14px); height: 2px; background: #3d3658; }
+.rn-map-cleared:not(:last-child)::after { background: var(--gold); }
+.rn-map-mark { display: grid; place-items: center; width: 24px; height: 24px; background: #2a2440; box-shadow: 0 0 0 2px var(--edge); color: var(--ink); font: 400 10px/1 var(--display); }
+.rn-map-cleared .rn-map-mark { background: var(--gold); color: #2a1a08; }
+.rn-map-current .rn-map-mark, .rn-map-next .rn-map-mark { box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold); animation: rn-map-pulse 1.2s steps(2) infinite; }
+.rn-map-castle .rn-map-mark { width: 28px; height: 28px; background: #4a1a2a; color: #ffb43a; font-size: 14px; }
+.rn-map-stop small { color: #cfc6dc; font-size: 13px; line-height: 1; overflow-wrap: anywhere; }
+@keyframes rn-map-pulse { 50% { box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px transparent; } }
+@media (prefers-reduced-motion: reduce) { .rn-map-current .rn-map-mark, .rn-map-next .rn-map-mark { animation: none; } }

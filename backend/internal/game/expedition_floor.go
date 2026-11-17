@@ -34,6 +34,9 @@ type ExpeditionTheme struct {
 
 	// Guardians are the bosses of every floor but the last, used in rotation.
 	Guardians []FloorBossTemplate
+	// ArmedGuardians, when set, replace Guardians with floor bosses that have mechanics of their own. Only the
+	// capstone castles use them: there, every boss is a fight with rules.
+	ArmedGuardians []FinalBossTemplate
 	// Final is the dungeon boss on the last floor, with the mechanics that set it apart.
 	Final FinalBossTemplate
 	// Lair is the optional lair boss some floors hold (theme_variety.go). It does not enrage.
@@ -56,6 +59,10 @@ type FinalBossTemplate struct {
 	BarrierLabel    string
 	CataclysmLabel  string
 	SummonMonsterID string
+	// AnchorMonsterID, RebirthLabel and LegionMonsterID configure the capstone mechanics (capstone.go).
+	AnchorMonsterID string
+	RebirthLabel    string
+	LegionMonsterID string
 }
 
 const (
@@ -75,7 +82,7 @@ var defaultExpeditionThemeCatalog = newExpeditionThemeCatalog()
 
 func newExpeditionThemeCatalog() ExpeditionThemeCatalog {
 	catalog := ExpeditionThemeCatalog{Themes: make(map[string]ExpeditionTheme)}
-	for _, theme := range expeditionThemes() {
+	for _, theme := range append(expeditionThemes(), newExpeditionThemes()...) {
 		if _, duplicate := catalog.Themes[theme.ThemeID]; duplicate {
 			panic(fmt.Sprintf("duplicate built-in expedition theme %q", theme.ThemeID))
 		}
@@ -83,6 +90,12 @@ func newExpeditionThemeCatalog() ExpeditionThemeCatalog {
 			theme.Standard = append(append([]string(nil), theme.Standard...), variety.Standard...)
 			theme.Heavy = append(append([]string(nil), theme.Heavy...), variety.Heavy...)
 			theme.Lair = variety.Lair
+		}
+		if len(theme.ArmedGuardians) > 0 {
+			theme.Guardians = make([]FloorBossTemplate, 0, len(theme.ArmedGuardians))
+			for _, armed := range theme.ArmedGuardians {
+				theme.Guardians = append(theme.Guardians, armed.FloorBossTemplate)
+			}
 		}
 		catalog.Themes[theme.ThemeID] = theme
 	}
@@ -181,6 +194,14 @@ func (catalog ExpeditionThemeCatalog) Validate(themes DungeonThemeCatalog, encou
 		}
 		if err := validateBossMechanics(content.Lair, themes, monsters, themeID); err != nil {
 			return fmt.Errorf("expedition content %q lair: %w", themeID, err)
+		}
+		for _, armed := range content.ArmedGuardians {
+			if err := validateBossMechanics(armed, themes, monsters, themeID); err != nil {
+				return fmt.Errorf("expedition content %q guardian: %w", themeID, err)
+			}
+		}
+		if theme.Capstone != (len(content.ArmedGuardians) > 0) {
+			return fmt.Errorf("expedition content %q: capstone castles, and only they, arm their floor guardians", themeID)
 		}
 	}
 	return nil
@@ -368,6 +389,9 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		armDungeonBoss(rooms[bossID].Encounter, theme.Final)
 	} else {
 		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, 0)
+		if len(theme.ArmedGuardians) > 0 {
+			armLairBoss(rooms[bossID].Encounter, theme.ArmedGuardians[(depth-1)%len(theme.ArmedGuardians)])
+		}
 	}
 
 	// 3. Connections. Each room leads to the room across from it in the next layer, every room is reachable, and

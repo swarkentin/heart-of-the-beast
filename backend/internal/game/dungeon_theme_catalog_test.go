@@ -32,8 +32,8 @@ func TestEveryMonsterHasArtAndEverySpriteHasAMonster(t *testing.T) {
 			t.Errorf("sprite %s (%s) has no monster definition", sprite.ID, sprite.Name)
 		}
 	}
-	if len(art.Sprites()) != 121 {
-		t.Errorf("expected the 121-creature bestiary, registry has %d sprites", len(art.Sprites()))
+	if len(art.Sprites()) != 165 {
+		t.Errorf("expected the 165-creature bestiary, registry has %d sprites", len(art.Sprites()))
 	}
 }
 
@@ -243,7 +243,10 @@ func TestPlayableThemesMatchExpeditionContent(t *testing.T) {
 			t.Errorf("theme %q has art, monsters and bosses but cannot be played", id)
 		}
 	}
-	if got := len(PlayableDungeonThemes()); got != 11 {
-		t.Errorf("playable themes = %d, want all 11", got)
+	if got := len(PlayableDungeonThemes()); got != 13 {
+		t.Errorf("playable themes = %d, want all 13 ordinary themes", got)
+	}
+	if got := len(CapstoneDungeonThemes()); got != 2 {
+		t.Errorf("capstone castles = %d, want 2", got)
 	}
 }

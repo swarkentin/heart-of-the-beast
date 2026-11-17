@@ -67,6 +67,26 @@
       "id": "wasteland",
       "name": "Post-Apocalyptic Settlement",
       "manifest": "wasteland/manifest.json"
+    },
+    {
+      "id": "noir",
+      "name": "Noir City",
+      "manifest": "noir/manifest.json"
+    },
+    {
+      "id": "arcade",
+      "name": "8-Bit Arcade",
+      "manifest": "arcade/manifest.json"
+    },
+    {
+      "id": "eldritch",
+      "name": "The Eldritch Castle",
+      "manifest": "eldritch/manifest.json"
+    },
+    {
+      "id": "infernal",
+      "name": "The Infernal Citadel",
+      "manifest": "infernal/manifest.json"
     }
   ]
 }

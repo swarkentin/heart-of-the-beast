@@ -55,6 +55,13 @@ export function texture(pattern, u, v, seed = 0) {
     }
     case "organic": return [clamp(0.25 + 0.5 * vnoise(u * 2.2, v * 2.2, seed) + 0.3 * vnoise(u * 7, v * 7, seed + 3)), vnoise(u * 3.1, v * 3.1, seed + 7) < 0.26];
     case "ice": return [clamp(0.3 + 0.55 * vnoise(u * 1.4, v * 3.2, seed) + 0.15 * vnoise(u * 9, v * 9, seed + 2)), Math.abs(vnoise(u * 2, v * 2, seed + 5) - 0.5) < 0.022];
+    case "pixel": {
+      // Big flat blocks with a hard bevel: an old console's background tiles.
+      const col = Math.floor(u * 2), row = Math.floor(v * 2), fu = fract(u * 2), fv = fract(v * 2);
+      let l = 0.32 + 0.3 * (hash2(col, row, seed) > 0.7 ? 1 : 0);
+      if (fv < 0.12 || fu < 0.12) l = 0.9; else if (fv > 0.88 || fu > 0.88) l = 0.08;
+      return [l, false];
+    }
     case "dirt": return [clamp(0.22 + 0.5 * vnoise(u * 3, v * 3, seed) + 0.28 * hash2(Math.round(u * 9), Math.round(v * 9), seed)), false];
     default: return [0.5, false];
   }

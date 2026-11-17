@@ -30,5 +30,6 @@ export const THEME_TITLES: Record<string, string> = {
   catacombs: "THE FORGOTTEN CATACOMBS", scifi: "SCI-FI RESEARCH FACILITY", mobster: "1930s MOBSTER UNDERWORLD", sunken: "THE SUNKEN KINGDOM",
   clockwork: "THE CLOCKWORK EMPIRE", carnival: "THE HAUNTED CARNIVAL", jungle: "THE ALIEN JUNGLE", dreamscape: "THE DREAMSCAPES",
   arctic: "THE ARCTIC STATION", ghosttown: "THE GHOST TOWN", wasteland: "THE WASTELAND SETTLEMENT",
+  noir: "NOIR CITY", arcade: "THE 8-BIT ARCADE", eldritch: "THE ELDRITCH CASTLE", infernal: "THE INFERNAL CITADEL",
 };
 export const themeTitle = (themeId?: string) => THEME_TITLES[backdropTheme(themeId)] ?? backdropTheme(themeId).toUpperCase();
