@@ -17,7 +17,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 These are the current priorities, not a promise that each item ships in strict isolation. Reorder as playtesting and implementation evidence changes. Routine real-device testing, regression checks, and continuous QA are expected for every change and are not standalone roadmap milestones.
 
 1. **Close the multiplayer usability gaps.**
-   - [ ] Make every multi-option room/event decision party-voted and server-authoritative, using a clear vote window, visible party choices/tallies, tie/no-vote fallback, and immediate solo resolution. This includes trade-off choices such as +1 Strike / -2 Guard; do not silently let one player decide for everyone.
+   - [x] Make every multi-option room/event decision party-voted and server-authoritative, using a 15-second vote window, visible party choices/tallies, vote changes, random tie/no-vote fallback, and immediate solo resolution. This includes trade-off choices such as +1 Strike / -2 Guard; do not silently let one player decide for everyone.
    - [ ] Show each player's profile/display name consistently in the lobby and combat party UI, alongside their character/class identity, so everyone knows who is playing whom.
    - [ ] Support more than four people in a lobby: retain overflow members as waiting spectators who can watch the active dungeon without consuming a combat slot. Make active-player versus spectator/waiting status explicit and avoid affecting encounter scaling or votes.
    - [ ] Design and implement a safe, understandable transition for waiting lobby members to join at a future safe checkpoint when a slot becomes available.
