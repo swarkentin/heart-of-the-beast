@@ -16,16 +16,14 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
   target: string; onTarget?: (id: string) => void; onPartyImpact: (impact: PartyImpact) => void; banner?: { text: string; tone: string };
 }) {
   const living = enemies.filter(enemy => enemy.hp > 0);
+  const player = party.find(member => member.isSelf) ?? party[0];
+  const handsSrc = player
+    ? "/art/first-person/" + (player.classId ?? "bulwark") + "/t" + (player.skin?.tier ?? 1) + "-" + (player.skin?.variant ?? "heraldic") + ".png"
+    : "/art/first-person/bulwark/t1-heraldic.png";
   return <div className={"rn-scene rn-scene-" + view}>
     <svg className="rn-scene-art" viewBox="0 0 1100 620" role="img" aria-label={(view === "player" ? "First-person view of " : "Party view of ") + roomName}>
       <RoomBackdrop {...backdrop} view={view === "player" ? "first" : "cinema"} />
-      {view === "player" ? (() => {
-        const member = party.find(member => member.isSelf) ?? party[0];
-        const classId = member?.classId ?? "bulwark";
-        const tier = member?.skin?.tier ?? 1;
-        const variant = member?.skin?.variant ?? "heraldic";
-        return <image className="rn-first-person-sprite" href={"/art/first-person/" + classId + "/t" + tier + "-" + variant + ".png"} x={190} y={260} width={720} height={360} imageRendering="pixelated" preserveAspectRatio="none" />;
-      })() : <g aria-hidden="true">{party.map((member, index) => {
+      {view === "player" ? <image className="rn-first-person-sprite" href={handsSrc} x={190} y={260} width={720} height={360} imageRendering="pixelated" preserveAspectRatio="none" /> : <g aria-hidden="true">{party.map((member, index) => {
         // The party as the spectator sees it: each hero's resting (or fallen) frame, at 3x, standing in a row.
         const x = 550 + (index - (party.length - 1) / 2) * 120;
         return <g key={member.id}>
