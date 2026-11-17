@@ -25,10 +25,10 @@ func startRoomEventVote(room *Room, now time.Time) {
 		return
 	}
 	run.EventVote = &RoomEventVote{
-		EventID: current.Event.ID,
+		EventID:   current.Event.ID,
 		StartedAt: now.UTC(),
-		Deadline: now.UTC().Add(RoomEventVoteWindow),
-		Votes: make(map[string]string),
+		Deadline:  now.UTC().Add(RoomEventVoteWindow),
+		Votes:     make(map[string]string),
 	}
 }
 
