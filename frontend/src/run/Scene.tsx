@@ -23,7 +23,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
   return <div className={"rn-scene rn-scene-" + view}>
     <svg className="rn-scene-art" viewBox="0 0 1100 620" role="img" aria-label={(view === "player" ? "First-person view of " : "Party view of ") + roomName}>
       <RoomBackdrop {...backdrop} view={view === "player" ? "first" : "cinema"} />
-      {view === "player" ? <image className="rn-first-person-sprite" href={handsSrc} x={190} y={260} width={720} height={360} imageRendering="pixelated" preserveAspectRatio="none" /> : <g aria-hidden="true">{party.map((member, index) => {
+      {view !== "player" ? <g aria-hidden="true">{party.map((member, index) => {
         // The party as the spectator sees it: each hero's resting (or fallen) frame, at 3x, standing in a row.
         const x = 550 + (index - (party.length - 1) / 2) * 120;
         return <g key={member.id}>
@@ -34,6 +34,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
         </g>;
       })}</g>}
       <EnemyStage key={roomId} view={view} enemies={enemies} events={events} target={onTarget ? target : undefined} onTarget={onTarget} onPartyImpact={onPartyImpact} />
+      {view === "player" ? <image className="rn-first-person-sprite" href={handsSrc} x={270} y={350} width={560} height={280} imageRendering="pixelated" preserveAspectRatio="xMidYMid meet" /> : null}
     </svg>
     {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 3 ? " rn-threats-crowded" : "")} aria-label="Enemy intentions">{living.map(enemy => {
       const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small>{enemy.traits.length > 0 ? <em className="rn-traits">{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
