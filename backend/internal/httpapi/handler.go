@@ -556,6 +556,9 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	if game.AdvanceNavigationVote(room, now) {
 		changed = true
 	}
+	if game.AdvanceRoomEventVote(room, now) {
+		changed = true
+	}
 	if game.AdvanceInterFloorChoice(room, now) {
 		changed = true
 	}
