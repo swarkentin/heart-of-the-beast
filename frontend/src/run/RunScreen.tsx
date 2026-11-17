@@ -135,7 +135,22 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     ...(room.event?.resolved && room.event.result ? [{ key: "event:" + room.id + ":" + room.event.id, text: room.event.result }] : []),
   ], [run.id, room.id, room.name, room.event?.resolved, room.event?.result, room.event?.id]);
   const log = useCombatLog(events, notes);
-  useEffect(() => { const el = logRef.current; if (el) el.scrollTop = el.scrollHeight; }, [log.length]);
+  // Keep the log pinned to its newest line. Keyed on the array itself, not its length: once the log is full at
+  // LOG_LIMIT, new lines push old ones out and the length stops changing. The observer re-pins when the box resizes.
+  // New lines glide into view (instantly for players who ask for reduced motion); resizes snap so the box never lags.
+  useEffect(() => {
+    const el = logRef.current;
+    if (!el) return;
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ top: el.scrollHeight, behavior: still ? "auto" : "smooth" });
+  }, [log]);
+  useEffect(() => {
+    const el = logRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => { el.scrollTop = el.scrollHeight; });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // ---- portrait reactions, in step with the stage ------------------------------------------------------------------
   useEffect(() => () => timers.current.forEach(timer => window.clearTimeout(timer)), []);
