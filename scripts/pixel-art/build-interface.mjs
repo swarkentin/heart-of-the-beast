@@ -85,14 +85,32 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     fpVoid: source.void,
   };
   const c = new Canvas(128, 64, palette, { shadow: heroTheme.shadow, light: heroTheme.light });
+  // Keep the forearm fabric subtly translucent so the room shows through it, while
+  // leaving the gloves, cuffs, shield and class implements crisp and fully opaque.
+  const sleeveParts = new Set();
+  const sleevePart = () => { c.part(); sleeveParts.add(c.pid); return c; };
   const plate = ["bulwark", "spellguard", "cleric"].includes(h.id);
   const wild = ["juggernaut", "beastcaller"].includes(h.id);
-  // Sleeves taper into the frame from both lower corners; overlapping material parts create
-  // the same hard-edged, shaded pixel construction used by the bestiary and hero rigs.
-  c.part().poly([[0, 63], [0, 47], [12, 43], [28, 32], [42, 30], [51, 37], [48, 48], [35, 63]], "fpSleeve");
-  c.part().poly([[128, 63], [128, 47], [116, 43], [100, 32], [86, 30], [77, 37], [80, 48], [93, 63]], "fpSleeve");
-  c.part().poly([[0, 63], [0, 53], [15, 48], [32, 37], [40, 37], [32, 48], [22, 63]], "fpSecondary");
-  c.part().poly([[128, 63], [128, 53], [113, 48], [96, 37], [88, 37], [96, 48], [106, 63]], "fpSecondary");
+  // Deliberately asymmetric grips: the off-hand and weapon hand occupy different
+  // heights/angles for each class instead of mirroring two fists across the screen.
+  const handPose = ({
+    bulwark:   { left: [35, 39], right: [59, 43] },
+    juggernaut:{ left: [45, 43], right: [78, 35] },
+    spellguard:{ left: [43, 41], right: [76, 37] },
+    assassin:  { left: [37, 42], right: [89, 35] },
+    arcanist:  { left: [45, 43], right: [80, 33] },
+    ranger:    { left: [39, 36], right: [88, 42] },
+    cleric:    { left: [44, 43], right: [77, 36] },
+    tactician: { left: [43, 39], right: [84, 37] },
+    beastcaller:{ left: [47, 42], right: [78, 36] },
+  })[h.id] || { left: [46, 39], right: [81, 38] };
+  const [lx, ly] = handPose.left, [rx, ry] = handPose.right;
+  // Each sleeve follows its own hand anchor, creating a different silhouette on
+  // either side while keeping both arms rooted naturally at the lower corners.
+  sleevePart().poly([[0, 63], [0, 48], [12, 44], [lx - 18, ly - 7], [lx - 7, ly - 9], [lx + 5, ly + 2], [lx - 5, ly + 11], [35, 63]], "fpSleeve");
+  sleevePart().poly([[128, 63], [128, 48], [116, 44], [rx + 18, ry - 7], [rx + 7, ry - 9], [rx - 5, ry + 2], [rx + 5, ry + 11], [93, 63]], "fpSleeve");
+  sleevePart().poly([[0, 63], [0, 54], [15, 49], [lx - 12, ly - 2], [lx - 3, ly + 2], [lx - 12, ly + 12], [22, 63]], "fpSecondary");
+  sleevePart().poly([[128, 63], [128, 54], [113, 49], [rx + 12, ry - 2], [rx + 3, ry + 2], [rx + 12, ry + 12], [106, 63]], "fpSecondary");
   // Wrist cuffs differ by silhouette, not merely by dye colour.
   if (plate) {
     c.part().poly([[28, 34], [39, 27], [51, 29], [56, 38], [50, 47], [35, 45]], "fpMetal");
@@ -162,12 +180,18 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     c.part().poly([[64, 4], [57, 13], [64, 11], [71, 13]], "fpBone");
     c.part().ell(64, 22, 5, 5, "fpGlow");
   }
-  // Knuckles and curled fingers sit forward of the cuffs. Their pose is intentionally
-  // symmetrical and readable at the same 1x pixel density as the hero art.
-  c.part().poly([[40, 31], [46, 27], [53, 29], [57, 35], [54, 42], [47, 44], [40, 40]], "fpSkin");
-  c.part().poly([[88, 31], [82, 27], [75, 29], [71, 35], [74, 42], [81, 44], [88, 40]], "fpSkin");
-  c.part().rect(43, 28, 3, 3, "fpSkin"); c.part().rect(48, 27, 3, 3, "fpSkin"); c.part().rect(53, 30, 2, 3, "fpSkin");
-  c.part().rect(82, 28, 3, 3, "fpSkin"); c.part().rect(77, 27, 3, 3, "fpSkin"); c.part().rect(73, 30, 2, 3, "fpSkin");
+  // Separate hand silhouettes and knuckle placement follow the class-specific grips.
+  const fist = (x, y, side) => {
+    const s = side === "left" ? -1 : 1;
+    c.part().poly([[x - 9, y - 5], [x - 3, y - 10], [x + 5, y - 8], [x + 9, y - 1], [x + 6, y + 6], [x - 2, y + 8], [x - 9, y + 3]], "fpSkin");
+    c.part().rect(x - 6, y - 9, 3, 3, "fpSkin");
+    c.part().rect(x - 1, y - 10, 3, 3, "fpSkin");
+    c.part().rect(x + 4, y - 7, 3, 3, "fpSkin");
+    // A small shadow notch on the inward-facing edge keeps the grip readable.
+    c.part().rect(x + s * 5, y + 1, 2, 3, "fpLeather");
+  };
+  fist(lx, ly, "left");
+  fist(rx, ry, "right");
   if (tier >= 2) {
     c.part().rect(31, 41, 16, 3, "fpMetal"); c.part().rect(81, 41, 16, 3, "fpMetal");
     c.part().rect(34, 44, 10, 2, "fpTrim"); c.part().rect(84, 44, 10, 2, "fpTrim");
@@ -205,7 +229,19 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     c.part().poly([[30, 31], [24, 20], [27, 33]], "fpMetal");
     c.part().poly([[98, 31], [104, 20], [101, 33]], "fpMetal");
   }
-  return c.render({ glowR: 2 });
+  const img = c.render({ glowR: 2 });
+  // Alpha is applied only to the original sleeve polygons. Later-drawn details naturally
+  // overwrite their pixels, so skin, armour, outlines and equipment stay solid.
+  for (let i = 0; i < c.p.length; i++) {
+    if (!sleeveParts.has(c.p[i])) continue;
+    const x = i % 128, y = Math.floor(i / 128);
+    const lowerFade = Math.max(0, Math.min(1, (y - 42) / 21));
+    const outerFade = Math.max(0, Math.min(1, (Math.min(x, 127 - x) - 2) / 13));
+    const alpha = 0.88 - lowerFade * 0.12 - (1 - outerFade) * 0.08;
+    const a = i * 4 + 3;
+    img.d[a] = Math.round(img.d[a] * alpha);
+  }
+  return img;
 }
 
 export function renderHero(h, tier = 3, variant = "heraldic") {
