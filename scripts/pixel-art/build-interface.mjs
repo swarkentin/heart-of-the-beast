@@ -6,6 +6,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Img, Canvas, encodePNG, hex, mix } from "./engine.mjs";
+import { blade } from "./kit.mjs";
 import { POSE0 } from "./anim.mjs";
 import { renderAnim, touchesEdge } from "./build.mjs";
 import { heroes, heroTheme, applySkin, TIERS, VARIANTS } from "./heroes.mjs";
