@@ -191,7 +191,7 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
   // Signature class details: rune cuts, leaves, holy marks, trophies and assassin's wrist blades.
   if (h.id === "spellguard" || h.id === "arcanist") {
     c.part().rect(39, 37, 2, 5, "fpRune"); c.part().rect(87, 37, 2, 5, "fpRune");
-  } else if (h.id === "ranger" || h.id === "beastcaller") {
+  } else if (h.id === "ranger") {
     c.part().poly([[35, 36], [40, 31], [42, 36], [40, 40]], "fpGlow");
     c.part().poly([[93, 36], [88, 31], [86, 36], [88, 40]], "fpGlow");
   } else if (h.id === "cleric") {
