@@ -25,6 +25,8 @@
 /* ---------- viewport ---------- */
 .rn-scene { position: absolute; inset: 0; overflow: hidden; }
 .rn-scene-art { display: block; width: 100%; height: 100%; font-family: var(--copy); }
+/* Keep the foreground gear readable while letting the room texture breathe through the arms. */
+.rn-first-person-sprite { opacity: .86; }
 .rn-threats { position: absolute; left: calc(6px * var(--px)); right: calc(6px * var(--px)); top: calc(5px * var(--px)); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; margin: 0; padding: 0; list-style: none; }
 .rn-threats li { min-width: 0; max-width: 100%; }
 .rn-threat-chip { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 3px 8px 4px 5px; border: 0; background: #0a0714e6; box-shadow: inset 3px 0 0 #9a4a4a, 0 0 0 2px var(--edge); color: var(--ink); font: inherit; text-align: left; line-height: 1; cursor: default; }
