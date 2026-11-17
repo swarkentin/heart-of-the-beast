@@ -74,17 +74,34 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
           persist-credentials: true
+      - name: Check whether first-person art needs generation
+        id: art
+        run: |
+          git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}" --depth=1
+          changed_inputs=$(git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD | grep -c '^scripts/pixel-art/' || true)
+          sprite_count=$(find frontend/public/art/first-person -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$changed_inputs" -eq 0 ] && [ "$sprite_count" -eq 270 ] && [ -f docs/art/first-person-hands.png ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "All 270 sprites and the gallery exist; generator inputs are unchanged."
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            echo "Generating art (changed pixel-art inputs: $changed_inputs; existing sprites: $sprite_count)."
+          fi
       - name: Set up Node.js
+        if: steps.art.outputs.needed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install locked dependencies
+        if: steps.art.outputs.needed == 'true'
         run: npm ci
       - name: Generate interface sprites and gallery
+        if: steps.art.outputs.needed == 'true'
         run: |
           node scripts/pixel-art/build-interface.mjs
           node scripts/pixel-art/build-interface.mjs --gallery
       - name: Commit generated first-person assets
+        if: steps.art.outputs.needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
