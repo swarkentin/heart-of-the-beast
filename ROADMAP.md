@@ -111,7 +111,7 @@ These are the current priorities, not a promise that each item ships in strict i
 - [x] Replace the single-theme prototype with a data-driven, theme-aware procedural music system: a profile per dungeon theme, per-state layers scaled by depth, per-boss treatments, crossfades and per-theme effects (ADR 0026).
 - [ ] Audition and tune the themed music by ear, and tune the mix on mobile, desktop, and spectator playback; consider authored assets later.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
-- [x] Verify core screens on mobile, tablet, and desktop layouts. Real-device testing is continuous QA, not a roadmap milestone; keep testing each meaningful UI change.
+- Core screens are continuously checked across mobile, tablet, and desktop as part of normal QA; real-device testing is not a standalone roadmap milestone.
 - [x] Rebuild the run screen (exploring and combat) on the interface kit: party portraits on the borders, a framed viewport, a combat log, and one command panel for actions, path votes, room choices, descent votes, and run over. Actions press in and lock, show keys 1-9, and automatic defends are announced, logged, and marked on the portrait. Works from one to four players and for spectators, and fits one screen without scrolling on phones (ADR 0027).
 - [ ] Run-screen follow-ups: self-host or draw the pixel fonts, restyle the sound settings sliders, and continue visual polish of the first-person hands and combat presentation.
 
@@ -121,7 +121,7 @@ These are the current priorities, not a promise that each item ships in strict i
 - [ ] Define and implement a server-authoritative in-run resurrection action with explicit timing, health, and end-of-run permanent-death rules.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
-- [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and an in-context talent-tree preview. Available and locked paths are shown distinctly, and the chosen hero joins the party line-up (ADR 0024). Next: continue multi-level spike iteration.
+- [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and mastery progression context. Available and locked classes are shown distinctly, and the chosen hero joins the party line-up (ADR 0024).
 - [x] Add class signature actions and target/mode controls to the player combat UI; preserve universal actions and one action per round.
 - [x] Use class mastery as the long-term class progression/unlock model. Do not build talent trees or MMO-style character progression; remove remaining talent-tree UI, terminology, assumptions, and code paths.
 - [ ] Add mastery-based class/content unlocks only where they add meaningful goals; keep launch classes available and ensure unlocks grant content access, not combat power.
