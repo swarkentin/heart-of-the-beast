@@ -11,6 +11,55 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - No account or third-party service required to play. Optional accounts may later support identity, achievements, and cosmetics.
 - Spectator viewing is independent of participation: people can watch a run through a shared viewing link/QR code without joining the party or creating a character.
 - Open-source and self-hostable, with Render and Neon as the initial prototype deployment.
+ 
+## Next up — prioritized product work
+
+These are the current priorities, not a promise that each item ships in strict isolation. Reorder as playtesting and implementation evidence changes. Routine real-device testing, regression checks, and continuous QA are expected for every change and are not standalone roadmap milestones.
+
+1. **Close the multiplayer usability gaps.**
+   - [ ] Make every multi-option room/event decision party-voted and server-authoritative, using a clear vote window, visible party choices/tallies, tie/no-vote fallback, and immediate solo resolution. This includes trade-off choices such as +1 Strike / -2 Guard; do not silently let one player decide for everyone.
+   - [ ] Show each player's profile/display name consistently in the lobby and combat party UI, alongside their character/class identity, so everyone knows who is playing whom.
+   - [ ] Support more than four people in a lobby: retain overflow members as waiting spectators who can watch the active dungeon without consuming a combat slot. Make active-player versus spectator/waiting status explicit and avoid affecting encounter scaling or votes.
+   - [ ] Design and implement a safe, understandable transition for waiting lobby members to join at a future safe checkpoint when a slot becomes available.
+   - [ ] Finish shareable party invitations (PR #87) and pre-adventure spectator links (PR #94); verify the complete host/guest/spectator journey.
+   - [ ] After the current four-player experience is solid, design larger active parties. Do not simply raise the cap: revisit encounter composition, telegraph readability, action windows, UI density, and network/state scaling.
+
+2. **Make combat and monsters more engaging.**
+   - [ ] Improve monster identity through distinct behaviours, target selection, support actions, interrupts, phases, environmental interactions, and complementary formations.
+   - [ ] Make combat choices more consequential and readable; expand the tactical verbs gradually (consumables, aid/recovery, defensive interactions) without introducing MMO-style role requirements or resource-management sprawl.
+   - [ ] Tune encounter pacing, monster durability/damage, player survivability, status effects, and reward cadence together. Prefer interesting mechanics over inflated health.
+   - [ ] Playtest boss mechanics and floor guardians; ensure each major encounter teaches, tests, or remixes mechanics players can understand and counter.
+
+3. **Build a balance-tuning workbench.**
+   - [ ] Consolidate and document tunable parameters for monsters, abilities, classes, encounter budgets, party scaling, floors, modifiers, XP, rewards, and economy in versioned, data-driven configuration. Identify remaining hard-coded knobs and migrate them incrementally.
+   - [ ] Make simulation reports explain the effective parameter set, scenario/episode seed, party composition, theme, policy, and outcome metrics; retain reproducible baselines and meaningful regression thresholds.
+   - [ ] Add an episode-based optimization loop for LLM-assisted tuning: propose a small parameter diff, run representative seeded episodes (solo, duos, trios, four-player parties; themes and depth bands), compare against baseline and safety/quality guardrails, and summarize trade-offs.
+   - [ ] Keep the loop deterministic, bounded, reproducible, and reviewable. LLMs may suggest changes and analyze results; they must not silently change balance or promote parameters without human review.
+   - [ ] Include actual playtest feedback alongside simulation results; simulation policies are proxies, not substitutes for human play.
+
+4. **Strengthen persistent progression after optional authentication lands.**
+   - [ ] Complete and merge optional Discord authentication (PR #101), then verify guest-to-account linking, conflict handling, cross-device profile access, and recovery.
+   - [ ] Move best expedition distance/rank from browser-only storage to the server-side profile and show it in the Profile menu.
+   - [ ] Add guest-profile export/recovery and data export/deletion.
+   - [ ] Continue tuning Adventurer Rank and class mastery pacing; expand mastery-based unlocks and cosmetics without talent trees, mandatory roles, or power-gated classes.
+   - [ ] Keep lifetime character identity/records and permadeath as a separate, deliberate progression layer; define resurrection and retirement semantics before implementing the full character-life system.
+
+5. **Expand cooperative formats and encounter spectacle.**
+   - [ ] Design raid-style encounters for parties larger than the current four-player limit, with multiple simultaneous objectives, environmental interaction, boss phases, and mechanics that reward coordination without mandatory class roles.
+   - [ ] Design a boss-rush mode: a focused sequence of escalating bosses, limited recovery/resources between fights, distinct modifiers, and clear score/progression rewards.
+   - [ ] Prototype richer environmental interactions in boss arenas (hazards, switches, destructible/usable objects, positioning, arena phase changes) and make them meaningful to boss mechanics.
+   - [ ] Treat raids and boss rushes as distinct modes with their own party-size, pacing, matchmaking/lobby, scaling, and reward rules—not merely longer standard expeditions.
+
+6. **Continue presentation and world-building polish.**
+   - [ ] Improve combat readability and impact: character/enemy animation, attack anticipation, hit feedback, status presentation, and spectator cinematography.
+   - [ ] Improve room-specific environmental props/layouts and interactions across themes; make the world feel less like repeated backdrops.
+   - [ ] Continue audio, accessibility, localization, and UI polish. Maintain continuous real-device QA as part of normal delivery.
+
+7. **Longer-term world and community work.**
+   - [ ] Build a safe hub/intermission with NPCs, repair/resupply, ambience, and environmental storytelling when the core expedition loop is well tuned.
+   - [ ] Complete self-hosting documentation, backup/restore, provider-neutral configuration, and release/contribution workflows after the product systems stabilize.
+
+
 
 ## Phase 0 — Foundation and discovery
 
@@ -25,7 +74,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Provide one-command local startup/shutdown, health status, and transactional versioned migration tooling (ADR 0011).
 - [x] Make `npm run dev:up` observable and fail-fast: numbered progress with timings, preflight checks, separate backend build, live service log output, and immediate failure with log tails when a service exits (ADR 0011 amendment).
 - [x] Add the Render Blueprint for the static frontend and Go API on Render, CI-gated auto-deploys, startup migrations, readiness checks, and graceful HTTP shutdown (ADR 0025).
-- [ ] Create the Neon project, configure its pooled DATABASE_URL secret in Render, and verify the first production deploy.
+- [x] Create the Neon project, configure its pooled DATABASE_URL secret in Render, and verify the production deployment at https://heart-of-the-beast.onrender.com. Render auto-deploys from `main`.
 - [x] Define the room/run lifecycle and deterministic authoritative state transitions.
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
 - [x] Choose first-person-inspired forward-facing player camera for exploration and combat; separate cinematic spectator renderer over shared game state.
@@ -38,13 +87,13 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Validate forward-facing player composition alongside a separate spectator/cast composition over the same encounter state.
 - [x] Prototype directional room navigation through a small predefined room graph, with solo-immediate path choices, room-specific encounters, and matching spectator scene transitions (PRs #5 and #6).
 - [x] Create a room and join a pre-run lobby by six-character invite code, with up to four guest players and host-controlled run start (PR #12).
-- [ ] Provide a separate, host-controlled spectator viewing link/QR code that does not consume a player slot or require party membership.
+- [ ] Finish the host-controlled spectator viewing link/QR flow so it works before the adventure starts as well as during a run (PR #94).
 - [x] Add initial player-authenticated room creation, run start, validated command, reconnect snapshot, and separately authorized read-only spectator snapshot endpoints.
-- [ ] Implement server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
+- [ ] Implement/verify server-authorized, read-only spectator subscriptions and reconnect/catch-up behavior.
 - [ ] Ensure spectators cannot issue commands and do not affect party size, scaling, presence, votes, readiness, or deadlines.
 - [x] Connect the player interface and independent spectator/cast presentation to the authoritative room API (PR #11; initial snapshot polling, with realtime subscriptions still pending).
 - [x] Server-authoritative player presence (10-second heartbeat, 30-second disconnect threshold), same-identity reconnect, and explicit leave/token revocation (ADR 0014).
-- [ ] Illustrated room scenes and directional navigation.
+- [x] Illustrated room scenes and directional navigation.
 - [ ] Readable character/enemy presentation with restrained, purposeful animation.
 - [x] Generate a pixel-art bestiary for eleven themes (six priority plus alien jungle, dreamscape, arctic, ghost town, post-apocalyptic): 5 monsters and 3 bosses each, with idle, hit, attack, special, and death animations, plus manifests and a verifier (ADR 0022, `docs/art/README.md`).
 - [x] Require art for every monster at compile time, add a dungeon theme catalog and themed encounters, and add catalog entries for the whole bestiary (82 new monsters, 72 new encounters; ADR 0023). Enemy snapshots now carry a `sprite` ID.
@@ -57,14 +106,14 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish server-authoritative simultaneous combat rounds: one action per living player, an 8-second co-op window, deadline fallback to defend, and immediate solo resolution (ADR 0015).
 - [x] Add server-authoritative enemy intent telegraphs, targeted/party-wide attacks, guard mitigation, enemy turn resolution, combat feedback, and party defeat (ADR 0018).
 - [x] Add a contextual interrupt counter for the Crypt Warden Soul Drain; see ADR 0018 and `docs/game-design/combat-roadmap.md`.
-- [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: multi-enemy encounters, party-size composition scaling, then support and consumable actions.
+- [x] Implement complementary multi-enemy encounters and party-size composition scaling (see Phase 2 and ADR 0030).\n- [ ] Continue combat iteration per `docs/game-design/combat-roadmap.md`: improve monster behaviour, telegraphs, encounter variety and tactical engagement; then support and consumable actions.
 - [x] Prototype opt-in Catacombs music, room ambience, event-driven gameplay effects, and independent master/music/effects controls (PR #20).
 - [x] Replace the single-theme prototype with a data-driven, theme-aware procedural music system: a profile per dungeon theme, per-state layers scaled by depth, per-boss treatments, crossfades and per-theme effects (ADR 0026).
 - [ ] Audition and tune the themed music by ear, and tune the mix on mobile, desktop, and spectator playback; consider authored assets later.
 - [ ] End-to-end acceptance: one player can complete the dungeon; a group can complete it together; independent viewers can watch either without joining.
-- [ ] Verify core screens on mobile, tablet, and desktop layouts. Title, lobby, and class selection were checked at 390, 820, and 1366 px wide in Chrome with fallback fonts; they still need a pass on real devices with the web fonts loaded.
+- Core screens are continuously checked across mobile, tablet, and desktop as part of normal QA; real-device testing is not a standalone roadmap milestone.
 - [x] Rebuild the run screen (exploring and combat) on the interface kit: party portraits on the borders, a framed viewport, a combat log, and one command panel for actions, path votes, room choices, descent votes, and run over. Actions press in and lock, show keys 1-9, and automatic defends are announced, logged, and marked on the portrait. Works from one to four players and for spectators, and fits one screen without scrolling on phones (ADR 0027).
-- [ ] Run-screen follow-ups: self-host or draw the pixel fonts (they still load from Google Fonts), check the screen on real phones with the real fonts, restyle the sound settings sliders, and replace the first-person hands placeholder in the viewport.
+- [ ] Run-screen follow-ups: self-host or draw the pixel fonts, restyle the sound settings sliders, and continue visual polish of the first-person hands and combat presentation.
 
 ## Phase 2 — Core roguelike loop
 
@@ -72,21 +121,21 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Define and implement a server-authoritative in-run resurrection action with explicit timing, health, and end-of-run permanent-death rules.
 - [x] Add the extensible class catalog, stable IDs, nine initial class definitions, unique starting stats/equipment, server-authoritative class selection, and run build snapshots (PR #35).
 - [x] Implement registered server-authoritative signature ability and passive handlers for all nine classes, with solo/co-op combat tests (PR #38; first-pass balance values).
-- [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and an in-context talent-tree preview. Available and locked paths are shown distinctly, and the chosen hero joins the party line-up (ADR 0024). Next: continue multi-level spike iteration.
+- [x] Selection experience: compact roster grouped by archetype with a focused class detail view, an animated hero, icon-led skills and passives, stats and gear, and mastery progression context. Available and locked classes are shown distinctly, and the chosen hero joins the party line-up (ADR 0024).
 - [x] Add class signature actions and target/mode controls to the player combat UI; preserve universal actions and one action per round.
-- [ ] Replace archetype-only talent assumptions with small class-specific talent trees while preserving explicit preview/acceptance and between-encounter spending.
-- [ ] Add persistent class-unlock foundations: player-owned unlock state, data-driven eligibility requirements, server-side authorization, and idempotent rewards. Keep initial classes available until progression unlock milestones are designed.
+- [x] Use class mastery as the long-term class progression/unlock model. Do not build talent trees or MMO-style character progression; remove remaining talent-tree UI, terminology, assumptions, and code paths.
+- [ ] Add mastery-based class/content unlocks only where they add meaningful goals; keep launch classes available and ensure unlocks grant content access, not combat power.
 - [ ] Snapshot class/build definition versions in active runs and test compatibility across reconnects and content updates.
 - [ ] First implementation should keep classes as build directions, not mandatory roles; every class must remain viable solo and duplicate classes must remain viable in parties.
-- [ ] Expand run rewards into gear, loot, inventory, spells, abilities, and consumables.
+- [ ] Expand run rewards selectively with meaningful gear, items, abilities, and combat consumables; avoid an MMO-style inventory/progression treadmill.
 - [ ] Build choices that let solo players cover their own needs without mandatory roles.
 - [x] Build complementary multi-enemy formations and tune encounter composition for solo, duo, and four-player parties without relying on health inflation. Larger parties meet theme reinforcements (up to six enemies a fight) instead of tougher enemies; see ADR 0030 and `docs/game-design/encounter-scaling-and-tuning.md`.
 - [ ] Solo Bulwark balance follow-up: a solo Bulwark clears themed first floors only 47–72% of the time under the tactical simulation policy (other solo classes reach 85–100%), because its Strike needs two hits for most themed monsters and Shield Wall only blocks one hit. Decide between class changes (damage, Shield Wall, passive) and solo-specific content before tuning.
 - [ ] Duo balance follow-up: two-player parties built around a support or an Arcanist (Arcanist + Cleric, Arcanist + Beastcaller, Ranger + Cleric) clear the whole first dungeon 93–95% of the time in simulation, even with Renewal on its three-round cooldown, while other duos reach about 45–60%. Find the cause (two-player reinforcement schedule, support kits, or Arcanist damage) before tuning.
-- [ ] Extract monster/ability/modifier/encounter definitions into a versioned content catalog and build a deterministic simulation harness using the live combat rules. See `docs/game-design/monster-content-and-simulation-spike.md`.
+- [x] Extract monster/ability/modifier/encounter definitions into a versioned content catalog and build a deterministic simulation harness using the live combat rules. See `docs/game-design/monster-content-and-simulation-spike.md`.\n- [ ] Make balance inputs easy to inspect and tune: consolidate gameplay knobs into explicit, versioned configuration/content data with documented ranges and ownership; minimize scattered magic numbers and expose effective values in simulation reports.\n- [ ] Build repeatable episode-based balance workflows that let an LLM propose parameter changes, run seeded solo/party episodes across representative compositions and themes, compare against baseline metrics/guardrails, and produce reviewable diffs. Keep all changes human-reviewed; simulations are evidence, not automatic authority.
   - [x] Move authored monster names, base health, behavior mappings, and existing depth/party/solo health scaling into catalog-backed enemy definitions.
   - [x] Extract reusable encounter compositions, party-size variants, and provisional relative difficulty budgets into a validated encounter catalog.
-  - [ ] Complete modifier/effect extraction: talent combat modifiers, room-event run effects, class passive effects, typed signature-ability operation definitions, and typed encounter/floor reward definitions are catalog-backed. Signature ability operations and reward operations remain applied by authoritative runtime transitions until the pure transition extraction.
+  - [ ] Complete modifier/effect extraction: mastery-unlocked combat modifiers (if any), room-event run effects, class passive effects, typed signature-ability operation definitions, and typed encounter/floor reward definitions are catalog-backed. Signature ability operations and reward operations remain applied by authoritative runtime transitions until the pure transition extraction.
   - [x] Isolate deterministic combat transitions and add the first seeded simulation scenarios/reports.
   - [x] Extract pure, shared health damage/healing arithmetic and route live combat, class abilities/passives, and run rewards through it; preserve caller-owned target eligibility and combat feedback.
   - [x] Extract pure attack damage, interrupt damage, incoming mitigation, and deterministic enemy-intent resolution into shared transitions used by live combat.
@@ -97,8 +146,8 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
   - [x] Run a fixed solo/co-op balance suite in GitHub Actions, record successful main-branch reports as baselines, compare pull requests for meaningful drift, and publish evidence-based investigation prompts.
   - [x] Simulate complete seeded multi-floor runs by making random legal combat, route, event, and inter-floor decisions through authoritative game commands; report completion/wipe rates and the probability of reaching each depth for solo and 1–4 player parties.
   - [x] Compare random and tactical player-decision policies across a seeded endless-expedition composition matrix; report median/P10/P90 depth and survival probability at every reached depth (all solos, all duos, sampled trios/quads).
-  - [ ] Extend run simulation coverage as consumables become playable; add live-transition parity fixtures before using full-run reports for balance tuning.
-- [ ] Reward and difficulty curves validated through playtesting.
+  - [ ] Extend run simulation coverage as consumables and new combat mechanics become playable; add live-transition parity fixtures before using full-run reports for balance tuning.
+- [ ] Reward, monster, combat, and difficulty curves validated through ongoing solo and co-op playtesting.
 - [ ] Spike multi-level runs: generate several connected dungeon floors from a run seed; carry party state and run rewards between floors; add a health-restoration-versus-perk choice between floors, occasional seeded minibosses with meaningful rewards, and a soundtrack that evolves with depth and encounter intensity; scale encounter pressure with depth and party size. Target 3–5 minutes per level. See `docs/game-design/multi-level-dungeon-spike.md` for scope and validation criteria.
 - [ ] Iterate on the playable multi-level run spike before merging it: rebalance health/damage and encounter pacing to reach the 3–5 minute floor target without relying on enemy HP inflation; slow early XP/level progression; tune healing and party-size scaling; add tactical enemy roles, complementary formations, and clearly telegraphed actions; introduce real risk/reward trade-offs for shrines, healing, perks, optional encounters, and treasure; add subtle depth-sensitive percussion to the existing musical progression. Validate solo and co-op with recorded floor duration, player damage/health changes, level-up timing, and choice outcomes. See the playtest follow-up section in `docs/game-design/multi-level-dungeon-spike.md`.
 
@@ -131,9 +180,9 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 - [ ] Data-driven room graph and encounter director, informed by the multi-level generation spike.
 - [ ] Traps, secrets, treasure rooms, merchants, puzzles, and alternate routes.
 - [ ] Reusable optional side-mission framework.
-- [ ] Distinct enemy families and bosses with mechanics, not just larger health pools.
+- [ ] Tune and expand distinct enemy families and bosses with engaging, legible mechanics—not just larger health pools. Improve monster behaviour, combat pacing, telegraphs, counters, and encounter combinations.
 - [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
-- [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; add a dedicated miniboss sprite. (All eleven themes are now playable; see ADR 0029.)
+- [ ] Simulate and tune the stats, abilities, behaviours and encounter budgets of the 82 art-backed monsters; add a dedicated miniboss sprite. (All eleven themes are now playable; see ADR 0029.)
 - [x] Dungeon expeditions (ADR 0029): an endless chain of dungeons, each 4–6 generated floors in one of eleven themes, ended only by a wipe; a two-option theme vote with per-dungeon modifiers after every dungeon boss; camps (mini-game and shop) only at a dungeon's midpoint and between dungeons; floor debuffs and perks that grow with depth; dungeon bosses with enrage, summon, barrier and cataclysm mechanics; discovery and vault rooms whose choices are trade-offs or gambles; a rank and personal best for how far the party got; lobby dungeon picker.
 - [x] Capstone castles (ADR 0033): every fifth dungeon, the party chooses between the Eldritch Castle and the Infernal Citadel. A castle has four floors, tougher three-monster fights, and an armed boss on every floor. Four new boss mechanics (anchor, rebirth, legion, devour). Every castle boss offers each adventurer a choice of three run-long boons. Tuned so about 40% of tactical parties that reach a castle clear it.
 - [x] Show the expedition map in every dungeon's briefing, and mark a ready interrupt skill when an enemy telegraphs an interruptible move (ADR 0033).
