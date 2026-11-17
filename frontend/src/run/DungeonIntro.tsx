@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { ApiBriefing } from "../api";
 import { Icon } from "../lobby";
 import { backdropUrl } from "../scenes";
+import { themeVars } from "../uiTheme";
 
 // The briefing that opens each dungeon of a run (not each floor). An iris wipe over the dungeon's entrance art
 // carries its title, then a briefing card says what waits below: the narrator's lines, threats, the boss and the
@@ -42,7 +43,7 @@ export function DungeonIntro({ briefing, runId, active, onOpenChange }: { briefi
   if (!showing) return null;
   const close = () => setOpen("");
   // A portal: the run screen sits inside framed panels whose filters would otherwise trap a fixed overlay.
-  return createPortal(<div className={"px-portal rn-intro rn-intro-at-" + stage + " rn-intro-theme-" + briefing.themeId} role="dialog" aria-modal="true" aria-labelledby="intro-title" onClick={() => stage === "wipe" && setStage("card")}>
+  return createPortal(<div className={"px-portal rn-intro rn-intro-at-" + stage + " rn-intro-theme-" + briefing.themeId} role="dialog" aria-modal="true" aria-labelledby="intro-title" style={themeVars(briefing.themeId)} onClick={() => stage === "wipe" && setStage("card")}>
     <div className="rn-intro-art" style={{ backgroundImage: "url(" + backdropUrl(briefing.themeId, "entry", "cinema") + ")" }} aria-hidden="true" />
     <div className="rn-intro-iris" aria-hidden="true" />
     <div className="rn-intro-title">

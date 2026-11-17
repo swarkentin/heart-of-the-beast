@@ -8,6 +8,7 @@ import { backdropRef, themeTitle } from "../scenes";
 import { Camp, ExpeditionResult, FloorStatus } from "./Camp";
 import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
+import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
 import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
@@ -310,7 +311,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: armedAction && canAct ? { label: armedAction.label.toUpperCase(), disabled: false, fallen: armedAction.pick === "fallen" } : undefined, onAid: aid });
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
-  return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}
+  return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))} style={themeVars(room.themeId || run.themeId)}
     center={<div className="rn-location"><b>{room.name}</b><span>{(run.dungeon ?? 1) > 1 ? "DUNGEON " + run.dungeon + " · " : ""}{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
     tools={<>
       {!spectator ? <button type="button" className="px-button px-button-small rn-view-switch" onClick={() => setView(view === "player" ? "cast" : "player")} aria-pressed={view === "cast"}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}

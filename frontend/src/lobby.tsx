@@ -166,8 +166,8 @@ export function Bust({ classId, skin, locked }: { classId?: string; skin?: HeroS
 
 function Torch() { return <span className="px-torch" aria-hidden="true" />; }
 
-export function GameShell({ status, children, className, center, tools }: { status: string; children: ReactNode; className?: string; center?: ReactNode; tools?: ReactNode }) {
-  return <main className={"px-screen" + (className ? " " + className : "")}>
+export function GameShell({ status, children, className, center, tools, style }: { status: string; children: ReactNode; className?: string; center?: ReactNode; tools?: ReactNode; style?: CSSProperties }) {
+  return <main className={"px-screen" + (className ? " " + className : "")} style={style}>
     <header className="px-topbar">
       <a className="px-brand" href="#" aria-label="Heart of the Beast"><span className="px-emblem" aria-hidden="true" /><span>HEART OF THE BEAST</span></a>
       {center}

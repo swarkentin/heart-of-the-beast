@@ -15,7 +15,7 @@
   position: relative; height: 100dvh; overflow: hidden auto; overscroll-behavior-y: contain; scrollbar-gutter: stable;
   padding: 0 clamp(10px, 3vw, 40px) 24px;
   color: var(--ink); font: 22px/1.15 var(--copy);
-  background: var(--edge) url("/art/ui/tile-wall.png") 50% 0 / calc(32px * var(--px)) auto;
+  background: var(--edge) var(--ui-wall, url("/art/ui/tile-wall.png")) 50% 0 / calc(32px * var(--px)) auto;
   image-rendering: pixelated;
 }
 .px-screen::before { content: ""; position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 18%, #3a264466 0, #0a0714cc 70%, #0a0714 100%); }
@@ -53,7 +53,7 @@
 .px-emblem-large { width: calc(32px * (var(--px) + 1)); height: calc(32px * (var(--px) + 1)); }
 
 /* ---------- frames, type and controls ---------- */
-.px-panel { border: calc(6px * var(--px)) solid transparent; border-image: url("/art/ui/frame-panel.png") 6 fill / calc(6px * var(--px)) stretch; padding: 6px 10px; filter: drop-shadow(0 calc(2px * var(--px)) 0 #05030a); }
+.px-panel { border: calc(6px * var(--px)) solid transparent; border-image: var(--ui-frame, url("/art/ui/frame-panel.png")) 6 fill / calc(6px * var(--px)) stretch; padding: 6px 10px; filter: drop-shadow(0 calc(2px * var(--px)) 0 #05030a); }
 .px-eyebrow, .px-label { font: 18px/1.1 var(--copy); letter-spacing: .14em; color: var(--gold); text-transform: uppercase; }
 .px-label { color: var(--muted); letter-spacing: .1em; }
 .px-copy { color: #cfc6dc; max-width: 62ch; }
@@ -61,7 +61,7 @@
 .px-screen h1 { font-size: 20px; } .px-screen h2 { font-size: 16px; } .px-screen h3 { font-size: 20px; }
 .px-error { color: var(--bad); }
 
-.px-button { position: relative; min-height: calc(14px * var(--px)); border: calc(5px * var(--px)) solid transparent; border-image: url("/art/ui/button.png") 5 fill / calc(5px * var(--px)) stretch; padding: 0 12px calc(1px * var(--px)); background: none; color: var(--ink); font: 12px/1.3 var(--display); text-shadow: 0 2px 0 #2a2440; cursor: pointer; }
+.px-button { position: relative; min-height: calc(14px * var(--px)); border: calc(5px * var(--px)) solid transparent; border-image: var(--ui-button, url("/art/ui/button.png")) 5 fill / calc(5px * var(--px)) stretch; padding: 0 12px calc(1px * var(--px)); background: none; color: var(--ink); font: 12px/1.3 var(--display); text-shadow: 0 2px 0 #2a2440; cursor: pointer; }
 .px-button-primary { border-image-source: url("/art/ui/button-primary.png"); color: #2a1a08; text-shadow: 0 1px 0 #f3d38c; }
 .px-button-danger { border-image-source: url("/art/ui/button-danger.png"); text-shadow: 0 2px 0 #4a1f24; }
 .px-button-large { font-size: 16px; padding-inline: 22px; min-height: calc(18px * var(--px)); }

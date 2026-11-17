@@ -19,18 +19,24 @@ const bevel = (img, x, y, w, h, r, t = 1) => {
 };
 
 /** 24x24, slice 6: stone band with gold corner studs and a gold inlay. */
-export function panelFrame() {
+/**
+ * A frame palette: rim (the bevelled band), trim (corner studs and brackets), slate (the viewport band) and the
+ * panel fill. The default is the Catacombs kit; uiPalette() builds one for another dungeon theme.
+ */
+export const DEFAULT_FRAME = { rim: R.stone, trim: R.gold, slate: R.slate, panel: C.panel, pit: C.pit };
+export const uiPalette = ({ rim, trim, slate, panel, pit }) => ({ rim: ramp(rim, T), trim: ramp(trim, T), slate: ramp(slate, T), panel: hex(panel), pit: hex(pit) });
+export function panelFrame(P = DEFAULT_FRAME) {
   const g = new Img(24, 24); fill(g, 0, 0, 24, 24, C.edge);
-  bevel(g, 1, 1, 22, 22, R.stone); fill(g, 4, 4, 16, 16, C.edge); fill(g, 5, 5, 14, 14, R.gold.dark); fill(g, 6, 6, 12, 12, C.panel);
-  for (const [x, y] of [[1, 1], [19, 1], [1, 19], [19, 19]]) { fill(g, x - 1, y - 1, 6, 6, C.edge); bevel(g, x, y, 4, 4, R.gold); g.plot(x + 1, y + 1, R.gold.hi, 1); }
+  bevel(g, 1, 1, 22, 22, P.rim); fill(g, 4, 4, 16, 16, C.edge); fill(g, 5, 5, 14, 14, P.trim.dark); fill(g, 6, 6, 12, 12, P.panel);
+  for (const [x, y] of [[1, 1], [19, 1], [1, 19], [19, 19]]) { fill(g, x - 1, y - 1, 6, 6, C.edge); bevel(g, x, y, 4, 4, P.trim); g.plot(x + 1, y + 1, P.trim.hi, 1); }
   return g;
 }
 /** 16x16, slice 4: recessed slot. `sel` draws the gold selected state. */
-export function insetFrame(sel = false) {
-  const g = new Img(16, 16), r = sel ? R.gold : R.slate;
+export function insetFrame(sel = false, P = DEFAULT_FRAME) {
+  const g = new Img(16, 16), r = sel ? P.trim : P.slate;
   fill(g, 0, 0, 16, 16, C.edge); fill(g, 1, 1, 14, 14, sel ? r.mid : r.dark);
   fill(g, 1, 1, 14, 1, sel ? r.light : r.deep); fill(g, 1, 1, 1, 14, sel ? r.light : r.deep); fill(g, 1, 14, 14, 1, sel ? r.dark : r.mid); fill(g, 14, 1, 1, 14, sel ? r.dark : r.mid);
-  fill(g, 2, 2, 12, 12, C.edge); fill(g, 3, 3, 10, 10, sel ? mix(C.panel, R.gold.dark, 0.22) : C.pit);
+  fill(g, 2, 2, 12, 12, C.edge); fill(g, 3, 3, 10, 10, sel ? mix(P.panel, P.trim.dark, 0.22) : P.pit);
   for (const [x, y] of [[0, 0], [15, 0], [0, 15], [15, 15]]) clear(g, x, y);
   return g;
 }
@@ -43,7 +49,8 @@ export function buttonFrame(r) {
   return g;
 }
 /** 32x32, slice 10: iron viewport frame with gold corner brackets. The centre is transparent. */
-export function viewFrame() {
+export function viewFrame(P = DEFAULT_FRAME) {
+  const R = { slate: P.slate, gold: P.trim };
   const g = new Img(32, 32); fill(g, 0, 0, 32, 32, C.edge); bevel(g, 1, 1, 30, 30, R.slate); fill(g, 2, 2, 28, 28, R.slate.mid); fill(g, 2, 2, 28, 1, R.slate.light); fill(g, 2, 2, 1, 28, R.slate.light); fill(g, 2, 29, 28, 1, R.slate.dark); fill(g, 29, 2, 1, 28, R.slate.dark);
   fill(g, 5, 5, 22, 22, C.edge);
   for (let y = 6; y < 26; y++) for (let x = 6; x < 26; x++) clear(g, x, y);
@@ -77,8 +84,8 @@ export function statusFx() {
 }
 export const buttons = () => ({ "button": buttonFrame(R.stone), "button-primary": buttonFrame(R.gold), "button-danger": buttonFrame(R.red) });
 
-const crop = (img, x0, y0, w, h) => { const o = new Img(w, h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let k = 0; k < 4; k++) o.d[(y * w + x) * 4 + k] = img.d[((y + y0) * img.w + x + x0) * 4 + k]; return o; };
-const toward = (img, c, amt) => { for (let i = 0; i < img.d.length; i += 4) if (img.d[i + 3]) for (let k = 0; k < 3; k++) img.d[i + k] = Math.round(img.d[i + k] + (c[k] - img.d[i + k]) * amt); return img; };
+export const crop = (img, x0, y0, w, h) => { const o = new Img(w, h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let k = 0; k < 4; k++) o.d[(y * w + x) * 4 + k] = img.d[((y + y0) * img.w + x + x0) * 4 + k]; return o; };
+export const toward = (img, c, amt) => { for (let i = 0; i < img.d.length; i += 4) if (img.d[i + 3]) for (let k = 0; k < 3; k++) img.d[i + k] = Math.round(img.d[i + k] + (c[k] - img.d[i + k]) * amt); return img; };
 
 /** Seamless 32x32 catacomb brickwork. Drawn 3x3 and cropped so the bevels wrap. */
 export function wallTile() {
