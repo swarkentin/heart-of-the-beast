@@ -111,5 +111,39 @@ export default {
         },
       }),
     },
+    {
+      id: "firebug", name: "Firebug", role: "Arsonist; lights a dynamite bundle that blows unless he's dropped first", attack: "lunge", special: "vent", death: "explode",
+      attackName: "Lit match", specialName: "Dynamite bundle", fx: { attack: ["claw"], special: ["burst", "burst"] }, fxc: ["#ff8a3a", "#ffffff"],
+      mats: { stick: "#c4283c", vest: "#5a4a3a" },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 16, legT: 2.6, legMat: "suit", armMat: "shirt", armT: 2.2, torsoH: 14, torsoW: 6, headR: 5.6, hipW: 3, footW: 4,
+        torso: torsos.slab({ mat: "vest", belt: "band" }), head: fedora({ cigar: true }),
+        handR: (c, x, y, side, pp) => { for (let i = -1; i <= 1; i++) c.part().rect(x + i * 2 * s - 1 * s, y - 6 * s, 2 * s, 8 * s, "stick"); c.part().rect(x - 3 * s, y - 3 * s, 6 * s, 1.4 * s, "wood"); c.part().line(x, y - 6 * s, x + 2 * s, y - 10 * s, "bone", 1); c.part().rect(x + 1.5 * s, y - 11 * s - Math.abs(Math.sin(pp.wave)) * s, 1.6 * s, 1.6 * s, "ember"); },
+        handL: hands.fist("skin"),
+      }),
+    },
+    {
+      id: "hired_muscle", name: "Hired Muscle", role: "Bodyguard; stands in front of the boss's people and soaks the heat", attack: "smash", special: "guard", death: "topple",
+      attackName: "Haymaker", specialName: "Step in front", fx: { attack: ["shock", "burst"], special: [] },
+      mats: { coat2: "#3a3046" },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 15, legT: 5, legMat: "suit", armMat: "coat2", armT: 5.2, torsoH: 19, torsoW: 11, headR: 5.2, hipW: 5, footW: 7, armOut: 3, armDrop: 15, neck: 0,
+        torso: torsos.coat({ mat: "coat2", shirt: "shirt", tie: "tie" }), head: fedora(),
+        handL: (c, x, y) => c.part().rect(x - 3.5 * s, y - 2 * s, 7 * s, 6 * s, "skin"),
+        handR: (c, x, y) => { c.part().rect(x - 3.5 * s, y - 2 * s, 7 * s, 6 * s, "skin"); c.part().rect(x - 3.5 * s, y - 2 * s, 7 * s, 1.6 * s, "steel"); },
+      }),
+    },
+    {
+      id: "ledger_ghost", tier: "boss", name: "The Ledger Ghost", role: "Lair boss; a dead bookkeeper who fades in and out and balances the books with a barrier", attack: "cast", special: "wail", death: "dissolve",
+      attackName: "Overdue notice", specialName: "Audit", fx: { attack: ["orb"], special: ["ring", "rise"] },
+      mats: { page: "#efe2c6", book: "#5a1f2a" },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 18, r: 12, bobAmp: 2, tentacles: { n: 3, len: 14, th: 4, mat: "ghost", spread: 14, y: 8, amp: 3 },
+        body: (c, G) => { torsos.coat({ mat: "suit", shirt: "shirt", tie: "tie" })(c, { cx: G.cx, topY: G.by - 8 * s, s, TW: 9 * s, TH: 14 * s }); },
+        face: (c, G, pp) => fedora({ skin: "ghost", glow: true })(c, { x: G.cx, y: G.by - 15 * s, r: 6 * s, s }, pp),
+        handL: (c, x, y) => { c.part().rect(x - 6 * s, y - 4 * s, 12 * s, 9 * s, "book"); c.part().rect(x - 5 * s, y - 3 * s, 10 * s, 7 * s, "page"); for (let i = 0; i < 3; i++) c.part().rect(x - 4 * s, y - 2 * s + i * 2 * s, 8 * s, 0.8 * s, "suit"); },
+        handR: (c, x, y, side, pp) => { c.part().line(x, y, x + 3 * s, y - 8 * s, "wood", 1.2 * s); c.part().rect(x + 2.5 * s, y - 9 * s, 1.4 * s, 1.4 * s, "glow"); },
+      }),
+    },
   ],
 };

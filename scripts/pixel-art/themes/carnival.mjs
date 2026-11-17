@@ -129,5 +129,41 @@ export default {
         handR: (c, x, y) => { for (let i = -2; i <= 2; i++) c.part().line(x + i * 1.8 * s, y, x + i * 2.6 * s, y + 8 * s, "white", Math.max(1, 1.2 * s), 1); },
       }),
     },
+    {
+      id: "mirror_jester", name: "Mirror Jester", role: "Trickster; on alternate turns it is a reflection and half your skills pass through", attack: "slash", special: "spin", death: "dissolve",
+      attackName: "Shard cut", specialName: "Hall of mirrors", fx: { attack: ["slash"], special: ["ring"] },
+      mats: { glass: { color: "#c9e8ff", emissive: true, pulse: true } },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 16, legT: 2.4, legMat: "purple", armMat: "red", armT: 2.2, torsoH: 14, torsoW: 6, headR: 5.8, hipW: 3, footW: 4,
+        torso: (c, G) => { torsos.slab({ mat: "red" })(c, G); c.part().rect(G.cx, G.topY, G.TW, G.TH, "blue"); },
+        head: clownHead({ jester: true, skin: "white" }),
+        handR: (c, x, y, side, pp) => { c.part().line(x, y, x, y + 5 * s, "gold", 1.4 * s); c.part().ell(x, y - 3 * s, 4 * s, 5 * s, "gold"); c.part().ell(x, y - 3 * s, 3 * s, 4 * s, "glass"); },
+        handL: (c, x, y, side, pp) => blade(c, x, y, -100 + pp.wR, 10 * s, 1.8, "glass", null, s),
+      }),
+    },
+    {
+      id: "fire_eater", name: "Fire Eater", role: "Sideshow performer wreathed in flame; plain attacks against him get burned", attack: "spit", special: "roar", death: "topple",
+      attackName: "Fire breath", specialName: "Flame wreath", fx: { attack: ["stream"], special: ["ring", "rise"] }, fxc: ["#ff8a3a", "#ffe08a"],
+      mats: { fire: { color: "#ff8a3a", emissive: true, pulse: true } },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 15, legT: 3.2, legMat: "purple", armMat: "skin", armT: 2.8, torsoH: 15, torsoW: 7.5, headR: 5.6, hipW: 3.5, footW: 5,
+        back: (c, G, pp) => { for (const k of [-1, 1]) flame(c, G.cx + k * 11 * s, G.topY + 14 * s, pp, s * 0.9, "fire"); },
+        torso: torsos.slab({ mat: "skin", belt: "gold" }), head: heads.ghoul({ skin: "skin", hair: "red", bone: "white" }),
+        handR: (c, x, y, side, pp) => { c.part().line(x, y + 2 * s, x + 1 * s, y - 8 * s, "wood", 1.6 * s); flame(c, x + 1 * s, y - 8 * s, pp, s, "fire"); },
+        handL: (c, x, y, side, pp) => { c.part().line(x, y + 2 * s, x - 1 * s, y - 8 * s, "wood", 1.6 * s); flame(c, x - 1 * s, y - 8 * s, pp, s, "fire"); },
+      }),
+    },
+    {
+      id: "calliope_golem", tier: "boss", name: "The Calliope Golem", role: "Lair boss; its steam pipes play a deafening chord and call up wind-up performers", attack: "smash", special: "wail", death: "explode",
+      attackName: "Organ slam", specialName: "Grand chord", fx: { attack: ["shock", "burst"], special: ["ring", "puffs"] },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 14, legT: 5, legMat: "wood", armMat: "red", armT: 4.6, torsoH: 20, torsoW: 11, headR: 5.4, hipW: 5, footW: 7, armOut: 3, armDrop: 15, neck: 0,
+        back: (c, G, pp) => { for (let i = -3; i <= 3; i++) { const h = 14 - Math.abs(i) * 2 + (i % 2 ? Math.sin(pp.wave) : 0); c.part().rect(G.cx + i * 3.2 * s - 1.2 * s, G.topY - h * s, 2.4 * s, (h + 4) * s, "gold"); c.part().rect(G.cx + i * 3.2 * s - 1.2 * s, G.topY - h * s, 2.4 * s, 1 * s, "void"); } },
+        torso: (c, G) => { torsos.plate({ steel: "red", cloth: "purple", trim: "gold" })(c, G); for (let i = 0; i < 5; i++) c.part().rect(G.cx - 6 * s + i * 2.6 * s, G.topY + 9 * s, 1.6 * s, 4 * s, i % 2 ? "void" : "white"); },
+        head: clownHead({ hair: "candy2" }),
+        handL: (c, x, y) => c.part().ell(x, y + 1 * s, 4.5 * s, 4 * s, "gold"),
+        handR: (c, x, y) => c.part().ell(x, y + 1 * s, 4.5 * s, 4 * s, "gold"),
+      }),
+    },
   ],
 };

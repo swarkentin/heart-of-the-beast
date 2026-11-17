@@ -151,7 +151,7 @@ npm run art:verify    # fail if art is stale, a frame is empty or clipped, or a 
 npm run art:gallery   # regenerate docs/art/heroes.png, hero-tiers.png, hero-variants.png and bestiary.png
 ```
 
-`art:verify` enforces: unique creature ids, at least 5 monsters and 1-3 bosses per theme, sheets byte-identical
+`art:verify` enforces: unique creature ids, at least 5 monsters and 1-4 bosses per theme (three dungeon bosses and a lair boss), sheets byte-identical
 to a fresh render, correct dimensions, no empty frames, no clipping of idle/hit frames, and an idle loop that
 actually animates. Oversized creatures are automatically scaled down (same pixel density) until their idle and
 hit frames fit their cell. It also checks that hero and interface

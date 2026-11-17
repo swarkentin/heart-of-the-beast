@@ -48,6 +48,7 @@ func startCombatRound(room *Room, now time.Time) {
 		}
 	}
 	applyBossMechanics(room, current, run.CombatRoundNumber)
+	applyTraitRoundStart(room, current.Encounter, run.CombatRoundNumber)
 	rules := floorRulesFor(run)
 	for enemyIndex := range current.Encounter.Enemies {
 		enemy := &current.Encounter.Enemies[enemyIndex]
@@ -55,7 +56,7 @@ func startCombatRound(room *Room, now time.Time) {
 			enemy.Intent = nil
 			continue
 		}
-		intent := bossIntentOverride(enemy, buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players), len(players))
+		intent := traitIntentOverride(enemy, bossIntentOverride(enemy, buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players), len(players)), len(players))
 		if intent.Damage > 0 {
 			// Floor modifiers and enrage are part of the telegraph, so what the party sees is what will land.
 			intent.Damage += rules.EnemyDamage + enemy.DamageBonus
@@ -263,6 +264,10 @@ func resolveCombatRound(room *Room, now time.Time) {
 				addCombatImpact(run, roundNumber, "enemy_heal", enemy.Name+" drains life and restores "+itoa(transition.Applied)+" health.", "heal", enemy.ID, "enemy", transition.Applied)
 			}
 		}
+		if intent.Kind == "detonate" && enemy.Health > 0 {
+			enemy.Health = 0
+			addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is destroyed in its own blast.")
+		}
 		enemy.Intent = nil
 	}
 
@@ -311,6 +316,11 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			if reward, ok := defaultRunRewardCatalog.Reward(rewardID); ok {
 				applyRunReward(room, reward, roundNumber, "miniboss-"+current.ID)
+			}
+		}
+		if current.RoomType == string(floorRoomLair) {
+			if reward, ok := defaultRunRewardCatalog.Reward("encounter.lair"); ok {
+				applyRunReward(room, reward, roundNumber, "lair-"+current.ID)
 			}
 		}
 		if isBossRoom(current) && run.Generator >= ExpeditionGenerator {

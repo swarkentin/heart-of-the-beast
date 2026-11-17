@@ -12,7 +12,7 @@ export const BACKDROP_SIZE = { width: 275, height: 155 } as const;
 
 export function backdropKind(room: Pick<BackdropRoom, "id" | "roomType">): BackdropKind {
   if (room.id.endsWith("entry")) return "entry";
-  if (room.roomType === "boss" || room.roomType === "miniboss") return "boss";
+  if (room.roomType === "boss" || room.roomType === "miniboss" || room.roomType === "lair") return "boss";
   if (room.roomType === "event") return "event";
   if (room.roomType === "reward") return "vault";
   return "corridor";

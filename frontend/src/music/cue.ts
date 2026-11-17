@@ -86,7 +86,7 @@ export function deriveMusicCue(run: CueRun | undefined | null): MusicCue {
   let state: MusicState = "exploration";
   if (run.phase === "completed") state = "victory";
   else if (run.phase === "failed") state = "defeat";
-  else if (run.phase === "combat") state = room?.roomType === "boss" || roomId === "warden" ? "boss" : room?.roomType === "miniboss" ? "miniboss" : "combat";
+  else if (run.phase === "combat") state = room?.roomType === "boss" || room?.roomType === "lair" || roomId === "warden" ? "boss" : room?.roomType === "miniboss" ? "miniboss" : "combat";
   else if (run.phase === "intermission" || (room?.event && !room.event.resolved)) state = "event";
   const cue: MusicCue = { theme, state, depth, variant: variantFor(theme, roomId), roomId };
   if (state === "boss") {

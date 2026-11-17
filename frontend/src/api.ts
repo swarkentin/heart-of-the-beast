@@ -1,7 +1,8 @@
 // The room API as the browser sees it: snapshot types and the one request helper.
 
 export type ApiEnemyIntent = { kind: string; label: string; damage: number; heal?: number; targetPlayerId?: string; targetAll?: boolean; interruptible?: boolean };
-export type ApiEnemy = { id: string; name: string; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; markedDamage?: number; stun?: number; bleed?: number; bleedRounds?: number; tauntedBy?: string; intent?: ApiEnemyIntent; mechanics?: string[]; barrier?: number; enraged?: boolean; summoned?: boolean };
+export type ApiEnemy = { id: string; name: string; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; markedDamage?: number; stun?: number; bleed?: number; bleedRounds?: number; tauntedBy?: string; intent?: ApiEnemyIntent; mechanics?: string[]; barrier?: number; enraged?: boolean; summoned?: boolean; traits?: ApiMonsterTrait[]; shield?: number; phased?: boolean; fuseIn?: number; split?: boolean; avenged?: boolean };
+export type ApiMonsterTrait = { kind: string; amount?: number; every?: number; label?: string };
 /** `actorId` names the acting player on player actions; `auto` marks an action the server chose at the round deadline. */
 export type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number; actorId?: string; auto?: boolean };
 export type ApiExit = { id: string; destination: string; label: string; description?: string };

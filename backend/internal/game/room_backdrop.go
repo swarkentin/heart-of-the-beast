@@ -19,7 +19,7 @@ func RoomBackdropKind(room *DungeonRoom) art.RoomKind {
 	switch {
 	case strings.HasSuffix(room.ID, "entry"):
 		return art.RoomKindEntry
-	case room.RoomType == "boss" || room.RoomType == "miniboss":
+	case room.RoomType == "boss" || room.RoomType == "miniboss" || room.RoomType == "lair":
 		return art.RoomKindBoss
 	case room.RoomType == "event":
 		return art.RoomKindEvent

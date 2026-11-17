@@ -1,6 +1,6 @@
 // Dreamscapes: surreal creatures whose shapes and proportions don't obey normal rules. Indigo + candy pink + mint.
 import { biped, floater, crawler, blob, heads, torsos, blade, ragged, tentacle } from "../kit.mjs";
-import { eyeball, fangs, star, spike } from "../parts.mjs";
+import { eyeball, fangs, star, spike, wing } from "../parts.mjs";
 
 const smile = (c, x, y, w, h, jaw, mat = "void", teeth = "cream") => { c.part().rect(x - w / 2, y, w, h + jaw, mat); fangs(c, x, y, w, Math.max(4, Math.round(w / 2.2)), Math.max(1.4, h * 0.5), teeth, 1); };
 
@@ -108,6 +108,42 @@ export default {
         },
         head: (c, H, pp) => { const { x, y, r, s } = H; c.part().ell(x, y, r, r * 1.05, "cream"); c.part().ell(x, y - r * 1.05, r * 0.4, r * 0.3, "pink"); for (const k of [-1, 1]) { c.part().ell(x + k * r * 0.42, y - r * 0.1, r * 0.2, r * 0.2, "void"); c.part().ell(x + k * r * 0.42, y + r * 0.35, r * 0.18, r * 0.28, "mint"); } c.part().ell(x, y + r * 0.55, r * 0.22, r * 0.2 + pp.jaw * r * 0.2, "void"); },
         handL: (c, x, y) => { c.part().ell(x, y + 2 * s, 5 * s, 5 * s, "cream"); }, handR: (c, x, y) => { c.part().ell(x, y + 2 * s, 5 * s, 5 * s, "cream"); },
+      }),
+    },
+    {
+      id: "doppel_wisp", name: "Doppel Wisp", role: "Two-faced wisp; on alternate turns it hides behind its double", attack: "cast", special: "spin", death: "dissolve",
+      attackName: "Mimic bolt", specialName: "Swap faces", fx: { attack: ["orb"], special: ["ring"] },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 18, r: 10, bobAmp: 2.2, tentacles: { n: 3, len: 12, th: 3, mat: "mint", spread: 10, y: 6 },
+        body: (c, G, pp) => { const o = Math.sin(pp.wave) * 4 * s; c.part().ell(G.cx - 4 * s - o, G.by, 9 * s, 10 * s, "mint"); c.part().ell(G.cx + 4 * s + o, G.by, 9 * s, 10 * s, "pink"); },
+        face: (c, G, pp) => { const o = Math.sin(pp.wave) * 4 * s; for (const [k, m] of [[-1, "dark"], [1, "dark"]]) { const fx = G.cx + k * (6 * s + o * 1); c.part().ell(fx - 2 * s, G.by - 2 * s, 1.4 * s, 1.8 * s, m); c.part().ell(fx + 2 * s, G.by - 2 * s, 1.4 * s, 1.8 * s, m); } smile(c, G.cx - 6 * s - o, G.by + 3 * s, 6 * s, 1.4 * s, pp.jaw * 2 * s); c.part().rect(G.cx + 3 * s + o, G.by + 4 * s, 6 * s, 1.4 * s, "dark"); },
+        handL: () => {}, handR: () => {},
+      }),
+    },
+    {
+      id: "lullaby_moth", name: "Lullaby Moth", role: "Warder; dusts an ally with a sleepy shield", attack: "cast", special: "guard", death: "dissolve",
+      attackName: "Drowsy dust", specialName: "Cradle song", fx: { attack: ["puffs"], special: ["ring", "rise"] },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 20, r: 6, bobAmp: 2.4,
+        back: (c, G, pp) => { const f = (Math.sin(pp.wave * 2) + 1) / 2; for (const k of [-1, 1]) { wing(c, G.cx + k * 2 * s, G.by - 2 * s, 17 * s, 12 * s, "dream", { side: k, flap: f }); c.part().ell(G.cx + k * 10 * s, G.by - 5 * s - f * 4 * s, 2.4 * s, 2.4 * s, "gold"); } },
+        body: (c, G) => { c.part().ell(G.cx, G.by + 3 * s, 4 * s, 10 * s, "cream"); for (let i = 0; i < 3; i++) c.part().rect(G.cx - 3.5 * s, G.by + 2 * s + i * 3 * s, 7 * s, 1 * s, "pink"); },
+        face: (c, G) => { c.part().ell(G.cx, G.by - 6 * s, 4 * s, 3.6 * s, "cream"); for (const k of [-1, 1]) { c.part().ell(G.cx + k * 2 * s, G.by - 6.5 * s, 1.2 * s, 1.2 * s, "iris"); c.part().line(G.cx + k * 1 * s, G.by - 9 * s, G.cx + k * 5 * s, G.by - 14 * s, "dark", 1); } },
+        handL: () => {}, handR: () => {},
+      }),
+    },
+    {
+      id: "nightmare_mare", tier: "boss", name: "The Nightmare Mare", role: "Lair boss; gallops between dream and waking behind a veil of sleep", attack: "lunge", special: "roar", death: "dissolve",
+      attackName: "Trample", specialName: "Night terror", fx: { attack: ["claw", "burst"], special: ["ring", "rise"] },
+      mats: { hide: "#2a1a5a", mane: { color: "#ff5fb0", emissive: true, pulse: true } },
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 20, bw: 14, bh: 8, pairs: 2, legMat: "hide", legT: 3, leg1: 11, leg2: 12, legOut: 2, legFan: 2,
+        body: (c, G, pp) => { c.part().ell(G.cx, G.by, 15 * s, 8 * s, "hide"); tentacle(c, G.cx - 14 * s, G.by - 3 * s, 14 * s, 3 * s, "mane", { wave: pp.wave, amp: 2 * s, dx: -1, dy: 0.6 }); for (const [dx, dy] of [[-5, -3], [4, 1], [9, -4]]) star(c, G.cx + dx * s, G.by + dy * s, 1.8 * s, "gold"); },
+        head: (c, G, pp) => {
+          const nx = G.cx + 13 * s, ny = G.by - 6 * s, hx = nx + 7 * s + pp.reach * 3 * s, hy = ny - 9 * s + pp.lean * 0.4 * s;
+          c.part().line(nx, ny, hx - 2 * s, hy + 2 * s, "hide", 6 * s, 4.5 * s); for (let i = 0; i < 4; i++) spike(c, nx - 1 * s + i * 2.2 * s, ny - 2 * s - i * 2.6 * s, -150, 6 * s, 1.4 * s, "mane");
+          c.part().poly([[hx - 4 * s, hy - 3 * s], [hx + 9 * s, hy + 1 * s], [hx + 9 * s, hy + 5 * s + pp.jaw * 2 * s], [hx - 3 * s, hy + 4 * s]], "hide");
+          c.part().ell(hx + 1 * s, hy - 1 * s, 1.6 * s, 1.6 * s, "iris"); spike(c, hx, hy - 3 * s, -110, 6 * s, 1.2 * s, "cream");
+        },
       }),
     },
   ],

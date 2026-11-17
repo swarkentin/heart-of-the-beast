@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { MusicEngine } from "./music/engine";
 import { profileFor } from "./music/profiles";
 import type { EffectKind, MusicCue, ThemeId } from "./music/types";
@@ -44,6 +44,12 @@ export function playEffect(kind: EffectKind, theme: ThemeId) {
 
 export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], events: { round: number; kind: string; message: string }[], version: number) {
   const [settings, setSettings] = useState<AudioSettings>(readSettings);
+  // Whether the audio context is really playing. Sound can be enabled in settings and still be silent until the
+  // browser has seen a gesture, and a phone suspends audio again when the page goes to the background.
+  const [running, setRunning] = useState(engine.running);
+  useEffect(() => engine.onStateChange(() => setRunning(engine.running)), []);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const previous = useRef<{ roomId: string; phase: string; playerHealth: number; enemies: Record<string, number>; events: string[]; version: number } | null>(null);
   const cueRef = useRef(cue);
   cueRef.current = cue;
@@ -70,23 +76,17 @@ export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number,
     applyVolumes(settings);
   }, [settings]);
 
-  // Browsers require a user gesture before Web Audio can start. Keep sound enabled by default, then start it on
-  // the first interaction; the engine applies whatever cue is current at that moment.
+  // Browsers require a user gesture before Web Audio can start. Sound is enabled by default and starts on the next
+  // tap, click or key. Mobile browsers ignore pointerdown/touchstart for this (only the end of a tap counts), so
+  // listen for those, and keep listening until the context really runs: a failed attempt, or a phone suspending
+  // audio in the background, is retried on the next touch instead of leaving the game silent.
   useEffect(() => {
-    if (!settings.enabled) return;
-    let activated = false;
-    const activate = () => {
-      if (activated) return;
-      activated = true;
-      void engine.enable().then(() => { applyVolumes(settings); engine.setCue(cueRef.current); });
-    };
-    window.addEventListener("pointerdown", activate, { once: true, capture: true });
-    window.addEventListener("keydown", activate, { once: true, capture: true });
-    return () => {
-      window.removeEventListener("pointerdown", activate, true);
-      window.removeEventListener("keydown", activate, true);
-    };
-  }, [settings]);
+    if (!settings.enabled || running) return;
+    const activate = () => { void engine.enable().then(() => { applyVolumes(settingsRef.current); engine.setCue(cueRef.current); }); };
+    const kinds = ["pointerup", "touchend", "click", "keydown"] as const;
+    kinds.forEach(kind => window.addEventListener(kind, activate, { capture: true }));
+    return () => kinds.forEach(kind => window.removeEventListener(kind, activate, true));
+  }, [settings.enabled, running]);
 
   // The cue is derived from the authoritative snapshot, so a reconnect lands on the right score. The engine ignores
   // cues with an unchanged identity and crossfades otherwise.
@@ -119,19 +119,52 @@ export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number,
     previous.current = { roomId: cue.roomId, phase, playerHealth, enemies, events: eventKeys, version };
   }, [cue.roomId, cue.theme, phase, playerHealth, enemyHealths, events, version, settings.enabled]);
 
-  return { settings, enable, updateSettings, title: `THE SOUND OF ${profileFor(cue.theme).name.toUpperCase()}` };
+  /** One tap: start or unmute the sound, or mute it when it is playing. */
+  const toggle = useCallback(() => {
+    if (running && settings.enabled && !settings.muted) updateSettings({ muted: true });
+    else void enable();
+  }, [running, settings.enabled, settings.muted, enable, updateSettings]);
+
+  return { settings, running, enable, toggle, updateSettings, title: `THE SOUND OF ${profileFor(cue.theme).name.toUpperCase()}` };
 }
 
-export function AudioControls({ settings, onEnable, onChange, title = "THE SOUND OF THE CATACOMBS" }: {
+export type SoundState = { settings: AudioSettings; running: boolean; toggle: () => void };
+/** The game sound, for controls anywhere in the tree (the top-bar sound button, the title screen prompt). */
+export const SoundContext = createContext<SoundState | null>(null);
+
+/** What a player hears right now: "on", "muted", "off" (turned off in settings) or "waiting" (enabled, but the
+ * browser has not had the tap it needs to start audio). */
+export function soundStatus(sound: SoundState): "on" | "muted" | "off" | "waiting" {
+  if (!sound.settings.enabled) return "off";
+  if (!sound.running) return "waiting";
+  return sound.settings.muted ? "muted" : "on";
+}
+
+const SOUND_LABEL = { on: "SOUND ON", muted: "MUTED", off: "SOUND OFF", waiting: "TAP FOR SOUND" } as const;
+
+/** A one-tap sound toggle for the top bar, so turning sound on never means digging through a menu on a phone. */
+export function SoundButton({ large = false }: { large?: boolean }) {
+  const sound = useContext(SoundContext);
+  if (!sound) return null;
+  const status = soundStatus(sound);
+  if (large && status === "on") return null;
+  const playing = status === "on";
+  return <button type="button" className={"px-button " + (large ? "px-sound-prompt" : "px-button-small px-sound-button") + " px-sound-" + status} onClick={sound.toggle} aria-pressed={playing} aria-label={playing ? "Mute sound" : "Turn sound on"} title={playing ? "Mute sound" : "Turn sound on"}>
+    <span aria-hidden="true">{playing ? "♫" : "♪"}</span><span className="px-sound-text">{large ? "TURN ON SOUND" : SOUND_LABEL[status]}</span>
+  </button>;
+}
+
+export function AudioControls({ settings, running = true, onEnable, onChange, title = "THE SOUND OF THE CATACOMBS" }: {
   settings: AudioSettings;
+  running?: boolean;
   onEnable: () => void;
   onChange: (patch: Partial<AudioSettings>) => void;
   title?: string;
 }) {
   return <details className="audio-controls">
-    <summary aria-label="Audio settings">♫ SOUND {settings.enabled && !settings.muted ? "ON" : "OFF"}</summary>
+    <summary aria-label="Audio settings">♫ SOUND {settings.enabled && running && !settings.muted ? "ON" : "OFF"}</summary>
     <div className="audio-panel">
-      <div className="audio-panel-heading"><strong>{title}</strong><button onClick={() => settings.enabled ? onChange({ enabled: false }) : onEnable()}>{settings.enabled ? "TURN SOUND OFF" : "TURN SOUND ON"}</button><button onClick={() => onChange({ muted: !settings.muted })}>{settings.muted ? "UNMUTE" : "MUTE"}</button></div>
+      <div className="audio-panel-heading"><strong>{title}</strong><button onClick={() => settings.enabled && running ? onChange({ enabled: false }) : onEnable()}>{settings.enabled && running ? "TURN SOUND OFF" : "TURN SOUND ON"}</button><button onClick={() => onChange({ muted: !settings.muted })}>{settings.muted ? "UNMUTE" : "MUTE"}</button></div>
       {([
         ["master", "MASTER"],
         ["music", "MUSIC"],

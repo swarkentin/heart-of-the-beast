@@ -227,6 +227,15 @@ type Enemy struct {
 	// TauntedBy is the adventurer this enemy's single-target moves are forced onto for TauntRounds more turns.
 	TauntedBy   string `json:"tauntedBy,omitempty"`
 	TauntRounds int    `json:"tauntRounds,omitempty"`
+	// Traits are the monster's traits (monster_traits.go). Shield is what a warder's shield has left to absorb,
+	// Phased marks a phasing monster's half-damage turn, FuseIn counts the turns until a fuse detonates, Split
+	// marks a splitting monster that has split (or is the copy), and Avenged an avenger that has sworn vengeance.
+	Traits  []MonsterTrait `json:"traits,omitempty"`
+	Shield  int            `json:"shield,omitempty"`
+	Phased  bool           `json:"phased,omitempty"`
+	FuseIn  int            `json:"fuseIn,omitempty"`
+	Split   bool           `json:"split,omitempty"`
+	Avenged bool           `json:"avenged,omitempty"`
 }
 
 type CombatEvent struct {

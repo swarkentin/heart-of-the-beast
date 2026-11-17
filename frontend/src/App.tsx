@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
-import { AudioControls, useGameAudio } from "./audio";
+import { AudioControls, SoundContext, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
 import { RunScreen } from "./run/RunScreen";
@@ -71,7 +71,9 @@ export default function App() {
   const playerHp = (playerId ? run?.players[playerId]?.health : undefined) ?? 30;
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
   const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
-  const audioControls = <AudioControls settings={audio.settings} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
+  const audioControls = <AudioControls settings={audio.settings} running={audio.running} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
+  const sound = { settings: audio.settings, running: audio.running, toggle: audio.toggle };
+  const withSound = (screen: ReactElement) => <SoundContext.Provider value={sound}>{screen}</SoundContext.Provider>;
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
@@ -240,17 +242,17 @@ export default function App() {
   }
 
   if (!roomId || !token) {
-    return <TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={saveProfileName} />;
+    return withSound(<TitleScreen busy={busy} error={error} joinCode={joinCode} onJoinCode={setJoinCode} onCreate={() => void createRun()} onJoin={() => void joinRoom()} profile={profile} classes={classCatalog?.classes ?? []} rewards={classCatalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={saveProfileName} />);
   }
 
   if (!snapshot) {
-    return <ConnectingScreen message={error || "Connecting to the room…"} />;
+    return withSound(<ConnectingScreen message={error || "Connecting to the room…"} />);
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return withSound(<PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />);
   }
 
-  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
-    onCommand={sendCommand} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />;
+  return withSound(<RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
+    onCommand={sendCommand} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />);
 }

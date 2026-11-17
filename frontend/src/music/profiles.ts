@@ -15,6 +15,7 @@ const catacombs: ThemeProfile = {
     crypt_warden: { tempoMul: 1.12, transpose: 0, scale: "harmonicMinor", lead: "horn", note: "Regal funeral march: harmonic minor, brass lead, soul-drain tension" },
     ossuary_colossus: { tempoMul: 0.85, transpose: -5, fill: "anvil", lead: "sub", note: "Slow earth-shaking slams: a fifth lower, anvil fills, sub-bass melody" },
     pale_archivist: { tempoMul: 1.25, transpose: 2, scale: "phrygian", lead: "musicBox", extraFx: "whisper", note: "Restless scholar: phrygian music-box runs over whispering stacks" },
+    tolling_abbot: { tempoMul: 0.75, transpose: -5, scale: "harmonicMinor", fill: "tom", lead: "bell", note: "Bell-tower vigil: slow harmonic-minor bells and tolling toms" },
   },
 };
 
@@ -31,6 +32,7 @@ const scifi: ThemeProfile = {
     containment_mech: { tempoMul: 0.95, transpose: -5, fill: "anvil", lead: "sub", note: "Hydraulic stomp: low, heavy, anvil-struck fills" },
     overseer_core: { tempoMul: 1.3, transpose: 0, scale: "diminished", lead: "pluck", extraFx: "beep", note: "Glitching machine mind: fast diminished plucks and beeps" },
     patient_zero: { tempoMul: 1, transpose: -2, scale: "locrian", lead: "warble", extraFx: "swell", note: "Organic horror: locrian, wavering voice, swelling noise" },
+    specimen_omega: { tempoMul: 1.15, transpose: -3, scale: "locrian", lead: "warble", extraFx: "beep", note: "Escaped specimen: locrian warble over containment alarms" },
   },
 };
 
@@ -47,6 +49,7 @@ const mobster: ThemeProfile = {
     the_don: { tempoMul: 0.9, transpose: -5, lead: "horn", note: "Menacing slow swing: low muted-brass lead" },
     spectral_kingpin: { tempoMul: 1, transpose: 0, scale: "diminished", lead: "glass", extraFx: "swell", note: "Ghost boss: diminished glass tones and swelling haze" },
     black_sedan: { tempoMul: 1.35, transpose: -2, fill: "tom", lead: "sub", extraFx: "carHorn", note: "Getaway chase: fast, engine-low, horn stabs" },
+    ledger_ghost: { tempoMul: 0.95, transpose: 0, scale: "diminished", lead: "musicBox", extraFx: "whisper", note: "Haunted books: diminished music-box and whispered sums" },
   },
 };
 
@@ -63,6 +66,7 @@ const sunken: ThemeProfile = {
     drowned_king: { tempoMul: 1, transpose: 0, scale: "minor", fill: "tom", lead: "bell", note: "Sunken court dirge: minor bells over drum-like toms" },
     abyssal_angler: { tempoMul: 0.8, transpose: -7, extraFx: "sonar", note: "Stalking depths: slow, a fifth lower, relentless sonar" },
     ancient_guardian: { tempoMul: 0.7, transpose: -12, fill: "anvil", lead: "sub", note: "Monolith waking: an octave down, anvil strikes" },
+    pearl_leviathan: { tempoMul: 0.85, transpose: -5, scale: "lydian", lead: "glass", extraFx: "sonar", note: "Pearl grotto: slow lydian glass and distant sonar" },
   },
 };
 
@@ -79,6 +83,7 @@ const clockwork: ThemeProfile = {
     brass_colossus: { tempoMul: 0.9, transpose: -5, fill: "anvil", lead: "horn", note: "Furnace march: heavy brass over anvil fills" },
     the_clockmaker: { tempoMul: 1.3, transpose: 0, scale: "phrygianDominant", lead: "musicBox", note: "Intricate artificer: fast music-box in phrygian dominant" },
     leviathan_boiler: { tempoMul: 1.1, transpose: -7, extraFx: "steam", fill: "clank", note: "Living engine: low roar, venting steam, clanking fills" },
+    grand_orrery: { tempoMul: 1.2, transpose: 2, scale: "wholeTone", lead: "arp", fill: "clank", note: "Turning heavens: whole-tone arpeggios and ticking gears" },
   },
 };
 
@@ -95,6 +100,7 @@ const carnival: ThemeProfile = {
     the_ringmaster: { tempoMul: 1.2, transpose: 2, lead: "horn", note: "Ringleader fanfare: brass over the waltz" },
     laughing_big_top: { tempoMul: 1.4, transpose: 0, scale: "wholeTone", extraFx: "honk", note: "Cackling tent: fast whole-tone, honking" },
     harlequin_horror: { tempoMul: 1.25, transpose: -2, scale: "diminished", lead: "musicBox", note: "Jerky contortionist: diminished music-box" },
+    calliope_golem: { tempoMul: 1.15, transpose: -2, scale: "phrygianDominant", lead: "horn", extraFx: "steam", note: "Steam organ: brassy phrygian dominant and hissing pipes" },
   },
 };
 
@@ -111,6 +117,7 @@ const jungle: ThemeProfile = {
     heartroot_titan: { tempoMul: 0.85, transpose: -7, fill: "tom", lead: "sub", note: "Ancient grove: a fifth lower, slow earth drums" },
     mother_lantern: { tempoMul: 1, transpose: 2, scale: "lydian", lead: "glass", extraFx: "swell", note: "Luminous bloom: bright lydian glass and swells" },
     apex_maw: { tempoMul: 1.3, transpose: -2, scale: "phrygian", fill: "bongo", note: "Apex predator: fast phrygian with bongo runs" },
+    hive_queen: { tempoMul: 1.25, transpose: 0, scale: "phrygian", lead: "warble", fill: "bongo", note: "Humming hive: buzzing phrygian warble and busy drums" },
   },
 };
 
@@ -127,6 +134,7 @@ const dreamscape: ThemeProfile = {
     moon_sovereign: { tempoMul: 0.8, transpose: 0, scale: "lydian", lead: "glass", note: "Stately lullaby: slow lydian glass" },
     hungry_grin: { tempoMul: 1.3, transpose: 1, scale: "diminished", extraFx: "whisper", note: "Laughing void: fast, diminished, whispering" },
     hollow_child: { tempoMul: 0.75, transpose: -3, scale: "minor", lead: "musicBox", extraFx: "whisper", note: "Lullaby from the door: a slow, wrong music box" },
+    nightmare_mare: { tempoMul: 1.3, transpose: -1, scale: "diminished", lead: "glass", fill: "tom", note: "Night gallop: fast diminished glass over galloping toms" },
   },
 };
 
@@ -143,6 +151,7 @@ const arctic: ThemeProfile = {
     glacier_titan: { tempoMul: 0.8, transpose: -7, fill: "tom", lead: "sub", note: "Colossal thaw: slow, a fifth down, deep toms" },
     thing_in_the_ice: { tempoMul: 1.2, transpose: -1, scale: "locrian", lead: "warble", extraFx: "icecreak", note: "Thawed horror: locrian warble, cracking ice" },
     cryo_warden: { tempoMul: 1.15, transpose: 0, lead: "arp", fill: "clank", note: "Security mech: cold arpeggios and clanking fills" },
+    permafrost_maw: { tempoMul: 0.8, transpose: -7, scale: "locrian", lead: "sub", extraFx: "icecreak", note: "Something under the ice: low locrian groans and cracking ice" },
   },
 };
 
@@ -159,6 +168,7 @@ const ghosttown: ThemeProfile = {
     the_undertaker: { tempoMul: 0.8, transpose: -5, fill: "tom", lead: "bell", note: "Funeral toll: slow, low, bell lead" },
     sheriff_of_the_damned: { tempoMul: 1.25, transpose: 0, scale: "phrygianDominant", lead: "twang", note: "High-noon showdown: fast phrygian dominant twang" },
     hanging_tree: { tempoMul: 0.75, transpose: -2, scale: "minor", lead: "glass", extraFx: "creak", note: "Mournful gallows: slow minor glass, creaking rope" },
+    hanging_judge: { tempoMul: 0.85, transpose: -3, scale: "harmonicMinor", lead: "twang", extraFx: "creak", note: "Court in session: harmonic-minor twang and a creaking rope" },
   },
 };
 
@@ -175,6 +185,7 @@ const wasteland: ThemeProfile = {
     warlord_rig: { tempoMul: 1.2, transpose: -5, fill: "anvil", note: "War-engine: fast, low, anvil fills" },
     fallout_behemoth: { tempoMul: 0.8, transpose: -12, extraFx: "geiger", lead: "sub", note: "Radioactive giant: an octave down, geiger crackle" },
     scrap_heap_king: { tempoMul: 1.1, transpose: 1, scale: "diminished", extraFx: "metalClank", note: "Junk-crowned chaos: diminished and clattering" },
+    rad_behemoth: { tempoMul: 0.85, transpose: -7, fill: "anvil", lead: "sub", extraFx: "geiger", note: "Glowing crater: heavy anvil stomps and geiger crackle" },
   },
 };
 

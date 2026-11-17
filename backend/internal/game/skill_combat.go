@@ -378,8 +378,14 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	if damage < 1 {
 		damage = 1
 	}
+	var encounter *Encounter
+	if current := run.Rooms[run.CurrentRoomID]; current != nil {
+		encounter = current.Encounter
+	}
+	damage = traitDamageTaken(run, encounter, enemy, damage, cast.round, true)
 	if cast.definition.Basic {
 		damage = absorbWithBarrier(run, enemy, damage, cast.round)
+		applySpikes(cast.room, player, enemy, cast.round)
 	}
 	transition := resolveHealthDamage(enemy.Health, damage)
 	enemy.Health = transition.Health
@@ -547,6 +553,7 @@ func applyEnemyRoundStart(room *Room, enemy *Enemy, intent *EnemyIntent, round i
 // endCombatRound ticks bleeds and regeneration and counts cooldowns down after every enemy has acted.
 func endCombatRound(room *Room, encounter *Encounter, round int) {
 	run := room.Run
+	applyTraitRegeneration(run, encounter, round)
 	for i := range encounter.Enemies {
 		enemy := &encounter.Enemies[i]
 		if enemy.Health <= 0 || enemy.BleedRounds <= 0 {
@@ -564,6 +571,7 @@ func endCombatRound(room *Room, encounter *Encounter, round int) {
 			addCombatEvent(run, round, "enemy_defeated", enemy.Name+" bleeds out.")
 		}
 	}
+	applyTraitSplits(run, encounter, round)
 	for _, playerID := range eligibleCombatPlayers(room) {
 		player := run.Players[playerID]
 		if player.ClassCombat.RegenRounds <= 0 {

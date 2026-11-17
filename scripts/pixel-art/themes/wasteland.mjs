@@ -99,5 +99,36 @@ export default {
         },
       }),
     },
+    {
+      id: "rad_roach_brood", name: "Rad-Roach Brood", role: "Swarm of roaches; squash it and a smaller swarm scuttles out", attack: "claw", special: "spit", death: "melt",
+      attackName: "Nibble", specialName: "Rad spit", fx: { attack: ["claw"], special: ["stream"] }, fxc: ["#a8ff4a", "#ffffff"],
+      mats: { roach: "#6a3a22" },
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 9, bw: 13, bh: 6, pairs: 3, legMat: "roach", legT: 1.6, leg1: 7, leg2: 8, legOut: 5, legFan: 3,
+        body: (c, G, pp) => { for (const [dx, dy, r] of [[-7, 0, 7], [6, -1, 7.5], [0, -6, 6]]) { const j = Math.sin(pp.wave + dx) * 0.8 * s; c.part().ell(G.cx + dx * s + j, G.by + dy * s, r * s, r * 0.65 * s, "roach"); c.part().line(G.cx + dx * s + j, G.by + (dy - r * 0.6) * s, G.cx + dx * s + j, G.by + (dy + r * 0.6) * s, "void", 0.8 * s); c.part().ell(G.cx + dx * s + j + r * 0.8 * s, G.by + dy * s, 1.2 * s, 1.2 * s, "glow"); } for (const k of [-1, 1]) c.part().line(G.cx + 12 * s, G.by - 2 * s, G.cx + 18 * s, G.by - (8 + k * 2) * s, "roach", 0.8); },
+      }),
+    },
+    {
+      id: "scrap_shieldbearer", name: "Scrap Shield-bearer", role: "Bodyguard; holds up a car-door shield for the rest of the gang", attack: "slam", special: "guard", death: "topple",
+      attackName: "Shield bash", specialName: "Brace", fx: { attack: ["shock"], special: [] },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 15, legT: 4, legMat: "cloth", armMat: "skin", armT: 3.6, torsoH: 17, torsoW: 9, headR: 5.4, hipW: 4, footW: 6, armOut: 2.5,
+        torso: torsos.plate({ steel: "rust", cloth: "cloth", trim: "hazard" }),
+        head: (c, H, pp) => { heads.ghoul({ skin: "skin" })(c, H, pp); goggles(c, H.x, H.y, H.r, H.s); mohawk(c, H.x, H.y, H.r, H.s); },
+        handL: (c, x, y) => { c.part().rect(x - 9 * s, y - 13 * s, 12 * s, 20 * s, "scrap"); c.part().rect(x - 9 * s, y - 13 * s, 12 * s, 2 * s, "rust"); c.part().rect(x - 7 * s, y - 9 * s, 8 * s, 5 * s, "steel"); for (let i = 0; i < 3; i++) c.part().rect(x - 8 * s + i * 4 * s, y + 4 * s, 2 * s, 2 * s, "hazard"); },
+        handR: (c, x, y) => tireRing(c, x, y + 2 * s, 3.2 * s),
+      }),
+    },
+    {
+      id: "rad_behemoth", tier: "boss", name: "The Rad Behemoth", role: "Lair boss; its glowing growths heal it and it stamps out a fallout wave", attack: "smash", special: "roar", death: "topple",
+      attackName: "Crater stomp", specialName: "Fallout wave", fx: { attack: ["shock", "burst"], special: ["ring", "puffs"] }, fxc: ["#a8ff4a", "#ffffff"],
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 14, legT: 6, legMat: "mutant", armMat: "mutant", armT: 5.6, torsoH: 20, torsoW: 12, headR: 5, hipW: 5.5, footW: 8, armOut: 3.5, armDrop: 16, headDrop: 4, neck: 0,
+        torso: (c, G, pp) => { torsos.slab({ mat: "mutant", belt: "tire" })(c, G); for (const [dx, dy, r] of [[-6, 4, 3.4], [5, 2, 2.6], [8, 11, 3], [-3, 12, 2.2]]) { c.part().ell(G.cx + dx * s, G.topY + dy * s, r * s, r * s, "glow"); c.part().ell(G.cx + dx * s, G.topY + dy * s, r * 0.4 * s, r * 0.4 * s, "eyeW"); } },
+        head: (c, H, pp) => { heads.ghoul({ skin: "mutant" })(c, H, pp); for (let i = -1; i <= 1; i++) spike(c, H.x + i * H.r * 0.6, H.y - H.r * 0.7, -90 + i * 25, H.r * 0.9, H.r * 0.18, "bone"); },
+        handL: (c, x, y) => c.part().ell(x, y + 2 * s, 5 * s, 4.5 * s, "mutant"),
+        handR: (c, x, y) => { c.part().ell(x, y + 2 * s, 5 * s, 4.5 * s, "mutant"); c.part().line(x, y, x + 2 * s, y - 14 * s, "rust", 2.4 * s); c.part().rect(x - 2 * s, y - 18 * s, 9 * s, 6 * s, "scrap"); },
+      }),
+    },
   ],
 };
