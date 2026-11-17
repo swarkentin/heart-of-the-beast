@@ -21,7 +21,7 @@ Target session length is 20–40 minutes, with dungeon levels around 5–8 minut
 
 Each location is a detailed illustrated scene with visible environmental details, creatures, objects, and points of interest. The party chooses a direction (initially North, South, East, or West) to move through a connected room graph.
 
-For groups, path choices use a 15-second vote window. The most-voted available path wins; a tie is settled by a server-side random choice among the tied paths. If nobody votes, choose randomly among all available paths so the run cannot stall. Solo choices resolve immediately; do not show a vote timer or simulate absent players.
+For groups, path and multi-option room-event choices use a 15-second vote window. Players may change their vote until the deadline; the most-voted available option wins, with a server-side random choice among tied options. If nobody votes, choose randomly among all available options so the run cannot stall. Solo choices resolve immediately; do not show a vote timer or simulate absent players.
 
 Exploration content must not require simultaneous actions from multiple players. A puzzle that has a cooperative solution should also have a solo route, sequential interaction, or ability-based alternative.
 
