@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
@@ -73,7 +73,7 @@ export default function App() {
   const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
   const audioControls = <AudioControls settings={audio.settings} running={audio.running} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
   const sound = { settings: audio.settings, running: audio.running, toggle: audio.toggle };
-  const withSound = (screen: JSX.Element) => <SoundContext.Provider value={sound}>{screen}</SoundContext.Provider>;
+  const withSound = (screen: ReactElement) => <SoundContext.Provider value={sound}>{screen}</SoundContext.Provider>;
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
