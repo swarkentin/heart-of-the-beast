@@ -76,6 +76,7 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 	room.Run.Depth = InitialDungeonDepth
 	room.Run.MaxDepth = maxDepth
 	room.Run.MusicIntensity = InitialDungeonDepth
+	briefDungeon(room.Run)
 	return nil
 }
 
@@ -225,6 +226,9 @@ func descendExpedition(room *Room, now time.Time) {
 	}
 	applyFloorEntryDamage(room)
 	startCombatRound(room, now)
+	if camp != nil && camp.NextThemeID != "" {
+		briefDungeon(run)
+	}
 }
 
 // tagDungeonRooms prefixes every room, exit, event and enemy ID of a floor, so the rooms of a later dungeon never

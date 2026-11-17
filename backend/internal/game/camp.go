@@ -210,7 +210,7 @@ func chooseDungeon(room *Room, eligible []string) {
 	addCombatEvent(run, 0, "dungeon_chosen", "The party chooses "+winner.Name+".")
 }
 
-// applyCampCommand handles the camp commands: "minigame", "choose_dungeon", "buy" and "ready".
+// applyCampCommand handles the camp commands: "minigame", "choose_dungeon", "buy", "ready" and "set_loadout".
 func applyCampCommand(room *Room, actorID string, command Command, now time.Time) error {
 	run := room.Run
 	if run == nil || run.Phase != PhaseIntermission || run.Camp == nil {
@@ -265,6 +265,11 @@ func applyCampCommand(room *Room, actorID string, command Command, now time.Time
 			return ErrInvalidCampAction
 		}
 		camp.Ready[actorID] = true
+	case "set_loadout":
+		// Between two dungeons, and only there, an adventurer can change their skills for the next one.
+		if err := changeRunLoadout(room, actorID, command.SkillIDs); err != nil {
+			return err
+		}
 	default:
 		return ErrInvalidAction
 	}

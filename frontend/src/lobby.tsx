@@ -1,10 +1,12 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
+import { cooldownLabel, loadoutProblem, MAX_LOADOUT, skillsForClass, usableLoadout, type Skill } from "./combatAbilities";
+import { SKILL_ICON_ORDER } from "./skillIcons.gen";
 
 // Title, connecting, party lobby and class selection screens. All art comes from
 // scripts/pixel-art (heroes and the interface kit) so these screens share the bestiary's look.
 
-export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; signatureAbilityId: string; passiveId: string };
+export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
 export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
@@ -13,9 +15,8 @@ export type HeroSkin = { tier: number; variant: string };
 export type LobbySkinTier = { tier: number; rank: string; name: string; description: string; masteryLevel: number };
 export type LobbySkinVariant = { id: string; name: string; description: string; masteryLevel: number };
 export type LobbySkinCatalog = { classes: { classId: string; tiers: LobbySkinTier[] }[]; variants: LobbySkinVariant[] };
-export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; classAbilities: LobbyNamedRule[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[]; classSkins?: LobbySkinCatalog };
-export type LobbyTalent = { id: string; archetype: string; name: string; description: string; tier: number; requires?: string };
-export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; playerSkins?: Record<string, HeroSkin>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
+export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; skills: Skill[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[]; classSkins?: LobbySkinCatalog };
+export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; playerSkins?: Record<string, HeroSkin>; playerLoadouts?: Record<string, string[]>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
 // Keep in step with scripts/pixel-art/heroes.mjs and ICON_ORDER in scripts/pixel-art/ui.mjs.
 const HERO_ART = new Set(["bulwark", "juggernaut", "spellguard", "assassin", "arcanist", "ranger", "cleric", "tactician", "beastcaller"]);
@@ -57,6 +58,83 @@ const vars = (values: Record<string, string | number>) => values as unknown as C
 export function Icon({ id, size = 2 }: { id: IconId; size?: number }) {
   return <span className="px-icon" aria-hidden="true" style={vars({ "--i": ICONS.indexOf(id), "--n": ICONS.length, "--s": size })} />;
 }
+
+/** A skill's own pixel-art icon from /art/ui/skill-icons.png, or its generic icon if the sheet has none. */
+export function SkillIcon({ skill, size = 2 }: { skill: Pick<Skill, "id" | "icon">; size?: number }) {
+  const index = SKILL_ICON_ORDER.indexOf(skill.id);
+  if (index < 0) return <Icon id={(ICONS as readonly string[]).includes(skill.icon) ? skill.icon as IconId : "strike"} size={size} />;
+  return <span className="px-skill-icon" aria-hidden="true" style={vars({ "--i": index, "--n": SKILL_ICON_ORDER.length, "--s": size })} />;
+}
+
+const BARS_KEY = "hotb.skillBars";
+/** The skill bar last chosen for each class, remembered on this device. The server re-checks it against mastery. */
+export function savedBars(): Record<string, string[]> { try { return JSON.parse(window.localStorage.getItem(BARS_KEY) || "{}") as Record<string, string[]>; } catch { return {}; } }
+export function saveBar(classId: string, ids: string[]) { try { window.localStorage.setItem(BARS_KEY, JSON.stringify({ ...savedBars(), [classId]: ids })); } catch { /* storage unavailable: the bar still applies to this room */ } }
+
+/**
+ * Chooses up to six skills for a class. Every skill is shown in full, locked ones too, with the mastery rank that
+ * earns them; only earned skills can go on the bar.
+ */
+export function SkillLoadout({ classId, className, catalog, mastery, initial, busy, title, note, onSave, onClose }: { classId: string; className: string; catalog: Skill[]; mastery: number; initial: string[]; busy?: boolean; title?: string; note?: string; onSave: (ids: string[]) => void; onClose: () => void }) {
+  const [bar, setBar] = useState<string[]>(initial);
+  const [focus, setFocus] = useState<string>(initial[0] ?? "");
+  const skills = skillsForClass(catalog, classId);
+  const byId = new Map(skills.map(skill => [skill.id, skill]));
+  const problem = loadoutProblem(catalog, classId, mastery, bar);
+  const focused = byId.get(focus) ?? skills[0];
+  const nextUnlock = skills.filter(skill => skill.masteryLevel > mastery).sort((a, b) => a.masteryLevel - b.masteryLevel)[0];
+  const earnedCount = skills.filter(skill => skill.masteryLevel <= mastery).length;
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [onClose]);
+  function toggle(skill: Skill) {
+    setFocus(skill.id);
+    if (skill.masteryLevel > mastery) return;
+    setBar(value => value.includes(skill.id) ? value.filter(id => id !== skill.id) : value.length >= MAX_LOADOUT ? value : [...value, skill.id]);
+  }
+  return <div className="px-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section className="px-panel px-loadout" role="dialog" aria-modal="true" aria-labelledby="loadout-title">
+      <div className="px-tree-head"><Bust classId={classId} /><div><p className="px-eyebrow">{className.toUpperCase()} · MASTERY {mastery} · {earnedCount}/{skills.length} SKILLS</p><h2 id="loadout-title">{title ?? "Choose your skills"}</h2><p className="px-copy">{note ?? "Take up to six skills into the dungeon. Keys 1 to 6 use them in combat. Playing this class earns mastery, and mastery unlocks new skills."}</p></div><button className="px-button px-button-small" onClick={onClose} aria-label="Close skill loadout" autoFocus>CLOSE</button></div>
+      <ol className="px-loadout-bar" aria-label="Your skill bar">
+        {Array.from({ length: MAX_LOADOUT }, (_, slot) => {
+          const skill = byId.get(bar[slot] ?? "");
+          return <li key={slot} className={skill ? "px-loadout-slot" : "px-loadout-slot px-loadout-empty"}>
+            <kbd>{slot + 1}</kbd>
+            {skill ? <button type="button" onClick={() => toggle(skill)} title={"Remove " + skill.name} aria-label={"Slot " + (slot + 1) + ": " + skill.name + ". Remove"}><SkillIcon skill={skill} size={3} /><span>{skill.name}</span></button> : <span className="px-loadout-open">EMPTY</span>}
+          </li>;
+        })}
+      </ol>
+      <div className="px-loadout-body">
+        <ul className="px-loadout-grid" aria-label={className + " skills"}>
+          {skills.map(skill => {
+            const locked = skill.masteryLevel > mastery, slot = bar.indexOf(skill.id);
+            return <li key={skill.id}>
+              <button type="button" className={"px-skill-card px-tone-" + skill.tone + (slot >= 0 ? " px-skill-equipped" : "") + (locked ? " px-skill-locked" : "") + (skill.id === focused?.id ? " px-skill-focus" : "")} onClick={() => toggle(skill)} onMouseEnter={() => setFocus(skill.id)} onFocus={() => setFocus(skill.id)} aria-pressed={slot >= 0} aria-label={skill.name + (locked ? ", locked until mastery " + skill.masteryLevel : slot >= 0 ? ", on the bar in slot " + (slot + 1) : "")}>
+                <SkillIcon skill={skill} size={3} />
+                <strong>{skill.name}</strong>
+                {locked ? <b className="px-skill-badge"><Icon id="locked" size={1} />M{skill.masteryLevel}</b> : slot >= 0 ? <b className="px-skill-badge px-skill-badge-on">{slot + 1}</b> : null}
+              </button>
+            </li>;
+          })}
+        </ul>
+        {focused ? <aside className={"px-skill-detail px-tone-" + focused.tone} aria-live="polite">
+          <div className="px-skill-detail-head"><SkillIcon skill={focused} size={4} /><div><strong>{focused.name}</strong><span>{cooldownLabel(focused).toUpperCase()}{focused.basic ? " · BASIC ATTACK" : ""}{focused.elemental ? " · ELEMENTAL" : ""}</span></div></div>
+          <p className="px-skill-rules">{focused.rules}</p>
+          <p className="px-skill-flavour">{focused.description}</p>
+          {focused.masteryLevel > mastery ? <p className="px-skill-unlock"><Icon id="locked" size={1} />UNLOCKS AT {className.toUpperCase()} MASTERY {focused.masteryLevel}</p> : null}
+        </aside> : null}
+      </div>
+      <div className="px-loadout-foot">
+        <p className={problem ? "px-error" : "px-loadout-next"} role="status">{problem || (nextUnlock ? "NEXT SKILL AT MASTERY " + nextUnlock.masteryLevel + ": " + nextUnlock.name.toUpperCase() : "EVERY " + className.toUpperCase() + " SKILL UNLOCKED")}</p>
+        <button type="button" className="px-button" onClick={() => setBar(usableLoadout(catalog, classId, mastery))} disabled={busy}>DEFAULT</button>
+        <button type="button" className="px-button px-button-primary" onClick={() => onSave(bar)} disabled={busy || Boolean(problem)}>{busy ? "SAVING…" : "TAKE THESE SKILLS"}</button>
+      </div>
+    </section>
+  </div>;
+}
+
 
 /** Looping body language. Status overlays (StatusFx) are layered on top of it. */
 export type HeroPose = "idle" | "injured" | "poisoned" | "down";
@@ -217,14 +295,6 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
   </section>;
 }
 
-function skillIcon(id: string): IconId {
-  if (/heal|renewal|recovery|companion|nature/i.test(id)) return "life";
-  if (/shield|ward|guard|resolve|resist/i.test(id)) return "guard";
-  if (/fire|element|arcane|focus/i.test(id)) return "arcane";
-  if (/interrupt|pin|command|disrupt/i.test(id)) return "control";
-  return "strike";
-}
-
 function Pips({ value, max = 4 }: { value: number; max?: number }) {
   return <span className="px-pips" aria-hidden="true">{Array.from({ length: Math.max(max, value) }, (_, index) => <i key={index} className={index < value ? "on" : ""} />)}</span>;
 }
@@ -269,9 +339,10 @@ function SkinPicker({ classId, className, accent, tiers, variants, mastery, show
   </section>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talents, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; talents: LobbyTalent[]; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin) => void; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onSaveLoadout, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin, skillIds?: string[]) => void; onSaveLoadout: (skillIds: string[]) => Promise<boolean>; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
-  const [treeOpen, setTreeOpen] = useState(false);
+  const [loadoutOpen, setLoadoutOpen] = useState(false);
+  const [bars, setBars] = useState<Record<string, string[]>>(savedBars);
   const [copied, setCopied] = useState(false);
   const [flourish, setFlourish] = useState(0);
   // Looks being previewed this visit, per class. They may be locked; only earned looks are worn.
@@ -298,25 +369,29 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
     return saved && earned(id, saved) ? saved : bestLook(id);
   };
   const shownLook = (id: string) => previews[id] ?? wornLook(id);
+  /** The bar a class takes into the dungeon: the server's record for your chosen class, else your last bar for it. */
+  const barFor = (id: string): string[] => {
+    if (!catalog) return [];
+    const stored = id === selectedClassId ? room.playerLoadouts?.[playerId] : undefined;
+    return usableLoadout(catalog.skills, id, masteryOf(profile, id), stored ?? bars[id]);
+  };
+  async function keepBar(id: string, ids: string[]) {
+    saveBar(id, ids);
+    setBars(value => ({ ...value, [id]: ids }));
+    if (id !== selectedClassId || (await onSaveLoadout(ids))) setLoadoutOpen(false);
+  }
   function pickLook(id: string, look: HeroSkin) {
     setPreviews(value => ({ ...value, [id]: look }));
     if (!earned(id, look)) return;
     saveLook(id, look);
-    if (id === selectedClassId && !sameSkin(look, room.playerSkins?.[playerId])) onSelectClass(id, look);
+    if (id === selectedClassId && !sameSkin(look, room.playerSkins?.[playerId])) onSelectClass(id, look, barFor(id));
   }
   const slots: (string | null)[] = [...present.slice(0, MAX_PARTY), ...Array<null>(Math.max(0, MAX_PARTY - present.length)).fill(null)];
 
   // Celebrate a confirmed choice: the chosen hero plays their signature move.
   useEffect(() => { if (selectedClassId) setFlourish(value => value + 1); }, [selectedClassId]);
   useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1800); return () => window.clearTimeout(timer); }, [copied]);
-  useEffect(() => {
-    if (!treeOpen) return;
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setTreeOpen(false); };
-    window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
-  }, [treeOpen]);
 
-  const ability = focusedClass ? catalog?.classAbilities.find(value => value.id === focusedClass.signatureAbilityId) : undefined;
   const passive = focusedClass ? catalog?.classPassives.find(value => value.id === focusedClass.passiveId) : undefined;
   const gear = focusedClass ? focusedClass.startingEquipment.map(id => catalog?.equipment.find(value => value.id === id)?.name || id) : [];
   const archetype = ARCHETYPES.find(item => item.id === focusedClass?.archetypeId);
@@ -403,13 +478,15 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
             </div>
             {tiersFor(focusedClass.id).length > 0 ? <SkinPicker classId={focusedClass.id} className={focusedClass.name} accent={ACCENTS[focusedClass.id] || "#d6a64d"} tiers={tiersFor(focusedClass.id)} variants={variants} mastery={masteryOf(profile, focusedClass.id)} shown={focusedLook} worn={wornLook(focusedClass.id)} onPick={look => pickLook(focusedClass.id, look)} /> : null}
             <div className="px-skills">
-              <article><Icon id={skillIcon(focusedClass.signatureAbilityId)} size={3} /><div><span className="px-label">SIGNATURE SKILL</span><strong>{ability?.name || "Signature ability"}</strong><p>{ability?.description}</p></div></article>
-              <article><Icon id={skillIcon(focusedClass.passiveId)} size={3} /><div><span className="px-label">ALWAYS WITH YOU</span><strong>{passive?.name || "Passive trait"}</strong><p>{passive?.description}</p></div></article>
+              <article className="px-bar-preview"><div><span className="px-label">SKILL BAR · {barFor(focusedClass.id).length}/{MAX_LOADOUT}</span>
+                <ol>{barFor(focusedClass.id).map(id => catalog.skills.find(skill => skill.id === id)).filter((skill): skill is Skill => Boolean(skill)).map(skill => <li key={skill.id} title={skill.name + ": " + skill.rules}><SkillIcon skill={skill} size={2} /></li>)}</ol>
+                <p>{skillsForClass(catalog.skills, focusedClass.id).filter(skill => skill.masteryLevel <= masteryOf(profile, focusedClass.id)).length} of {skillsForClass(catalog.skills, focusedClass.id).length} skills earned. Mastery unlocks more.</p></div></article>
+              <article><Icon id="support" size={3} /><div><span className="px-label">ALWAYS WITH YOU</span><strong>{passive?.name || "Passive trait"}</strong><p>{passive?.description}</p></div></article>
             </div>
             <p className="px-gear"><span className="px-label">STARTING GEAR</span>{gear.join(" · ")}</p>
             <div className="px-detail-actions">
-              <button className="px-button" onClick={() => setTreeOpen(true)}>TALENT TREE</button>
-              <button className="px-button px-button-primary" onClick={() => onSelectClass(focusedClass.id, skinCatalog ? (focusedLocked ? wornLook(focusedClass.id) : focusedLook) : undefined)} disabled={busy || focusedClass.id === selectedClassId}>{focusedClass.id === selectedClassId ? "YOUR CHOSEN PATH" : busy ? "SAVING…" : "CHOOSE " + focusedClass.name.toUpperCase()}</button>
+              <button className="px-button" onClick={() => setLoadoutOpen(true)}>SKILLS</button>
+              <button className="px-button px-button-primary" onClick={() => onSelectClass(focusedClass.id, skinCatalog ? (focusedLocked ? wornLook(focusedClass.id) : focusedLook) : undefined, barFor(focusedClass.id))} disabled={busy || focusedClass.id === selectedClassId}>{focusedClass.id === selectedClassId ? "YOUR CHOSEN PATH" : busy ? "SAVING…" : "CHOOSE " + focusedClass.name.toUpperCase()}</button>
             </div>
           </section>
         </div>}
@@ -434,14 +511,8 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, talen
       </div>
     </section>
 
-    {treeOpen && focusedClass ? <div className="px-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setTreeOpen(false); }}>
-      <section className="px-panel px-tree" role="dialog" aria-modal="true" aria-labelledby="class-tree-title">
-        <div className="px-tree-head"><Bust classId={focusedClass.id} skin={focusedLook} /><div><p className="px-eyebrow">{focusedClass.name.toUpperCase()} · {focusedClass.archetypeId.toUpperCase()} PATH</p><h2 id="class-tree-title">Talent path preview</h2><p className="px-copy">Spend a talent point between encounters as you level. These are the shared {focusedClass.archetypeId} talents; class-specific trees come later.</p></div><button className="px-button px-button-small" onClick={() => setTreeOpen(false)} aria-label="Close talent tree preview" autoFocus>CLOSE</button></div>
-        <div className="px-tree-tiers">{[1, 2].map(tier => <div className="px-tree-tier" key={tier}>
-          <div className="px-label">{tier === 1 ? "TIER 1 · FOUNDATION" : "TIER 2 · SPECIALIZATION"}</div>
-          {talents.filter(talent => talent.archetype === focusedClass.archetypeId && talent.tier === tier).map(talent => <div className="px-tree-node" key={talent.id}><Icon id={skillIcon(talent.id + " " + talent.name)} /><div><strong>{talent.name}</strong><p>{talent.description}</p><span className="px-label">{talent.requires ? "FOLLOWS " + (talents.find(value => value.id === talent.requires)?.name || "").toUpperCase() : "AVAILABLE FIRST"}</span></div></div>)}
-        </div>)}</div>
-      </section>
-    </div> : null}
+    {loadoutOpen && focusedClass && catalog ? <SkillLoadout classId={focusedClass.id} className={focusedClass.name} catalog={catalog.skills} mastery={masteryOf(profile, focusedClass.id)} initial={barFor(focusedClass.id)} busy={busy}
+      note={focusedClass.id === selectedClassId ? undefined : "Take up to six skills into the dungeon. This bar is used when you choose " + focusedClass.name + ". Mastery unlocks new skills."}
+      onSave={ids => void keepBar(focusedClass.id, ids)} onClose={() => setLoadoutOpen(false)} /> : null}
   </GameShell>;
 }

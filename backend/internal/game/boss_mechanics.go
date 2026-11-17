@@ -8,10 +8,10 @@ import "fmt"
 //
 //	enrage     at 40% health the boss deals +2 damage with every hit for the rest of the fight.
 //	summon     at 60% health the boss calls one reinforcement. It must also be defeated.
-//	barrier    every third turn the boss raises a barrier that absorbs Strike damage. Signature abilities and
-//	           interrupts pierce it, so a party that only Strikes loses a round to it.
+//	barrier    every third turn the boss raises a barrier that absorbs basic-attack damage. Every other skill
+//	           pierces it, so a party that only uses basic attacks loses a round to it.
 //	cataclysm  every fourth turn the boss telegraphs a heavy, party-wide, interruptible attack in place of its
-//	           normal move. Interrupt it or Defend.
+//	           normal move. Interrupt it (interrupts are on cooldowns, so plan for it) or Defend.
 const (
 	BossMechanicEnrage    = "enrage"
 	BossMechanicSummon    = "summon"
@@ -113,7 +113,7 @@ func applyBossMechanics(room *Room, current *DungeonRoom, round int) {
 		}
 		if enemy.hasMechanic(BossMechanicBarrier) && enemy.TurnsTaken%BossBarrierEveryTurns == 1 {
 			enemy.Barrier = BossBarrierBase + BossBarrierPerPlayer*partySize
-			addCombatEvent(run, round, "boss_barrier", enemy.Name+" raises "+enemy.BarrierLabel+". It absorbs "+itoa(enemy.Barrier)+" Strike damage; signature abilities and interrupts pierce it.")
+			addCombatEvent(run, round, "boss_barrier", enemy.Name+" raises "+enemy.BarrierLabel+". It absorbs "+itoa(enemy.Barrier)+" damage from basic attacks; every other skill pierces it.")
 		}
 		if enemy.hasMechanic(BossMechanicSummon) && enemy.SummonsLeft > 0 && len(encounter.Enemies) < MaxEncounterEnemies && enemy.Health*100 <= enemy.MaxHealth*BossSummonHealthPercent {
 			enemy.SummonsLeft--

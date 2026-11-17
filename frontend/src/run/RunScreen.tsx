@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, ApiRoom, ApiRun, ApiVote, PlayerSession, TalentChoice } from "../api";
-import { getSignatureAbility, partySupportCommand, signatureCommand, type SignatureMode } from "../combatAbilities";
-import { GameShell, Icon, SharedMenu, type IconId, type LobbyCatalog } from "../lobby";
+import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, ApiRoom, ApiRun, ApiVote, PlayerSession } from "../api";
+import { cooldownLabel, cooldownLeft, SKILL_DEFEND, skillCommand, type Skill } from "../combatAbilities";
+import { GameShell, Icon, SharedMenu, SkillIcon, SkillLoadout, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
 import { enemyX } from "../monsters/layout";
 import { backdropRef, themeTitle } from "../scenes";
 import { Camp, ExpeditionResult, FloorStatus } from "./Camp";
 import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
-import { archetypeName, buildParty, partyLabels, seatParty } from "./party";
+import { DungeonIntro } from "./DungeonIntro";
+import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
 import "./run.css";
 
@@ -20,10 +21,11 @@ import "./run.css";
 
 type Props = {
   snapshot: ApiRoom; run: ApiRun; room: ApiDungeonRoom; session: PlayerSession | null; spectator: boolean;
-  catalog: LobbyCatalog | null; profile: ApiProfile | null; talents: TalentChoice[]; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>;
-  onCommand: (command: ApiCommand) => Promise<boolean>; onChooseTalent: (talentId: string) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
+  catalog: LobbyCatalog | null; profile: ApiProfile | null; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>;
+  onCommand: (command: ApiCommand) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
 };
-type ActionDef = { key: string; label: string; hint: string; details: string; icon: IconId; tone: "strike" | "guard" | "control" | "signature"; disabled: boolean; command: ApiCommand };
+/** One button on the skill bar. A skill that targets an ally or a fallen adventurer has no command until one is picked. */
+type ActionDef = { key: string; skill: Skill; label: string; hint: string; details: string; tone: string; disabled: boolean; cooldown: number; ready: boolean; command?: ApiCommand; pick?: "ally" | "fallen" };
 
 function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: string[], selfId: string): SceneEnemy {
   const intent = enemy.intent;
@@ -37,6 +39,9 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
     interruptible: Boolean(intent?.interruptible),
   };
 }
+
+/** The opening of a skill rule ("Taunt", "Guard 5 more"), short enough for a button. */
+function firstClause(rules: string) { return rules.split(/[.:;,]/)[0].trim(); }
 
 /** A clock that only ticks while a deadline is running. */
 function useNow(active: boolean, restartKey: string) {
@@ -66,15 +71,17 @@ function LogText({ line, labels }: { line: LogLine; labels: Record<number, strin
   return <li className={"rn-log-line rn-log-" + line.tone}>{line.tone === "auto" ? <Icon id="waiting" size={1} /> : null}<span>{parts.map((part, index) => index % 2 ? <b key={index}>{part}</b> : part)}</span></li>;
 }
 
-export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, talents, busy, error, isHost, audioControls, onSaveName, onCommand, onChooseTalent, onLeave, onReturnToLobby }: Props) {
+export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, busy, error, isHost, audioControls, onSaveName, onCommand, onLeave, onReturnToLobby }: Props) {
   const selfId = spectator ? "" : session?.playerId ?? "";
   const [view, setView] = useState<"player" | "cast">(spectator ? "cast" : "player");
   const [target, setTarget] = useState("");
   const [pending, setPending] = useState<{ round: number; key: string } | null>(null);
   const [focused, setFocused] = useState("");
   const [fx, setFx] = useState<Record<string, CardFx>>({});
-  const [talentOpen, setTalentOpen] = useState(false);
-  const [talentId, setTalentId] = useState("");
+  // A skill waiting for its target portrait, and whether the between-dungeons skill picker is open.
+  const [armed, setArmed] = useState("");
+  const [loadoutOpen, setLoadoutOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const popId = useRef(0);
   const timers = useRef<number[]>([]);
@@ -109,14 +116,14 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const seconds = Math.ceil(remainingMs / 1000);
   const myAction = round && selfId ? round.actions[selfId] : undefined;
   const waitingOn = round ? eligible.filter(member => !round.actions[member.id]).length : 0;
-  const lockedKey = myAction ? (myAction.action === "attack" ? "strike" : myAction.action === "defend" ? "guard" : myAction.action === "interrupt" ? "interrupt" : "sig" + (myAction.mode ? ":" + myAction.mode : "")) : pending && pending.round === round?.number ? pending.key : "";
+  const lockedKey = myAction ? (myAction.action === "defend" ? SKILL_DEFEND : myAction.skill ?? "") : pending && pending.round === round?.number ? pending.key : "";
   const canAct = Boolean(acting && round && self?.alive && !lockedKey && remainingMs > 0 && !busy);
-  useEffect(() => { setPending(null); }, [round?.number]);
+  useEffect(() => { setPending(null); setArmed(""); }, [round?.number]);
   // If the timer runs out the server defends for you. Say so on the Defend button itself: it flashes over the last
   // seconds, then shows as pressed while the round resolves.
   const undecided = Boolean(acting && round && self?.alive && !lockedKey);
   const autoSoon = undecided && remainingMs > 0 && seconds <= 3;
-  const shownKey = lockedKey || (undecided && remainingMs <= 0 ? "guard" : "");
+  const shownKey = lockedKey || (undecided && remainingMs <= 0 ? SKILL_DEFEND : "");
 
   // ---- log -------------------------------------------------------------------------------------------------------
   const labels = partyLabels(party);
@@ -136,61 +143,83 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     timers.current.push(window.setTimeout(() => setFx(all => all[impact.playerId] ? { ...all, [impact.playerId]: { ...all[impact.playerId], pops: all[impact.playerId].pops.filter(item => item.id !== id) } } : all), 1300));
   }, []);
 
+  const labelsFor = (id: string) => { const member = party.find(item => item.id === id); return member ? "P" + member.position + " " + member.className : "your ally"; };
+  const classId = player?.classBuild?.classId;
+  const mastery = Math.max(1, snapshot.playerMastery?.[selfId] ?? 1);
+  // Skills change only at the camp between two dungeons (when the party votes on the next one).
+  const canChangeSkills = Boolean(acting && camp && (camp.choices?.length ?? 0) > 0 && classId && self?.alive);
   const banner = gameOver ? { text: run.phase === "completed" ? "VICTORY" : "THE PARTY HAS FALLEN", tone: run.phase === "completed" ? "good" : "bad" } : undefined;
 
-  // ---- combat actions ----------------------------------------------------------------------------------------------
-  const signatureAbilityId = player?.classBuild?.signatureAbilityId || catalog?.classes.find(item => item.id === player?.classBuild?.classId)?.signatureAbilityId;
-  const signature = getSignatureAbility(signatureAbilityId);
-  const signatureName = catalog?.classAbilities.find(item => item.id === signatureAbilityId)?.name || "Signature";
-  // Rounds until the signature ability can be used again (Renewal recovers for a few rounds after each cast).
-  const cooldown = player?.classCombat?.abilityCooldown ?? 0;
-  const recovering = cooldown > 0 ? "Ready in " + cooldown + (cooldown === 1 ? " round" : " rounds") : "";
-  const aidLabel = combat && acting && signature ? (signature.id === "ability.renewal" ? "RENEW" : signature.id === "ability.companion-command" ? "GUARD" : "") : "";
+  // ---- combat actions: the player's skill bar ------------------------------------------------------------------------
+  const skillById = useMemo(() => new Map((catalog?.skills ?? []).map(skill => [skill.id, skill])), [catalog?.skills]);
+  const cooldowns = player?.classCombat?.cooldowns;
+  const fallen = party.filter(member => !member.alive && !member.isSelf && member.online);
   const actions: ActionDef[] = [];
   if (round && player) {
     const n = round.number, foe = livingTarget, foeName = foe?.name ?? "no target";
-    const strike = (player.strikeDamage ?? 10) + player.stats.power;
-    actions.push({ key: "strike", label: "Strike", hint: foe ? strike + "+ damage" : "No enemy to hit", details: "Hit " + foeName + " for at least " + strike + " damage.", icon: "power", tone: "strike", disabled: !foe, command: { type: "combat", round: n, action: "attack", targetId: foe?.id } });
-    actions.push({ key: "guard", label: "Defend", hint: "Block " + (player.guardReduction || 6) + "+ damage", details: "Brace: the next hit against you is reduced by at least " + (player.guardReduction || 6) + ". This is also what happens if the timer runs out.", icon: "guard", tone: "guard", disabled: false, command: { type: "combat", round: n, action: "defend" } });
-    actions.push({ key: "interrupt", label: "Interrupt", hint: foe?.interruptible ? "Cancel " + (foe.rawIntent?.label ?? "its move") : "Nothing to interrupt", details: foe?.interruptible ? "Stop " + foeName + " from using " + (foe.rawIntent?.label ?? "its move") + " this round." : "Only moves marked CAN BE INTERRUPTED can be cancelled. Pick an enemy that shows that mark.", icon: "control", tone: "control", disabled: !foe?.interruptible, command: { type: "combat", round: n, action: "interrupt", targetId: foe?.id } });
-    if (signature) {
-      const make = (mode: SignatureMode | "", label: string, hint: string, icon: IconId, needsFoe: boolean, allyId = ""): ActionDef => ({ key: "sig" + (mode ? ":" + mode : ""), label, hint: recovering || hint, details: signature.details, icon, tone: "signature", disabled: (needsFoe && !foe) || cooldown > 0, command: signatureCommand(signature, n, mode, foe?.id ?? "", allyId) });
-      if (signature.id === "ability.elemental-surge") { actions.push(make("fire", "Fire Surge", "More damage", "arcane", true)); actions.push(make("frost", "Frost Surge", "Less damage, cancels its move", "control", true)); }
-      else if (signature.id === "ability.companion-command") { actions.push(make("attack", "Pet: Attack", "Companion strikes", "strike", true)); actions.push(make("defend", "Pet: Guard", "Guard yourself, or pick an ally", "guard", false, selfId)); actions.push(make("disrupt", "Pet: Disrupt", "Stop or weaken its move", "control", true)); }
-      else if (signature.id === "ability.renewal") actions.push(make("", "Renewal", "Heal yourself, or pick an ally", "life", false, selfId));
-      else actions.push(make("", signatureName, signature.summary, signature.target === "enemy" ? "strike" : "ward", signature.target === "enemy"));
+    for (const id of player.skills ?? []) {
+      const skill = skillById.get(id);
+      if (!skill) continue;
+      const left = cooldownLeft(cooldowns, id);
+      const interrupts = skill.effects?.some(effect => effect.kind === "interrupt") ?? false;
+      let hint = "", command: ApiCommand | undefined, pick: ActionDef["pick"], disabled = left > 0;
+      switch (skill.target) {
+        case "enemy":
+          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
+          disabled ||= !foe;
+          command = foe ? skillCommand(skill, n, foe.id) : undefined;
+          break;
+        case "all_enemies": hint = "Every enemy"; command = skillCommand(skill, n); break;
+        case "party": hint = "Whole party"; command = skillCommand(skill, n); break;
+        case "self": hint = id === SKILL_DEFEND ? "Block " + (player.guardReduction || 4) + "+ damage" : firstClause(skill.rules); command = skillCommand(skill, n); break;
+        case "ally":
+          hint = eligible.length > 1 ? "Pick a portrait" : "Yourself";
+          if (eligible.length > 1) pick = "ally"; else command = skillCommand(skill, n, selfId);
+          break;
+        case "fallen":
+          hint = fallen.length === 0 ? "No one has fallen" : fallen.length === 1 ? "Revive " + (labelsFor(fallen[0].id)) : "Pick a fallen ally";
+          disabled ||= fallen.length === 0;
+          if (fallen.length === 1) command = skillCommand(skill, n, fallen[0].id); else pick = "fallen";
+          break;
+      }
+      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && Boolean(foe?.interruptible) && left === 0, command, pick });
     }
   }
+  const send = (key: string, command: ApiCommand) => {
+    if (!round) return;
+    navigator.vibrate?.(12);
+    setArmed("");
+    setPending({ round: round.number, key });
+    void onCommand(command).then(ok => { if (!ok) setPending(null); });
+  };
   const act = (action: ActionDef) => {
     if (!canAct || action.disabled || !round) return;
-    navigator.vibrate?.(12);
-    setPending({ round: round.number, key: action.key });
-    void onCommand(action.command).then(ok => { if (!ok) setPending(null); });
+    if (action.command) { send(action.key, action.command); return; }
+    // Pressing an ally skill again casts it on yourself; otherwise it waits for a portrait.
+    if (armed === action.key && action.pick === "ally") { send(action.key, skillCommand(action.skill, round.number, selfId)); return; }
+    setArmed(armed === action.key ? "" : action.key);
   };
+  const armedAction = actions.find(action => action.key === armed);
   const aid = (memberId: string) => {
-    if (!canAct || !signature || !round || cooldown > 0) return;
-    navigator.vibrate?.(12);
-    setPending({ round: round.number, key: signature.id === "ability.companion-command" ? "sig:defend" : "sig" });
-    void onCommand(partySupportCommand(signature, round.number, memberId)).then(ok => { if (!ok) setPending(null); });
+    if (!canAct || !armedAction || !round) return;
+    send(armedAction.key, skillCommand(armedAction.skill, round.number, memberId));
   };
   const cycleTarget = (step: number) => { if (living.length < 2) return; const index = Math.max(0, living.findIndex(enemy => enemy.id === livingTarget?.id)); setTarget(living[(index + step + living.length) % living.length].id); };
 
   // Number keys choose an action; arrow keys change the target.
   const keys = useRef({ act, cycleTarget, actions, enabled: false });
-  keys.current = { act, cycleTarget, actions, enabled: acting && combat && !talentOpen };
+  keys.current = { act, cycleTarget, actions, enabled: acting && combat && !introOpen };
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const state = keys.current, el = event.target as HTMLElement | null;
       if (!state.enabled || event.metaKey || event.ctrlKey || event.altKey || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      if (/^[1-9]$/.test(event.key)) { const action = state.actions[Number(event.key) - 1]; if (action) { event.preventDefault(); state.act(action); } }
+      if (event.key === "Escape") setArmed("");
+      else if (/^[1-9]$/.test(event.key)) { const action = state.actions[Number(event.key) - 1]; if (action) { event.preventDefault(); state.act(action); } }
       else if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); state.cycleTarget(event.key === "ArrowLeft" ? -1 : 1); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  // ---- talents -----------------------------------------------------------------------------------------------------
-  useEffect(() => { if (!spectator && exploring && (player?.talentPoints ?? 0) > 0) { setTalentOpen(true); setTalentId(""); } }, [exploring, player?.level, player?.talentPoints, spectator]);
 
   // ---- votes -------------------------------------------------------------------------------------------------------
   const exitsOpen = exploring && (!room.event || room.event.resolved);
@@ -200,7 +229,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const spectatorLink = session?.spectatorToken ? window.location.origin + window.location.pathname + "#spectate=" + encodeURIComponent(session.roomId + ":" + session.spectatorToken) : "";
 
   const focusedAction = actions.find(action => action.key === focused);
-  const timerLabel = !round ? "" : lockedKey ? (waitingOn > 0 ? "LOCKED IN · WAITING FOR " + waitingOn + " MORE" : "LOCKED IN · RESOLVING") : !self?.alive ? "YOU ARE DOWN · THE PARTY FIGHTS ON" : remainingMs <= 0 ? "TIME UP · DEFENDING" : seconds <= 3 ? "AUTO-DEFEND IN " + seconds : "CHOOSE YOUR ACTION";
+  const timerLabel = !round ? "" : armedAction && !lockedKey ? (armedAction.pick === "fallen" ? "PICK A FALLEN ALLY TO REVIVE" : "PICK A PORTRAIT · PRESS AGAIN FOR YOURSELF") : lockedKey ? (waitingOn > 0 ? "LOCKED IN · WAITING FOR " + waitingOn + " MORE" : "LOCKED IN · RESOLVING") : !self?.alive ? "YOU ARE DOWN · THE PARTY FIGHTS ON" : remainingMs <= 0 ? "TIME UP · DEFENDING" : seconds <= 3 ? "AUTO-DEFEND IN " + seconds : "CHOOSE YOUR ACTION";
 
   let command: ReactNode;
   if (gameOver) {
@@ -225,14 +254,15 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           <strong>{livingTarget?.name ?? "NONE"}</strong>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
         </div>
-        <div className={"rn-actions rn-actions-" + actions.length}>{actions.map((action, index) => <button key={action.key} type="button"
-          className={"rn-act rn-act-" + action.tone + (shownKey === action.key ? " rn-act-chosen" : shownKey ? " rn-act-passed" : autoSoon && action.key === "guard" ? " rn-act-auto" : "")}
+        <div className={"rn-actions rn-actions-" + Math.max(1, actions.length)}>{actions.map((action, index) => <button key={action.key} type="button"
+          className={"rn-act rn-act-" + action.tone + (shownKey === action.key ? " rn-act-chosen" : shownKey ? " rn-act-passed" : autoSoon && action.key === SKILL_DEFEND ? " rn-act-auto" : "") + (armed === action.key ? " rn-act-armed" : "") + (action.cooldown > 0 ? " rn-act-cooling" : "") + (action.ready && !shownKey ? " rn-act-opening" : "")}
           onClick={() => act(action)} onPointerEnter={() => setFocused(action.key)} onPointerLeave={() => setFocused("")} onFocus={() => setFocused(action.key)} onBlur={() => setFocused("")}
-          disabled={!shownKey && (!canAct || action.disabled)} aria-disabled={Boolean(shownKey) || undefined} aria-pressed={shownKey === action.key} title={action.details}>
-          <kbd aria-hidden="true">{index + 1}</kbd><Icon id={action.icon} size={2} />
-          <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : shownKey === action.key ? "AUTOMATIC" : autoSoon && action.key === "guard" ? "Automatic in " + seconds : action.hint}</small></span>
+          disabled={!shownKey && (!canAct || action.disabled)} aria-disabled={Boolean(shownKey) || undefined} aria-pressed={shownKey === action.key || armed === action.key} title={action.label + ": " + action.details}>
+          <kbd aria-hidden="true">{index + 1}</kbd>
+          <span className="rn-act-icon"><SkillIcon skill={action.skill} size={2} />{action.cooldown > 0 ? <b className="rn-act-cd" aria-label={"ready in " + action.cooldown + " rounds"}>{action.cooldown}</b> : null}</span>
+          <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : shownKey === action.key ? "AUTOMATIC" : armed === action.key ? (action.pick === "fallen" ? "Pick a fallen ally" : "Pick a portrait") : autoSoon && action.key === SKILL_DEFEND ? "Automatic in " + seconds : action.hint}</small></span>
         </button>)}</div>
-        <p className="rn-inspect" aria-live="polite">{focusedAction ? focusedAction.details : aidLabel ? "Keys 1–" + actions.length + " choose · ◀ ▶ change target · select a portrait to " + aidLabel.toLowerCase() + " an ally" : "Keys 1–" + actions.length + " choose · ◀ ▶ change target · one action per round"}</p>
+        <p className="rn-inspect" aria-live="polite">{focusedAction ? <><b>{focusedAction.label}</b> {focusedAction.details}</> : "Keys 1–" + actions.length + " use a skill · ◀ ▶ change target · one skill per round"}</p>
       </> : <p className="px-copy">{spectator ? "Spectating. The party is choosing its actions." : "Cast view is read-only. Switch to the player view to act."}</p>}
     </div>;
   } else if (camp) {
@@ -240,6 +270,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     const campTotal = camp.deadline ? Math.max(1, Math.round((new Date(camp.deadline).getTime() - new Date(camp.startedAt).getTime()) / 1000)) : 0;
     const campDone = eligible.filter(member => camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.stage === "crossroads" ? camp.votes?.[member.id] : camp.ready?.[member.id]).length;
     command = <Camp camp={camp} run={run} selfId={selfId} acting={acting && Boolean(self?.alive)} spectator={spectator} busy={busy} onCommand={onCommand}
+      onChangeSkills={canChangeSkills ? () => setLoadoutOpen(true) : undefined}
       timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "game" ? "CAMP GAME" : camp.stage === "crossroads" ? "DUNGEON VOTE" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "game" ? "DONE" : camp.stage === "crossroads" ? "IN" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
   } else if (run.phase === "intermission") {
     const mine = descentVote?.votes?.[selfId];
@@ -267,17 +298,16 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       {room.event?.resolved ? <p className="px-copy">{room.event.result || "The party moves on."}</p> : null}
       {navigation ? <div className="rn-timer" role="timer"><strong>PATH VOTE · {eligible.filter(member => navigationVote?.votes?.[member.id]).length}/{eligible.length} IN · TIES RANDOM</strong><TimerBar seconds={Math.min(10, navigation.seconds)} total={10} urgent={navigation.seconds <= 3} /><b>{navigation.seconds}s</b></div> : null}
       {exitsOpen ? <div className="rn-choices">{room.exits.map(exit => <button key={exit.id} className={"rn-choice" + (mine === exit.id ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_exit", exitId: exit.id })} disabled={!acting || busy || Boolean(navigation && navigation.remainingMs <= 0)} aria-label={"Vote for " + exit.label}><Icon id="agility" size={2} /><span><strong>{exit.label}</strong><small>{exit.description || "Enter this path"}</small></span>{navigationVote ? <em>{votesFor(navigationVote, exit.id)} {mine === exit.id ? "· YOURS" : ""}</em> : null}</button>)}</div> : null}
-      {!spectator && (player?.talentPoints ?? 0) > 0 ? <div className="rn-choices"><button className="px-button px-button-primary" onClick={() => { setTalentOpen(true); setTalentId(""); }}>CHOOSE A TALENT ({player?.talentPoints})</button></div> : null}
     </div>;
   }
 
   const kitFor = (classId?: string) => {
     const definition = catalog?.classes.find(item => item.id === classId);
     if (!definition) return undefined;
-    return [catalog?.classAbilities.find(item => item.id === definition.signatureAbilityId), catalog?.classPassives.find(item => item.id === definition.passiveId)].filter(item => item !== undefined).map(item => ({ name: item.name, description: item.description }));
+    return [catalog?.classPassives.find(item => item.id === definition.passiveId)].filter(item => item !== undefined).map(item => ({ name: item.name, description: item.description }));
   };
   // A card that has a whole border to itself also explains the class kit.
-  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: aidLabel ? { label: aidLabel, disabled: !canAct || cooldown > 0 } : undefined, onAid: aid });
+  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: armedAction && canAct ? { label: armedAction.label.toUpperCase(), disabled: false, fallen: armedAction.pick === "fallen" } : undefined, onAid: aid });
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))}
@@ -305,20 +335,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       </div>
     </div>
 
-    {talentOpen && player && !spectator ? <div className="px-backdrop" role="presentation">
-      <section className="px-panel px-tree" role="dialog" aria-modal="true" aria-labelledby="talent-title">
-        <div className="px-tree-head rn-talent-head"><div><p className="px-eyebrow">LEVEL {player.level} · {archetypeName(player.archetype).toUpperCase()} · {player.talentPoints} POINT{player.talentPoints === 1 ? "" : "S"}</p><h2 id="talent-title">Choose your next talent</h2><p className="px-copy">Select a talent to commit a point. Nothing is saved until you accept.</p></div><button className="px-button px-button-small" onClick={() => setTalentOpen(false)} aria-label="Close talent selection">CLOSE</button></div>
-        <div className="px-tree-tiers">{[1, 2].map(tier => <div className="px-tree-tier" key={tier}>
-          <div className="px-label">{tier === 1 ? "TIER 1 · FOUNDATION" : "TIER 2 · SPECIALIZATION"}</div>
-          {talents.filter(talent => talent.archetype === player.archetype && talent.tier === tier).map(talent => {
-            const known = player.talents?.includes(talent.id), locked = player.level < talent.tier + 1 || Boolean(talent.requires && !player.talents?.includes(talent.requires));
-            return <button key={talent.id} type="button" className={"px-tree-node rn-talent" + (talentId === talent.id ? " rn-talent-on" : "") + (known ? " rn-talent-known" : "") + (locked ? " rn-talent-locked" : "")} onClick={() => setTalentId(talent.id)} disabled={known || locked || busy} aria-pressed={talentId === talent.id}>
-              <Icon id={known ? "ready" : locked ? "locked" : "empower"} /><div><strong>{talent.name}</strong><p>{talent.description}</p><span className="px-label">{known ? "LEARNED" : talent.requires ? "REQUIRES " + (talents.find(item => item.id === talent.requires)?.name ?? "").toUpperCase() : tier === 1 ? "AVAILABLE NOW" : "UNLOCKS AT LEVEL 3"}</span></div>
-            </button>;
-          })}
-        </div>)}</div>
-        <div className="rn-talent-actions"><button className="px-button" onClick={() => { setTalentOpen(false); setTalentId(""); }}>DECIDE LATER</button><button className="px-button px-button-primary" disabled={!talentId || busy} onClick={() => { void onChooseTalent(talentId).then(ok => { if (ok) { setTalentOpen(false); setTalentId(""); } }); }}>{busy ? "SAVING…" : "ACCEPT TALENT"}</button></div>
-      </section>
-    </div> : null}
+    {loadoutOpen && canChangeSkills && classId && catalog ? <SkillLoadout classId={classId} className={catalog.classes.find(item => item.id === classId)?.name ?? "Adventurer"} catalog={catalog.skills} mastery={mastery} initial={player?.skills ?? []} busy={busy}
+      title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
+      onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
+    {run.briefing ? <DungeonIntro briefing={run.briefing} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

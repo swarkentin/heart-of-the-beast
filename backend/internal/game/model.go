@@ -21,13 +21,17 @@ const (
 )
 
 type Room struct {
-	ID                 string                    `json:"id"`
-	Code               string                    `json:"code"`
-	OwnerPlayerID      string                    `json:"ownerPlayerId"`
-	PlayerIDs          []string                  `json:"playerIds"`
-	PlayerArchetypes   map[string]string         `json:"playerArchetypes,omitempty"`
-	PlayerClasses      map[string]string         `json:"playerClasses,omitempty"`
-	PlayerSkins        map[string]PlayerSkin     `json:"playerSkins,omitempty"`
+	ID               string                `json:"id"`
+	Code             string                `json:"code"`
+	OwnerPlayerID    string                `json:"ownerPlayerId"`
+	PlayerIDs        []string              `json:"playerIds"`
+	PlayerArchetypes map[string]string     `json:"playerArchetypes,omitempty"`
+	PlayerClasses    map[string]string     `json:"playerClasses,omitempty"`
+	PlayerSkins      map[string]PlayerSkin `json:"playerSkins,omitempty"`
+	// PlayerLoadouts are the skill bars chosen in the lobby. PlayerMastery is the server's record of each
+	// player's mastery in their selected class, read from their profile, which decides the skills they may pick.
+	PlayerLoadouts     map[string][]string       `json:"playerLoadouts,omitempty"`
+	PlayerMastery      map[string]int            `json:"playerMastery,omitempty"`
 	PlayerTokenHashes  map[string]string         `json:"playerTokenHashes"`
 	PlayerProfileIDs   map[string]string         `json:"playerProfileIds,omitempty"`
 	Presence           map[string]PlayerPresence `json:"presence,omitempty"`
@@ -70,6 +74,8 @@ type Run struct {
 	DungeonModifiers []ActiveFloorModifier `json:"dungeonModifiers,omitempty"`
 	// FloorModifiers are the level-wide debuffs and perks in force on the current floor.
 	FloorModifiers []ActiveFloorModifier `json:"floorModifiers,omitempty"`
+	// Briefing describes the dungeon the party is in; clients show it as an intro on entering it.
+	Briefing *DungeonBriefing `json:"briefing,omitempty"`
 	// Camp is the respite between two floors of an expedition: a mini-game, then a shop.
 	Camp                    *Camp                   `json:"camp,omitempty"`
 	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`
@@ -101,8 +107,14 @@ type ClassCombatState struct {
 	WardReflect          int  `json:"wardReflect,omitempty"`
 	ResolveReady         bool `json:"resolveReady,omitempty"`
 	ArcaneCharges        int  `json:"arcaneCharges,omitempty"`
-	// AbilityCooldown is how many more rounds the signature ability is unavailable. It resets when a fight ends.
-	AbilityCooldown int `json:"abilityCooldown,omitempty"`
+	// Cooldowns is how many more rounds each recovering skill is unavailable. Every fight starts with all ready.
+	Cooldowns map[string]int `json:"cooldowns,omitempty"`
+	// Empower is bonus damage on the next damaging skill. Thorns reflects damage to attackers this round.
+	Empower int `json:"empower,omitempty"`
+	Thorns  int `json:"thorns,omitempty"`
+	// Regen heals at the end of each of the next RegenRounds rounds.
+	Regen       int `json:"regen,omitempty"`
+	RegenRounds int `json:"regenRounds,omitempty"`
 }
 
 type PlayerState struct {
@@ -117,9 +129,9 @@ type PlayerState struct {
 	ClassCombat    ClassCombatState    `json:"classCombat,omitempty"`
 	Experience     int                 `json:"experience"`
 	Level          int                 `json:"level"`
-	TalentPoints   int                 `json:"talentPoints"`
-	Talents        []string            `json:"talents"`
 	Stats          PlayerStats         `json:"stats"`
+	// Skills is the player's combat bar for this run, in slot order.
+	Skills []string `json:"skills,omitempty"`
 	// Gold is earned by clearing encounters and playing camp mini-games, and spent at the camp shop.
 	Gold int `json:"gold,omitempty"`
 	// Items are the IDs of the shop items the player has bought this run, in order.
@@ -195,7 +207,7 @@ type Enemy struct {
 	Intent       *EnemyIntent `json:"intent,omitempty"`
 	// Mechanics are the boss mechanics (see boss_mechanics.go) this enemy uses. Only dungeon bosses have any.
 	Mechanics []string `json:"mechanics,omitempty"`
-	// Barrier absorbs Strike damage before health. Signature abilities and interrupts pierce it.
+	// Barrier absorbs basic-attack damage before health. Every other skill pierces it.
 	Barrier int `json:"barrier,omitempty"`
 	// Enraged is set once, when an enraging boss falls to low health. DamageBonus then raises every hit.
 	Enraged     bool `json:"enraged,omitempty"`
@@ -207,6 +219,14 @@ type Enemy struct {
 	// BarrierLabel and CataclysmLabel name the boss's barrier and cataclysm in telegraphs and the log.
 	BarrierLabel   string `json:"barrierLabel,omitempty"`
 	CataclysmLabel string `json:"cataclysmLabel,omitempty"`
+	// Stun is how many coming turns the enemy loses (a boss is staggered instead and hits for half).
+	Stun int `json:"stun,omitempty"`
+	// Bleed is damage taken at the end of each of the next BleedRounds rounds.
+	Bleed       int `json:"bleed,omitempty"`
+	BleedRounds int `json:"bleedRounds,omitempty"`
+	// TauntedBy is the adventurer this enemy's single-target moves are forced onto for TauntRounds more turns.
+	TauntedBy   string `json:"tauntedBy,omitempty"`
+	TauntRounds int    `json:"tauntRounds,omitempty"`
 }
 
 type CombatEvent struct {
@@ -231,6 +251,9 @@ type Command struct {
 	Action   string `json:"action,omitempty"`
 	Mode     string `json:"mode,omitempty"`
 	TargetID string `json:"targetId,omitempty"`
+	// Skill is the skill a "skill" combat action uses. SkillIDs is the new bar of a "set_loadout" command.
+	Skill    string   `json:"skill,omitempty"`
+	SkillIDs []string `json:"skillIds,omitempty"`
 }
 
 type CombatRound struct {

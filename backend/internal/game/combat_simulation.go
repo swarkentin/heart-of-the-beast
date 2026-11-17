@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"time"
 )
 
 // CombatSimulationSnapshot is an explicit, persistence-free combat fixture.
@@ -32,15 +33,18 @@ type CombatSimulationReport struct {
 	PlayerProgression     map[string]ProgressionTransition `json:"playerProgression,omitempty"`
 }
 
-// SimulateCombat runs a deterministic attack/defend/interrupt policy against a
-// catalog-backed encounter. It intentionally has no room, clock, database,
-// websocket, or event dependencies. The seed controls policy tie-breaking.
+const simulationRoomID = "simulation"
+
+// SimulateCombat plays one encounter through the live round engine with the shared skill policy
+// (skillPolicyCommand). It has no clock, database or network: a round resolves as soon as every adventurer has
+// chosen. The seed controls policy tie-breaking.
 func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int) (CombatSimulationReport, error) {
 	if maxRounds <= 0 {
 		maxRounds = 100
 	}
 	players := make(map[string]*PlayerState, len(snapshot.Players))
 	playerIDs := make([]string, 0, len(snapshot.Players))
+	starting := make(map[string]PlayerState, len(snapshot.Players))
 	for _, value := range snapshot.Players {
 		if value.ID == "" {
 			return CombatSimulationReport{}, fmt.Errorf("simulation player ID cannot be empty")
@@ -52,8 +56,11 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		if player.MaxHealth <= 0 || player.Health < 0 || player.Health > player.MaxHealth {
 			return CombatSimulationReport{}, fmt.Errorf("player %q has invalid health", player.ID)
 		}
+		player.Skills = append([]string(nil), value.Skills...)
+		ensureSkills(&player)
 		players[player.ID] = &player
 		playerIDs = append(playerIDs, player.ID)
+		starting[player.ID] = player
 	}
 	if len(players) == 0 {
 		return CombatSimulationReport{}, fmt.Errorf("simulation requires at least one player")
@@ -97,210 +104,68 @@ func SimulateCombat(snapshot CombatSimulationSnapshot, seed int64, maxRounds int
 		PlayerProgression:     make(map[string]ProgressionTransition),
 	}
 	rng := rand.New(rand.NewSource(seed))
-
-	for round := 1; round <= maxRounds; round++ {
-		if allSimulationEnemiesDefeated(enemies) {
-			report.Won = true
-			break
-		}
-		if allSimulationPlayersDown(players) {
-			report.Wiped = true
-			break
-		}
-		report.Rounds = round
-
-		eligibleIDs := make([]string, 0, len(players))
-		for _, id := range playerIDs {
-			if players[id].Health > 0 {
-				eligibleIDs = append(eligibleIDs, id)
+	now := time.Unix(0, 0).UTC()
+	encounter := &Encounter{Status: EncounterActive, Enemies: enemies}
+	room := &Room{
+		ID: simulationRoomID, PlayerIDs: playerIDs, Presence: map[string]PlayerPresence{},
+		Run: &Run{
+			ID: simulationRoomID, Phase: PhaseCombat, CurrentRoomID: simulationRoomID, Players: players, Flags: map[string]bool{},
+			Rooms: map[string]*DungeonRoom{simulationRoomID: {ID: simulationRoomID, RoomType: "combat", Encounter: encounter}},
+		},
+	}
+	run := room.Run
+	startCombatRound(room, now)
+	for run.Phase == PhaseCombat && run.CombatRound != nil && report.Rounds < maxRounds {
+		round := run.CombatRound.Number
+		for _, enemy := range encounter.Enemies {
+			if enemy.Health > 0 && enemy.Intent != nil {
+				report.AbilityUses[enemy.Intent.Kind]++
 			}
 		}
-		for i := range enemies {
-			enemy := &enemies[i]
-			if enemy.Health <= 0 {
-				enemy.Intent = nil
-				continue
-			}
-			enemy.TurnsTaken++
-			enemy.Intent = buildEnemyIntent(enemy, enemy.TurnsTaken, i, eligibleIDs)
-		}
-
-		// Players act in stable ID order, before any surviving enemy intent resolves.
 		for _, playerID := range playerIDs {
-			player := players[playerID]
-			if player.Health <= 0 {
+			if players[playerID].Health <= 0 || run.CombatRound == nil || run.CombatRound.Number != round {
 				continue
 			}
-			targetIndex := simulationTarget(enemies, rng)
-			if targetIndex < 0 {
-				break
+			command := skillPolicyCommand(room, playerID, round, rng)
+			if err := SubmitCombatAction(room, playerID, command, now); err != nil {
+				return CombatSimulationReport{}, fmt.Errorf("simulate %q for player %q: %w", command.Skill, playerID, err)
 			}
-			target := &enemies[targetIndex]
-			bonuses := bonusesFor(player)
-			passive := classPassiveEffects(player, target, target.Intent)
-
-			if command, ok := simulationClassAbilityCommand(player, players, enemies, targetIndex, playerID); ok {
-				room := &Room{
-					PlayerIDs: playerIDs,
-					Run: &Run{
-						Players: players, CurrentRoomID: "simulation",
-						Rooms: map[string]*DungeonRoom{"simulation": {Encounter: &Encounter{Enemies: enemies}}},
-					},
-				}
-				beforeEnemyHealth := simulationEnemyHealth(enemies)
-				beforePlayerHealth := simulationPlayerHealth(players)
-				if err := applyClassAbility(room, player, command, round); err != nil {
-					return CombatSimulationReport{}, fmt.Errorf("simulate ability for player %q: %w", playerID, err)
-				}
-				report.PlayerDamageDealt += beforeEnemyHealth - simulationEnemyHealth(enemies)
-				report.PlayerHealing += simulationPlayerHealth(players) - beforePlayerHealth
-				ability, _ := findClassAbility(player.ClassBuild.SignatureAbilityID)
-				report.AbilityUses[ability.EffectID]++
-				continue
+			if command.Skill != "" {
+				report.AbilityUses[command.Skill]++
 			}
-
-			if target.Intent != nil && target.Intent.Interruptible && target.Intent.Damage >= 5 && player.Stats.Focus > 0 {
-				interruptPassive := classPassiveEffects(player, target, target.Intent)
-				damage := resolveInterruptDamage(player.Stats.Focus, bonuses.InterruptDamage, interruptPassive.InterruptDamage)
-				transition := resolveHealthDamage(target.Health, damage)
-				target.Health = transition.Health
-				report.PlayerDamageDealt += transition.Applied
-				target.Intent = nil
-				continue
-			}
-
-			partyBonuses := simulationPartyBonuses(players)
-			incoming := simulationIncomingFor(playerID, enemies, player, bonuses.DamageReduction)
-			guard := player.GuardReduction
-			if guard <= 0 {
-				guard = GuardDamageReduction
-			}
-			guard += bonuses.GuardReduction + partyBonuses.PartyGuardReduction
-			if incoming > guard && incoming >= 5 {
-				player.Guarding = true
-				continue
-			}
-
-			attack := resolveAttackDamage(AttackDamageInput{
-				BaseDamage:          player.StrikeDamage + player.Stats.Power,
-				BonusDamage:         bonuses.AttackDamage + passive.AttackDamage,
-				TelegraphBonus:      bonuses.AttackVsTelegraph,
-				MarkedDamage:        target.MarkedDamage,
-				IncludeMarkedDamage: true,
-				ConsumeMarkedDamage: true,
-				ResolveReady:        player.ClassCombat.ResolveReady,
-				UseResolve:          true,
-				ResolveBonus:        3,
-				Telegraph:           target.Intent != nil && target.Intent.Interruptible,
-			})
-			target.MarkedDamage = attack.RemainingMarkedDamage
-			player.ClassCombat.ResolveReady = attack.ResolveReady
-			transition := resolveHealthDamage(target.Health, attack.Damage)
-			target.Health = transition.Health
-			report.PlayerDamageDealt += transition.Applied
 		}
-
-		// Surviving enemies execute the same catalog intent and mitigation arithmetic as live combat.
-		for i := range enemies {
-			enemy := &enemies[i]
-			if enemy.Health <= 0 || enemy.Intent == nil {
+		report.Rounds++
+		for _, event := range run.LastCombatEvents {
+			if event.Round != round {
 				continue
 			}
-			intent := *enemy.Intent
-			report.AbilityUses[intent.Kind]++
-			targetIDs := make([]string, 0, len(players))
-			if intent.TargetAll {
-				for _, id := range playerIDs {
-					if players[id].Health > 0 {
-						targetIDs = append(targetIDs, id)
-					}
-				}
-			} else if intent.TargetPlayerID != "" && players[intent.TargetPlayerID] != nil && players[intent.TargetPlayerID].Health > 0 {
-				targetIDs = append(targetIDs, intent.TargetPlayerID)
+			switch {
+			case event.Effect == "damage" && event.TargetType == "enemy":
+				report.PlayerDamageDealt += event.Amount
+			case event.Effect == "damage" && event.TargetType == "player":
+				report.PlayerDamageReceived += event.Amount
+			case event.Effect == "heal" && event.TargetType == "player":
+				report.PlayerHealing += event.Amount
+			case event.Effect == "heal" && event.TargetType == "enemy":
+				report.MonsterHealing += event.Amount
 			}
-			for _, playerID := range targetIDs {
-				player := players[playerID]
-				mitigation := resolveIncomingDamage(IncomingDamageInput{
-					IntentDamage:          intent.Damage,
-					TalentReduction:       bonusesFor(player).DamageReduction,
-					PassiveReduction:      classPassiveEffects(player, enemy, &intent).DamageReduction,
-					Ward:                  player.ClassCombat.Ward,
-					WardReflect:           player.ClassCombat.WardReflect,
-					Guarding:              player.Guarding,
-					GuardReduction:        player.GuardReduction,
-					DefaultGuardReduction: GuardDamageReduction,
-					GuardBonus:            player.ClassCombat.GuardBonus,
-					TalentGuardReduction:  bonusesFor(player).GuardReduction,
-					PartyGuardReduction:   simulationPartyBonuses(players).PartyGuardReduction,
-				})
-				player.ClassCombat.Ward = mitigation.WardRemaining
-				player.ClassCombat.WardReflect = mitigation.WardReflectRemaining
-				player.Guarding = mitigation.Guarding
-				player.ClassCombat.GuardBonus = mitigation.GuardBonus
-				onClassGuardBlocked(player, intent, mitigation.Guarded, mitigation.GuardBlocked)
-				transition := resolveHealthDamage(player.Health, mitigation.Damage)
-				player.Health = transition.Health
-				player.ClassCombat.DamageTakenThisRound += transition.Applied
-				report.PlayerDamageReceived += transition.Applied
-				if player.Health == 0 {
-					report.PlayersDowned++
-				}
-				reflectDamage := mitigation.WardReflect + bonusesFor(player).ReflectDamage
-				if reflectDamage > 0 && enemy.Health > 0 {
-					reflect := reflectDamage
-					reflected := resolveHealthDamage(enemy.Health, reflect)
-					enemy.Health = reflected.Health
-					report.PlayerDamageDealt += reflected.Applied
-				}
-			}
-			if intent.Heal > 0 && enemy.Health > 0 {
-				healing := resolveHealthHealing(enemy.Health, enemy.MaxHealth, intent.Heal)
-				enemy.Health = healing.Health
-				report.MonsterHealing += healing.Applied
-			}
-			enemy.Intent = nil
-		}
-		report.PlayerHealing += applySimulationCompanionInstinct(players, playerIDs)
-		for _, player := range players {
-			player.ClassCombat.DamageTakenLastRound = player.ClassCombat.DamageTakenThisRound
-			player.ClassCombat.DamageTakenThisRound = 0
-			player.Guarding = false
-			player.ClassCombat.GuardBonus = 0
-			if player.ClassCombat.AbilityCooldown > 0 {
-				player.ClassCombat.AbilityCooldown--
+			if event.Kind == "player_down" {
+				report.PlayersDowned++
 			}
 		}
 	}
 
-	if allSimulationEnemiesDefeated(enemies) {
-		report.Won = true
-	}
-	if allSimulationPlayersDown(players) && !report.Won {
-		report.Wiped = true
-	}
-	if report.Won {
-		partyBonuses := simulationPartyBonuses(players)
-		for _, player := range players {
-			if player.Health <= 0 {
-				continue
-			}
-			heal := bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonuses.PartyEncounterHeal
-			if heal > 0 {
-				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
-				player.Health = transition.Health
-				report.PlayerHealing += transition.Applied
-			}
-		}
-		if snapshot.ExperienceReward > 0 {
-			for id, player := range players {
-				report.PlayerProgression[id] = resolveExperienceGain(*player, snapshot.ExperienceReward)
-			}
+	report.Won = encounter.Status == EncounterCleared
+	report.Wiped = run.Phase == PhaseFailed
+	if report.Won && snapshot.ExperienceReward > 0 {
+		for id, player := range starting {
+			report.PlayerProgression[id] = resolveExperienceGain(player, snapshot.ExperienceReward)
 		}
 	}
 	for id, player := range players {
 		report.RemainingPlayerHealth[id] = player.Health
 	}
-	for _, enemy := range enemies {
+	for _, enemy := range encounter.Enemies {
 		report.RemainingEnemyHealth[enemy.ID] = enemy.Health
 	}
 	if len(report.PlayerProgression) == 0 {
@@ -320,195 +185,6 @@ func SimulateCombatBatch(snapshot CombatSimulationSnapshot, seeds []int64, maxRo
 		reports = append(reports, report)
 	}
 	return reports, nil
-}
-
-func simulationClassAbilityCommand(player *PlayerState, players map[string]*PlayerState, enemies []Enemy, targetIndex int, playerID string) (Command, bool) {
-	if player == nil || player.ClassBuild == nil {
-		return Command{}, false
-	}
-	ability, ok := findClassAbility(player.ClassBuild.SignatureAbilityID)
-	if ok && classAbilityHandlers[ability.EffectID].cooldown > 0 && player.ClassCombat.AbilityCooldown > 0 {
-		return Command{}, false
-	}
-	if !ok {
-		return Command{}, false
-	}
-	target := &enemies[targetIndex]
-	incoming := simulationIncomingFor(playerID, enemies, player, bonusesFor(player).DamageReduction)
-	command := Command{Action: "ability"}
-	switch ability.EffectID {
-	case "combat.guard":
-		return command, incoming > 0 && !player.Guarding
-	case "combat.counter":
-		command.TargetID = target.ID
-		return command, player.ClassCombat.DamageTakenLastRound > 0
-	case "combat.ward":
-		return command, incoming > 0 && player.ClassCombat.Ward == 0
-	case "combat.precision":
-		command.TargetID = target.ID
-		return command, target.Intent != nil || target.Health*2 <= target.MaxHealth
-	case "combat.elemental":
-		command.TargetID = target.ID
-		if target.Intent != nil && target.Intent.Interruptible {
-			command.Mode = "frost"
-		} else {
-			command.Mode = "fire"
-		}
-		return command, true
-	case "combat.disrupt":
-		command.TargetID = target.ID
-		return command, target.Intent != nil
-	case "combat.heal":
-		var recipient *PlayerState
-		for _, candidateID := range sortedSimulationPlayerIDs(players) {
-			candidate := players[candidateID]
-			if candidate.Health <= 0 || candidate.Health >= candidate.MaxHealth {
-				continue
-			}
-			if recipient == nil || candidate.Health*recipient.MaxHealth < recipient.Health*candidate.MaxHealth {
-				recipient = candidate
-			}
-		}
-		if recipient == nil || recipient.MaxHealth-recipient.Health < 5 {
-			return Command{}, false
-		}
-		command.TargetID = recipient.ID
-		return command, true
-	case "combat.command":
-		command.TargetID = target.ID
-		return command, target.Health > 0 && target.MarkedDamage == 0
-	case "combat.companion":
-		switch {
-		case target.Intent != nil && target.Intent.Interruptible:
-			command.Mode = "disrupt"
-			command.TargetID = target.ID
-		case incoming > 0:
-			command.Mode = "defend"
-		default:
-			command.Mode = "attack"
-			command.TargetID = target.ID
-		}
-		return command, true
-	default:
-		return Command{}, false
-	}
-}
-
-// sortedSimulationPlayerIDs keeps policy tie-breaking independent of Go map iteration.
-func sortedSimulationPlayerIDs(players map[string]*PlayerState) []string {
-	ids := make([]string, 0, len(players))
-	for id := range players {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	return ids
-}
-
-func simulationEnemyHealth(enemies []Enemy) int {
-	total := 0
-	for _, enemy := range enemies {
-		total += enemy.Health
-	}
-	return total
-}
-
-func simulationPlayerHealth(players map[string]*PlayerState) int {
-	total := 0
-	for _, player := range players {
-		total += player.Health
-	}
-	return total
-}
-
-func simulationTarget(enemies []Enemy, rng *rand.Rand) int {
-	lowestHealth := -1
-	candidates := make([]int, 0, len(enemies))
-	for i := range enemies {
-		if enemies[i].Health <= 0 {
-			continue
-		}
-		if lowestHealth < 0 || enemies[i].Health < lowestHealth {
-			lowestHealth = enemies[i].Health
-			candidates = candidates[:0]
-			candidates = append(candidates, i)
-		} else if enemies[i].Health == lowestHealth {
-			candidates = append(candidates, i)
-		}
-	}
-	if len(candidates) == 0 {
-		return -1
-	}
-	return candidates[rng.Intn(len(candidates))]
-}
-
-func simulationIncomingFor(playerID string, enemies []Enemy, player *PlayerState, talentReduction int) int {
-	total := 0
-	for _, enemy := range enemies {
-		if enemy.Health <= 0 || enemy.Intent == nil || (!enemy.Intent.TargetAll && enemy.Intent.TargetPlayerID != playerID) {
-			continue
-		}
-		passive := classPassiveEffects(player, &enemy, enemy.Intent)
-		damage := enemy.Intent.Damage - talentReduction - passive.DamageReduction
-		if damage > 0 {
-			total += damage
-		}
-	}
-	return total
-}
-
-func simulationPartyBonuses(players map[string]*PlayerState) TalentBonuses {
-	var bonuses TalentBonuses
-	for _, player := range players {
-		if player == nil || player.Health <= 0 {
-			continue
-		}
-		bonuses = addTalentBonuses(bonuses, bonusesFor(player))
-	}
-	return bonuses
-}
-
-func applySimulationCompanionInstinct(players map[string]*PlayerState, playerIDs []string) int {
-	healed := 0
-	for _, ownerID := range playerIDs {
-		owner := players[ownerID]
-		if owner == nil || owner.Health <= 0 || !classPassiveHasTrigger(owner, ClassPassiveTriggerCompanionInstinct) {
-			continue
-		}
-		var target *PlayerState
-		for _, candidateID := range playerIDs {
-			candidate := players[candidateID]
-			if candidate == nil || candidate.Health <= 0 || candidate.Health >= candidate.MaxHealth {
-				continue
-			}
-			if target == nil || candidate.Health*target.MaxHealth < target.Health*candidate.MaxHealth {
-				target = candidate
-			}
-		}
-		if target != nil {
-			transition := resolveHealthHealing(target.Health, target.MaxHealth, 1)
-			target.Health = transition.Health
-			healed += transition.Applied
-		}
-	}
-	return healed
-}
-
-func allSimulationEnemiesDefeated(enemies []Enemy) bool {
-	for _, enemy := range enemies {
-		if enemy.Health > 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func allSimulationPlayersDown(players map[string]*PlayerState) bool {
-	for _, player := range players {
-		if player.Health > 0 {
-			return false
-		}
-	}
-	return true
 }
 
 // CombatSimulationBatchReport summarizes the outcome distribution for a batch.

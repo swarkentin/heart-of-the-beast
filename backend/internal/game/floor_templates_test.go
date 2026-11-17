@@ -265,7 +265,7 @@ func TestSciFiRunDescendsThroughThemedFloorsToVictory(t *testing.T) {
 			boss.Encounter.Enemies[i].Health = 1
 		}
 		startCombatRound(room, now)
-		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: boss.Encounter.Enemies[0].ID}, now); err != nil {
+		if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: boss.Encounter.Enemies[0].ID}, now); err != nil {
 			t.Fatalf("depth %d: %v", depth, err)
 		}
 		if depth < MaximumDungeonDepth {

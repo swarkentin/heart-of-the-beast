@@ -30,6 +30,16 @@ func startExpedition(t *testing.T, players int, themeID, runID string) *Room {
 	return room
 }
 
+// basicAttackOf is the skill on a player bar that is always ready: their basic attack.
+func basicAttackOf(player *PlayerState) string {
+	for _, id := range player.Skills {
+		if definition, ok := findSkill(id); ok && definition.Basic {
+			return id
+		}
+	}
+	return SkillStrike
+}
+
 // defeatCurrentEncounter wins the fight in the current room with one Strike from player-1.
 func defeatCurrentEncounter(t *testing.T, room *Room) {
 	t.Helper()
@@ -42,7 +52,7 @@ func defeatCurrentEncounter(t *testing.T, room *Room) {
 	current.Encounter.Enemies[0].Health = 1
 	target := current.Encounter.Enemies[0].ID
 	for _, playerID := range eligibleCombatPlayers(room) {
-		command := Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: target}
+		command := Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: basicAttackOf(run.Players[playerID]), TargetID: target}
 		if playerID != "player-1" {
 			command = Command{Type: "combat", Round: run.CombatRound.Number, Action: "defend"}
 		}
@@ -449,7 +459,7 @@ func TestFloorModifiersChangeCombatRules(t *testing.T) {
 	}
 
 	// Dull Edges: Strike deals one less. Brittle Guard: Defend blocks one less.
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: enemy.ID}, expeditionNow); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: enemy.ID}, expeditionNow); err != nil {
 		t.Fatal(err)
 	}
 	if dealt := baseHealth - enemy.Health; dealt != PlayerStrikeDamage-1 {
@@ -667,7 +677,7 @@ func TestExpeditionLoopsThroughDungeonsUntilThePartyFalls(t *testing.T) {
 			run.Rooms[run.CurrentRoomID].Encounter.Enemies[i].Health = 9999
 		}
 		for round := 0; round < 30 && run.Phase == PhaseCombat; round++ {
-			bossRound(t, room, Command{Action: "attack", TargetID: run.Rooms[run.CurrentRoomID].Encounter.Enemies[0].ID})
+			bossRound(t, room, Command{Action: "skill", Skill: SkillStrike, TargetID: run.Rooms[run.CurrentRoomID].Encounter.Enemies[0].ID})
 		}
 		if run.Phase != PhaseFailed || run.Rank != ExpeditionRank(floors) || run.Rank == "Wanderer" || run.FloorsCleared != floors {
 			t.Fatalf("the fall should end the expedition with a rank: phase=%s rank=%q floors=%d", run.Phase, run.Rank, run.FloorsCleared)
@@ -1195,12 +1205,12 @@ func TestDungeonBossEnragesAndSummonsOnce(t *testing.T) {
 
 	// The reinforcement has to fall too before the dungeon is cleared.
 	encounter.Enemies[0].Health = 1
-	bossRound(t, room, Command{Action: "attack", TargetID: encounter.Enemies[0].ID})
+	bossRound(t, room, Command{Action: "skill", Skill: SkillStrike, TargetID: encounter.Enemies[0].ID})
 	if run.Phase != PhaseCombat || encounter.Status != EncounterActive {
 		t.Fatal("the fight should continue while the reinforcement stands")
 	}
 	encounter.Enemies[1].Health = 1
-	bossRound(t, room, Command{Action: "attack", TargetID: encounter.Enemies[1].ID})
+	bossRound(t, room, Command{Action: "skill", Skill: SkillStrike, TargetID: encounter.Enemies[1].ID})
 	if run.Phase != PhaseIntermission || run.DungeonsCleared != 1 || run.Camp == nil || len(run.Camp.Choices) != DungeonChoiceCount {
 		t.Fatalf("the dungeon boss should lead to the camp and its crossroads: phase=%s camp=%+v", run.Phase, run.Camp)
 	}
@@ -1215,7 +1225,7 @@ func TestDungeonBossBarrierAbsorbsStrikesButNotAbilities(t *testing.T) {
 	}
 	health := boss.Health
 	boss.Intent.Heal = 0 // keep the Clockmaker's drain out of the arithmetic
-	bossRound(t, room, Command{Action: "attack", TargetID: boss.ID})
+	bossRound(t, room, Command{Action: "skill", Skill: SkillStrike, TargetID: boss.ID})
 	// Two Strikes of 6: the first is absorbed whole, the second breaks through.
 	if dealt, want := health-boss.Health, 2*PlayerStrikeDamage-wantBarrier; dealt != want || boss.Barrier != 0 {
 		t.Fatalf("strikes dealt %d through the barrier, want %d (barrier left %d)", dealt, want, boss.Barrier)
@@ -1234,16 +1244,11 @@ func TestDungeonBossBarrierAbsorbsStrikesButNotAbilities(t *testing.T) {
 	classRun := classRoom.Run
 	target := &classRun.Rooms["d1-entry"].Encounter.Enemies[0]
 	target.Barrier, target.BarrierLabel, target.Health, target.MaxHealth = 50, "Test Barrier", 200, 200
-	for _, command := range randomCombatCommands(classRoom, "player-1", classRun.CombatRound.Number) {
-		if command.Action == "ability" && command.TargetID == target.ID {
-			if err := ApplyCommand(classRoom, "player-1", command, expeditionNow); err != nil {
-				t.Fatal(err)
-			}
-			break
-		}
+	if err := ApplyCommand(classRoom, "player-1", Command{Type: "combat", Round: classRun.CombatRound.Number, Action: "skill", Skill: "assassin.exploit-weakness", TargetID: target.ID}, expeditionNow); err != nil {
+		t.Fatal(err)
 	}
 	if target.Barrier != 50 || target.Health == 200 {
-		t.Fatalf("a signature ability should pierce the barrier: barrier=%d health=%d", target.Barrier, target.Health)
+		t.Fatalf("a non-basic skill should pierce the barrier: barrier=%d health=%d", target.Barrier, target.Health)
 	}
 }
 
@@ -1263,10 +1268,11 @@ func TestDungeonBossCataclysmCanBeInterrupted(t *testing.T) {
 		t.Fatalf("turn %d should telegraph the cataclysm: %+v", boss.TurnsTaken, boss.Intent)
 	}
 	before := run.Players["player-1"].Health + run.Players["player-2"].Health
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "interrupt", TargetID: boss.ID}, expeditionNow); err != nil {
+	run.Players["player-1"].Skills = append(run.Players["player-1"].Skills, "ranger.pinning-shot")
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: "ranger.pinning-shot", TargetID: boss.ID}, expeditionNow); err != nil {
 		t.Fatal(err)
 	}
-	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: boss.ID}, expeditionNow); err != nil {
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: boss.ID}, expeditionNow); err != nil {
 		t.Fatal(err)
 	}
 	if after := run.Players["player-1"].Health + run.Players["player-2"].Health; after != before {
@@ -1277,7 +1283,7 @@ func TestDungeonBossCataclysmCanBeInterrupted(t *testing.T) {
 		boss = &run.Rooms[run.CurrentRoomID].Encounter.Enemies[0]
 	}
 	before = run.Players["player-1"].Health + run.Players["player-2"].Health
-	bossRound(t, room, Command{Action: "attack", TargetID: boss.ID})
+	bossRound(t, room, Command{Action: "skill", Skill: SkillStrike, TargetID: boss.ID})
 	if after := run.Players["player-1"].Health + run.Players["player-2"].Health; before-after < 2*(want-1) {
 		t.Fatalf("an unanswered cataclysm should hit everyone, party lost %d", before-after)
 	}

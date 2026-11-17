@@ -21,7 +21,7 @@ func TestSoloRunLifecycle(t *testing.T) {
 		t.Fatalf("unexpected initial run state: %#v", room.Run)
 	}
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = PlayerStrikeDamage
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if room.Run.Phase != PhaseExploring || !room.Run.Rooms["entry"].Cleared {
@@ -44,13 +44,13 @@ func TestRunRejectsInvalidTransitionsAndActors(t *testing.T) {
 	if err := StartRun(room, "run-1", now); err != nil {
 		t.Fatal(err)
 	}
-	if err := ApplyCommand(room, "outsider", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); !errors.Is(err, ErrNotPlayer) {
+	if err := ApplyCommand(room, "outsider", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now); !errors.Is(err, ErrNotPlayer) {
 		t.Fatalf("expected not-player error, got %v", err)
 	}
 	if err := ApplyCommand(room, "player-1", Command{Type: "choose_exit", ExitID: "north"}, now); !errors.Is(err, ErrInvalidPhase) {
 		t.Fatalf("expected invalid-phase error, got %v", err)
 	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "missing"}, now); !errors.Is(err, ErrInvalidTarget) {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "missing"}, now); !errors.Is(err, ErrInvalidTarget) {
 		t.Fatalf("expected invalid-target error, got %v", err)
 	}
 }
@@ -69,7 +69,7 @@ func TestBossDefeatCompletesRun(t *testing.T) {
 					continue
 				}
 				room.Run.Players["player-1"].Health = 100
-				if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "attack", TargetID: enemy.ID}, now); err != nil {
+				if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: room.Run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: enemy.ID}, now); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -120,7 +120,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	withoutReinforcements(room, "entry")
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 2 * PlayerStrikeDamage
 
-	first := Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}
+	first := Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}
 	if err := ApplyCommand(room, "player-1", first, now); err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestCoopCombatActionsResolveTogether(t *testing.T) {
 	if err := ApplyCommand(room, "player-1", first, now); !errors.Is(err, ErrRoundActionSubmitted) {
 		t.Fatalf("expected duplicate action to be rejected, got %v", err)
 	}
-	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if room.Run.Phase != PhaseExploring || room.Run.Rooms["entry"].Encounter.Enemies[0].Health != 0 {
@@ -152,7 +152,7 @@ func TestCombatRoundDeadlineDefaultsMissingPlayersToDefend(t *testing.T) {
 	room.Run.Players["player-2"].Health = 20
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Intent.Damage = 7
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if !AdvanceCombatRound(room, now.Add(CombatActionWindow)) {
@@ -174,10 +174,10 @@ func TestCombatRejectsActionFromExpiredRound(t *testing.T) {
 		t.Fatal(err)
 	}
 	room.Run.Rooms["entry"].Encounter.Enemies[0].Health = 20
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now); err != nil {
 		t.Fatal(err)
 	}
-	err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}, now.Add(CombatActionWindow))
+	err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}, now.Add(CombatActionWindow))
 	if !errors.Is(err, ErrStaleCombatRound) {
 		t.Fatalf("expected stale round error, got %v", err)
 	}

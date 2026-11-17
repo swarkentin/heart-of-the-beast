@@ -48,7 +48,7 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /rooms/{id}/return-to-lobby", h.returnToLobby)
 	mux.HandleFunc("POST /rooms/{id}/archetype", h.selectArchetype)
 	mux.HandleFunc("POST /rooms/{id}/class", h.selectClass)
-	mux.HandleFunc("POST /rooms/{id}/talents", h.chooseTalent)
+	mux.HandleFunc("POST /rooms/{id}/loadout", h.selectLoadout)
 	mux.HandleFunc("GET /progression", progressionCatalog)
 	mux.HandleFunc("POST /profile", h.createOrGetProfile)
 	mux.HandleFunc("GET /profile", h.getProfile)
@@ -166,17 +166,19 @@ type playerPresenceResponse struct {
 }
 
 type roomResponse struct {
-	ID            string                            `json:"id"`
-	Code          string                            `json:"code"`
-	OwnerPlayerID string                            `json:"ownerPlayerId"`
-	PlayerIDs     []string                          `json:"playerIds"`
-	PlayerClasses map[string]string                 `json:"playerClasses,omitempty"`
-	PlayerSkins   map[string]game.PlayerSkin        `json:"playerSkins,omitempty"`
-	Presence      map[string]playerPresenceResponse `json:"presence"`
-	Run           *game.Run                         `json:"run,omitempty"`
-	Version       int64                             `json:"version"`
-	CreatedAt     time.Time                         `json:"createdAt"`
-	UpdatedAt     time.Time                         `json:"updatedAt"`
+	ID             string                            `json:"id"`
+	Code           string                            `json:"code"`
+	OwnerPlayerID  string                            `json:"ownerPlayerId"`
+	PlayerIDs      []string                          `json:"playerIds"`
+	PlayerClasses  map[string]string                 `json:"playerClasses,omitempty"`
+	PlayerSkins    map[string]game.PlayerSkin        `json:"playerSkins,omitempty"`
+	PlayerLoadouts map[string][]string               `json:"playerLoadouts,omitempty"`
+	PlayerMastery  map[string]int                    `json:"playerMastery,omitempty"`
+	Presence       map[string]playerPresenceResponse `json:"presence"`
+	Run            *game.Run                         `json:"run,omitempty"`
+	Version        int64                             `json:"version"`
+	CreatedAt      time.Time                         `json:"createdAt"`
+	UpdatedAt      time.Time                         `json:"updatedAt"`
 }
 
 const presenceTimeout = 30 * time.Second
@@ -196,7 +198,7 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 	}
 	return roomResponse{
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
-		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerSkins: room.PlayerSkins, Presence: presence, Run: room.Run,
+		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerSkins: room.PlayerSkins, PlayerLoadouts: room.PlayerLoadouts, PlayerMastery: room.PlayerMastery, Presence: presence, Run: room.Run,
 		Version: room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
 	}
 }
@@ -576,8 +578,8 @@ type archetypeRequest struct {
 	Archetype string `json:"archetype"`
 }
 
-type talentRequest struct {
-	TalentID string `json:"talentId"`
+type loadoutRequest struct {
+	SkillIDs []string `json:"skillIds"`
 }
 
 type classRequest struct {
@@ -585,6 +587,8 @@ type classRequest struct {
 	// Tier and Variant choose the look; omitted, the best unlocked armour in the class colours is worn.
 	Tier    int    `json:"tier,omitempty"`
 	Variant string `json:"variant,omitempty"`
+	// SkillIDs optionally chooses the skill bar; omitted or no longer valid, the class's default bar is used.
+	SkillIDs []string `json:"skillIds,omitempty"`
 }
 
 // selectClass validates the stable content ID and availability on the server;
@@ -615,6 +619,11 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		mastery := h.classMasteryLevel(r, room, actor, request.ClassID)
+		game.SetPlayerMastery(room, actor, mastery)
+		if len(request.SkillIDs) > 0 {
+			// A remembered bar may hold skills this profile has not earned: fall back to the default bar.
+			_ = game.SetPlayerLoadout(room, actor, request.SkillIDs)
+		}
 		skin := game.PlayerSkin{Tier: request.Tier, Variant: request.Variant}
 		if skin.Tier == 0 {
 			skin.Tier = game.HighestUnlockedSkinTier(mastery)
@@ -645,11 +654,11 @@ func progressionCatalog(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"archetypes":        game.ArchetypeCatalog(),
 		"classes":           game.ClassCatalog(),
-		"classAbilities":    game.ClassAbilityCatalog(),
+		"skills":            game.SkillCatalog(),
+		"loadoutSize":       game.MaxLoadoutSkills,
 		"classPassives":     game.ClassPassiveCatalog(),
 		"equipment":         game.EquipmentCatalog(),
 		"classAvailability": game.ClassAvailabilityCatalog(),
-		"talents":           game.TalentCatalog(),
 		"levelThresholds":   []int{50, 100, 200, 325},
 		"profileRewards":    game.ProfileRewardCatalog(),
 		"classSkins":        game.ClassSkinCatalogSnapshot(),
@@ -696,14 +705,16 @@ func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusConflict, "room is busy; retry the archetype choice")
 }
 
-func (h *Handler) chooseTalent(w http.ResponseWriter, r *http.Request) {
+// selectLoadout chooses the skill bar for the player's class in the lobby. Mastery is re-read from the profile,
+// so skills earned since the class was picked are available without picking it again.
+func (h *Handler) selectLoadout(w http.ResponseWriter, r *http.Request) {
 	_, actor, ok := h.authorizedPlayer(w, r)
 	if !ok {
 		return
 	}
-	var request talentRequest
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
-		writeError(w, http.StatusBadRequest, "choose a valid talent")
+	var request loadoutRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "choose a valid set of skills")
 		return
 	}
 	for attempt := 0; attempt < 4; attempt++ {
@@ -717,7 +728,10 @@ func (h *Handler) chooseTalent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		expected := room.Version
-		if err := game.ChooseTalent(room, actor, request.TalentID); err != nil {
+		if classID := room.PlayerClasses[actor]; classID != "" {
+			game.SetPlayerMastery(room, actor, h.classMasteryLevel(r, room, actor, classID))
+		}
+		if err := game.SetPlayerLoadout(room, actor, request.SkillIDs); err != nil {
 			writeError(w, http.StatusConflict, err.Error())
 			return
 		}
@@ -733,7 +747,7 @@ func (h *Handler) chooseTalent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
 		return
 	}
-	writeError(w, http.StatusConflict, "room is busy; retry the talent choice")
+	writeError(w, http.StatusConflict, "room is busy; retry the skill choice")
 }
 
 type themeResponse struct {

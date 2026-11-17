@@ -56,13 +56,6 @@ type ClassStatProfile struct {
 	Agility int `json:"agility"`
 }
 
-type ClassAbilityDefinition struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	EffectID    string `json:"effectId"`
-}
-
 type ClassPassiveDefinition struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -71,15 +64,14 @@ type ClassPassiveDefinition struct {
 }
 
 type ClassDefinition struct {
-	ID                 string           `json:"id"`
-	ArchetypeID        string           `json:"archetypeId"`
-	Name               string           `json:"name"`
-	Description        string           `json:"description"`
-	DefinitionVersion  int              `json:"definitionVersion"`
-	StartingStats      ClassStatProfile `json:"startingStats"`
-	StartingEquipment  []string         `json:"startingEquipment"`
-	SignatureAbilityID string           `json:"signatureAbilityId"`
-	PassiveID          string           `json:"passiveId"`
+	ID                string           `json:"id"`
+	ArchetypeID       string           `json:"archetypeId"`
+	Name              string           `json:"name"`
+	Description       string           `json:"description"`
+	DefinitionVersion int              `json:"definitionVersion"`
+	StartingStats     ClassStatProfile `json:"startingStats"`
+	StartingEquipment []string         `json:"startingEquipment"`
+	PassiveID         string           `json:"passiveId"`
 }
 
 type ClassAvailability struct {
@@ -89,37 +81,24 @@ type ClassAvailability struct {
 }
 
 type ClassBuildSnapshot struct {
-	ClassID            string      `json:"classId"`
-	DefinitionVersion  int         `json:"definitionVersion"`
-	SignatureAbilityID string      `json:"signatureAbilityId"`
-	PassiveID          string      `json:"passiveId"`
-	MaxHealth          int         `json:"maxHealth"`
-	Stats              PlayerStats `json:"stats"`
-	EquipmentIDs       []string    `json:"equipmentIds"`
-}
-
-var classAbilities = []ClassAbilityDefinition{
-	{ID: "ability.shield-wall", Name: "Shield Wall", Description: "Substantially reduce incoming damage.", EffectID: "combat.guard"},
-	{ID: "ability.reckoning", Name: "Reckoning", Description: "Turn recently absorbed damage into a counterattack.", EffectID: "combat.counter"},
-	{ID: "ability.runic-ward", Name: "Runic Ward", Description: "Absorb an incoming attack and reflect part of its damage.", EffectID: "combat.ward"},
-	{ID: "ability.exploit-weakness", Name: "Exploit Weakness", Description: "Deal bonus damage to a marked or preparing enemy.", EffectID: "combat.precision"},
-	{ID: "ability.elemental-surge", Name: "Elemental Surge", Description: "Choose fire damage or frost control.", EffectID: "combat.elemental"},
-	{ID: "ability.pinning-shot", Name: "Pinning Shot", Description: "Damage an enemy and weaken or delay its next action.", EffectID: "combat.disrupt"},
-	{ID: "ability.renewal", Name: "Renewal", Description: "Restore health and remove a minor negative effect.", EffectID: "combat.heal"},
-	{ID: "ability.commanding-strike", Name: "Commanding Strike", Description: "Weaken an enemy and empower the next attack against it.", EffectID: "combat.command"},
-	{ID: "ability.companion-command", Name: "Companion Command", Description: "Direct a companion to attack, defend, or disrupt.", EffectID: "combat.companion"},
+	ClassID           string      `json:"classId"`
+	DefinitionVersion int         `json:"definitionVersion"`
+	PassiveID         string      `json:"passiveId"`
+	MaxHealth         int         `json:"maxHealth"`
+	Stats             PlayerStats `json:"stats"`
+	EquipmentIDs      []string    `json:"equipmentIds"`
 }
 
 var classPassives = []ClassPassiveDefinition{
-	{ID: "passive.resolve", Name: "Resolve", Description: "Blocking a heavy attack empowers the next strike.", EffectID: "passive.resolve"},
-	{ID: "passive.bloodied-strength", Name: "Bloodied Strength", Description: "Gain offensive strength while below half health.", EffectID: "passive.low-health"},
-	{ID: "passive.arcane-resistance", Name: "Arcane Resistance", Description: "Improved resistance to magical attacks.", EffectID: "passive.magic-resist"},
-	{ID: "passive.executioner", Name: "Executioner", Description: "Deal bonus damage to wounded enemies.", EffectID: "passive.wounded-target"},
-	{ID: "passive.arcane-focus", Name: "Arcane Focus", Description: "Consecutive elemental attacks build Arcane Power.", EffectID: "passive.elemental-chain"},
-	{ID: "passive.first-strike", Name: "First Strike", Description: "Deal bonus damage to enemies that have not acted.", EffectID: "passive.unacted-target"},
-	{ID: "passive.recovery", Name: "Recovery", Description: "Improved recovery after encounters.", EffectID: "passive.encounter-recovery"},
-	{ID: "passive.interrupt-training", Name: "Tactical Interruption", Description: "Improved interrupt effectiveness.", EffectID: "passive.interrupt"},
-	{ID: "passive.companion-instinct", Name: "Companion Instinct", Description: "A companion contributes a small automatic benefit each round.", EffectID: "passive.companion"},
+	{ID: "passive.resolve", Name: "Resolve", Description: "Guarding against a hit of 7 or more makes your next damaging skill deal 3 more.", EffectID: "passive.resolve"},
+	{ID: "passive.bloodied-strength", Name: "Bloodied Strength", Description: "Below half health, every damaging skill deals 3 more.", EffectID: "passive.low-health"},
+	{ID: "passive.arcane-resistance", Name: "Arcane Resistance", Description: "Soul-draining magic deals 2 less damage to you.", EffectID: "passive.magic-resist"},
+	{ID: "passive.executioner", Name: "Executioner", Description: "Damaging skills deal 3 more to enemies at or below half health.", EffectID: "passive.wounded-target"},
+	{ID: "passive.arcane-focus", Name: "Arcane Focus", Description: "Each elemental skill in a row adds 2 damage to the next elemental skill, up to +4.", EffectID: "passive.elemental-chain"},
+	{ID: "passive.first-strike", Name: "First Strike", Description: "Damaging skills deal 3 more to enemies that have not acted yet.", EffectID: "passive.unacted-target"},
+	{ID: "passive.recovery", Name: "Recovery", Description: "Recover 2 more health after every fight won.", EffectID: "passive.encounter-recovery"},
+	{ID: "passive.interrupt-training", Name: "Tactical Interruption", Description: "Interrupting an enemy also deals it 2 damage.", EffectID: "passive.interrupt"},
+	{ID: "passive.companion-instinct", Name: "Companion Instinct", Description: "Each round your companion tends the most wounded adventurer for 1 health.", EffectID: "passive.companion"},
 }
 
 var equipmentCatalog = []EquipmentDefinition{
@@ -151,15 +130,15 @@ var equipmentCatalog = []EquipmentDefinition{
 }
 
 var classCatalog = []ClassDefinition{
-	{ID: ClassBulwark, ArchetypeID: "tank", Name: "Bulwark", Description: "A defensive shield specialist who protects allies and holds the line.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 36, Power: 2, Focus: 1, Agility: 1}, StartingEquipment: []string{"weapon.tower-shield", "weapon.mace", "armor.heavy"}, SignatureAbilityID: "ability.shield-wall", PassiveID: "passive.resolve"},
-	{ID: ClassJuggernaut, ArchetypeID: "tank", Name: "Juggernaut", Description: "An aggressive bruiser who turns punishment into retaliation.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 38, Power: 4, Focus: 0, Agility: 1}, StartingEquipment: []string{"weapon.warhammer", "armor.reinforced", "armor.heavy-boots"}, SignatureAbilityID: "ability.reckoning", PassiveID: "passive.bloodied-strength"},
-	{ID: ClassSpellguard, ArchetypeID: "tank", Name: "Spellguard", Description: "An arcane defender who relies on wards and resistance.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 34, Power: 3, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.rune-blade", "accessory.warding-charm", "armor.medium"}, SignatureAbilityID: "ability.runic-ward", PassiveID: "passive.arcane-resistance"},
-	{ID: ClassAssassin, ArchetypeID: "damage", Name: "Assassin", Description: "A precision fighter who exploits openings and wounded targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 28, Power: 3, Focus: 1, Agility: 4}, StartingEquipment: []string{"weapon.twin-daggers", "accessory.throwing-knives", "armor.leather"}, SignatureAbilityID: "ability.exploit-weakness", PassiveID: "passive.executioner"},
-	{ID: ClassArcanist, ArchetypeID: "damage", Name: "Arcanist", Description: "An elemental specialist who combines damage and control.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 27, Power: 1, Focus: 4, Agility: 2}, StartingEquipment: []string{"weapon.arcane-staff", "accessory.spellbook", "armor.cloth-robes"}, SignatureAbilityID: "ability.elemental-surge", PassiveID: "passive.arcane-focus"},
-	{ID: ClassRanger, ArchetypeID: "damage", Name: "Ranger", Description: "A tactical ranged fighter who disrupts dangerous targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 30, Power: 3, Focus: 1, Agility: 3}, StartingEquipment: []string{"weapon.longbow", "weapon.hunting-knife", "armor.reinforced-leather"}, SignatureAbilityID: "ability.pinning-shot", PassiveID: "passive.first-strike"},
-	{ID: ClassCleric, ArchetypeID: "support", Name: "Cleric", Description: "A restorative protector who keeps adventurers on their feet.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 32, Power: 1, Focus: 4, Agility: 1}, StartingEquipment: []string{"weapon.holy-staff", "accessory.healing-talisman", "armor.light"}, SignatureAbilityID: "ability.renewal", PassiveID: "passive.recovery"},
-	{ID: ClassTactician, ArchetypeID: "support", Name: "Tactician", Description: "A battlefield planner who disrupts enemies and amplifies allies.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 31, Power: 2, Focus: 2, Agility: 3}, StartingEquipment: []string{"weapon.rapier", "accessory.war-horn", "armor.medium"}, SignatureAbilityID: "ability.commanding-strike", PassiveID: "passive.interrupt-training"},
-	{ID: ClassBeastcaller, ArchetypeID: "support", Name: "Beastcaller", Description: "A nature adept who directs a companion in combat.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 30, Power: 2, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.nature-staff", "weapon.hunting-knife", "accessory.beast-charm", "armor.leather"}, SignatureAbilityID: "ability.companion-command", PassiveID: "passive.companion-instinct"},
+	{ID: ClassBulwark, ArchetypeID: "tank", Name: "Bulwark", Description: "A defensive shield specialist who protects allies and holds the line.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 36, Power: 2, Focus: 1, Agility: 1}, StartingEquipment: []string{"weapon.tower-shield", "weapon.mace", "armor.heavy"}, PassiveID: "passive.resolve"},
+	{ID: ClassJuggernaut, ArchetypeID: "tank", Name: "Juggernaut", Description: "An aggressive bruiser who turns punishment into retaliation.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 38, Power: 4, Focus: 0, Agility: 1}, StartingEquipment: []string{"weapon.warhammer", "armor.reinforced", "armor.heavy-boots"}, PassiveID: "passive.bloodied-strength"},
+	{ID: ClassSpellguard, ArchetypeID: "tank", Name: "Spellguard", Description: "An arcane defender who relies on wards and resistance.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 34, Power: 3, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.rune-blade", "accessory.warding-charm", "armor.medium"}, PassiveID: "passive.arcane-resistance"},
+	{ID: ClassAssassin, ArchetypeID: "damage", Name: "Assassin", Description: "A precision fighter who exploits openings and wounded targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 28, Power: 3, Focus: 1, Agility: 4}, StartingEquipment: []string{"weapon.twin-daggers", "accessory.throwing-knives", "armor.leather"}, PassiveID: "passive.executioner"},
+	{ID: ClassArcanist, ArchetypeID: "damage", Name: "Arcanist", Description: "An elemental specialist who combines damage and control.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 27, Power: 1, Focus: 4, Agility: 2}, StartingEquipment: []string{"weapon.arcane-staff", "accessory.spellbook", "armor.cloth-robes"}, PassiveID: "passive.arcane-focus"},
+	{ID: ClassRanger, ArchetypeID: "damage", Name: "Ranger", Description: "A tactical ranged fighter who disrupts dangerous targets.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 30, Power: 3, Focus: 1, Agility: 3}, StartingEquipment: []string{"weapon.longbow", "weapon.hunting-knife", "armor.reinforced-leather"}, PassiveID: "passive.first-strike"},
+	{ID: ClassCleric, ArchetypeID: "support", Name: "Cleric", Description: "A restorative protector who keeps adventurers on their feet.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 32, Power: 1, Focus: 4, Agility: 1}, StartingEquipment: []string{"weapon.holy-staff", "accessory.healing-talisman", "armor.light"}, PassiveID: "passive.recovery"},
+	{ID: ClassTactician, ArchetypeID: "support", Name: "Tactician", Description: "A battlefield planner who disrupts enemies and amplifies allies.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 31, Power: 2, Focus: 2, Agility: 3}, StartingEquipment: []string{"weapon.rapier", "accessory.war-horn", "armor.medium"}, PassiveID: "passive.interrupt-training"},
+	{ID: ClassBeastcaller, ArchetypeID: "support", Name: "Beastcaller", Description: "A nature adept who directs a companion in combat.", DefinitionVersion: ClassDefinitionVersion, StartingStats: ClassStatProfile{Health: 30, Power: 2, Focus: 3, Agility: 2}, StartingEquipment: []string{"weapon.nature-staff", "weapon.hunting-knife", "accessory.beast-charm", "armor.leather"}, PassiveID: "passive.companion-instinct"},
 }
 
 // Availability is deliberately stored separately from gameplay definitions so
@@ -185,10 +164,6 @@ func ClassCatalog() []ClassDefinition {
 	return result
 }
 
-func ClassAbilityCatalog() []ClassAbilityDefinition {
-	return append([]ClassAbilityDefinition(nil), classAbilities...)
-}
-
 func ClassPassiveCatalog() []ClassPassiveDefinition {
 	return append([]ClassPassiveDefinition(nil), classPassives...)
 }
@@ -201,20 +176,13 @@ func ClassAvailabilityCatalog() []ClassAvailability {
 	return append([]ClassAvailability(nil), classAvailabilityCatalog...)
 }
 
-func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefinition, abilities []ClassAbilityDefinition, passives []ClassPassiveDefinition, equipment []EquipmentDefinition, availability []ClassAvailability) error {
+func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefinition, passives []ClassPassiveDefinition, equipment []EquipmentDefinition, availability []ClassAvailability) error {
 	archetypeIDs := make(map[string]bool, len(archetypes))
 	for _, value := range archetypes {
 		if value.ID == "" || archetypeIDs[value.ID] {
 			return fmt.Errorf("duplicate or empty archetype ID %q", value.ID)
 		}
 		archetypeIDs[value.ID] = true
-	}
-	abilityIDs := make(map[string]bool, len(abilities))
-	for _, value := range abilities {
-		if value.ID == "" || abilityIDs[value.ID] || value.EffectID == "" {
-			return fmt.Errorf("invalid or duplicate ability %q", value.ID)
-		}
-		abilityIDs[value.ID] = true
 	}
 	passiveIDs := make(map[string]bool, len(passives))
 	for _, value := range passives {
@@ -245,8 +213,8 @@ func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefin
 			value.StartingStats.Power < 0 || value.StartingStats.Focus < 0 || value.StartingStats.Agility < 0 {
 			return fmt.Errorf("class %q has invalid metadata or starting stats", value.ID)
 		}
-		if !abilityIDs[value.SignatureAbilityID] || !passiveIDs[value.PassiveID] {
-			return fmt.Errorf("class %q references an unknown ability or passive", value.ID)
+		if !passiveIDs[value.PassiveID] {
+			return fmt.Errorf("class %q references an unknown passive", value.ID)
 		}
 		if len(value.StartingEquipment) == 0 {
 			return fmt.Errorf("class %q has no starting equipment", value.ID)
@@ -275,7 +243,7 @@ func ValidateClassCatalog(archetypes []ArchetypeDefinition, classes []ClassDefin
 }
 
 func ValidateCatalog() error {
-	if err := ValidateClassCatalog(archetypeCatalog, classCatalog, classAbilities, classPassives, equipmentCatalog, classAvailabilityCatalog); err != nil {
+	if err := ValidateClassCatalog(archetypeCatalog, classCatalog, classPassives, equipmentCatalog, classAvailabilityCatalog); err != nil {
 		return err
 	}
 	if err := defaultRunRewardCatalog.Validate(); err != nil {
@@ -293,7 +261,13 @@ func ValidateCatalog() error {
 	if err := defaultExpeditionThemeCatalog.Validate(defaultDungeonThemeCatalog, defaultEncounterCatalog, defaultMonsterCatalog); err != nil {
 		return err
 	}
-	return validateRegisteredClassEffects()
+	if err := ValidateSkillCatalog(classCatalog); err != nil {
+		return err
+	}
+	if err := validateThemeBriefings(); err != nil {
+		return err
+	}
+	return ValidateClassPassiveEffectCatalog(classPassives, defaultClassPassiveEffectCatalog)
 }
 
 func ClassAvailableToPlayer(classID string, unlockedClassIDs []string) bool {
@@ -338,6 +312,10 @@ func SelectClassWithUnlocks(room *Room, playerID, classID string, unlockedClassI
 		// a look belongs to a class: a new class starts from its own default
 		delete(room.PlayerSkins, playerID)
 	}
+	if room.PlayerClasses[playerID] != classID && room.PlayerLoadouts != nil {
+		// a bar belongs to a class too: a new class starts from its own default skills
+		delete(room.PlayerLoadouts, playerID)
+	}
 	room.PlayerClasses[playerID] = classID
 	room.PlayerArchetypes[playerID] = definition.ArchetypeID
 	return nil
@@ -350,7 +328,7 @@ func StartingBuildForClass(classID string) (ClassBuildSnapshot, error) {
 	}
 	return ClassBuildSnapshot{
 		ClassID: definition.ID, DefinitionVersion: definition.DefinitionVersion,
-		SignatureAbilityID: definition.SignatureAbilityID, PassiveID: definition.PassiveID,
+		PassiveID:    definition.PassiveID,
 		MaxHealth:    definition.StartingStats.Health,
 		Stats:        PlayerStats{Power: definition.StartingStats.Power, Focus: definition.StartingStats.Focus, Agility: definition.StartingStats.Agility},
 		EquipmentIDs: append([]string(nil), definition.StartingEquipment...),
@@ -361,7 +339,7 @@ func newPlayerStateForClass(id string, definition ClassDefinition) *PlayerState 
 	build, _ := StartingBuildForClass(definition.ID)
 	return &PlayerState{
 		ID: id, Health: build.MaxHealth, MaxHealth: build.MaxHealth, Archetype: definition.ArchetypeID,
-		Stats: build.Stats, ClassBuild: &build, Level: 1, Talents: []string{},
+		Stats: build.Stats, ClassBuild: &build, Level: 1, Skills: DefaultLoadout(definition.ID, 1),
 	}
 }
 
@@ -381,15 +359,6 @@ func findClassAvailability(id string) (ClassAvailability, bool) {
 		}
 	}
 	return ClassAvailability{}, false
-}
-
-func findClassAbility(id string) (ClassAbilityDefinition, bool) {
-	for _, definition := range classAbilities {
-		if definition.ID == id {
-			return definition, true
-		}
-	}
-	return ClassAbilityDefinition{}, false
 }
 
 func findClassPassive(id string) (ClassPassiveDefinition, bool) {

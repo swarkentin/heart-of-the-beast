@@ -111,6 +111,7 @@ func newRunPlayers(room *Room) (map[string]*PlayerState, error) {
 				return nil, ErrInvalidClass
 			}
 			player = newPlayerStateForClass(id, definition)
+			player.Skills = runLoadout(room, id, classID)
 		} else {
 			player = newPlayerState(id, room.PlayerArchetypes[id])
 		}
@@ -159,7 +160,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return ChooseRoomEvent(room, actorID, command.ChoiceID, now)
 	case "choose_inter_floor":
 		return resolveInterFloorChoice(room, actorID, command.ChoiceID, now)
-	case "minigame", "choose_dungeon", "buy", "ready":
+	case "minigame", "choose_dungeon", "buy", "ready", "set_loadout":
 		return applyCampCommand(room, actorID, command, now)
 	default:
 		return ErrInvalidAction

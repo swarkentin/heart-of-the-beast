@@ -12,8 +12,6 @@ type AttackDamageInput struct {
 	ResolveReady        bool
 	UseResolve          bool
 	ResolveBonus        int
-	Telegraph           bool
-	TelegraphBonus      int
 	StrikeBonus         int
 }
 
@@ -33,9 +31,6 @@ func resolveAttackDamage(input AttackDamageInput) AttackDamageTransition {
 	if input.UseResolve && input.ResolveReady {
 		damage += input.ResolveBonus
 	}
-	if input.Telegraph {
-		damage += input.TelegraphBonus
-	}
 	remainingMarked := input.MarkedDamage
 	if input.ConsumeMarkedDamage {
 		remainingMarked = 0
@@ -51,17 +46,10 @@ func resolveAttackDamage(input AttackDamageInput) AttackDamageTransition {
 	}
 }
 
-// resolveInterruptDamage combines the stat and catalog bonuses for an
-// interrupt without deciding whether the target is interruptible.
-func resolveInterruptDamage(focus, talentBonus, passiveBonus int) int {
-	return focus + talentBonus + passiveBonus
-}
-
 // IncomingDamageInput captures the ordered reductions applied to one enemy
 // hit. Ward is consumed before guard, matching the live combat rules.
 type IncomingDamageInput struct {
 	IntentDamage          int
-	TalentReduction       int
 	PassiveReduction      int
 	Ward                  int
 	WardReflect           int
@@ -69,7 +57,6 @@ type IncomingDamageInput struct {
 	GuardReduction        int
 	DefaultGuardReduction int
 	GuardBonus            int
-	TalentGuardReduction  int
 	PartyGuardReduction   int
 }
 
@@ -89,7 +76,7 @@ type IncomingDamageTransition struct {
 }
 
 func resolveIncomingDamage(input IncomingDamageInput) IncomingDamageTransition {
-	damage := input.IntentDamage - input.TalentReduction - input.PassiveReduction
+	damage := input.IntentDamage - input.PassiveReduction
 	if damage < 0 {
 		damage = 0
 	}
@@ -118,7 +105,7 @@ func resolveIncomingDamage(input IncomingDamageInput) IncomingDamageTransition {
 		if reduction <= 0 {
 			reduction = input.DefaultGuardReduction
 		}
-		reduction += input.GuardBonus + input.TalentGuardReduction + input.PartyGuardReduction
+		reduction += input.GuardBonus + input.PartyGuardReduction
 		beforeGuard := damage
 		damage -= reduction
 		if damage < 0 {
