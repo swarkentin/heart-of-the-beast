@@ -212,7 +212,7 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
   const img = c.render({ glowR: 2 });
   // Alpha is applied only to the original sleeve polygons. Later-drawn details naturally
   // overwrite their pixels, so skin, armour, outlines and equipment stay solid.
-  for ( (let i = 0; i < c.p.length; i++) {
+  for (let i = 0; i < c.p.length; i++) {
     if (!sleeveParts.has(c.p[i])) continue;
     const x = i % 128, y = Math.floor(i / 128);
     const lowerFade = Math.max(0, Math.min(1, (y - 42) / 21));
