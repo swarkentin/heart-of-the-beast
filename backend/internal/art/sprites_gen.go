@@ -60,6 +60,15 @@ var CatacombsOssuaryColossus = SpriteID{"catacombs/ossuary_colossus"}
 // CatacombsPaleArchivist is the The Pale Archivist sprite sheet.
 var CatacombsPaleArchivist = SpriteID{"catacombs/pale_archivist"}
 
+// CatacombsRattlingHeap is the Rattling Heap sprite sheet.
+var CatacombsRattlingHeap = SpriteID{"catacombs/rattling_heap"}
+
+// CatacombsCandleAcolyte is the Candle Acolyte sprite sheet.
+var CatacombsCandleAcolyte = SpriteID{"catacombs/candle_acolyte"}
+
+// CatacombsTollingAbbot is the The Tolling Abbot sprite sheet.
+var CatacombsTollingAbbot = SpriteID{"catacombs/tolling_abbot"}
+
 // ScifiCrabDrone is the Sentry Crab sprite sheet.
 var ScifiCrabDrone = SpriteID{"scifi/crab_drone"}
 
@@ -83,6 +92,15 @@ var ScifiOverseerCore = SpriteID{"scifi/overseer_core"}
 
 // ScifiPatientZero is the Patient Zero sprite sheet.
 var ScifiPatientZero = SpriteID{"scifi/patient_zero"}
+
+// ScifiVolatileCanister is the Volatile Canister sprite sheet.
+var ScifiVolatileCanister = SpriteID{"scifi/volatile_canister"}
+
+// ScifiShieldProjector is the Shield Projector sprite sheet.
+var ScifiShieldProjector = SpriteID{"scifi/shield_projector"}
+
+// ScifiSpecimenOmega is the Specimen Omega sprite sheet.
+var ScifiSpecimenOmega = SpriteID{"scifi/specimen_omega"}
 
 // MobsterGoonGunner is the Goon Gunner sprite sheet.
 var MobsterGoonGunner = SpriteID{"mobster/goon_gunner"}
@@ -108,6 +126,15 @@ var MobsterSpectralKingpin = SpriteID{"mobster/spectral_kingpin"}
 // MobsterBlackSedan is the The Black Sedan sprite sheet.
 var MobsterBlackSedan = SpriteID{"mobster/black_sedan"}
 
+// MobsterFirebug is the Firebug sprite sheet.
+var MobsterFirebug = SpriteID{"mobster/firebug"}
+
+// MobsterHiredMuscle is the Hired Muscle sprite sheet.
+var MobsterHiredMuscle = SpriteID{"mobster/hired_muscle"}
+
+// MobsterLedgerGhost is the The Ledger Ghost sprite sheet.
+var MobsterLedgerGhost = SpriteID{"mobster/ledger_ghost"}
+
 // SunkenDrownedKnight is the Drowned Knight sprite sheet.
 var SunkenDrownedKnight = SpriteID{"sunken/drowned_knight"}
 
@@ -131,6 +158,15 @@ var SunkenAbyssalAngler = SpriteID{"sunken/abyssal_angler"}
 
 // SunkenAncientGuardian is the Ancient Guardian sprite sheet.
 var SunkenAncientGuardian = SpriteID{"sunken/ancient_guardian"}
+
+// SunkenBrinePolyp is the Brine Polyp sprite sheet.
+var SunkenBrinePolyp = SpriteID{"sunken/brine_polyp"}
+
+// SunkenTwinEel is the Twin-Eel sprite sheet.
+var SunkenTwinEel = SpriteID{"sunken/twin_eel"}
+
+// SunkenPearlLeviathan is the The Pearl Leviathan sprite sheet.
+var SunkenPearlLeviathan = SpriteID{"sunken/pearl_leviathan"}
 
 // ClockworkWindupScamp is the Windup Scamp sprite sheet.
 var ClockworkWindupScamp = SpriteID{"clockwork/windup_scamp"}
@@ -156,6 +192,15 @@ var ClockworkTheClockmaker = SpriteID{"clockwork/the_clockmaker"}
 // ClockworkLeviathanBoiler is the Leviathan Boiler sprite sheet.
 var ClockworkLeviathanBoiler = SpriteID{"clockwork/leviathan_boiler"}
 
+// ClockworkWindupBomber is the Wind-up Bomber sprite sheet.
+var ClockworkWindupBomber = SpriteID{"clockwork/windup_bomber"}
+
+// ClockworkRepairAutomaton is the Repair Automaton sprite sheet.
+var ClockworkRepairAutomaton = SpriteID{"clockwork/repair_automaton"}
+
+// ClockworkGrandOrrery is the The Grand Orrery sprite sheet.
+var ClockworkGrandOrrery = SpriteID{"clockwork/grand_orrery"}
+
 // CarnivalJesterCutthroat is the Jester Cutthroat sprite sheet.
 var CarnivalJesterCutthroat = SpriteID{"carnival/jester_cutthroat"}
 
@@ -179,6 +224,15 @@ var CarnivalLaughingBigTop = SpriteID{"carnival/laughing_big_top"}
 
 // CarnivalHarlequinHorror is the Harlequin Horror sprite sheet.
 var CarnivalHarlequinHorror = SpriteID{"carnival/harlequin_horror"}
+
+// CarnivalMirrorJester is the Mirror Jester sprite sheet.
+var CarnivalMirrorJester = SpriteID{"carnival/mirror_jester"}
+
+// CarnivalFireEater is the Fire Eater sprite sheet.
+var CarnivalFireEater = SpriteID{"carnival/fire_eater"}
+
+// CarnivalCalliopeGolem is the The Calliope Golem sprite sheet.
+var CarnivalCalliopeGolem = SpriteID{"carnival/calliope_golem"}
 
 // JungleLumenStalker is the Lumen Stalker sprite sheet.
 var JungleLumenStalker = SpriteID{"jungle/lumen_stalker"}
@@ -204,6 +258,15 @@ var JungleMotherLantern = SpriteID{"jungle/mother_lantern"}
 // JungleApexMaw is the The Apex Maw sprite sheet.
 var JungleApexMaw = SpriteID{"jungle/apex_maw"}
 
+// JungleThornbackBeetle is the Thornback Beetle sprite sheet.
+var JungleThornbackBeetle = SpriteID{"jungle/thornback_beetle"}
+
+// JungleBuddingMass is the Budding Mass sprite sheet.
+var JungleBuddingMass = SpriteID{"jungle/budding_mass"}
+
+// JungleHiveQueen is the The Hive Queen sprite sheet.
+var JungleHiveQueen = SpriteID{"jungle/hive_queen"}
+
 // DreamscapeWanderingEye is the Wandering Eye sprite sheet.
 var DreamscapeWanderingEye = SpriteID{"dreamscape/wandering_eye"}
 
@@ -227,6 +290,15 @@ var DreamscapeHungryGrin = SpriteID{"dreamscape/hungry_grin"}
 
 // DreamscapeHollowChild is the The Hollow Child sprite sheet.
 var DreamscapeHollowChild = SpriteID{"dreamscape/hollow_child"}
+
+// DreamscapeDoppelWisp is the Doppel Wisp sprite sheet.
+var DreamscapeDoppelWisp = SpriteID{"dreamscape/doppel_wisp"}
+
+// DreamscapeLullabyMoth is the Lullaby Moth sprite sheet.
+var DreamscapeLullabyMoth = SpriteID{"dreamscape/lullaby_moth"}
+
+// DreamscapeNightmareMare is the The Nightmare Mare sprite sheet.
+var DreamscapeNightmareMare = SpriteID{"dreamscape/nightmare_mare"}
 
 // ArcticFrostbittenResearcher is the Frostbitten Researcher sprite sheet.
 var ArcticFrostbittenResearcher = SpriteID{"arctic/frostbitten_researcher"}
@@ -252,6 +324,15 @@ var ArcticThingInTheIce = SpriteID{"arctic/thing_in_the_ice"}
 // ArcticCryoWarden is the Cryo Warden sprite sheet.
 var ArcticCryoWarden = SpriteID{"arctic/cryo_warden"}
 
+// ArcticFrostback is the Frostback sprite sheet.
+var ArcticFrostback = SpriteID{"arctic/frostback"}
+
+// ArcticOverheatingGenerator is the Overheating Generator sprite sheet.
+var ArcticOverheatingGenerator = SpriteID{"arctic/overheating_generator"}
+
+// ArcticPermafrostMaw is the The Permafrost Maw sprite sheet.
+var ArcticPermafrostMaw = SpriteID{"arctic/permafrost_maw"}
+
 // GhosttownRevenantGunslinger is the Revenant Gunslinger sprite sheet.
 var GhosttownRevenantGunslinger = SpriteID{"ghosttown/revenant_gunslinger"}
 
@@ -275,6 +356,15 @@ var GhosttownSheriffOfTheDamned = SpriteID{"ghosttown/sheriff_of_the_damned"}
 
 // GhosttownHangingTree is the The Hanging Tree sprite sheet.
 var GhosttownHangingTree = SpriteID{"ghosttown/hanging_tree"}
+
+// GhosttownVengefulDeputy is the Vengeful Deputy sprite sheet.
+var GhosttownVengefulDeputy = SpriteID{"ghosttown/vengeful_deputy"}
+
+// GhosttownDustDevil is the Dust Devil sprite sheet.
+var GhosttownDustDevil = SpriteID{"ghosttown/dust_devil"}
+
+// GhosttownHangingJudge is the The Hanging Judge sprite sheet.
+var GhosttownHangingJudge = SpriteID{"ghosttown/hanging_judge"}
 
 // WastelandScrapRaider is the Scrap Raider sprite sheet.
 var WastelandScrapRaider = SpriteID{"wasteland/scrap_raider"}
@@ -300,6 +390,15 @@ var WastelandFalloutBehemoth = SpriteID{"wasteland/fallout_behemoth"}
 // WastelandScrapHeapKing is the The Scrap-Heap King sprite sheet.
 var WastelandScrapHeapKing = SpriteID{"wasteland/scrap_heap_king"}
 
+// WastelandRadRoachBrood is the Rad-Roach Brood sprite sheet.
+var WastelandRadRoachBrood = SpriteID{"wasteland/rad_roach_brood"}
+
+// WastelandScrapShieldbearer is the Scrap Shield-bearer sprite sheet.
+var WastelandScrapShieldbearer = SpriteID{"wasteland/scrap_shieldbearer"}
+
+// WastelandRadBehemoth is the The Rad Behemoth sprite sheet.
+var WastelandRadBehemoth = SpriteID{"wasteland/rad_behemoth"}
+
 var themes = []Theme{
 	{ID: ThemeCatacombs, Name: "Forgotten Catacombs", Tagline: "Ancient ruins, undead, and forgotten horrors"},
 	{ID: ThemeScifi, Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI"},
@@ -323,6 +422,9 @@ var sprites = []Sprite{
 	{ID: CatacombsCryptWarden, Theme: ThemeCatacombs, CreatureID: "crypt_warden", Name: "Crypt Warden", Boss: true, Sheet: "catacombs/crypt_warden.png", FrameSize: 128},
 	{ID: CatacombsOssuaryColossus, Theme: ThemeCatacombs, CreatureID: "ossuary_colossus", Name: "Ossuary Colossus", Boss: true, Sheet: "catacombs/ossuary_colossus.png", FrameSize: 128},
 	{ID: CatacombsPaleArchivist, Theme: ThemeCatacombs, CreatureID: "pale_archivist", Name: "The Pale Archivist", Boss: true, Sheet: "catacombs/pale_archivist.png", FrameSize: 128},
+	{ID: CatacombsRattlingHeap, Theme: ThemeCatacombs, CreatureID: "rattling_heap", Name: "Rattling Heap", Boss: false, Sheet: "catacombs/rattling_heap.png", FrameSize: 64},
+	{ID: CatacombsCandleAcolyte, Theme: ThemeCatacombs, CreatureID: "candle_acolyte", Name: "Candle Acolyte", Boss: false, Sheet: "catacombs/candle_acolyte.png", FrameSize: 64},
+	{ID: CatacombsTollingAbbot, Theme: ThemeCatacombs, CreatureID: "tolling_abbot", Name: "The Tolling Abbot", Boss: true, Sheet: "catacombs/tolling_abbot.png", FrameSize: 128},
 	{ID: ScifiCrabDrone, Theme: ThemeScifi, CreatureID: "crab_drone", Name: "Sentry Crab", Boss: false, Sheet: "scifi/crab_drone.png", FrameSize: 64},
 	{ID: ScifiSecurityBot, Theme: ThemeScifi, CreatureID: "security_bot", Name: "Security Bot", Boss: false, Sheet: "scifi/security_bot.png", FrameSize: 64},
 	{ID: ScifiMutatedSubject, Theme: ThemeScifi, CreatureID: "mutated_subject", Name: "Mutated Subject", Boss: false, Sheet: "scifi/mutated_subject.png", FrameSize: 64},
@@ -331,6 +433,9 @@ var sprites = []Sprite{
 	{ID: ScifiContainmentMech, Theme: ThemeScifi, CreatureID: "containment_mech", Name: "Containment Unit-9", Boss: true, Sheet: "scifi/containment_mech.png", FrameSize: 128},
 	{ID: ScifiOverseerCore, Theme: ThemeScifi, CreatureID: "overseer_core", Name: "The Overseer", Boss: true, Sheet: "scifi/overseer_core.png", FrameSize: 128},
 	{ID: ScifiPatientZero, Theme: ThemeScifi, CreatureID: "patient_zero", Name: "Patient Zero", Boss: true, Sheet: "scifi/patient_zero.png", FrameSize: 128},
+	{ID: ScifiVolatileCanister, Theme: ThemeScifi, CreatureID: "volatile_canister", Name: "Volatile Canister", Boss: false, Sheet: "scifi/volatile_canister.png", FrameSize: 64},
+	{ID: ScifiShieldProjector, Theme: ThemeScifi, CreatureID: "shield_projector", Name: "Shield Projector", Boss: false, Sheet: "scifi/shield_projector.png", FrameSize: 64},
+	{ID: ScifiSpecimenOmega, Theme: ThemeScifi, CreatureID: "specimen_omega", Name: "Specimen Omega", Boss: true, Sheet: "scifi/specimen_omega.png", FrameSize: 128},
 	{ID: MobsterGoonGunner, Theme: ThemeMobster, CreatureID: "goon_gunner", Name: "Goon Gunner", Boss: false, Sheet: "mobster/goon_gunner.png", FrameSize: 64},
 	{ID: MobsterTrenchHitman, Theme: ThemeMobster, CreatureID: "trench_hitman", Name: "Trenchcoat Hitman", Boss: false, Sheet: "mobster/trench_hitman.png", FrameSize: 64},
 	{ID: MobsterSpectralEnforcer, Theme: ThemeMobster, CreatureID: "spectral_enforcer", Name: "Spectral Enforcer", Boss: false, Sheet: "mobster/spectral_enforcer.png", FrameSize: 64},
@@ -339,6 +444,9 @@ var sprites = []Sprite{
 	{ID: MobsterTheDon, Theme: ThemeMobster, CreatureID: "the_don", Name: "The Don", Boss: true, Sheet: "mobster/the_don.png", FrameSize: 128},
 	{ID: MobsterSpectralKingpin, Theme: ThemeMobster, CreatureID: "spectral_kingpin", Name: "Spectral Kingpin", Boss: true, Sheet: "mobster/spectral_kingpin.png", FrameSize: 128},
 	{ID: MobsterBlackSedan, Theme: ThemeMobster, CreatureID: "black_sedan", Name: "The Black Sedan", Boss: true, Sheet: "mobster/black_sedan.png", FrameSize: 128},
+	{ID: MobsterFirebug, Theme: ThemeMobster, CreatureID: "firebug", Name: "Firebug", Boss: false, Sheet: "mobster/firebug.png", FrameSize: 64},
+	{ID: MobsterHiredMuscle, Theme: ThemeMobster, CreatureID: "hired_muscle", Name: "Hired Muscle", Boss: false, Sheet: "mobster/hired_muscle.png", FrameSize: 64},
+	{ID: MobsterLedgerGhost, Theme: ThemeMobster, CreatureID: "ledger_ghost", Name: "The Ledger Ghost", Boss: true, Sheet: "mobster/ledger_ghost.png", FrameSize: 128},
 	{ID: SunkenDrownedKnight, Theme: ThemeSunken, CreatureID: "drowned_knight", Name: "Drowned Knight", Boss: false, Sheet: "sunken/drowned_knight.png", FrameSize: 64},
 	{ID: SunkenReefLurker, Theme: ThemeSunken, CreatureID: "reef_lurker", Name: "Reef Lurker", Boss: false, Sheet: "sunken/reef_lurker.png", FrameSize: 64},
 	{ID: SunkenGhostJelly, Theme: ThemeSunken, CreatureID: "ghost_jelly", Name: "Ghost Jelly", Boss: false, Sheet: "sunken/ghost_jelly.png", FrameSize: 64},
@@ -347,6 +455,9 @@ var sprites = []Sprite{
 	{ID: SunkenDrownedKing, Theme: ThemeSunken, CreatureID: "drowned_king", Name: "The Drowned King", Boss: true, Sheet: "sunken/drowned_king.png", FrameSize: 128},
 	{ID: SunkenAbyssalAngler, Theme: ThemeSunken, CreatureID: "abyssal_angler", Name: "Abyssal Angler", Boss: true, Sheet: "sunken/abyssal_angler.png", FrameSize: 128},
 	{ID: SunkenAncientGuardian, Theme: ThemeSunken, CreatureID: "ancient_guardian", Name: "Ancient Guardian", Boss: true, Sheet: "sunken/ancient_guardian.png", FrameSize: 128},
+	{ID: SunkenBrinePolyp, Theme: ThemeSunken, CreatureID: "brine_polyp", Name: "Brine Polyp", Boss: false, Sheet: "sunken/brine_polyp.png", FrameSize: 64},
+	{ID: SunkenTwinEel, Theme: ThemeSunken, CreatureID: "twin_eel", Name: "Twin-Eel", Boss: false, Sheet: "sunken/twin_eel.png", FrameSize: 64},
+	{ID: SunkenPearlLeviathan, Theme: ThemeSunken, CreatureID: "pearl_leviathan", Name: "The Pearl Leviathan", Boss: true, Sheet: "sunken/pearl_leviathan.png", FrameSize: 128},
 	{ID: ClockworkWindupScamp, Theme: ThemeClockwork, CreatureID: "windup_scamp", Name: "Windup Scamp", Boss: false, Sheet: "clockwork/windup_scamp.png", FrameSize: 64},
 	{ID: ClockworkGildedDancer, Theme: ThemeClockwork, CreatureID: "gilded_dancer", Name: "Gilded Dancer", Boss: false, Sheet: "clockwork/gilded_dancer.png", FrameSize: 64},
 	{ID: ClockworkCogSpider, Theme: ThemeClockwork, CreatureID: "cog_spider", Name: "Cogwork Spider", Boss: false, Sheet: "clockwork/cog_spider.png", FrameSize: 64},
@@ -355,6 +466,9 @@ var sprites = []Sprite{
 	{ID: ClockworkBrassColossus, Theme: ThemeClockwork, CreatureID: "brass_colossus", Name: "Brass Colossus", Boss: true, Sheet: "clockwork/brass_colossus.png", FrameSize: 128},
 	{ID: ClockworkTheClockmaker, Theme: ThemeClockwork, CreatureID: "the_clockmaker", Name: "The Clockmaker", Boss: true, Sheet: "clockwork/the_clockmaker.png", FrameSize: 128},
 	{ID: ClockworkLeviathanBoiler, Theme: ThemeClockwork, CreatureID: "leviathan_boiler", Name: "Leviathan Boiler", Boss: true, Sheet: "clockwork/leviathan_boiler.png", FrameSize: 128},
+	{ID: ClockworkWindupBomber, Theme: ThemeClockwork, CreatureID: "windup_bomber", Name: "Wind-up Bomber", Boss: false, Sheet: "clockwork/windup_bomber.png", FrameSize: 64},
+	{ID: ClockworkRepairAutomaton, Theme: ThemeClockwork, CreatureID: "repair_automaton", Name: "Repair Automaton", Boss: false, Sheet: "clockwork/repair_automaton.png", FrameSize: 64},
+	{ID: ClockworkGrandOrrery, Theme: ThemeClockwork, CreatureID: "grand_orrery", Name: "The Grand Orrery", Boss: true, Sheet: "clockwork/grand_orrery.png", FrameSize: 128},
 	{ID: CarnivalJesterCutthroat, Theme: ThemeCarnival, CreatureID: "jester_cutthroat", Name: "Jester Cutthroat", Boss: false, Sheet: "carnival/jester_cutthroat.png", FrameSize: 64},
 	{ID: CarnivalCarouselSpecter, Theme: ThemeCarnival, CreatureID: "carousel_specter", Name: "Carousel Specter", Boss: false, Sheet: "carnival/carousel_specter.png", FrameSize: 64},
 	{ID: CarnivalBalloonHorror, Theme: ThemeCarnival, CreatureID: "balloon_horror", Name: "Balloon Horror", Boss: false, Sheet: "carnival/balloon_horror.png", FrameSize: 64},
@@ -363,6 +477,9 @@ var sprites = []Sprite{
 	{ID: CarnivalTheRingmaster, Theme: ThemeCarnival, CreatureID: "the_ringmaster", Name: "The Ringmaster", Boss: true, Sheet: "carnival/the_ringmaster.png", FrameSize: 128},
 	{ID: CarnivalLaughingBigTop, Theme: ThemeCarnival, CreatureID: "laughing_big_top", Name: "The Laughing Big Top", Boss: true, Sheet: "carnival/laughing_big_top.png", FrameSize: 128},
 	{ID: CarnivalHarlequinHorror, Theme: ThemeCarnival, CreatureID: "harlequin_horror", Name: "Harlequin Horror", Boss: true, Sheet: "carnival/harlequin_horror.png", FrameSize: 128},
+	{ID: CarnivalMirrorJester, Theme: ThemeCarnival, CreatureID: "mirror_jester", Name: "Mirror Jester", Boss: false, Sheet: "carnival/mirror_jester.png", FrameSize: 64},
+	{ID: CarnivalFireEater, Theme: ThemeCarnival, CreatureID: "fire_eater", Name: "Fire Eater", Boss: false, Sheet: "carnival/fire_eater.png", FrameSize: 64},
+	{ID: CarnivalCalliopeGolem, Theme: ThemeCarnival, CreatureID: "calliope_golem", Name: "The Calliope Golem", Boss: true, Sheet: "carnival/calliope_golem.png", FrameSize: 128},
 	{ID: JungleLumenStalker, Theme: ThemeJungle, CreatureID: "lumen_stalker", Name: "Lumen Stalker", Boss: false, Sheet: "jungle/lumen_stalker.png", FrameSize: 64},
 	{ID: JungleSporeBloom, Theme: ThemeJungle, CreatureID: "spore_bloom", Name: "Spore Bloom", Boss: false, Sheet: "jungle/spore_bloom.png", FrameSize: 64},
 	{ID: JungleThornWalker, Theme: ThemeJungle, CreatureID: "thorn_walker", Name: "Thorn Walker", Boss: false, Sheet: "jungle/thorn_walker.png", FrameSize: 64},
@@ -371,6 +488,9 @@ var sprites = []Sprite{
 	{ID: JungleHeartrootTitan, Theme: ThemeJungle, CreatureID: "heartroot_titan", Name: "Heartroot Titan", Boss: true, Sheet: "jungle/heartroot_titan.png", FrameSize: 128},
 	{ID: JungleMotherLantern, Theme: ThemeJungle, CreatureID: "mother_lantern", Name: "Mother Lantern", Boss: true, Sheet: "jungle/mother_lantern.png", FrameSize: 128},
 	{ID: JungleApexMaw, Theme: ThemeJungle, CreatureID: "apex_maw", Name: "The Apex Maw", Boss: true, Sheet: "jungle/apex_maw.png", FrameSize: 128},
+	{ID: JungleThornbackBeetle, Theme: ThemeJungle, CreatureID: "thornback_beetle", Name: "Thornback Beetle", Boss: false, Sheet: "jungle/thornback_beetle.png", FrameSize: 64},
+	{ID: JungleBuddingMass, Theme: ThemeJungle, CreatureID: "budding_mass", Name: "Budding Mass", Boss: false, Sheet: "jungle/budding_mass.png", FrameSize: 64},
+	{ID: JungleHiveQueen, Theme: ThemeJungle, CreatureID: "hive_queen", Name: "The Hive Queen", Boss: true, Sheet: "jungle/hive_queen.png", FrameSize: 128},
 	{ID: DreamscapeWanderingEye, Theme: ThemeDreamscape, CreatureID: "wandering_eye", Name: "Wandering Eye", Boss: false, Sheet: "dreamscape/wandering_eye.png", FrameSize: 64},
 	{ID: DreamscapeChatterhead, Theme: ThemeDreamscape, CreatureID: "chatterhead", Name: "Chatterhead", Boss: false, Sheet: "dreamscape/chatterhead.png", FrameSize: 64},
 	{ID: DreamscapePalmCrawler, Theme: ThemeDreamscape, CreatureID: "palm_crawler", Name: "Palm Crawler", Boss: false, Sheet: "dreamscape/palm_crawler.png", FrameSize: 64},
@@ -379,6 +499,9 @@ var sprites = []Sprite{
 	{ID: DreamscapeMoonSovereign, Theme: ThemeDreamscape, CreatureID: "moon_sovereign", Name: "Sovereign of Sleep", Boss: true, Sheet: "dreamscape/moon_sovereign.png", FrameSize: 128},
 	{ID: DreamscapeHungryGrin, Theme: ThemeDreamscape, CreatureID: "hungry_grin", Name: "The Hungry Grin", Boss: true, Sheet: "dreamscape/hungry_grin.png", FrameSize: 128},
 	{ID: DreamscapeHollowChild, Theme: ThemeDreamscape, CreatureID: "hollow_child", Name: "The Hollow Child", Boss: true, Sheet: "dreamscape/hollow_child.png", FrameSize: 128},
+	{ID: DreamscapeDoppelWisp, Theme: ThemeDreamscape, CreatureID: "doppel_wisp", Name: "Doppel Wisp", Boss: false, Sheet: "dreamscape/doppel_wisp.png", FrameSize: 64},
+	{ID: DreamscapeLullabyMoth, Theme: ThemeDreamscape, CreatureID: "lullaby_moth", Name: "Lullaby Moth", Boss: false, Sheet: "dreamscape/lullaby_moth.png", FrameSize: 64},
+	{ID: DreamscapeNightmareMare, Theme: ThemeDreamscape, CreatureID: "nightmare_mare", Name: "The Nightmare Mare", Boss: true, Sheet: "dreamscape/nightmare_mare.png", FrameSize: 128},
 	{ID: ArcticFrostbittenResearcher, Theme: ThemeArctic, CreatureID: "frostbitten_researcher", Name: "Frostbitten Researcher", Boss: false, Sheet: "arctic/frostbitten_researcher.png", FrameSize: 64},
 	{ID: ArcticHuskHound, Theme: ThemeArctic, CreatureID: "husk_hound", Name: "Husk Hound", Boss: false, Sheet: "arctic/husk_hound.png", FrameSize: 64},
 	{ID: ArcticIceWraith, Theme: ThemeArctic, CreatureID: "ice_wraith", Name: "Ice Wraith", Boss: false, Sheet: "arctic/ice_wraith.png", FrameSize: 64},
@@ -387,6 +510,9 @@ var sprites = []Sprite{
 	{ID: ArcticGlacierTitan, Theme: ThemeArctic, CreatureID: "glacier_titan", Name: "Glacier Titan", Boss: true, Sheet: "arctic/glacier_titan.png", FrameSize: 128},
 	{ID: ArcticThingInTheIce, Theme: ThemeArctic, CreatureID: "thing_in_the_ice", Name: "The Thing in the Ice", Boss: true, Sheet: "arctic/thing_in_the_ice.png", FrameSize: 128},
 	{ID: ArcticCryoWarden, Theme: ThemeArctic, CreatureID: "cryo_warden", Name: "Cryo Warden", Boss: true, Sheet: "arctic/cryo_warden.png", FrameSize: 128},
+	{ID: ArcticFrostback, Theme: ThemeArctic, CreatureID: "frostback", Name: "Frostback", Boss: false, Sheet: "arctic/frostback.png", FrameSize: 64},
+	{ID: ArcticOverheatingGenerator, Theme: ThemeArctic, CreatureID: "overheating_generator", Name: "Overheating Generator", Boss: false, Sheet: "arctic/overheating_generator.png", FrameSize: 64},
+	{ID: ArcticPermafrostMaw, Theme: ThemeArctic, CreatureID: "permafrost_maw", Name: "The Permafrost Maw", Boss: true, Sheet: "arctic/permafrost_maw.png", FrameSize: 128},
 	{ID: GhosttownRevenantGunslinger, Theme: ThemeGhosttown, CreatureID: "revenant_gunslinger", Name: "Revenant Gunslinger", Boss: false, Sheet: "ghosttown/revenant_gunslinger.png", FrameSize: 64},
 	{ID: GhosttownTumbleweedHaunt, Theme: ThemeGhosttown, CreatureID: "tumbleweed_haunt", Name: "Tumbleweed Haunt", Boss: false, Sheet: "ghosttown/tumbleweed_haunt.png", FrameSize: 64},
 	{ID: GhosttownCursedProspector, Theme: ThemeGhosttown, CreatureID: "cursed_prospector", Name: "Cursed Prospector", Boss: false, Sheet: "ghosttown/cursed_prospector.png", FrameSize: 64},
@@ -395,6 +521,9 @@ var sprites = []Sprite{
 	{ID: GhosttownTheUndertaker, Theme: ThemeGhosttown, CreatureID: "the_undertaker", Name: "The Undertaker", Boss: true, Sheet: "ghosttown/the_undertaker.png", FrameSize: 128},
 	{ID: GhosttownSheriffOfTheDamned, Theme: ThemeGhosttown, CreatureID: "sheriff_of_the_damned", Name: "Sheriff of the Damned", Boss: true, Sheet: "ghosttown/sheriff_of_the_damned.png", FrameSize: 128},
 	{ID: GhosttownHangingTree, Theme: ThemeGhosttown, CreatureID: "hanging_tree", Name: "The Hanging Tree", Boss: true, Sheet: "ghosttown/hanging_tree.png", FrameSize: 128},
+	{ID: GhosttownVengefulDeputy, Theme: ThemeGhosttown, CreatureID: "vengeful_deputy", Name: "Vengeful Deputy", Boss: false, Sheet: "ghosttown/vengeful_deputy.png", FrameSize: 64},
+	{ID: GhosttownDustDevil, Theme: ThemeGhosttown, CreatureID: "dust_devil", Name: "Dust Devil", Boss: false, Sheet: "ghosttown/dust_devil.png", FrameSize: 64},
+	{ID: GhosttownHangingJudge, Theme: ThemeGhosttown, CreatureID: "hanging_judge", Name: "The Hanging Judge", Boss: true, Sheet: "ghosttown/hanging_judge.png", FrameSize: 128},
 	{ID: WastelandScrapRaider, Theme: ThemeWasteland, CreatureID: "scrap_raider", Name: "Scrap Raider", Boss: false, Sheet: "wasteland/scrap_raider.png", FrameSize: 64},
 	{ID: WastelandRustHound, Theme: ThemeWasteland, CreatureID: "rust_hound", Name: "Rust Hound", Boss: false, Sheet: "wasteland/rust_hound.png", FrameSize: 64},
 	{ID: WastelandFlameRig, Theme: ThemeWasteland, CreatureID: "flame_rig", Name: "Jury-Rigged Flamer", Boss: false, Sheet: "wasteland/flame_rig.png", FrameSize: 64},
@@ -403,4 +532,7 @@ var sprites = []Sprite{
 	{ID: WastelandWarlordRig, Theme: ThemeWasteland, CreatureID: "warlord_rig", Name: "Warlord's War-Rig", Boss: true, Sheet: "wasteland/warlord_rig.png", FrameSize: 128},
 	{ID: WastelandFalloutBehemoth, Theme: ThemeWasteland, CreatureID: "fallout_behemoth", Name: "Fallout Behemoth", Boss: true, Sheet: "wasteland/fallout_behemoth.png", FrameSize: 128},
 	{ID: WastelandScrapHeapKing, Theme: ThemeWasteland, CreatureID: "scrap_heap_king", Name: "The Scrap-Heap King", Boss: true, Sheet: "wasteland/scrap_heap_king.png", FrameSize: 128},
+	{ID: WastelandRadRoachBrood, Theme: ThemeWasteland, CreatureID: "rad_roach_brood", Name: "Rad-Roach Brood", Boss: false, Sheet: "wasteland/rad_roach_brood.png", FrameSize: 64},
+	{ID: WastelandScrapShieldbearer, Theme: ThemeWasteland, CreatureID: "scrap_shieldbearer", Name: "Scrap Shield-bearer", Boss: false, Sheet: "wasteland/scrap_shieldbearer.png", FrameSize: 64},
+	{ID: WastelandRadBehemoth, Theme: ThemeWasteland, CreatureID: "rad_behemoth", Name: "The Rad Behemoth", Boss: true, Sheet: "wasteland/rad_behemoth.png", FrameSize: 128},
 }

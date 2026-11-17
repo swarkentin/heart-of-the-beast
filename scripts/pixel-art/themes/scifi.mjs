@@ -106,5 +106,45 @@ export default {
         face: (c, G) => { const cx = G.cx, cy = G.cy; for (const [dx, dy, r] of [[-12, -8, 5], [10, -12, 4], [0, -2, 6], [-4, 12, 3.4], [16, 4, 3.6]]) { c.part().ell(cx + dx * s, cy + dy * s, r * s, r * s, "eyeW"); c.part().ell(cx + dx * s, cy + dy * s, r * s * 0.45, r * s * 0.45, "glow"); } c.part().rect(cx - 12 * s, cy + 16 * s, 24 * s, (3 + p.jaw * 4) * s, "void"); for (let i = -5; i <= 5; i++) c.part().rect(cx + i * 2.2 * s, cy + 16 * s, 1.2 * s, 2 * s, "eyeW"); for (const k of [-1, 1]) c.part().line(cx + k * 26 * s, cy - 10 * s, cx + k * 20 * s, cy + 8 * s, "vein", 2 * s); },
       }),
     },
+    {
+      id: "volatile_canister", name: "Volatile Canister", role: "Walking fuel cell; detonates on its own unless destroyed first", attack: "spit", special: "vent", death: "explode",
+      attackName: "Coolant spray", specialName: "Critical breach", fx: { attack: ["stream"], special: ["burst", "burst"] }, fxc: ["#8bff5a", "#ffffff"],
+      mats: { hazard: "#e8c23a" },
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 13, bw: 8, bh: 10, pairs: 2, legMat: "steel", legT: 1.8, leg1: 7, leg2: 8, legOut: 4,
+        body: (c, G, pp) => {
+          const cx = G.cx, by = G.by; c.part().rect(cx - 8 * s, by - 14 * s, 16 * s, 20 * s, "steel");
+          c.part().rect(cx - 6 * s, by - 11 * s, 12 * s, 14 * s, "green"); for (let i = 0; i < 3; i++) c.part().rect(cx - 8 * s, by - 13 * s + i * 7 * s, 16 * s, 1.4 * s, "dark");
+          for (let i = 0; i < 4; i++) c.part().rect(cx - 8 * s + i * 4 * s, by + 4 * s, 2 * s, 2 * s, "hazard");
+          c.part().rect(cx - 3 * s, by - 17 * s, 6 * s, 3 * s, "dark"); c.part().rect(cx - 1 * s, by - 19 * s - Math.abs(Math.sin(pp.wave)) * 2 * s, 2 * s, 2 * s, "glow");
+        },
+      }),
+    },
+    {
+      id: "shield_projector", name: "Shield Projector", role: "Bodyguard drone; its field blunts skills aimed at its allies", attack: "shoot", special: "guard", death: "explode",
+      attackName: "Pulse tap", specialName: "Field surge", fx: { attack: ["bolt"], special: ["ring"] }, fxc: ["#7fe9ff", "#ffffff"],
+      mats: { field: { color: "#7fe9ff", emissive: true, pulse: true } },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 20, r: 10, bobAmp: 1.4,
+        back: (c, G, pp) => { const r = 15 + Math.sin(pp.wave) * 1.2; c.part().ell(G.cx, G.by, r * s, r * s, "field"); c.part().ell(G.cx, G.by, (r - 1.5) * s, (r - 1.5) * s, "void"); },
+        body: (c, G) => { c.part().ell(G.cx, G.by, 10 * s, 7 * s, "steel"); c.part().rect(G.cx - 12 * s, G.by - 1 * s, 24 * s, 2 * s, "dark"); c.part().poly([[G.cx - 5 * s, G.by + 6 * s], [G.cx + 5 * s, G.by + 6 * s], [G.cx, G.by + 12 * s]], "dark"); },
+        face: (c, G, pp) => { c.part().ell(G.cx, G.by - 1 * s, 4 * s, 4 * s, "void"); c.part().ell(G.cx + Math.sin(pp.wave) * 1.5 * s, G.by - 1 * s, 2.2 * s, 2.2 * s, "field"); },
+        handL: () => {}, handR: () => {},
+      }),
+    },
+    {
+      id: "specimen_omega", tier: "boss", name: "Specimen Omega", role: "Lair boss; slips out of phase and splits off spawn", attack: "lunge", special: "summon", death: "melt",
+      attackName: "Engulf", specialName: "Budding spawn", fx: { attack: ["claw", "burst"], special: ["rise", "puffs"] }, fxc: ["#8bff5a", "#ffffff"],
+      mats: { flesh: "#7a5a9a", vein: "#4a2f6a", eyeW: "#f3f0d8", tubeC: "#8bff5a" },
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 21, ry: 20, mat: "flesh", wob: 1.4, tentacles: { n: 6, len: 18, th: 4, mat: "flesh", y: 0.5 },
+        face: (c, G, pp) => {
+          const cx = G.cx, cy = G.cy;
+          for (let i = -1; i <= 1; i++) tube(c, cx + i * 8 * s, cy - G.h + 2 * s, cx + i * 14 * s, cy - G.h - 6 * s, "tubeC");
+          for (const [dx, dy, r] of [[-8, -6, 4], [7, -8, 3.4], [0, 1, 5.5], [-11, 4, 2.4], [11, 3, 2.6]]) { c.part().ell(cx + dx * s, cy + dy * s, r * s, r * s, "eyeW"); c.part().ell(cx + dx * s + Math.sin(pp.wave + dx) * 0.6 * s, cy + dy * s, r * 0.45 * s, r * 0.45 * s, "green"); }
+          c.part().rect(cx - 9 * s, cy + 9 * s, 18 * s, 3 * s + pp.jaw * 3 * s, "void");
+        },
+      }),
+    },
   ],
 };

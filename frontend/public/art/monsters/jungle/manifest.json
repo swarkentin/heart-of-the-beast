@@ -456,6 +456,174 @@
       },
       "attack": "Engulfing snap",
       "special": "Acid geyser"
+    },
+    {
+      "id": "thornback_beetle",
+      "name": "Thornback Beetle",
+      "tier": "monster",
+      "role": "Armoured beetle; plain attacks against its thorns hurt the attacker",
+      "sheet": "jungle/thornback_beetle.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "crumble"
+        }
+      },
+      "attack": "Horn charge",
+      "special": "Bristle"
+    },
+    {
+      "id": "budding_mass",
+      "name": "Budding Mass",
+      "tier": "monster",
+      "role": "Spore lump; when it bursts, a smaller bud carries on",
+      "sheet": "jungle/budding_mass.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spit"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "melt"
+        }
+      },
+      "attack": "Spore spit",
+      "special": "Burst pod"
+    },
+    {
+      "id": "hive_queen",
+      "name": "The Hive Queen",
+      "tier": "boss",
+      "role": "Lair boss; lays drones mid-fight and grows back her wounds",
+      "sheet": "jungle/hive_queen.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "claw"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "summon"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Stinger",
+      "special": "Brood call"
     }
   ]
 }

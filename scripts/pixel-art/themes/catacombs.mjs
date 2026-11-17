@@ -1,5 +1,5 @@
 // Forgotten Catacombs: skeletons, drowned scouts, armored undead. Purple dusk + bone + spectral green.
-import { biped, floater, heads, torsos, blade, shield, ragged, tentacle, hands } from "../kit.mjs";
+import { biped, floater, heads, torsos, blade, shield, ragged, tentacle, hands, blob } from "../kit.mjs";
 
 export const flame = (c, x, y, p, s, mat = "glow") => {
   const w = Math.sin(p.wave * 2) * 1.2 * s;
@@ -137,6 +137,45 @@ export default {
         handL: (c, x, y) => c.part().rect(x - 1.5 * s, y - 1.5 * s, 3 * s, 3 * s, "bone"),
         handR: (c, x, y) => c.part().rect(x - 1.5 * s, y - 1.5 * s, 3 * s, 3 * s, "bone"),
         arms: { sh: 6, shY: -6, l1: 10, l2: 10, mat: "robe", t: 2.4 },
+      }),
+    },
+    {
+      id: "rattling_heap", name: "Rattling Heap", role: "Bone pile that splits into a smaller heap when it first falls", attack: "slam", special: "roar", death: "crumble",
+      attackName: "Bone avalanche", specialName: "Clatter", fx: { attack: ["shock", "burst"], special: ["ring"] },
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 18, ry: 12, mat: "bone", wob: 1.3, flat: 0.4,
+        face: (c, G, pp) => {
+          const cx = G.cx, cy = G.cy;
+          for (const [dx, dy, a] of [[-12, -2, -40], [10, -4, -140], [-4, -9, -70], [6, 3, -20]]) c.part().line(cx + dx * s, cy + dy * s, cx + dx * s + Math.cos(a * 0.0175) * 8 * s, cy + dy * s + Math.sin(a * 0.0175) * 8 * s, "bone", 2 * s, 1.2 * s);
+          for (const [dx, dy, r] of [[-7, -3, 4.5], [6, -1, 4], [0, -9 + Math.sin(pp.wave) * s, 3.6]]) heads.skull()(c, { x: cx + dx * s, y: cy + dy * s, r: r * s, s }, pp);
+          c.part().rect(cx - 12 * s, cy + 6 * s, 24 * s, 2 * s, "rag");
+        },
+      }),
+    },
+    {
+      id: "candle_acolyte", name: "Candle Acolyte", role: "Warder; wraps an ally in a ward of candlelight", attack: "cast", special: "guard", death: "dissolve",
+      attackName: "Wax lash", specialName: "Candle ward", fx: { attack: ["orb"], special: ["ring", "rise"] },
+      mats: { robe: "#6a4a3a", wax: "#efe2c0" },
+      draw: (c, p0, s) => {
+        const p = { ...p0, aLx: p0.aLx * 0.4, aLy: p0.aLy * 0.4 };
+        return biped(c, p, {
+          s, legs: false, hover: 2, torsoH: 17, torsoW: 6.5, headR: 5.5, armT: 2.4, armMat: "robe", armDrop: 11, armOut: 3,
+          torso: torsos.robe({ mat: "robe", trim: "gold", flare: 1.8 }), head: heads.hood({ cloth: "robe" }),
+          handR: (c, x, y) => { c.part().rect(x - 5 * s, y - 2 * s, 10 * s, 2 * s, "gold"); for (const k of [-1, 0, 1]) { c.part().rect(x + k * 4 * s - 1 * s, y - 7 * s, 2 * s, 5 * s, "wax"); flame(c, x + k * 4 * s, y - 7 * s, p, s * 0.6); } },
+          handL: (c, x, y) => c.part().rect(x - 1.5 * s, y - 1 * s, 3 * s, 3 * s, "bone"),
+        });
+      },
+    },
+    {
+      id: "tolling_abbot", tier: "boss", name: "The Tolling Abbot", role: "Lair boss; tolls a bell that rings through the party and mends itself", attack: "smash", special: "roar", death: "topple",
+      attackName: "Bell hammer", specialName: "Funeral toll", fx: { attack: ["shock", "burst"], special: ["ring", "ring"] },
+      mats: { robe: "#3a2a5a", bell: "#b88a3a", wax: "#efe2c0" },
+      draw: (c, p, s) => biped(c, p, {
+        s, legs: false, hover: 1, torsoH: 21, torsoW: 9, headR: 6, armT: 3.4, armMat: "robe", armDrop: 14, armOut: 3,
+        back: (c, G, pp) => { const sw = Math.sin(pp.wave) * 2 * s, bx = G.cx - 11 * s + sw, by = G.topY - 8 * s; c.part().line(G.cx - 11 * s, G.topY - 15 * s, bx, by - 2 * s, "wood", 1.6 * s); c.part().poly([[bx - 4 * s, by - 2 * s], [bx + 4 * s, by - 2 * s], [bx + 8 * s, by + 9 * s], [bx - 8 * s, by + 9 * s]], "bell"); c.part().rect(bx - 9 * s, by + 8 * s, 18 * s, 2 * s, "gold"); },
+        torso: torsos.robe({ mat: "robe", trim: "gold", flare: 2.2, waves: true }), head: heads.skull({ crown: "gold" }),
+        handR: (c, x, y, side, pp) => { c.part().line(x, y + 4 * s, x, y - 16 * s, "wood", 2 * s); c.part().rect(x - 5 * s, y - 20 * s, 10 * s, 6 * s, "bell"); },
+        handL: (c, x, y, side, pp) => { c.part().rect(x - 1 * s, y - 6 * s, 2 * s, 6 * s, "wax"); flame(c, x, y - 6 * s, pp, s * 0.7); },
       }),
     },
   ],

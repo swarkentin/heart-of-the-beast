@@ -50,6 +50,8 @@ type MonsterDefinition struct {
 	BaseHealth     int
 	HealthPerDepth int
 	AbilityIDs     []string
+	// Traits are extra rules the monster fights by (monster_traits.go).
+	Traits []MonsterTrait
 }
 
 // defineMonster attaches required art to a monster definition. Leaving the art out of a monster entry is a
@@ -111,6 +113,8 @@ func newMonsterCatalog() MonsterCatalog {
 		defineMonster(art.CatacombsCryptWarden, MonsterDefinition{ID: "crypt-warden-solo", Name: "Crypt Warden", Role: MonsterRoleBoss, BehaviorID: "warden", BaseHealth: 36, AbilityIDs: []string{"soul-drain", "soul-sweep"}}),
 	}
 	themedAbilities, themedMonsters := themedMonsterContent()
+	varietyAbilities, varietyMonsters := varietyMonsterContent()
+	themedAbilities, themedMonsters = append(themedAbilities, varietyAbilities...), append(themedMonsters, varietyMonsters...)
 	for _, ability := range themedAbilities {
 		if _, duplicate := abilityMap[ability.ID]; duplicate {
 			panic(fmt.Sprintf("duplicate built-in monster ability %q", ability.ID))
@@ -158,6 +162,9 @@ func (catalog MonsterCatalog) Validate() error {
 		}
 		if _, ok := catalog.Monsters[monster.BehaviorID]; !ok {
 			return fmt.Errorf("monster %q uses undefined behavior %q", id, monster.BehaviorID)
+		}
+		if err := validateMonsterTraits(monster); err != nil {
+			return err
 		}
 		for _, abilityID := range monster.AbilityIDs {
 			if _, ok := catalog.Abilities[abilityID]; !ok {
@@ -222,6 +229,7 @@ func (catalog MonsterCatalog) NewEnemy(instanceID, monsterID string, scaling Mon
 	return Enemy{
 		ID: instanceID, DefinitionID: monster.ID, Name: monster.Name,
 		Behavior: monster.BehaviorID, SpriteID: monster.Sprite.String(), Health: health, MaxHealth: health,
+		Traits: append([]MonsterTrait(nil), monster.Traits...),
 	}, nil
 }
 

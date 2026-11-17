@@ -144,6 +144,9 @@ func skillPolicyCommand(room *Room, playerID string, round int, rng *rand.Rand) 
 	best, bestValue := "", -1
 	for _, definition := range ready {
 		value := skillValue(definition, player, target, livingEnemies, len(living), incoming)
+		if spiked, ok := target.trait(TraitSpiked); ok && definition.Basic {
+			value -= spiked.Amount * 2 // spikes cut whoever uses a basic attack on them
+		}
 		if damage := estimatedDamage(run, player, definition, target); damage >= target.Health {
 			value += 20 // a killing blow also stops the enemy's move
 		}
@@ -336,6 +339,9 @@ func estimatedDamage(run *Run, player *PlayerState, definition SkillDefinition, 
 	if definition.Elemental {
 		total += passive.ElementalDamage
 	}
+	if current := run.Rooms[run.CurrentRoomID]; current != nil {
+		total = traitDamageTaken(run, current.Encounter, enemy, total, 0, false)
+	}
 	if definition.Basic {
 		total -= enemy.Barrier
 	}
@@ -404,7 +410,9 @@ func sortedPlayerIDs(players map[string]*PlayerState) []string {
 	return ids
 }
 
-// simulationTarget is the weakest living enemy, ties broken by the seed.
+// simulationTarget is the enemy to focus, ties broken by the seed: the weakest living enemy, counting a shield
+// as health and an out-of-phase enemy as twice as tough, except that a lit fuse, a bodyguard or a warder comes
+// first, since dropping it is what answers its trait.
 func simulationTarget(enemies []Enemy, rng *rand.Rand) int {
 	lowestHealth := -1
 	candidates := make([]int, 0, len(enemies))
@@ -412,11 +420,12 @@ func simulationTarget(enemies []Enemy, rng *rand.Rand) int {
 		if enemies[i].Health <= 0 {
 			continue
 		}
-		if lowestHealth < 0 || enemies[i].Health < lowestHealth {
-			lowestHealth = enemies[i].Health
+		key := targetPriority(&enemies[i])
+		if lowestHealth < 0 || key < lowestHealth {
+			lowestHealth = key
 			candidates = candidates[:0]
 			candidates = append(candidates, i)
-		} else if enemies[i].Health == lowestHealth {
+		} else if key == lowestHealth {
 			candidates = append(candidates, i)
 		}
 	}
@@ -424,4 +433,20 @@ func simulationTarget(enemies []Enemy, rng *rand.Rand) int {
 		return -1
 	}
 	return candidates[rng.Intn(len(candidates))]
+}
+
+func targetPriority(enemy *Enemy) int {
+	key := enemy.Health + enemy.Shield
+	if enemy.Phased {
+		key *= 2
+	}
+	if _, ok := enemy.trait(TraitFuse); ok {
+		return key - 100
+	}
+	for _, kind := range []string{TraitBodyguard, TraitWarder} {
+		if _, ok := enemy.trait(kind); ok {
+			return key - 8
+		}
+	}
+	return key + 100
 }

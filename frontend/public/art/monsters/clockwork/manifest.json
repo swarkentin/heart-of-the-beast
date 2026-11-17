@@ -456,6 +456,174 @@
       },
       "attack": "Furnace charge",
       "special": "Scalding breath"
+    },
+    {
+      "id": "windup_bomber",
+      "name": "Wind-up Bomber",
+      "tier": "monster",
+      "role": "Clockwork bomb; its key runs down to a blast unless it is smashed first",
+      "sheet": "clockwork/windup_bomber.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Ram",
+      "special": "Spring release"
+    },
+    {
+      "id": "repair_automaton",
+      "name": "Repair Automaton",
+      "tier": "monster",
+      "role": "Warder; bolts a plate of armour onto a damaged ally",
+      "sheet": "clockwork/repair_automaton.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slam"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "crumble"
+        }
+      },
+      "attack": "Wrench swing",
+      "special": "Patch plating"
+    },
+    {
+      "id": "grand_orrery",
+      "name": "The Grand Orrery",
+      "tier": "boss",
+      "role": "Lair boss; its orbits slide in and out of reach and line up for an eclipse",
+      "sheet": "clockwork/grand_orrery.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spin"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Orbital strike",
+      "special": "Eclipse"
     }
   ]
 }

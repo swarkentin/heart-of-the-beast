@@ -456,6 +456,174 @@
       },
       "attack": "Colossal fist",
       "special": "Waking pulse"
+    },
+    {
+      "id": "brine_polyp",
+      "name": "Brine Polyp",
+      "tier": "monster",
+      "role": "Coral growth that knits itself back together each round unless it bleeds",
+      "sheet": "sunken/brine_polyp.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spit"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "melt"
+        }
+      },
+      "attack": "Stinging spray",
+      "special": "Regrow"
+    },
+    {
+      "id": "twin_eel",
+      "name": "Twin-Eel",
+      "tier": "monster",
+      "role": "Two eels in one knot; when cut apart, the second keeps fighting",
+      "sheet": "sunken/twin_eel.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spin"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "melt"
+        }
+      },
+      "attack": "Double bite",
+      "special": "Coil"
+    },
+    {
+      "id": "pearl_leviathan",
+      "name": "The Pearl Leviathan",
+      "tier": "boss",
+      "role": "Lair boss; shuts its pearl shell into a barrier and heals in the deep",
+      "sheet": "sunken/pearl_leviathan.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Crushing maw",
+      "special": "Close the shell"
     }
   ]
 }

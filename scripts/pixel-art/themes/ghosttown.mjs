@@ -1,5 +1,5 @@
 // Ghost Towns: western frontier atmosphere, revenants, cursed settlements. Dust orange + leather + spectral teal.
-import { biped, floater, crawler, blob, heads, torsos, blade, ragged, tentacle } from "../kit.mjs";
+import { biped, floater, crawler, blob, heads, torsos, blade, ragged, tentacle, hands } from "../kit.mjs";
 import { wing, fangs, spike, hat, star } from "../parts.mjs";
 
 const skullHat = (m = {}) => (c, H, p) => {
@@ -97,6 +97,40 @@ export default {
         s, rx: 21, ry: 27, mat: "wood", wob: 0.7, flat: 0.1, tentacles: { n: 6, len: 28, th: 5, mat: "wood", up: true, y: 0.9 },
         back: (c, G, pp) => { for (const k of [-1, 1]) for (let j = 0; j < 2; j++) { const bx = G.cx + k * (16 + j * 10) * s, by = G.floor - (50 + j * 6) * s; c.part().line(bx, by, bx, by + (10 + j * 6) * s + Math.sin(pp.wave + j + k) * 1.5 * s, "bone", Math.max(1, 1.2 * s)); c.part().ell(bx, by + (13 + j * 6) * s, 2.6 * s, 3.2 * s, "bone"); c.part().ell(bx, by + (13 + j * 6) * s, 1.4 * s, 1.8 * s, null); } },
         face: (c, G, pp) => { const cx = G.cx, cy = G.cy; for (const k of [-1, 1]) { c.part().poly([[cx + k * 3 * s, cy - 8 * s], [cx + k * 12 * s, cy - 12 * s], [cx + k * 11 * s, cy - 3 * s]], "void"); c.part().ell(cx + k * 8 * s, cy - 8 * s, 2 * s, 2 * s, "glow"); } c.part().ell(cx, cy + 8 * s, 8 * s, 9 * s + pp.jaw * 3 * s, "void"); c.part().ell(cx, cy + 12 * s, 4 * s, 4 * s, "glow"); for (let i = 0; i < 4; i++) c.part().line(cx - 16 * s + i * 2 * s, cy - 20 * s + i * 8 * s, cx - 10 * s + i * s, cy - 14 * s + i * 8 * s, "leather", 1.4 * s); },
+      }),
+    },
+    {
+      id: "vengeful_deputy", name: "Vengeful Deputy", role: "Avenger; when a comrade falls, he swears revenge and hits harder", attack: "shoot", special: "roar", death: "dissolve",
+      attackName: "Six-shooter", specialName: "Swear vengeance", fx: { attack: ["muzzle", "bolt"], special: ["ring"] },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 16, legT: 2.8, legMat: "denim", armMat: "leather", armT: 2.4, torsoH: 15, torsoW: 7, headR: 5.6, hipW: 3.4, footW: 4.6,
+        torso: (c, G) => { torsos.coat({ mat: "leather", shirt: "dust" })(c, G); star(c, G.cx - 3.5 * s, G.topY + 5 * s, 2.4 * s, "brass"); },
+        head: skullHat(),
+        handR: (c, x, y, side, pp) => { c.part().rect(x - 1 * s, y - 1 * s, 3 * s, 3 * s, "bone"); c.part().rect(x, y - 3 * s, 7 * s, 2 * s, "steel"); },
+        handL: hands.fist("bone"),
+      }),
+    },
+    {
+      id: "dust_devil", name: "Dust Devil", role: "Whirlwind of grit; every other turn it scatters and skills only clip it", attack: "spin", special: "spin", death: "dissolve",
+      attackName: "Grit lash", specialName: "Scatter", fx: { attack: ["slash"], special: ["ring", "puffs"] },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 4, r: 12, bobAmp: 1,
+        body: (c, G, pp) => { for (let i = 0; i < 8; i++) { const y = G.by - 26 * s + i * 4 * s, w = (5 + i * 1.6) * s, o = Math.sin(pp.wave + i * 0.9) * 3 * s; c.part().ell(G.cx + o, y, w, 2.2 * s, i % 2 ? "dust" : "leather"); } },
+        face: (c, G, pp) => { for (const k of [-1, 1]) c.part().rect(G.cx + k * 3 * s - 1 * s + Math.sin(pp.wave + 2) * 2 * s, G.by - 18 * s, 2 * s, 2 * s, "glow"); for (const [dx, dy] of [[-12, -10], [10, -16], [13, -4]]) c.part().rect(G.cx + dx * s + Math.sin(pp.wave + dx) * s, G.by + dy * s, 1.6 * s, 1.6 * s, "wood"); },
+        handL: () => {}, handR: () => {},
+      }),
+    },
+    {
+      id: "hanging_judge", tier: "boss", name: "The Hanging Judge", role: "Lair boss; calls up a posse and grows fiercer with every one you drop", attack: "smash", special: "summon", death: "dissolve",
+      attackName: "Gavel", specialName: "Call the posse", fx: { attack: ["shock", "burst"], special: ["rise", "ring"] },
+      mats: { robe: "#1f1a24", rope: "#a8835a" },
+      draw: (c, p, s) => biped(c, p, {
+        s, legs: false, hover: 3, torsoH: 21, torsoW: 9, headR: 6, armT: 3.2, armMat: "robe", armDrop: 14, armOut: 3,
+        back: (c, G, pp) => { const sw = Math.sin(pp.wave) * 1.5 * s; c.part().line(G.cx + 14 * s, G.topY - 18 * s, G.cx + 14 * s + sw, G.topY + 2 * s, "rope", 1.4 * s); c.part().ell(G.cx + 14 * s + sw, G.topY + 5 * s, 3 * s, 3.6 * s, "rope"); c.part().ell(G.cx + 14 * s + sw, G.topY + 5 * s, 1.8 * s, 2.4 * s, "void"); },
+        torso: torsos.robe({ mat: "robe", trim: "bone", flare: 2.2, waves: true }),
+        head: (c, H, pp) => { heads.skull()(c, H, pp); for (const k of [-1, 1]) for (let i = 0; i < 3; i++) c.part().ell(H.x + k * H.r * 1.05, H.y - H.r * 0.3 + i * H.r * 0.5, H.r * 0.35, H.r * 0.3, "bone"); },
+        handR: (c, x, y) => { c.part().line(x, y, x, y - 10 * s, "wood", 1.6 * s); c.part().rect(x - 4 * s, y - 14 * s, 8 * s, 5 * s, "wood"); c.part().rect(x - 4 * s, y - 12 * s, 8 * s, 1 * s, "brass"); },
+        handL: hands.claw("bone"),
       }),
     },
   ],

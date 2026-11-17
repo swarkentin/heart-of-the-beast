@@ -13,78 +13,78 @@
       "id": "catacombs",
       "name": "Forgotten Catacombs",
       "manifest": "catacombs/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "scifi",
       "name": "Sci-Fi Research Facility",
       "manifest": "scifi/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "mobster",
       "name": "1930s Mobster Underworld",
       "manifest": "mobster/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "sunken",
       "name": "Sunken Kingdom",
       "manifest": "sunken/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "clockwork",
       "name": "Clockwork Empire",
       "manifest": "clockwork/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "carnival",
       "name": "Haunted Carnival",
       "manifest": "carnival/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "jungle",
       "name": "Alien Jungle",
       "manifest": "jungle/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "dreamscape",
       "name": "Dreamscapes",
       "manifest": "dreamscape/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "arctic",
       "name": "Arctic Station",
       "manifest": "arctic/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "ghosttown",
       "name": "Ghost Town",
       "manifest": "ghosttown/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     },
     {
       "id": "wasteland",
       "name": "Post-Apocalyptic Settlement",
       "manifest": "wasteland/manifest.json",
-      "creatures": 8,
-      "bosses": 3
+      "creatures": 11,
+      "bosses": 4
     }
   ]
 }

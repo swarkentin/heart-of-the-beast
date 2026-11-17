@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Validates the generated monster art. Exits non-zero on any failure so it can gate CI.
 //   node scripts/pixel-art/verify.mjs
-// Checks: unique ids; roster size (>=5 monsters, 1-3 bosses per theme); every sprite sheet and
+// Checks: unique ids; roster size (>=5 monsters, 1-4 bosses per theme); every sprite sheet and
 // manifest on disk is byte-identical to a fresh deterministic render (i.e. nothing is stale);
 // sheet dimensions match the manifest; every animation frame draws something (death may fully
 // clear on its last frame only); idle/hit frames never touch the top/left/right cell edge (no
@@ -31,7 +31,7 @@ for (const theme of themes) {
   const where = `[${theme.id}]`;
   const monsters = theme.creatures.filter((c) => (c.tier || "monster") !== "boss"), bosses = theme.creatures.filter((c) => c.tier === "boss");
   if (monsters.length < 5) fail(`${where} needs >= 5 monsters (has ${monsters.length})`);
-  if (bosses.length < 1 || bosses.length > 3) fail(`${where} needs 1-3 bosses (has ${bosses.length})`);
+  if (bosses.length < 1 || bosses.length > 4) fail(`${where} needs 1-4 bosses (has ${bosses.length})`);
   const manifestPath = resolve(OUT, theme.id, "manifest.json");
   const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : null;
   if (!manifest) fail(`${where} manifest.json missing - run npm run art:build`);

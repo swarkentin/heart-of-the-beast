@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
+import { SoundButton } from "./audio";
 import { cooldownLabel, loadoutProblem, MAX_LOADOUT, skillsForClass, usableLoadout, type Skill } from "./combatAbilities";
 import { SKILL_ICON_ORDER } from "./skillIcons.gen";
 
@@ -194,6 +195,7 @@ export function SharedMenu({ profile, classes = [], rewards = [], audioControls,
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [profileOpen]);
   return <>
+  <SoundButton />
   <details className="px-shared-menu">
     <summary className="px-button px-button-small">MENU</summary>
     <div className="px-panel px-shared-menu-panel">
@@ -226,6 +228,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
       <h1 className="px-wordmark">HEART <small>OF THE</small> BEAST</h1>
       <p className="px-lede">A dungeon crawl for one to four. Pick a hero, descend together, and see who makes it back.</p>
+      <SoundButton large />
       <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={ASCENDANT} />)}</div></div>
     </section>
     <section className="px-panel px-title-actions" aria-label="Start playing">

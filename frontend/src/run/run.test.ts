@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
+import { traitTags } from "./traits.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -93,4 +94,15 @@ test("each event is logged once, under a heading for its round", () => {
   assert.deepEqual(again.lines, [], "a repeated snapshot adds nothing");
   const next = linesFor([{ round: 3, kind: "player_defend", message: "C", auto: true }], new Set(first.keys), first.lastRound);
   assert.deepEqual(next.lines.map(line => [line.tone, line.text]), [["system", "ROUND 3"], ["auto", "C"]]);
+});
+
+test("monster traits become tags that track their live state", () => {
+  const base = { id: "e", name: "Bomb", turnsTaken: 1, health: 8, maxHealth: 8 };
+  assert.deepEqual(traitTags({ ...base, traits: [{ kind: "fuse", every: 3, amount: 5, label: "Boom" }], fuseIn: 2 }).map(t => t.label), ["FUSE 2"]);
+  assert.equal(traitTags({ ...base, traits: [{ kind: "fuse", every: 3, amount: 5 }], fuseIn: 0 })[0].label, "DETONATING");
+  assert.equal(traitTags({ ...base, traits: [{ kind: "phasing" }], phased: true })[0].tone, "good");
+  assert.deepEqual(traitTags({ ...base, traits: [{ kind: "splits", amount: 50 }], split: true }), []);
+  assert.equal(traitTags({ ...base, traits: [{ kind: "avenger", amount: 2 }], avenged: true })[0].label, "VENGEFUL +2");
+  assert.deepEqual(traitTags({ ...base, shield: 3 }).map(t => t.label), ["SHIELD 3"]);
+  assert.equal(toneOf({ round: 1, kind: "trait_split", message: "x" } as never), "bad");
 });

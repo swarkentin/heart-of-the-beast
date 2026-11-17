@@ -456,6 +456,174 @@
       },
       "attack": "Gnarled slam",
       "special": "Chorus of the hanged"
+    },
+    {
+      "id": "vengeful_deputy",
+      "name": "Vengeful Deputy",
+      "tier": "monster",
+      "role": "Avenger; when a comrade falls, he swears revenge and hits harder",
+      "sheet": "ghosttown/vengeful_deputy.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "shoot"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "roar"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Six-shooter",
+      "special": "Swear vengeance"
+    },
+    {
+      "id": "dust_devil",
+      "name": "Dust Devil",
+      "tier": "monster",
+      "role": "Whirlwind of grit; every other turn it scatters and skills only clip it",
+      "sheet": "ghosttown/dust_devil.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spin"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spin"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Grit lash",
+      "special": "Scatter"
+    },
+    {
+      "id": "hanging_judge",
+      "name": "The Hanging Judge",
+      "tier": "boss",
+      "role": "Lair boss; calls up a posse and grows fiercer with every one you drop",
+      "sheet": "ghosttown/hanging_judge.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "summon"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Gavel",
+      "special": "Call the posse"
     }
   ]
 }

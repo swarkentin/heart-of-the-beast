@@ -371,3 +371,18 @@
 .px-skin-next { display: flex; align-items: center; gap: 6px; color: var(--gold); font: 8px/1.5 var(--display); }
 .px-skin-done { color: var(--good); }
 @media (max-width: 760px) { .px-skin-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Sound: a one-tap toggle in the top bar on every screen, and a large prompt on the title screen until sound plays. */
+.px-sound-button { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.px-sound-button > span[aria-hidden], .px-sound-prompt > span[aria-hidden] { font-size: 1.3em; line-height: 1; }
+.px-sound-off, .px-sound-muted { opacity: .8; }
+.px-sound-waiting { color: var(--ember, #ffcf6a); animation: px-sound-call 1.6s ease-in-out infinite; }
+.px-sound-prompt { display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin: 14px auto 0; min-height: 48px; padding-inline: 18px; font-size: 14px; }
+@keyframes px-sound-call { 50% { filter: brightness(1.35); } }
+@media (max-width: 420px) { .px-sound-button { padding-inline: 5px; } }
+@media (prefers-reduced-motion: reduce) { .px-sound-waiting { animation: none; } }
+/* On a phone the top bar has no room for words: the note alone (pulsing while sound waits for a tap) is the toggle. */
+@media (max-width: 560px) {
+  .px-sound-button .px-sound-text { display: none; }
+  .px-sound-button { min-width: 32px; justify-content: center; }
+}

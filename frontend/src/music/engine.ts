@@ -38,6 +38,13 @@ export class MusicEngine {
   private pending: MusicCue | null = null;
   private volumes: Volumes = { muted: false, master: 0.72, music: 0.48, effects: 0.72 };
   private lastEffectAt = new Map<string, number>();
+  private listeners = new Set<() => void>();
+
+  /** Calls listener whenever the audio context starts, suspends or is interrupted. Returns an unsubscribe. */
+  onStateChange(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
 
   get running(): boolean {
     return this.ctx !== null && this.ctx.state === "running";
@@ -47,17 +54,28 @@ export class MusicEngine {
     return this.layer?.key ?? null;
   }
 
-  /** Must be called from a user gesture the first time (browser autoplay rules). Applies any cue that arrived earlier. */
+  /**
+   * Must be called from a user gesture (browser autoplay rules): mobile browsers only let a context start inside
+   * the handler of a tap, click or key, so everything up to resume() runs synchronously. Applies any cue that
+   * arrived earlier. Safe to call again whenever the context is not running, such as after the phone backgrounded the page.
+   */
   async enable(): Promise<void> {
+    // iOS mutes Web Audio with the ringer switch unless the page asks for playback audio (Safari 17+).
+    const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+    if (session && session.type !== "playback") { try { session.type = "playback"; } catch { /* unsupported */ } }
     if (!this.ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
       this.ctx = new Ctor();
+      this.ctx.onstatechange = () => this.listeners.forEach(listener => listener());
       this.chain = createMasterChain(this.ctx);
       this.applyVolumes();
     }
     if (this.ctx.state !== "running") {
+      // Older iOS only unlocks once a sound has started inside the gesture: a one-sample silent buffer is enough.
+      try { const source = this.ctx.createBufferSource(); source.buffer = this.ctx.createBuffer(1, 1, 22050); source.connect(this.ctx.destination); source.start(0); } catch { /* not needed */ }
       try { await this.ctx.resume(); } catch { return; }
+      this.listeners.forEach(listener => listener());
     }
     if (!this.timer) this.timer = setInterval(() => this.tick(), TICK_MS);
     if (this.pending) {

@@ -2,6 +2,7 @@
 import { biped, floater, crawler, blob, heads, torsos, blade, ragged } from "../kit.mjs";
 import { paw, wing, fangs, spike, eyeball } from "../parts.mjs";
 
+const hands_claw = (c, x, y, side, p, G) => { const s = G.s; for (let i = -1; i <= 1; i++) c.part().line(x + i * 2 * s, y, x + i * 3 * s, y + 5 * s, "chit", Math.max(1, s)); };
 const bugEyes = (c, x, y, r, s) => { for (const k of [-1, 1]) { c.part().ell(x + k * r * 0.5, y, r * 0.38, r * 0.5, "void"); c.part().ell(x + k * r * 0.5, y, r * 0.28, r * 0.38, "glow"); } };
 
 export default {
@@ -101,6 +102,35 @@ export default {
           for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, rx = 20 * s, ry = 14 * s + j; spike(c, cx + Math.cos(a) * rx * 0.92, cy + 2 * s + Math.sin(a) * ry * 0.92, (a * 180) / Math.PI + 180, 6 * s, 1.5 * s, "bone"); }
           for (const k of [-1, 1]) { c.part().ell(cx + k * 14 * s, cy - 17 * s, 4 * s, 4 * s, "eyeW"); c.part().ell(cx + k * 14 * s, cy - 17 * s, 2 * s, 2 * s, "glow"); }
         },
+      }),
+    },
+    {
+      id: "thornback_beetle", name: "Thornback Beetle", role: "Armoured beetle; plain attacks against its thorns hurt the attacker", attack: "lunge", special: "guard", death: "crumble",
+      attackName: "Horn charge", specialName: "Bristle", fx: { attack: ["claw", "burst"], special: [] },
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 10, bw: 14, bh: 8, pairs: 3, legMat: "chit", legT: 2.2, leg1: 8, leg2: 9, legOut: 5,
+        body: (c, G) => { c.part().ell(G.cx, G.by - 3 * s, 15 * s, 10 * s, "chit"); c.part().line(G.cx, G.by - 13 * s, G.cx, G.by + 4 * s, "void", 1 * s); for (let i = -2; i <= 2; i++) spike(c, G.cx + i * 5.5 * s, G.by - 10 * s + Math.abs(i) * 2 * s, -90 + i * 18, 8 * s, 1.8 * s, "leaf"); },
+        head: (c, G, pp) => { const hx = G.cx + 15 * s + pp.reach * 2 * s, hy = G.by; c.part().ell(hx, hy, 5 * s, 4.5 * s, "chit"); spike(c, hx + 2 * s, hy - 2 * s, -40, 9 * s, 2 * s, "bone"); bugEyes(c, hx, hy - 1 * s, 4 * s, s); },
+      }),
+    },
+    {
+      id: "budding_mass", name: "Budding Mass", role: "Spore lump; when it bursts, a smaller bud carries on", attack: "spit", special: "vent", death: "melt",
+      attackName: "Spore spit", specialName: "Burst pod", fx: { attack: ["stream"], special: ["puffs", "rise"] }, fxc: ["#ff5fd2", "#ffffff"],
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 16, ry: 13, mat: "flesh", wob: 1.4,
+        face: (c, G, pp) => { for (const [dx, dy, r] of [[-9, -6, 4], [7, -8, 3.4], [11, 0, 2.6], [-12, 3, 2.4]]) { c.part().ell(G.cx + dx * s, G.cy + dy * s, r * s, r * s, "petal"); c.part().ell(G.cx + dx * s, G.cy + dy * s, r * 0.45 * s, r * 0.45 * s, "spore"); } eyeball(c, G.cx, G.cy - 1 * s, 4 * s, { look: Math.sin(pp.wave) }); c.part().rect(G.cx - 5 * s, G.cy + 5 * s, 10 * s, 2 * s + pp.jaw * 2 * s, "void"); },
+      }),
+    },
+    {
+      id: "hive_queen", tier: "boss", name: "The Hive Queen", role: "Lair boss; lays drones mid-fight and grows back her wounds", attack: "claw", special: "summon", death: "topple",
+      attackName: "Stinger", specialName: "Brood call", fx: { attack: ["claw"], special: ["rise", "puffs"] },
+      mats: { amber: { color: "#ffb347", emissive: true, pulse: true } },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 18, r: 10, bobAmp: 1.6, armOut: 13, armDrop: 2,
+        back: (c, G, pp) => { for (const k of [-1, 1]) wing(c, G.cx + k * 4 * s, G.by - 8 * s, 20 * s, 10 * s, "petal", { side: k, flap: (Math.sin(pp.wave * 2) + 1) / 2 }); },
+        body: (c, G) => { c.part().ell(G.cx, G.by + 12 * s, 9 * s, 12 * s, "amber"); for (let i = 0; i < 3; i++) c.part().rect(G.cx - 8 * s, G.by + 7 * s + i * 4.5 * s, 16 * s, 1.6 * s, "void"); c.part().ell(G.cx, G.by, 8 * s, 7 * s, "chit"); },
+        face: (c, G, pp) => { c.part().ell(G.cx, G.by - 9 * s, 6 * s, 5 * s, "chit"); bugEyes(c, G.cx, G.by - 10 * s, 5 * s, s); for (const k of [-1, 1]) c.part().line(G.cx + k * 2 * s, G.by - 13 * s, G.cx + k * 6 * s, G.by - 19 * s, "chit", 1); c.part().poly([[G.cx - 3 * s, G.by - 6 * s], [G.cx + 3 * s, G.by - 6 * s], [G.cx, G.by - 3 * s + pp.jaw * 2 * s]], "bone"); },
+        handL: hands_claw, handR: hands_claw,
       }),
     },
   ],

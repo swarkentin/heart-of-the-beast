@@ -36,6 +36,8 @@ type ExpeditionTheme struct {
 	Guardians []FloorBossTemplate
 	// Final is the dungeon boss on the last floor, with the mechanics that set it apart.
 	Final FinalBossTemplate
+	// Lair is the optional lair boss some floors hold (theme_variety.go). It does not enrage.
+	Lair FinalBossTemplate
 
 	ClearedText string
 }
@@ -77,6 +79,11 @@ func newExpeditionThemeCatalog() ExpeditionThemeCatalog {
 		if _, duplicate := catalog.Themes[theme.ThemeID]; duplicate {
 			panic(fmt.Sprintf("duplicate built-in expedition theme %q", theme.ThemeID))
 		}
+		if variety, ok := themeVarieties[theme.ThemeID]; ok {
+			theme.Standard = append(append([]string(nil), theme.Standard...), variety.Standard...)
+			theme.Heavy = append(append([]string(nil), theme.Heavy...), variety.Heavy...)
+			theme.Lair = variety.Lair
+		}
 		catalog.Themes[theme.ThemeID] = theme
 	}
 	return catalog
@@ -91,7 +98,7 @@ func (catalog ExpeditionThemeCatalog) Theme(themeID string) (ExpeditionTheme, er
 }
 
 func (theme ExpeditionTheme) encounterIDs() []string {
-	ids := append([]string{theme.EliteID, theme.Final.EncounterID}, theme.Light...)
+	ids := append([]string{theme.EliteID, theme.Final.EncounterID, theme.Lair.EncounterID}, theme.Light...)
 	ids = append(ids, theme.Standard...)
 	ids = append(ids, theme.Heavy...)
 	for _, boss := range theme.Guardians {
@@ -120,7 +127,7 @@ func (catalog ExpeditionThemeCatalog) Validate(themes DungeonThemeCatalog, encou
 		if len(content.Entries) == 0 || len(content.Halls) < MaxHallsPerFloor || len(content.Discoveries) < 2 || len(content.Light) == 0 || len(content.Standard) == 0 || len(content.Heavy) == 0 || len(content.Guardians) == 0 || content.ClearedText == "" {
 			return fmt.Errorf("expedition content %q is incomplete", themeID)
 		}
-		rooms := append(append([]FloorRoomTemplate{content.Vault.Room, content.Elite, content.Guard, content.Final.FloorBossTemplate.room()}, content.Entries...), content.Halls...)
+		rooms := append(append([]FloorRoomTemplate{content.Vault.Room, content.Elite, content.Guard, content.Final.FloorBossTemplate.room(), content.Lair.FloorBossTemplate.room()}, content.Entries...), content.Halls...)
 		for _, guardian := range content.Guardians {
 			rooms = append(rooms, guardian.room())
 		}
@@ -164,13 +171,16 @@ func (catalog ExpeditionThemeCatalog) Validate(themes DungeonThemeCatalog, encou
 				return fmt.Errorf("expedition content %q places encounter %q from theme %q", themeID, id, encounter.ThemeID)
 			}
 		}
-		for _, boss := range append(append([]FloorBossTemplate(nil), content.Guardians...), content.Final.FloorBossTemplate) {
+		for _, boss := range append(append([]FloorBossTemplate(nil), content.Guardians...), content.Final.FloorBossTemplate, content.Lair.FloorBossTemplate) {
 			if !encounterHasBoss(encounters, monsters, boss.EncounterID) {
 				return fmt.Errorf("expedition content %q boss encounter %q has no boss monster", themeID, boss.EncounterID)
 			}
 		}
 		if err := validateBossMechanics(content.Final, themes, monsters, themeID); err != nil {
 			return fmt.Errorf("expedition content %q: %w", themeID, err)
+		}
+		if err := validateBossMechanics(content.Lair, themes, monsters, themeID); err != nil {
+			return fmt.Errorf("expedition content %q lair: %w", themeID, err)
 		}
 	}
 	return nil
@@ -205,6 +215,7 @@ const (
 	floorRoomDiscovery floorRoomKind = "event"
 	floorRoomVault     floorRoomKind = "reward"
 	floorRoomElite     floorRoomKind = "miniboss"
+	floorRoomLair      floorRoomKind = "lair"
 )
 
 // exitHints tell the party what kind of room a path leads to, so choosing a route is a decision and not a guess.
@@ -215,6 +226,7 @@ var exitHints = map[string]string{
 	"event":    "No fight. A discovery, and every gift there has a price.",
 	"reward":   "No fight. A sealed vault: safe coin, or a gamble.",
 	"miniboss": "A champion. A dangerous fight that strengthens the whole party.",
+	"lair":     "A lair. An optional boss with tricks of its own, guarding a rich reward.",
 	"guard":    "The last defenders before this floor's guardian.",
 	"boss":     "The guardian of this floor.",
 	"final":    "The master of this dungeon. There is no way back.",
@@ -288,6 +300,12 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		}
 		slots[candidates[i]].kind = kind
 	}
+	// A lair takes a slot the special rooms left free. It is rolled with its own generator so adding lairs did not
+	// reshape every other floor.
+	lairRoll := rand.New(rand.NewSource(int64(mixSeed(seed, uint64(depth), 0x1a12))))
+	if theme.Lair.EncounterID != "" && depth >= 2 && len(candidates) > len(specials) && lairRoll.Intn(100) < LairChance {
+		slots[candidates[len(specials)]].kind = floorRoomLair
+	}
 
 	// 2. Rooms.
 	rooms := make(map[string]*DungeonRoom, len(slots)+3)
@@ -317,6 +335,10 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		case floorRoomElite:
 			room.Name, room.Description = theme.Elite.Name, theme.Elite.Description
 			room.Encounter = encounter(id, theme.EliteID, EliteHealthPercent)
+		case floorRoomLair:
+			room.Name, room.Description = theme.Lair.RoomName, theme.Lair.Description
+			room.Encounter = encounter(id, theme.Lair.EncounterID, 0)
+			armLairBoss(room.Encounter, theme.Lair)
 		default:
 			hall := theme.Halls[halls[0]]
 			halls = halls[1:]

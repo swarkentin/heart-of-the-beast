@@ -35,6 +35,10 @@ button.rn-threat-chip:hover { background: #1d1733f2; }
 .rn-threat-chip b { font: 400 18px/1 var(--copy); color: var(--bone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-threat-chip i { font-style: normal; color: var(--ember); font-size: 18px; }
 .rn-threat-chip small { color: var(--muted); font-size: 16px; letter-spacing: .04em; }
+.rn-traits { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; font-style: normal; }
+.rn-trait { padding: 1px 4px; font-size: 13px; letter-spacing: .06em; line-height: 1.1; color: var(--bone); background: #ffffff14; box-shadow: inset 0 0 0 1px #ffffff2a; cursor: help; }
+.rn-trait-bad { color: #ffb0a0; background: #b0302a40; box-shadow: inset 0 0 0 1px #e0604a80; }
+.rn-trait-good { color: #b8f0c0; background: #2a903a33; box-shadow: inset 0 0 0 1px #60c07080; }
 .rn-banner { position: absolute; left: 50%; top: 42%; translate: -50% -50%; max-width: 90%; padding: 8px 18px 10px; background: var(--edge); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--gold); color: var(--bone); font: 400 14px/1.6 var(--display); text-align: center; animation: rn-banner .28s steps(4) 1; }
 .rn-banner-good { color: var(--gold); font-size: 22px; } .rn-banner-bad { color: var(--bad); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px #9a4a4a; font-size: 18px; }
 @keyframes rn-banner { from { scale: 1.3; opacity: 0; } }

@@ -104,6 +104,7 @@ func newEncounterCatalog() EncounterCatalog {
 		}},
 	}
 	definitions = append(definitions, themedEncounters()...)
+	definitions = append(definitions, varietyEncounters()...)
 	encounters := make(map[string]EncounterDefinition, len(definitions))
 	for _, definition := range definitions {
 		definition = withPartyReinforcements(definition)

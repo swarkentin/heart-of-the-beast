@@ -1,6 +1,6 @@
 // Arctic Stations: frozen experiments, ice creatures, abandoned technology. Midnight blue + ice cyan + hazard orange.
 import { biped, floater, crawler, blob, heads, torsos, blade, ragged } from "../kit.mjs";
-import { gear, fangs, spike, robotHead } from "../parts.mjs";
+import { gear, fangs, spike, robotHead, eyeball } from "../parts.mjs";
 
 const crystals = (c, x, y, n, len, spread, mat, s) => { for (let i = 0; i < n; i++) { const f = n === 1 ? 0 : i / (n - 1) - 0.5; spike(c, x + f * spread, y, -90 + f * 70, len * (1 - Math.abs(f) * 0.5), len * 0.16, mat); } };
 
@@ -93,6 +93,38 @@ export default {
         head: robotHead({ glow: "glow" }),
         handL: (c, x, y) => { c.part().rect(x - 5 * s, y - 2 * s, 10 * s, 10 * s, "steel"); c.part().rect(x - 5 * s, y + 5 * s, 10 * s, 3 * s, "orange"); },
         handR: (c, x, y) => { c.part().rect(x - 3 * s, y - 12 * s, 6 * s, 20 * s, "steel"); c.part().rect(x - 2 * s, y - 16 * s, 4 * s, 5 * s, "dark"); c.part().rect(x - 2 * s, y - 8 * s, 4 * s, 3 * s, "glow"); },
+      }),
+    },
+    {
+      id: "frostback", name: "Frostback", role: "Ice-crusted beast; plain attacks against its back break on the shards", attack: "claw", special: "guard", death: "crumble",
+      attackName: "Maul", specialName: "Hunker down", fx: { attack: ["claw"], special: [] },
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 13, bw: 14, bh: 9, pairs: 2, legMat: "fur", legT: 4, leg1: 8, leg2: 9, legOut: 3, legFan: 2,
+        body: (c, G) => { c.part().ell(G.cx, G.by - 1 * s, 16 * s, 10 * s, "fur"); crystals(c, G.cx - 2 * s, G.by - 8 * s, 5, 11 * s, 20 * s, "ice", s); },
+        head: (c, G, pp) => { const hx = G.cx + 15 * s + pp.reach * 2 * s, hy = G.by + 1 * s; c.part().ell(hx, hy, 6.5 * s, 5.5 * s, "fur"); c.part().rect(hx - 1 * s, hy + 2 * s, 7 * s, 2 * s + pp.jaw * 2 * s, "void"); fangs(c, hx + 2.5 * s, hy + 2 * s, 7 * s, 3, 2 * s, "snow", 1); c.part().ell(hx + 2 * s, hy - 2 * s, 1.4 * s, 1.4 * s, "glow"); },
+      }),
+    },
+    {
+      id: "overheating_generator", name: "Overheating Generator", role: "Station generator past its limit; it blows unless shut down first", attack: "shoot", special: "vent", death: "explode",
+      attackName: "Arc spark", specialName: "Meltdown", fx: { attack: ["bolt"], special: ["burst", "burst"] }, fxc: ["#ff9a4a", "#ffffff"],
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 6, bw: 11, bh: 6, pairs: 2, legMat: "dark", legT: 2.4, leg1: 4, leg2: 4, legOut: 2, walk: 0.3,
+        body: (c, G, pp) => {
+          c.part().rect(G.cx - 12 * s, G.by - 18 * s, 24 * s, 22 * s, "steel"); c.part().rect(G.cx - 12 * s, G.by - 18 * s, 24 * s, 2 * s, "dark");
+          for (let i = 0; i < 4; i++) c.part().rect(G.cx - 9 * s, G.by - 13 * s + i * 3.5 * s, 10 * s, 1.6 * s, "warn");
+          c.part().ell(G.cx + 6 * s, G.by - 9 * s, 3.4 * s, 3.4 * s, "dark"); c.part().line(G.cx + 6 * s, G.by - 9 * s, G.cx + 6 * s + Math.cos(pp.wave) * 2.6 * s, G.by - 9 * s + Math.sin(pp.wave) * 2.6 * s, "warn", 1);
+          c.part().rect(G.cx + 3 * s, G.by - 24 * s, 3 * s, 6 * s, "dark"); c.part().ell(G.cx + 4.5 * s, G.by - 26 * s - Math.abs(Math.sin(pp.wave)) * 2 * s, 2.2 * s, 2 * s, "frost");
+        },
+      }),
+    },
+    {
+      id: "permafrost_maw", tier: "boss", name: "The Permafrost Maw", role: "Lair boss; thaws its wounds shut and cracks the whole cavern", attack: "lunge", special: "roar", death: "melt",
+      attackName: "Thawing grasp", specialName: "Glacier crack", fx: { attack: ["claw", "burst"], special: ["shock", "ring"] },
+      mats: { meat: "#9a8aa8", vein: "#5a4a78" },
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 20, ry: 18, mat: "meat", wob: 1.2, tentacles: { n: 5, len: 18, th: 3.6, mat: "meat", y: 0.5 },
+        back: (c, G) => { c.part().poly([[G.cx - 24 * s, c.floor], [G.cx - 20 * s, c.floor - 34 * s], [G.cx - 6 * s, c.floor - 42 * s], [G.cx + 14 * s, c.floor - 38 * s], [G.cx + 24 * s, c.floor - 20 * s], [G.cx + 22 * s, c.floor]], "ice"); },
+        face: (c, G, pp) => { eyeball(c, G.cx, G.cy - 4 * s, 7 * s, { iris: "warn", look: Math.sin(pp.wave) }); for (const [dx, dy] of [[-11, -6], [11, -8], [-8, 6]]) eyeball(c, G.cx + dx * s, G.cy + dy * s, 2.6 * s, { iris: "glow" }); c.part().rect(G.cx - 9 * s, G.cy + 7 * s, 18 * s, 2 * s + pp.jaw * 4 * s, "void"); fangs(c, G.cx, G.cy + 7 * s, 18 * s, 7, 2.4 * s, "snow", 1); crystals(c, G.cx + 6 * s, G.cy - G.h + 3 * s, 3, 9 * s, 12 * s, "frost", s); },
       }),
     },
   ],

@@ -1,5 +1,6 @@
 // Sunken Kingdom: drowned royalty, aquatic creatures, ancient guardians. Teal depths + coral + glowing cyan.
 import { biped, floater, crawler, blob, heads, torsos, blade, ragged, tentacle, hands } from "../kit.mjs";
+import { fangs } from "../parts.mjs";
 
 const trident = (c, x, y, ang, len, s) => {
   const a = (ang * Math.PI) / 180, dx = Math.cos(a), dy = Math.sin(a), tx = x + dx * len, ty = y + dy * len, nx = -dy, ny = dx;
@@ -107,6 +108,46 @@ export default {
         torso: (c, G) => { torsos.slab({ mat: "stone", belt: "moss" })(c, G); c.part().ell(G.cx, G.topY + 9 * s, 4 * s, 4 * s, "glow"); for (let i = 0; i < 4; i++) c.part().rect(G.cx - 12 * s + (i * 7) * s, G.topY + 20 * s, 3 * s, 4 * s, "moss"); },
         head: (c, H, p) => { const { x, y, r, s } = H; c.part().rect(x - r, y - r, r * 2, r * 2.1, "stone"); c.part().rect(x - r * 1.1, y - r * 1.2, r * 2.2, r * 0.4, "moss"); for (const k of [-1, 1]) c.part().rect(x + k * r * 0.45 - s, y - r * 0.2, 2 * s, 1.6 * s, "glow"); c.part().rect(x - r * 0.5, y + r * 0.5 + p.jaw * 2 * s, r, Math.max(1, s), "void"); },
         handL: (c, x, y) => c.part().rect(x - 6 * s, y - s, 12 * s, 10 * s, "stone"), handR: (c, x, y) => c.part().rect(x - 6 * s, y - s, 12 * s, 10 * s, "stone"),
+      }),
+    },
+    {
+      id: "brine_polyp", name: "Brine Polyp", role: "Coral growth that knits itself back together each round unless it bleeds", attack: "spit", special: "vent", death: "melt",
+      attackName: "Stinging spray", specialName: "Regrow", fx: { attack: ["stream"], special: ["rise", "puffs"] },
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 15, ry: 11, mat: "coral", wob: 0.8, flat: 0.5, tentacles: { n: 6, len: 13, th: 2.4, mat: "coral", up: true },
+        face: (c, G, pp) => { for (const [dx, dy] of [[-7, -2], [0, -5], [7, -1], [-3, 3], [4, 3]]) { c.part().ell(G.cx + dx * s, G.cy + dy * s, 2.2 * s, 2.2 * s, "void"); c.part().ell(G.cx + dx * s, G.cy + dy * s, 1 * s, 1 * s, "glow"); } },
+      }),
+    },
+    {
+      id: "twin_eel", name: "Twin-Eel", role: "Two eels in one knot; when cut apart, the second keeps fighting", attack: "lunge", special: "spin", death: "melt",
+      attackName: "Double bite", specialName: "Coil", fx: { attack: ["claw", "claw"], special: ["ring"] },
+      mats: { eel: "#3f6a7a", belly: "#c9d8a0" },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 18, r: 8, bobAmp: 2,
+        body: (c, G, pp) => {
+          for (const k of [-1, 1]) {
+            tentacle(c, G.cx + k * 3 * s, G.by - 2 * s, 22 * s, 4 * s, "eel", { wave: pp.wave + (k > 0 ? 1.5 : 0), amp: 3 * s, dx: k * 0.3, dy: 1, th1: 1 });
+            const hx = G.cx + k * 8 * s + k * pp.reach * 3 * s, hy = G.by - 8 * s + Math.sin(pp.wave + k) * 1.5 * s;
+            c.part().line(G.cx + k * 3 * s, G.by - 2 * s, hx, hy, "eel", 4 * s, 3 * s);
+            c.part().ell(hx, hy, 5 * s, 3.6 * s, "eel"); c.part().rect(hx - 4 * s, hy + 1 * s, 8 * s, 1.4 * s + pp.jaw * 2 * s, "void"); c.part().rect(hx + k * 1.5 * s - 0.5 * s, hy - 2 * s, Math.max(1, s), Math.max(1, s), "glow");
+          }
+          c.part().ell(G.cx, G.by, 5 * s, 4 * s, "belly");
+        },
+        handL: () => {}, handR: () => {},
+      }),
+    },
+    {
+      id: "pearl_leviathan", tier: "boss", name: "The Pearl Leviathan", role: "Lair boss; shuts its pearl shell into a barrier and heals in the deep", attack: "lunge", special: "guard", death: "topple",
+      attackName: "Crushing maw", specialName: "Close the shell", fx: { attack: ["claw", "burst"], special: ["ring"] },
+      mats: { shell: "#8fa8c0", shellD: "#5a7090", pearl: { color: "#f4f0ff", emissive: true, pulse: true } },
+      draw: (c, p, s) => blob(c, p, {
+        s, rx: 23, ry: 15, mat: "scale", wob: 0.6, flat: 0.3, tentacles: { n: 4, len: 14, th: 4, mat: "scale" },
+        back: (c, G, pp) => { const op = 6 + pp.jaw * 6; c.part().poly([[G.cx - 24 * s, c.floor - 18 * s], [G.cx, c.floor - (34 + op) * s], [G.cx + 24 * s, c.floor - 18 * s]], "shell"); for (let i = -2; i <= 2; i++) c.part().line(G.cx, c.floor - (32 + op) * s, G.cx + i * 10 * s, c.floor - 19 * s, "shellD", 1.2 * s); },
+        face: (c, G, pp) => {
+          c.part().ell(G.cx, G.cy - 2 * s, 7 * s, 7 * s, "pearl");
+          for (const k of [-1, 1]) { c.part().ell(G.cx + k * 14 * s, G.cy - 4 * s, 3 * s, 3 * s, "eyeW"); c.part().rect(G.cx + k * 14 * s - 0.5 * s, G.cy - 5 * s, Math.max(1, s), 2 * s, "void"); }
+          c.part().rect(G.cx - 13 * s, G.cy + 6 * s, 26 * s, 2 * s + pp.jaw * 3 * s, "void"); fangs(c, G.cx, G.cy + 6 * s, 26 * s, 9, 2 * s, "bone", 1);
+        },
       }),
     },
   ],

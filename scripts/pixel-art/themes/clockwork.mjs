@@ -143,5 +143,40 @@ export default {
         },
       }),
     },
+    {
+      id: "windup_bomber", name: "Wind-up Bomber", role: "Clockwork bomb; its key runs down to a blast unless it is smashed first", attack: "lunge", special: "vent", death: "explode",
+      attackName: "Ram", specialName: "Spring release", fx: { attack: ["claw"], special: ["burst", "burst"] }, fxc: ["#ffb347", "#ffffff"],
+      draw: (c, p, s) => crawler(c, p, {
+        s, lift: 12, bw: 10, bh: 9, pairs: 2, legMat: "iron", legT: 2, leg1: 7, leg2: 7, legOut: 3,
+        body: (c, G, pp) => {
+          c.part().ell(G.cx, G.by - 4 * s, 11 * s, 10 * s, "iron"); rivets(c, G.cx - 9 * s, G.cx + 9 * s, G.by - 4 * s, 3 * s, s);
+          gauge(c, G.cx, G.by - 6 * s, 4 * s, pp.wave);
+          windKey(c, { s, cx: G.cx - 4 * s, topY: G.by - 10 * s }, pp);
+          c.part().line(G.cx + 6 * s, G.by - 12 * s, G.cx + 9 * s, G.by - 17 * s, "cloth", 1.2 * s); c.part().rect(G.cx + 8.5 * s, G.by - 18.5 * s, 1.6 * s, 1.6 * s, "glow");
+        },
+      }),
+    },
+    {
+      id: "repair_automaton", name: "Repair Automaton", role: "Warder; bolts a plate of armour onto a damaged ally", attack: "slam", special: "guard", death: "crumble",
+      attackName: "Wrench swing", specialName: "Patch plating", fx: { attack: ["shock"], special: ["ring", "rise"] },
+      draw: (c, p, s) => biped(c, p, {
+        s, legLen: 14, legT: 3, legMat: "iron", armMat: "copper", armT: 2.6, torsoH: 15, torsoW: 7.5, headR: 5.6, hipW: 3.5, footW: 5,
+        torso: (c, G) => { torsos.plate({ steel: "brass", cloth: "copper", trim: "gold" })(c, G); gauge(c, G.cx, G.topY + 7 * s, 2.6 * s, 1); },
+        head: autoHead({ antenna: true }),
+        handR: (c, x, y, side, pp) => { c.part().line(x, y, x + 2 * s, y - 12 * s, "steel", 2 * s); c.part().ell(x + 2 * s, y - 13 * s, 3 * s, 2.4 * s, "steel"); c.part().rect(x + 1 * s, y - 15.5 * s, 2 * s, 2.4 * s, "void"); },
+        handL: (c, x, y) => c.part().rect(x - 4 * s, y - 3 * s, 8 * s, 6 * s, "steel"),
+      }),
+    },
+    {
+      id: "grand_orrery", tier: "boss", name: "The Grand Orrery", role: "Lair boss; its orbits slide in and out of reach and line up for an eclipse", attack: "cast", special: "spin", death: "explode",
+      attackName: "Orbital strike", specialName: "Eclipse", fx: { attack: ["orb"], special: ["ring", "shock"] },
+      draw: (c, p, s) => floater(c, p, {
+        s, hover: 22, r: 10, bobAmp: 1.2,
+        back: (c, G, pp) => { c.part().line(G.cx, G.by + 10 * s, G.cx, c.floor - 2 * s, "iron", 2.4 * s); c.part().rect(G.cx - 9 * s, c.floor - 4 * s, 18 * s, 3 * s, "brass"); for (const r of [17, 24]) { c.part().ell(G.cx, G.by, r * s, r * 0.35 * s, "copper"); c.part().ell(G.cx, G.by, (r - 1.2) * s, (r - 1.2) * 0.35 * s, "void"); } },
+        body: (c, G, pp) => { gear(c, G.cx, G.by, 9 * s, 10, "gold", { rot: pp.wave / 10, holeR: 0.5 }); c.part().ell(G.cx, G.by, 4.5 * s, 4.5 * s, "glow"); },
+        face: (c, G, pp) => { for (const [r, ph, m, sz] of [[17, 0, "steel", 3], [24, 2.1, "copper", 3.6], [24, 4.4, "eyeW", 2.4]]) { const a = pp.wave + ph; c.part().ell(G.cx + Math.cos(a) * r * s, G.by + Math.sin(a) * r * 0.35 * s, sz * s, sz * s, m); } },
+        handL: () => {}, handR: () => {},
+      }),
+    },
   ],
 };

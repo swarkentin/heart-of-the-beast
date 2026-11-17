@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { traitTags } from "./traits.ts";
 import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, ApiRoom, ApiRun, ApiVote, PlayerSession } from "../api";
 import { cooldownLabel, cooldownLeft, SKILL_DEFEND, skillCommand, type Skill } from "../combatAbilities";
 import { GameShell, Icon, SharedMenu, SkillIcon, SkillLoadout, type LobbyCatalog } from "../lobby";
@@ -38,6 +39,7 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
     intentEffect: intent ? intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "",
     intentTarget: intent?.targetAll ? "→ WHOLE PARTY" : intent?.targetPlayerId && intent.targetPlayerId === selfId ? "→ YOU" : targetIndex > 0 ? "→ P" + targetIndex : "",
     interruptible: Boolean(intent?.interruptible),
+    traits: traitTags(enemy),
   };
 }
 
