@@ -339,7 +339,7 @@ function SkinPicker({ classId, className, accent, tiers, variants, mastery, show
   </section>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onSaveLoadout, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin, skillIds?: string[]) => void; onSaveLoadout: (skillIds: string[]) => Promise<boolean>; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, spectator = false, spectatorLink = "", busy, error, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onSaveLoadout, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; spectator?: boolean; spectatorLink?: string; busy: boolean; error: string; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin, skillIds?: string[]) => void; onSaveLoadout: (skillIds: string[]) => Promise<boolean>; onStart: () => void; onLeave: () => void }) {
   const [previewClassId, setPreviewClassId] = useState("");
   const [loadoutOpen, setLoadoutOpen] = useState(false);
   const [bars, setBars] = useState<Record<string, string[]>>(savedBars);
@@ -392,6 +392,21 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, theme
   useEffect(() => { if (selectedClassId) setFlourish(value => value + 1); }, [selectedClassId]);
   useEffect(() => { if (!copied) return; const timer = window.setTimeout(() => setCopied(false), 1800); return () => window.clearTimeout(timer); }, [copied]);
 
+  if (spectator) {
+    return <GameShell status="SPECTATING" tools={<SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} />}>
+      <section className="px-lobby">
+        <div className="px-panel px-camp">
+          <div className="px-camp-head"><div><p className="px-eyebrow">SPECTATOR VIEW</p><h1>The party is gathering</h1><p className="px-copy">You’re watching this room. The adventure will appear here automatically when the host begins.</p></div><div className="px-code"><span className="px-label">ROOM CODE</span><strong>{room.code}</strong></div></div>
+          <h2 className="px-label px-camp-count">ADVENTURERS {present.length}/{MAX_PARTY}</h2>
+          <ul className="px-stage">
+            {slots.map((id, index) => id ? <li key={id} className="px-slot"><HeroSprite classId={room.playerClasses?.[id]} skin={room.playerSkins?.[id]} label={className(room.playerClasses?.[id]) || "Undecided adventurer"} /><div className="px-nameplate"><span>{id === room.ownerPlayerId ? "HOST" : "PLAYER " + (room.playerIds.indexOf(id) + 1)}</span><strong>{className(room.playerClasses?.[id]) || "Choosing…"}</strong><em className="px-presence px-presence-online">{room.playerClasses?.[id] ? "READY" : "DECIDING"}</em></div></li> : <li key={"empty-" + index} className="px-slot px-slot-empty"><HeroSprite /><div className="px-nameplate"><span>OPEN SLOT</span><strong>Awaiting hero</strong></div></li>)}
+          </ul>
+        </div>
+        <div className="px-panel px-depart"><p className="px-copy">This is a read-only view. You don’t take a player slot or affect the party.</p></div>
+      </section>
+    </GameShell>;
+  }
+
   const passive = focusedClass ? catalog?.classPassives.find(value => value.id === focusedClass.passiveId) : undefined;
   const gear = focusedClass ? focusedClass.startingEquipment.map(id => catalog?.equipment.find(value => value.id === id)?.name || id) : [];
   const archetype = ARCHETYPES.find(item => item.id === focusedClass?.archetypeId);
@@ -414,6 +429,7 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, theme
             <span className="px-label">ROOM CODE</span>
             <strong aria-label={"Room code " + room.code.split("").join(" ")}>{room.code}</strong>
             <button className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(room.code).then(() => setCopied(true)).catch(() => undefined); }}>{copied ? "COPIED" : "COPY"}</button>
+            {isHost && spectatorLink ? <button className="px-button px-button-small" onClick={() => { void navigator.clipboard?.writeText(spectatorLink).then(() => setCopied(true)).catch(() => undefined); }}>{copied ? "COPIED" : "COPY SPECTATOR LINK"}</button> : null}
           </div>
         </div>
         <h2 className="px-label px-camp-count">ADVENTURERS {present.length}/{MAX_PARTY}</h2>
