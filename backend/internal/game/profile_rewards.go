@@ -1,5 +1,14 @@
 package game
 
+// ProfileXPPerLevel is the persistent experience in each Adventurer Rank and each class-mastery level: both start
+// at 1 and go up one per this much XP. The Postgres store writes the same rule in SQL.
+const ProfileXPPerLevel = 100
+
+// ProfileLevelFor is the Adventurer Rank or mastery level that this much persistent experience reaches.
+func ProfileLevelFor(xp int64) int {
+	return int(xp/ProfileXPPerLevel) + 1
+}
+
 // ProfileRewardDefinition describes a persistent cosmetic earned through
 // Adventurer Rank or class mastery. Rewards never change run power.
 type ProfileRewardDefinition struct {

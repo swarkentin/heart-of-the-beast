@@ -11,6 +11,8 @@ import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
+import { Celebrations } from "./Celebration";
+import { progressReport } from "./progress.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
 import "./run.css";
@@ -130,10 +132,21 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
 
   // ---- log -------------------------------------------------------------------------------------------------------
   const labels = partyLabels(party);
+  // What the run did for lasting progress, once it is over. The profile seen while the run was live tells the stale
+  // profile apart from the one the server updated at the end.
+  const liveProfile = useRef<ApiProfile | null>(null);
+  if (!gameOver && profile) liveProfile.current = profile;
+  const runClassId = player?.classBuild?.classId;
+  const report = useMemo(() => gameOver ? progressReport({
+    runId: run.id, progress: snapshot.runProgress, before: liveProfile.current, after: profile, spectator: !selfId,
+    classId: runClassId, className: catalog?.classes.find(item => item.id === runClassId)?.name,
+    rewards: catalog?.profileRewards ?? [], skills: catalog?.skills ?? [], xpPerLevel: catalog?.profileXpPerLevel,
+  }) : { lines: [], celebrations: [] }, [gameOver, run.id, snapshot.runProgress, profile, selfId, runClassId, catalog]);
   const notes = useMemo(() => [
     { key: "room:" + run.id + ":" + room.id, text: "ENTERED " + room.name.toUpperCase() },
     ...(room.event?.resolved && room.event.result ? [{ key: "event:" + room.id + ":" + room.event.id, text: room.event.result }] : []),
-  ], [run.id, room.id, room.name, room.event?.resolved, room.event?.result, room.event?.id]);
+    ...report.lines,
+  ], [run.id, room.id, room.name, room.event?.resolved, room.event?.result, room.event?.id, report.lines]);
   const log = useCombatLog(events, notes);
   // Keep the log pinned to its newest line. Keyed on the array itself, not its length: once the log is full at
   // LOG_LIMIT, new lines push old ones out and the length stops changing. The observer re-pins when the box resizes.
@@ -356,6 +369,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     {loadoutOpen && canChangeSkills && classId && catalog ? <SkillLoadout classId={classId} className={catalog.classes.find(item => item.id === classId)?.name ?? "Adventurer"} catalog={catalog.skills} mastery={mastery} initial={player?.skills ?? []} busy={busy}
       title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
       onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
+    <Celebrations items={report.celebrations} theme={room.themeId || run.themeId} />
     {run.briefing ? <DungeonIntro briefing={run.briefing} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

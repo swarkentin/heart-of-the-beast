@@ -16,7 +16,7 @@ export type HeroSkin = { tier: number; variant: string };
 export type LobbySkinTier = { tier: number; rank: string; name: string; description: string; masteryLevel: number };
 export type LobbySkinVariant = { id: string; name: string; description: string; masteryLevel: number };
 export type LobbySkinCatalog = { classes: { classId: string; tiers: LobbySkinTier[] }[]; variants: LobbySkinVariant[] };
-export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; skills: Skill[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[]; classSkins?: LobbySkinCatalog };
+export type LobbyCatalog = { classes: LobbyClass[]; classAvailability: { classId: string; initiallyAvailable: boolean; unlockPolicyId?: string }[]; skills: Skill[]; classPassives: LobbyNamedRule[]; equipment: { id: string; name: string; slot: string }[]; profileRewards: LobbyProfileReward[]; profileXpPerLevel?: number; classSkins?: LobbySkinCatalog };
 export type LobbyRoom = { code: string; ownerPlayerId: string; playerIds: string[]; playerClasses?: Record<string, string>; playerSkins?: Record<string, HeroSkin>; playerLoadouts?: Record<string, string[]>; presence?: Record<string, { status: "online" | "disconnected" | "left" }> };
 
 // Keep in step with scripts/pixel-art/heroes.mjs and ICON_ORDER in scripts/pixel-art/ui.mjs.

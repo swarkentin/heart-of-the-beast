@@ -390,11 +390,28 @@ const (
 	RunXPCompletionBonus = 20
 )
 
+// RunProgress is what a finished run is worth, line by line, so the party can see where its experience came from.
+type RunProgress struct {
+	XP              int64 `json:"xp"`
+	Encounters      int   `json:"encounters"`
+	Floors          int   `json:"floors"`
+	Dungeons        int   `json:"dungeons"`
+	CompletionBonus int   `json:"completionBonus,omitempty"`
+}
+
 // RunProgressXP is the persistent experience a finished run is worth to each adventurer who stayed. It is zero
 // until the run is over, and zero for a run that won no fight.
 func RunProgressXP(run *Run) int64 {
+	if progress := RunProgressOf(run); progress != nil {
+		return progress.XP
+	}
+	return 0
+}
+
+// RunProgressOf breaks RunProgressXP down. It is nil until the run is over, and nil for a run that won no fight.
+func RunProgressOf(run *Run) *RunProgress {
 	if run == nil || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
-		return 0
+		return nil
 	}
 	encounters := 0
 	for _, dungeonRoom := range run.Rooms {
@@ -406,11 +423,12 @@ func RunProgressXP(run *Run) int64 {
 		encounters = run.EncountersCleared
 	}
 	if encounters == 0 {
-		return 0
+		return nil
 	}
-	xp := encounters*RunXPPerEncounter + run.FloorsCleared*RunXPPerFloor + run.DungeonsCleared*RunXPPerDungeon
+	progress := &RunProgress{Encounters: encounters, Floors: run.FloorsCleared, Dungeons: run.DungeonsCleared}
 	if run.Phase == PhaseCompleted {
-		xp += RunXPCompletionBonus
+		progress.CompletionBonus = RunXPCompletionBonus
 	}
-	return int64(xp)
+	progress.XP = int64(encounters*RunXPPerEncounter + run.FloorsCleared*RunXPPerFloor + run.DungeonsCleared*RunXPPerDungeon + progress.CompletionBonus)
+	return progress
 }

@@ -117,6 +117,24 @@ const BASE_EFFECTS: Record<EffectKind, readonly Step[]> = {
   encounter: [tone(110, 0.5, "triangle", 0.18, { cents: -8 }), tone(164.81, 0.65, "sine", 0.1, { cents: -12 })],
   victory: [293.66, 369.99, 440].map((f, i) => tone(f, 0.8, "sine", 0.12, { at: i * 0.08, cents: -5 + i * 2 })),
   failure: [tone(220, 0.9, "triangle", 0.17, { to: 55, a: 0.002 })],
+  // Adventurer Rank up: a quick brass-like climb to a held major chord, with a sparkle on top.
+  rankUp: [
+    ...[392, 523.25, 659.25].map((f, i) => tone(f, 0.13, "square", 0.05, { at: i * 0.1, a: 0.004 })),
+    ...[523.25, 659.25, 783.99, 1046.5].map((f, i) => tone(f, 1.3, "triangle", 0.09 - i * 0.012, { at: 0.32, a: 0.01, cents: -4 + i * 3 })),
+    tone(1046.5, 0.12, "square", 0.04, { at: 0.32, a: 0.003 }),
+    tone(130.81, 1.1, "sine", 0.14, { at: 0.32, a: 0.01 }),
+    noise(0.7, 5200, 0.035, "highpass", { at: 0.34, a: 0.05 }),
+    ...[2093, 2637, 3136].map((f, i) => tone(f, 0.35, "sine", 0.025, { at: 0.55 + i * 0.11, a: 0.002 })),
+  ],
+  // Class mastery up: a bright run that keeps rising, a bell, and a low swell of power underneath.
+  masteryUp: [
+    ...[587.33, 739.99, 880, 1108.73, 1174.66].map((f, i) => tone(f, 0.16, "triangle", 0.08, { at: i * 0.075, a: 0.003 })),
+    tone(1174.66, 1.6, "sine", 0.07, { at: 0.4, a: 0.004 }),
+    tone(1174.66 * 2.76, 0.9, "sine", 0.025, { at: 0.4, a: 0.003 }),
+    tone(146.83, 1.4, "sawtooth", 0.05, { to: 293.66, at: 0.05, a: 0.3 }),
+    noise(1, 1800, 0.04, "bandpass", { q: 1.2, to: 6000, at: 0.05, a: 0.35 }),
+    ...[1760, 2349.32].map((f, i) => tone(f, 0.5, "sine", 0.03, { at: 0.7 + i * 0.14, a: 0.002 })),
+  ],
 };
 
 interface EffectFlavour {
