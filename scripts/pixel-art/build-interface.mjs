@@ -123,6 +123,44 @@ export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
     c.part().poly([[28, 35], [39, 28], [51, 32], [53, 44], [39, 48], [29, 43]], "fpSecondary");
     c.part().poly([[100, 35], [89, 28], [77, 32], [75, 44], [89, 48], [99, 43]], "fpSecondary");
   }
+  // Each class carries a recognizable first-person implement. These are silhouette studies;
+  // the next equipment pass can swap them for the actual equipped weapon sprite.
+  if (h.id === "bulwark") {
+    c.part().poly([[5, 18], [25, 12], [37, 21], [34, 47], [19, 57], [4, 45]], "fpMetal");
+    c.part().poly([[9, 21], [24, 17], [32, 24], [29, 43], [19, 51], [9, 42]], "fpSleeve");
+    c.part().rect(18, 25, 3, 17, "fpTrim"); c.part().rect(12, 32, 15, 3, "fpTrim");
+    c.part().rect(18, 30, 3, 7, "fpGlow");
+  } else if (h.id === "juggernaut") {
+    c.part().line(64, 62, 75, 8, "fpWood", 5);
+    c.part().poly([[63, 14], [66, 2], [86, 2], [91, 9], [87, 23], [69, 25]], "fpMetal");
+    c.part().rect(69, 7, 17, 3, "fpTrim"); c.part().rect(72, 15, 12, 3, "fpGlow");
+  } else if (h.id === "spellguard") {
+    blade(c, 74, 43, -112, 42, 4, "fpMetal", "fpTrim", 1);
+    c.part().rect(68, 38, 13, 3, "fpGlow");
+  } else if (h.id === "assassin") {
+    blade(c, 39, 39, -118, 27, 3, "fpMetal", "fpLeather", 1);
+    blade(c, 89, 39, -62, 27, 3, "fpMetal", "fpLeather", 1);
+  } else if (h.id === "arcanist") {
+    c.part().ell(64, 17, 8, 8, "fpGlow"); c.part().ell(64, 17, 4, 4, "fpRune");
+    c.part().rect(62, 5, 4, 4, "fpTrim"); c.part().rect(62, 26, 4, 4, "fpTrim");
+    c.part().rect(51, 15, 4, 4, "fpTrim"); c.part().rect(73, 15, 4, 4, "fpTrim");
+  } else if (h.id === "ranger") {
+    c.part().line(111, 4, 102, 31, "fpWood", 3); c.part().line(102, 31, 111, 59, "fpWood", 3);
+    c.part().line(111, 4, 111, 59, "fpTrim", 1);
+    c.part().line(47, 19, 91, 19, "fpWood", 2); c.part().poly([[91, 19], [84, 15], [84, 23]], "fpMetal");
+  } else if (h.id === "cleric") {
+    c.part().line(83, 58, 70, 8, "fpWood", 4);
+    c.part().poly([[60, 9], [63, 1], [78, 1], [82, 9], [78, 18], [64, 18]], "fpMetal");
+    c.part().rect(68, 6, 7, 2, "fpTrim"); c.part().rect(70, 3, 3, 9, "fpGlow");
+  } else if (h.id === "tactician") {
+    c.part().poly([[48, 17], [80, 17], [88, 25], [80, 32], [48, 32], [40, 25]], "fpMetal");
+    c.part().rect(50, 20, 28, 3, "fpTrim"); c.part().rect(60, 24, 8, 5, "fpGlow");
+    c.part().line(44, 17, 44, 8, "fpWood", 2); c.part().line(84, 17, 84, 8, "fpWood", 2);
+  } else if (h.id === "beastcaller") {
+    c.part().line(64, 12, 64, 32, "fpWood", 3);
+    c.part().poly([[64, 4], [57, 13], [64, 11], [71, 13]], "fpBone");
+    c.part().ell(64, 22, 5, 5, "fpGlow");
+  }
   // Knuckles and curled fingers sit forward of the cuffs. Their pose is intentionally
   // symmetrical and readable at the same 1x pixel density as the hero art.
   c.part().poly([[40, 31], [46, 27], [53, 29], [57, 35], [54, 42], [47, 44], [40, 40]], "fpSkin");
