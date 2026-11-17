@@ -11,6 +11,7 @@ import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
+import { interruptTarget } from "./interrupts.ts";
 import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
@@ -187,16 +188,18 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const fallen = party.filter(member => !member.alive && !member.isSelf && member.online);
   const actions: ActionDef[] = [];
   if (round && player) {
-    const n = round.number, foe = livingTarget, foeName = foe?.name ?? "no target";
+    const n = round.number, opening = interruptTarget(living, livingTarget?.id);
     for (const id of player.skills ?? []) {
       const skill = skillById.get(id);
       if (!skill) continue;
       const left = cooldownLeft(cooldowns, id);
       const interrupts = skill.effects?.some(effect => effect.kind === "interrupt") ?? false;
+      // An interrupt goes to whichever enemy is telegraphing an interruptible move, so the button can say so.
+      const foe = interrupts && opening ? opening : livingTarget, foeName = foe?.name ?? "no target";
       let hint = "", command: ApiCommand | undefined, pick: ActionDef["pick"], disabled = left > 0;
       switch (skill.target) {
         case "enemy":
-          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
+          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
           disabled ||= !foe;
           command = foe ? skillCommand(skill, n, foe.id) : undefined;
           break;
@@ -213,7 +216,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           if (fallen.length === 1) command = skillCommand(skill, n, fallen[0].id); else pick = "fallen";
           break;
       }
-      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && Boolean(foe?.interruptible) && left === 0, command, pick });
+      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && skill.target === "enemy" && Boolean(opening) && left === 0, command, pick });
     }
   }
   const send = (key: string, command: ApiCommand) => {
@@ -299,10 +302,10 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   } else if (camp) {
     const campSeconds = camp.deadline ? Math.max(0, Math.ceil((new Date(camp.deadline).getTime() - now) / 1000)) : 0;
     const campTotal = camp.deadline ? Math.max(1, Math.round((new Date(camp.deadline).getTime() - new Date(camp.startedAt).getTime()) / 1000)) : 0;
-    const campDone = eligible.filter(member => camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.stage === "crossroads" ? camp.votes?.[member.id] : camp.ready?.[member.id]).length;
+    const campDone = eligible.filter(member => camp.stage === "boon" ? camp.boonChoices?.[member.id] : camp.stage === "game" ? camp.game?.players[member.id]?.done !== false : camp.stage === "crossroads" ? camp.votes?.[member.id] : camp.ready?.[member.id]).length;
     command = <Camp camp={camp} run={run} selfId={selfId} acting={acting && Boolean(self?.alive)} spectator={spectator} busy={busy} onCommand={onCommand}
       onChangeSkills={canChangeSkills ? () => setLoadoutOpen(true) : undefined}
-      timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "game" ? "CAMP GAME" : camp.stage === "crossroads" ? "DUNGEON VOTE" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "game" ? "DONE" : camp.stage === "crossroads" ? "IN" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
+      timer={camp.deadline ? <div className="rn-timer" role="timer"><strong>{camp.stage === "boon" ? "BOONS" : camp.stage === "game" ? "CAMP GAME" : camp.stage === "crossroads" ? "DUNGEON VOTE" : "CAMP SHOP"} · {campDone}/{eligible.length} {camp.stage === "boon" ? "CLAIMED" : camp.stage === "game" ? "DONE" : camp.stage === "crossroads" ? "IN" : "READY"}</strong><TimerBar seconds={Math.ceil(campSeconds * 15 / campTotal)} total={15} urgent={campSeconds <= 5} /><b>{campSeconds}s</b></div> : null} />;
   } else if (run.phase === "intermission") {
     const mine = descentVote?.votes?.[selfId];
     command = <div className="rn-context">
@@ -370,6 +373,6 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
       onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
     <Celebrations items={report.celebrations} theme={room.themeId || run.themeId} />
-    {run.briefing ? <DungeonIntro briefing={run.briefing} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
+    {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

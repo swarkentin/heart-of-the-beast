@@ -125,7 +125,8 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 
 ## Phase 3 — Procedural dungeons and replayability
 
-- [ ] Add an optional, party-shared dungeon map that reveals rooms and connections as they are discovered, marks the party's current room, and distinguishes unexplored, visited, and cleared areas. Keep in-scene directional exits as the primary way to move; the map is for orientation and reviewing discovered routes.
+- [x] Show an expedition map between dungeons: the current group of four dungeons, the castle that crowns it, what has been cleared and where the party is (ADR 0033).
+- [ ] Add an optional, party-shared floor map that reveals rooms and connections as they are discovered, marks the party's current room, and distinguishes unexplored, visited, and cleared areas. Keep in-scene directional exits as the primary way to move; the map is for orientation and reviewing discovered routes. The camp between dungeons is the first place to show it, next to the expedition map.
 - [ ] Data-driven room graph and encounter director, informed by the multi-level generation spike.
 - [ ] Traps, secrets, treasure rooms, merchants, puzzles, and alternate routes.
 - [ ] Reusable optional side-mission framework.
@@ -133,6 +134,11 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 - [x] Per-theme floor templates (Catacombs byte-identical) and a playable Sci-Fi theme; `themeId` on runs and rooms; optional theme at run start (ADR 0025)
 - [ ] Simulate and tune the provisional stats, abilities and encounter budgets of the 82 art-backed monsters; add a dedicated miniboss sprite. (All eleven themes are now playable; see ADR 0029.)
 - [x] Dungeon expeditions (ADR 0029): an endless chain of dungeons, each 4–6 generated floors in one of eleven themes, ended only by a wipe; a two-option theme vote with per-dungeon modifiers after every dungeon boss; camps (mini-game and shop) only at a dungeon's midpoint and between dungeons; floor debuffs and perks that grow with depth; dungeon bosses with enrage, summon, barrier and cataclysm mechanics; discovery and vault rooms whose choices are trade-offs or gambles; a rank and personal best for how far the party got; lobby dungeon picker.
+- [x] Capstone castles (ADR 0033): every fifth dungeon, the party chooses between the Eldritch Castle and the Infernal Citadel. A castle has four floors, tougher three-monster fights, and an armed boss on every floor. Four new boss mechanics (anchor, rebirth, legion, devour). Every castle boss offers each adventurer a choice of three run-long boons. Tuned so about 40% of tactical parties that reach a castle clear it.
+- [x] Show the expedition map in every dungeon's briefing, and mark a ready interrupt skill when an enemy telegraphs an interruptible move (ADR 0033).
+- [ ] Rule-changing floor debuffs, so debuffs change how a fight plays rather than a number: hidden telegraphs, nothing can be interrupted, enemies hitting harder the longer a fight lasts, enemies that burst when they die, enemy regeneration, no recovery after fights, longer cooldowns (with perks opposing some of them). A prototype with all seven in the roll pool lowered the tactical median depth for four-player parties from 17.5 to 9 floors, so it was set aside. Bring them back one at a time, measure each with the balance tools, and probably soften the numbers or roll at most one rule debuff per floor.
+- [ ] Tune castles and boons by play: the midpoint guardian (especially the Choir of Mouths) ends most castle runs, and boon strength is untested. Teach the tactical simulation policy to choose boons.
+- [ ] Check with more seeds whether adding themes lowered how often parties reach dungeon 5 (ADR 0033), or whether it is crossroads reshuffling.
 - [x] Feed expedition distance into persistent progression (ADR 0028): profile and class-mastery XP now come from fights won, floors cleared and dungeons conquered across the whole expedition.
 - [ ] Keep each profile's best expedition distance and rank on the server and show them in the Profile menu (today the personal best is browser-only).
 - [ ] Tune the expedition by play: modifier strength, boss thresholds, floor length against the 3–5 minute target, and the difficulty of floors 4–6. Give floor guardians (not only dungeon bosses) a mechanic each. Initial Strike and gold curves are now capped and documented in `docs/game-design/expedition-economy-and-strike-scaling.md`.
@@ -147,7 +153,8 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 
 ## Phase 5 — Content and presentation
 
-- [ ] Additional themes (fantasy, sci-fi, noir, and stranger combinations).
+- [x] Noir City (greyscale) and the 8-Bit Arcade (block-map sprites) as ordinary themes, with full art, backdrops, interface, music and content (ADR 0033).
+- [ ] Additional themes (fantasy and stranger combinations).
 - [x] Pixel-art room backdrops (first-person and cinematic; entry, corridor, event, boss, vault) for all eleven themes, registered in Go so a missing background fails CI (ADR 0025)
 - [ ] Bespoke props and layouts per theme beyond Catacombs and Sci-Fi. (Lobby theme picker and content for all themes shipped with ADR 0029.)
 - [ ] More enemy families, bosses, side missions, items, and abilities.
@@ -177,7 +184,7 @@ A provisional first dungeon: 8–12 connected rooms, 3–4 enemy types, one opti
 
 ### Themes
 
-Classic fantasy crypts and forests; sci-fi research facilities; 1930s mobster/noir underworld; sunken kingdoms; clockwork empires; haunted carnivals; ghost towns; alien jungles; dreamscapes; arctic stations; post-apocalyptic settlements. Theme collisions can create surprising encounters and loot.
+Classic fantasy crypts and forests; sci-fi research facilities; 1930s mobster underworld; black-and-white noir city (shipped); 8-bit arcade (shipped); eldritch and infernal capstone castles (shipped); sunken kingdoms; clockwork empires; haunted carnivals; ghost towns; alien jungles; dreamscapes; arctic stations; post-apocalyptic settlements. Theme collisions can create surprising encounters and loot.
 
 ### Side-mission seeds
 

@@ -189,7 +189,75 @@ const wasteland: ThemeProfile = {
   },
 };
 
-export const PROFILES: Readonly<Record<ThemeId, ThemeProfile>> = { catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland };
+const noir: ThemeProfile = {
+  id: "noir", name: "Noir City", character: "Brushed snare and a slow walking bass under a muted horn, with rain, a distant car horn and a lonely piano bell",
+  rootHz: 69.3, depthDrift: [0, -2, -5], scale: "blues", bpm: 78, steps: 16, swing: 0.3, wobble: 2, leadOct: 2,
+  voices: { pad: "smokePad", bass: "walkBass", lead: "horn", accent: "vibes", kick: "kick", back: "brush", tick: "brush", fill: "rim" },
+  patterns: { kick: "X.......x.......", back: "....x.......x...", tick: "x.xx.xx.x.xx.xx.", bass: "X...x...X...x...", lead: "x.....x...x..x..", leadSparse: "x.........x....." },
+  motif: [0, 2, 3, 4, 3, 1, 0, -1], chordRoots: [0, 3, 4, 0], bassLines: [[0, 2, 3, 4], [0, 4, 3, 2]],
+  bed: { noise: "pink", filter: "bandpass", f: 2400, q: 0.4, gain: 0.05, lfo: { rate: 0.2, depth: 0.3 }, drones: [{ ratio: 1, w: "sine", gain: 0.05, cents: 0 }] },
+  fx: [{ fx: "drip", p: 0.6 }, { fx: "carHorn", p: 0.1 }, { fx: "siren", p: 0.08, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    the_commissioner: { tempoMul: 0.9, transpose: -5, fill: "rim", lead: "horn", note: "Smoke-filled office: slow, low, muted brass" },
+    the_rain_king: { tempoMul: 1.1, transpose: 2, scale: "minor", lead: "glass", extraFx: "drip", note: "Storm drain: minor glass over a downpour" },
+    man_in_shadow: { tempoMul: 1.2, transpose: -7, scale: "locrian", lead: "sub", fill: "rim", note: "The last streetlight: locrian sub-bass stalking, rim-shot heartbeats" },
+    the_projectionist: { tempoMul: 1, transpose: 0, scale: "harmonicMinor", lead: "musicBox", extraFx: "static", note: "Picture palace: a music-box score through a crackling projector" },
+  },
+};
+
+const arcade: ThemeProfile = {
+  id: "arcade", name: "8-Bit Arcade", character: "Square-wave arpeggios, pulse bass and chip-tune drums, with coin blips and power-up sweeps",
+  rootHz: 65.41, depthDrift: [0, 2, 5], scale: "mixolydian", bpm: 132, steps: 16, swing: 0, wobble: 0, leadOct: 3,
+  voices: { pad: "synthPad", bass: "pulseBass", lead: "arp", accent: "pluck", kick: "kick", back: "snare", tick: "hat", fill: "crack" },
+  patterns: { kick: "X...X...X...X...", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X.x.X.x.X.x.X.x.", lead: "x.xxx.x.x.xxx.x.", leadSparse: "x...x...x...x..." },
+  motif: [0, 2, 4, 5, 4, 2, 4, 7], chordRoots: [0, 4, 5, 3], bassLines: [[0, 0, 4, 4], [0, 5, 4, 2]],
+  bed: { noise: "white", filter: "highpass", f: 5000, q: 0.5, gain: 0.006, drones: [{ ratio: 1, w: "square", gain: 0.02, cents: 0 }] },
+  fx: [{ fx: "beep", p: 0.5 }, { fx: "pop", p: 0.3 }, { fx: "static", p: 0.08, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    mecha_drake: { tempoMul: 1.15, transpose: -5, scale: "phrygian", fill: "anvil", note: "Volcano stage: phrygian, low, anvil fills" },
+    high_scorer: { tempoMul: 1.25, transpose: 5, scale: "lydian", lead: "musicBox", note: "Leaderboard: bright lydian music-box combo" },
+    the_final_boss: { tempoMul: 1.3, transpose: 0, scale: "harmonicMinor", lead: "arp", fill: "crack", note: "The last level: fast harmonic-minor arps, every drum hitting" },
+    glitch_king: { tempoMul: 1.05, transpose: 1, scale: "wholeTone", lead: "warble", extraFx: "static", note: "Corrupted save: warbling whole-tone glitches" },
+  },
+};
+
+const eldritch: ThemeProfile = {
+  id: "eldritch", name: "The Eldritch Castle", character: "A drowned organ under whispered choirs, a slow wrong heartbeat and dripping stone; it never quite resolves",
+  rootHz: 51.91, depthDrift: [0, -1, -6], scale: "locrian", bpm: 70, steps: 16, swing: 0, wobble: 8, leadOct: 2,
+  voices: { pad: "organPad", bass: "subBass", lead: "glass", accent: "bell", kick: "heartbeat", back: "tom", tick: "bellTick", fill: "tom" },
+  patterns: { kick: "X..x............", back: "........x.......", tick: "..x.......x.....", bass: "X.......X.......", lead: "x......x....x...", leadSparse: "x..............." },
+  motif: [0, 1, 4, 3, 1, 0, -2, 0], chordRoots: [0, 1, 4, 6], bassLines: [[0, 1], [0, 4, 1]],
+  bed: { noise: "brown", filter: "lowpass", f: 300, q: 1, gain: 0.1, lfo: { rate: 0.05, depth: 0.5 }, drones: [{ ratio: 1, w: "sine", gain: 0.08, cents: 0 }, { ratio: 1.06, w: "triangle", gain: 0.03, cents: -8 }] },
+  fx: [{ fx: "whisper", p: 0.5 }, { fx: "drip", p: 0.4 }, { fx: "bubble", p: 0.2 }, { fx: "toll", p: 0.1, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    dreaming_bishop: { tempoMul: 0.8, transpose: -5, scale: "phrygian", lead: "bell", extraFx: "whisper", note: "Sermon of madness: slow phrygian bells and whispers" },
+    choir_of_mouths: { tempoMul: 1, transpose: 3, scale: "diminished", lead: "warble", extraFx: "whisper", note: "Discordant hymn: diminished warbling choir" },
+    the_sleeper: { tempoMul: 0.7, transpose: -12, scale: "locrian", lead: "sub", fill: "heartbeat", extraFx: "bubble", note: "The eye opens: an octave down, a vast slow heartbeat, bubbles from the deep" },
+    unwritten_librarian: { tempoMul: 1.1, transpose: 2, scale: "wholeTone", lead: "musicBox", extraFx: "whisper", note: "Unwritten stacks: whole-tone music box and turning pages" },
+  },
+};
+
+const infernal: ThemeProfile = {
+  id: "infernal", name: "The Infernal Citadel", character: "War drums and anvils under a burning brass choir and an iron organ, with steam vents and a tolling bell",
+  rootHz: 55, depthDrift: [0, -2, -5], scale: "phrygianDominant", bpm: 108, steps: 16, swing: 0, wobble: 4, leadOct: 2,
+  voices: { pad: "choirPad", bass: "ironBass", lead: "horn", accent: "bell", kick: "kick", back: "anvil", tick: "clank", fill: "tom" },
+  patterns: { kick: "X..X..X.X..X..X.", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X..X..X.X..X..X.", lead: "x...x.x.x...x...", leadSparse: "X.......X......." },
+  motif: [0, 1, 4, 5, 4, 1, 0, -1], chordRoots: [0, 1, 5, 4], bassLines: [[0, 0, 1, 0], [0, 4, 1, 0]],
+  bed: { noise: "brown", filter: "lowpass", f: 500, q: 0.8, gain: 0.11, lfo: { rate: 0.3, depth: 0.4 }, drones: [{ ratio: 1, w: "sawtooth", gain: 0.04, cents: -6 }, { ratio: 1.5, w: "sawtooth", gain: 0.03, cents: 6 }] },
+  fx: [{ fx: "steam", p: 0.4 }, { fx: "metalClank", p: 0.3 }, { fx: "toll", p: 0.15, minDepth: 2 }],
+  variants: {},
+  bosses: {
+    hellforge_smith: { tempoMul: 1, transpose: -5, fill: "anvil", lead: "horn", extraFx: "metalClank", note: "The hellforge: hammered anvils and brass" },
+    chain_duke: { tempoMul: 1.15, transpose: 1, scale: "harmonicMinor", lead: "bell", extraFx: "metalClank", note: "Hall of chains: rattling harmonic-minor bells" },
+    archfiend: { tempoMul: 1.25, transpose: -7, scale: "phrygianDominant", lead: "horn", fill: "anvil", note: "The burning throne: fast, low, every drum and every horn" },
+    gluttonous_maw: { tempoMul: 0.8, transpose: -12, lead: "sub", fill: "heartbeat", extraFx: "bubble", note: "The gullet: a low hungry heartbeat and boiling slag" },
+  },
+};
+
+export const PROFILES: Readonly<Record<ThemeId, ThemeProfile>> = { catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland, noir, arcade, eldritch, infernal };
 
 export function profileFor(theme: ThemeId): ThemeProfile {
   return PROFILES[theme];

@@ -3,7 +3,7 @@
 // (no enums or namespaces) so Node's type stripping can run it directly.
 
 /** Dungeon themes, in the order of the backend DungeonThemeCatalog. Ids match the art theme folder names. */
-export const THEME_IDS = ["catacombs", "scifi", "mobster", "sunken", "clockwork", "carnival", "jungle", "dreamscape", "arctic", "ghosttown", "wasteland"] as const;
+export const THEME_IDS = ["catacombs", "scifi", "mobster", "sunken", "clockwork", "carnival", "jungle", "dreamscape", "arctic", "ghosttown", "wasteland", "noir", "arcade", "eldritch", "infernal"] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
 /** What the party is doing. Each state gets its own layer mix, tempo and (for victory and defeat) a stinger. */

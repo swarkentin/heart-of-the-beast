@@ -5,6 +5,8 @@ import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
 import { traitTags } from "./traits.ts";
 import { progressReport } from "./progress.ts";
+import { expeditionMap } from "./expeditionRoad.ts";
+import { interruptTarget } from "./interrupts.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -143,4 +145,39 @@ test("the run report waits for the updated profile and celebrates nothing withou
   assert.equal(updated.celebrations.length, 0);
   assert.equal(progressReport({ runId: "r", before: null, after: null, rewards: [], skills: [] }).lines[0].tone, "system");
   assert.match(progressReport({ runId: "r", progress, before: null, after: null, rewards: [], skills: [], spectator: true }).lines[0].text, /^Each adventurer earns 10 XP/);
+});
+
+test("the expedition map shows the group of four and the castle that crowns it", () => {
+  const inDungeon = expeditionMap({ dungeon: 3, dungeonThemes: ["noir", "arcade", "jungle"] });
+  assert.deepEqual(inDungeon.map(stop => stop.state), ["cleared", "cleared", "current", "ahead", "ahead"]);
+  assert.deepEqual(inDungeon.map(stop => stop.capstone), [false, false, false, false, true]);
+  assert.equal(inDungeon[1].themeId, "arcade");
+  const crossroads = { stage: "crossroads" as const, startedAt: "", nextDepth: 1, choices: [{ themeId: "eldritch", name: "", tagline: "", floors: 4, modifiers: [], capstone: true }], nextThemeId: "eldritch" };
+  const atCastleGate = expeditionMap({ dungeon: 4, dungeonThemes: ["a", "b", "c", "d"], camp: crossroads });
+  assert.deepEqual(atCastleGate.map(stop => stop.state), ["cleared", "cleared", "cleared", "cleared", "next"]);
+  assert.equal(atCastleGate[4].themeId, "eldritch");
+  const nextGroup = expeditionMap({ dungeon: 5, dungeonThemes: ["a", "b", "c", "d", "eldritch"], camp: { ...crossroads, nextThemeId: undefined } });
+  assert.deepEqual(nextGroup.map(stop => stop.dungeon), [6, 7, 8, 9, 10]);
+  assert.equal(nextGroup[0].state, "next");
+  assert.equal(expeditionMap({ dungeon: 2 })[0].themeId, undefined, "runs saved before the history still draw a map");
+});
+
+test("capstone bosses show their mechanics as tags", () => {
+  const boss = { id: "b", name: "B", turnsTaken: 1, health: 10, maxHealth: 10 };
+  assert.deepEqual(traitTags({ ...boss, mechanics: ["anchor"], anchored: true }).map(t => t.label), ["ANCHORED"]);
+  assert.equal(traitTags({ ...boss, mechanics: ["rebirth"], reborn: true }).length, 0);
+  assert.deepEqual(traitTags({ ...boss, mechanics: ["legion", "devour"], devourIn: 1, devoured: 2 }).map(t => t.label), ["DEVOURS NEXT TURN", "FED +2"]);
+  assert.deepEqual(traitTags({ ...boss, anchor: true }).map(t => t.label), ["ANCHOR"]);
+});
+
+test("an interrupt goes to the enemy that is telegraphing an interruptible move", () => {
+  const foes = [
+    { id: "a", hp: 5, interruptible: false, rawIntent: { damage: 3 } },
+    { id: "b", hp: 5, interruptible: true, rawIntent: { damage: 6 } },
+    { id: "c", hp: 5, interruptible: true, rawIntent: { damage: 9 } },
+    { id: "d", hp: 0, interruptible: true, rawIntent: { damage: 20 } },
+  ];
+  assert.equal(interruptTarget(foes, "b")?.id, "b", "the selected target when it can be interrupted");
+  assert.equal(interruptTarget(foes, "a")?.id, "c", "otherwise the hardest-hitting interruptible enemy");
+  assert.equal(interruptTarget(foes.map(foe => ({ ...foe, interruptible: false })), "a"), undefined, "nothing to cancel");
 });

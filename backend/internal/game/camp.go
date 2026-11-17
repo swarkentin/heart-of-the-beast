@@ -58,6 +58,11 @@ type Camp struct {
 	Votes                map[string]string     `json:"votes,omitempty"`
 	NextThemeID          string                `json:"nextThemeId,omitempty"`
 	NextDungeonModifiers []ActiveFloorModifier `json:"nextDungeonModifiers,omitempty"`
+	// After a capstone boss: each adventurer's boon offer and choice (boons.go). BoonOnly marks a camp that is
+	// only the boon choice, after a castle floor that does not camp.
+	BoonOffers  map[string][]Boon `json:"boonOffers,omitempty"`
+	BoonChoices map[string]string `json:"boonChoices,omitempty"`
+	BoonOnly    bool              `json:"boonOnly,omitempty"`
 }
 
 // ensureMaps restores the per-player maps. They are saved with omitempty, so a camp reloaded before anyone bought,
@@ -71,6 +76,9 @@ func (camp *Camp) ensureMaps() {
 	}
 	if camp.Votes == nil {
 		camp.Votes = make(map[string]string)
+	}
+	if camp.BoonChoices == nil {
+		camp.BoonChoices = make(map[string]string)
 	}
 }
 
@@ -110,6 +118,11 @@ func openCamp(room *Room, round int, now time.Time) {
 	}
 	camp.Game = newMinigame(dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth+dungeonExtraDepth(run), eligibleCombatPlayers(room))
 	run.Camp = camp
+	if IsCapstoneTheme(run.Theme()) {
+		// A castle boss was just beaten: boons come before the camp's game.
+		startBoonStage(room, now)
+		return
+	}
 	setCampDeadline(room, CampGameWindow, now)
 }
 
@@ -137,6 +150,22 @@ func AdvanceCamp(room *Room, now time.Time) bool {
 	}
 	expired := camp.Deadline != nil && !now.Before(*camp.Deadline)
 	switch camp.Stage {
+	case CampStageBoon:
+		chosen := true
+		for _, playerID := range eligible {
+			chosen = chosen && (camp.BoonChoices[playerID] != "" || len(camp.BoonOffers[playerID]) == 0)
+		}
+		if !chosen && !expired {
+			return false
+		}
+		settleBoons(room, eligible)
+		if camp.BoonOnly {
+			descendExpedition(room, now)
+			return true
+		}
+		camp.Stage = CampStageGame
+		setCampDeadline(room, CampGameWindow, now)
+		return true
 	case CampStageGame:
 		finished := true
 		for _, playerID := range eligible {
@@ -210,7 +239,8 @@ func chooseDungeon(room *Room, eligible []string) {
 	addCombatEvent(run, 0, "dungeon_chosen", "The party chooses "+winner.Name+".")
 }
 
-// applyCampCommand handles the camp commands: "minigame", "choose_dungeon", "buy", "ready" and "set_loadout".
+// applyCampCommand handles the camp commands: "choose_boon", "minigame", "choose_dungeon", "buy", "ready" and
+// "set_loadout".
 func applyCampCommand(room *Room, actorID string, command Command, now time.Time) error {
 	run := room.Run
 	if run == nil || run.Phase != PhaseIntermission || run.Camp == nil {
@@ -239,6 +269,13 @@ func applyCampCommand(room *Room, actorID string, command Command, now time.Time
 			return ErrInvalidCampAction
 		}
 		if err := playMinigame(room, actorID, play, command); err != nil {
+			return err
+		}
+	case "choose_boon":
+		if camp.Stage != CampStageBoon {
+			return ErrInvalidCampAction
+		}
+		if err := chooseBoon(room, actorID, command.ChoiceID); err != nil {
 			return err
 		}
 	case "choose_dungeon":

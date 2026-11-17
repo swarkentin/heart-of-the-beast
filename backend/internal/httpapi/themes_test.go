@@ -95,7 +95,7 @@ func TestEveryListedThemeStarts(t *testing.T) {
 }
 
 func TestStartRunRejectsUnknownAndMalformedThemes(t *testing.T) {
-	for name, body := range map[string]string{"unknown": `{"themeId":"atlantis"}`, "malformed": `{"themeId":`} {
+	for name, body := range map[string]string{"unknown": `{"themeId":"atlantis"}`, "malformed": `{"themeId":`, "capstone castle": `{"themeId":"eldritch"}`} {
 		response, _ := startThemedRun(t, body)
 		if response.Code != http.StatusBadRequest {
 			t.Errorf("%s: status %d, want 400 (%s)", name, response.Code, response.Body.String())
@@ -128,7 +128,7 @@ func TestThemesEndpointListsPlayableThemes(t *testing.T) {
 			t.Errorf("theme %q has no name", theme.ID)
 		}
 	}
-	if body.DefaultThemeID != "catacombs" || body.RandomThemeID != "random" || strings.Join(ids, ",") != "catacombs,scifi,mobster,sunken,clockwork,carnival,jungle,dreamscape,arctic,ghosttown,wasteland" {
+	if body.DefaultThemeID != "catacombs" || body.RandomThemeID != "random" || strings.Join(ids, ",") != "catacombs,scifi,mobster,sunken,clockwork,carnival,jungle,dreamscape,arctic,ghosttown,wasteland,noir,arcade" {
 		t.Fatalf("themes = %v default=%q", ids, body.DefaultThemeID)
 	}
 }

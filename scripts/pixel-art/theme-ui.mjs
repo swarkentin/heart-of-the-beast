@@ -21,6 +21,10 @@ export const THEME_UI = {
   arctic: { rim: "#5e8eae", trim: "#e2f8ff", slate: "#24486a", panel: "#0e1a2a", pit: "#08111d", wall: "ice" },
   ghosttown: { rim: "#6a4a2c", trim: "#e0a070", slate: "#3a2818", panel: "#1c130d", pit: "#120c08", wall: "boards" },
   wasteland: { rim: "#6e5630", trim: "#f0c040", slate: "#3e3020", panel: "#1c160e", pit: "#120e08", wall: "corrugated" },
+  noir: { rim: "#5a5a5a", trim: "#e8e8e8", slate: "#2a2a2a", panel: "#141414", pit: "#0a0a0a", wall: "blinds" },
+  arcade: { rim: "#3c7cfc", trim: "#fcd848", slate: "#1c2c8c", panel: "#0c0c2c", pit: "#06061a", wall: "blocks" },
+  eldritch: { rim: "#5a4a7a", trim: "#b8f08a", slate: "#2c2840", panel: "#120e1c", pit: "#0a0712", wall: "tendrils", glow: "#9cff6a" },
+  infernal: { rim: "#8a2a22", trim: "#ffb43a", slate: "#3a1414", panel: "#1a0808", pit: "#100404", wall: "brimstone", glow: "#ff7a2a" },
 };
 export const THEME_UI_IDS = Object.keys(THEME_UI);
 
@@ -116,6 +120,29 @@ const WALLS = {
     for (const x of [2, 18]) for (const y of [3, 19]) { p.put(x, y, mix(hex(accent), p.light, 0.4)); p.put(x + 1, y + 1, p.dark); }
   },
 };
+
+Object.assign(WALLS, {
+  // Venetian-blind light across a dark wall.
+  blinds(p, accent) {
+    p.rect(0, 0, N, N, (x, y) => { const slat = y % 8, edge = ((x + y) % 32) < 1; p.tone(x, y, slat === 0 ? 0.04 : slat < 3 ? 0.62 - 0.02 * (x % 5) : edge ? 0.2 : 0.16 + 0.05 * h(x >> 3, y >> 3, 20)); });
+    p.put(25, 13, hex(accent));
+  },
+  // Chunky console blocks with a hard bevel and one bright coin.
+  blocks(p, accent) {
+    p.rect(0, 0, N, N, (x, y) => { const fx = x % 16, fy = y % 16; p.tone(x, y, fx === 0 || fy === 0 ? 0.9 : fx === 15 || fy === 15 ? 0.06 : 0.36 + 0.14 * h(x >> 4, y >> 4, 21)); });
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) p.put(23 + dx, 7 + dy, hex(accent));
+  },
+  // Bruised stone with a pale tendril creeping across it.
+  tendrils(p, accent) {
+    p.rect(0, 0, N, N, (x, y) => { const row = Math.floor(y / 8), off = row % 2 ? 8 : 0, fx = (x + off) % 16, fy = y % 8; p.tone(x, y, fx === 0 || fy === 0 ? 0.05 : 0.28 + 0.14 * h(Math.floor(((x + off) % N) / 16), row, 22)); });
+    for (let x = 0; x < N; x++) { const y = Math.round(16 + Math.sin((x / N) * Math.PI * 2) * 5); p.put(x, y, mix(hex("#86a870"), p.mid, 0.2)); p.put(x, y + 1, mix(hex("#5e7a5a"), p.dark, 0.3)); }
+    p.put(10, 13, hex(accent)); p.put(26, 19, hex(accent));
+  },
+  // Basalt blocks with glowing lava seams.
+  brimstone(p, accent) {
+    p.rect(0, 0, N, N, (x, y) => { const row = Math.floor(y / 8), off = row % 2 ? 8 : 0, fx = (x + off) % 16, fy = y % 8; if (fx === 0 || fy === 0) p.put(x, y, mix(hex(accent), p.dark, 0.35 + 0.3 * h(x, y, 23))); else p.tone(x, y, 0.22 + 0.16 * h(Math.floor(((x + off) % N) / 16), row, 24) + (fy === 1 ? 0.2 : 0)); });
+  },
+});
 
 /** The seamless 32x32 wall tile for a theme, darkened like the original so portraits and text stay in front. */
 export function themeWallTile(id) {

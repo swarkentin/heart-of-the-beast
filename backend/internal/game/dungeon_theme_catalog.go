@@ -18,6 +18,9 @@ type DungeonThemeDefinition struct {
 	Art art.ThemeID
 	// Playable themes have expedition content (see ExpeditionThemeCatalog) and can be chosen when starting a run.
 	Playable bool
+	// Capstone themes are the castles at the end of every group of four dungeons (see capstone.go). They have
+	// expedition content but are never offered in the lobby or at an ordinary crossroads.
+	Capstone bool
 }
 
 type DungeonThemeCatalog struct {
@@ -41,6 +44,10 @@ func newDungeonThemeCatalog() DungeonThemeCatalog {
 		{ID: "arctic", Name: "Arctic Station", Tagline: "Frozen experiments, ice creatures and abandoned technology", Art: art.ThemeArctic, Playable: true},
 		{ID: "ghosttown", Name: "Ghost Town", Tagline: "Western frontier atmosphere, revenants and cursed settlements", Art: art.ThemeGhosttown, Playable: true},
 		{ID: "wasteland", Name: "Post-Apocalyptic Settlement", Tagline: "Scavengers, improvised machines and mutated wildlife", Art: art.ThemeWasteland, Playable: true},
+		{ID: "noir", Name: "Noir City", Tagline: "Rain, shadows and a city that never gives a straight answer", Art: art.ThemeNoir, Playable: true},
+		{ID: "arcade", Name: "8-Bit Arcade", Tagline: "Blocky beasts, power-ups and a boss stage at the end of every level", Art: art.ThemeArcade, Playable: true},
+		{ID: "eldritch", Name: "The Eldritch Castle", Tagline: "A drowned keep that dreams of the thing asleep beneath it", Art: art.ThemeEldritch, Playable: true, Capstone: true},
+		{ID: "infernal", Name: "The Infernal Citadel", Tagline: "Brimstone halls where demon princes keep court", Art: art.ThemeInfernal, Playable: true, Capstone: true},
 	}
 	themes := make(map[string]DungeonThemeDefinition, len(definitions))
 	order := make([]string, 0, len(definitions))
@@ -62,15 +69,33 @@ func (catalog DungeonThemeCatalog) Theme(id string) (DungeonThemeDefinition, err
 	return theme, nil
 }
 
-// PlayableDungeonThemes returns the themes a run can be started in, in authored order.
+// PlayableDungeonThemes returns the themes a run can be started in, in authored order. Capstone castles are not
+// among them: they are only reached through the crossroads after every fourth dungeon.
 func PlayableDungeonThemes() []DungeonThemeDefinition {
 	var themes []DungeonThemeDefinition
 	for _, id := range defaultDungeonThemeCatalog.order {
-		if theme := defaultDungeonThemeCatalog.Themes[id]; theme.Playable {
+		if theme := defaultDungeonThemeCatalog.Themes[id]; theme.Playable && !theme.Capstone {
 			themes = append(themes, theme)
 		}
 	}
 	return themes
+}
+
+// CapstoneDungeonThemes returns the capstone castles, in authored order.
+func CapstoneDungeonThemes() []DungeonThemeDefinition {
+	var themes []DungeonThemeDefinition
+	for _, id := range defaultDungeonThemeCatalog.order {
+		if theme := defaultDungeonThemeCatalog.Themes[id]; theme.Playable && theme.Capstone {
+			themes = append(themes, theme)
+		}
+	}
+	return themes
+}
+
+// IsCapstoneTheme reports whether a theme is one of the capstone castles.
+func IsCapstoneTheme(themeID string) bool {
+	theme, ok := defaultDungeonThemeCatalog.Themes[themeID]
+	return ok && theme.Capstone
 }
 
 // IDs returns theme IDs in authored order.

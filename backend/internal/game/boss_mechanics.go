@@ -30,7 +30,8 @@ const (
 
 func knownBossMechanic(id string) bool {
 	switch id {
-	case BossMechanicEnrage, BossMechanicSummon, BossMechanicBarrier, BossMechanicCataclysm:
+	case BossMechanicEnrage, BossMechanicSummon, BossMechanicBarrier, BossMechanicCataclysm,
+		BossMechanicAnchor, BossMechanicRebirth, BossMechanicLegion, BossMechanicDevour:
 		return true
 	}
 	return false
@@ -50,17 +51,31 @@ func validateBossMechanics(final FinalBossTemplate, themes DungeonThemeCatalog, 
 	if seen[BossMechanicBarrier] != (final.BarrierLabel != "") || seen[BossMechanicCataclysm] != (final.CataclysmLabel != "") {
 		return fmt.Errorf("dungeon boss %q needs a label for exactly the barrier and cataclysm it uses", final.EncounterID)
 	}
-	if seen[BossMechanicSummon] {
-		summoned, err := monsters.Monster(final.SummonMonsterID)
+	themeMonster := func(mechanic, monsterID string) error {
+		summoned, err := monsters.Monster(monsterID)
 		if err != nil || summoned.Role == MonsterRoleBoss {
-			return fmt.Errorf("dungeon boss %q summons an unknown or boss monster %q", final.EncounterID, final.SummonMonsterID)
+			return fmt.Errorf("dungeon boss %q %s an unknown or boss monster %q", final.EncounterID, mechanic, monsterID)
 		}
-		belongs := false
 		for _, id := range themes.MonsterIDs(themeID, monsters) {
-			belongs = belongs || id == final.SummonMonsterID
+			if id == monsterID {
+				return nil
+			}
 		}
-		if !belongs {
-			return fmt.Errorf("dungeon boss %q summons %q from another theme", final.EncounterID, final.SummonMonsterID)
+		return fmt.Errorf("dungeon boss %q %s %q from another theme", final.EncounterID, mechanic, monsterID)
+	}
+	if seen[BossMechanicSummon] != (final.SummonMonsterID != "") || seen[BossMechanicAnchor] != (final.AnchorMonsterID != "") ||
+		seen[BossMechanicLegion] != (final.LegionMonsterID != "") || seen[BossMechanicRebirth] != (final.RebirthLabel != "") {
+		return fmt.Errorf("dungeon boss %q needs a monster or label for exactly the summon, anchor, legion and rebirth it uses", final.EncounterID)
+	}
+	if seen[BossMechanicDevour] && !seen[BossMechanicLegion] {
+		return fmt.Errorf("dungeon boss %q devours without a legion to feed on", final.EncounterID)
+	}
+	for mechanic, monsterID := range map[string]string{"summons": final.SummonMonsterID, "anchors to": final.AnchorMonsterID, "calls a legion of": final.LegionMonsterID} {
+		if monsterID == "" {
+			continue
+		}
+		if err := themeMonster(mechanic, monsterID); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -79,6 +94,7 @@ func armDungeonBoss(encounter *Encounter, final FinalBossTemplate) {
 			enemy.SummonMonsterID = final.SummonMonsterID
 			enemy.SummonsLeft = 1
 		}
+		armCapstoneMechanics(enemy, final)
 	}
 }
 
@@ -106,6 +122,9 @@ func applyBossMechanics(room *Room, current *DungeonRoom, round int) {
 		if enemy.Health <= 0 || len(enemy.Mechanics) == 0 {
 			continue
 		}
+		// Capstone mechanics may add enemies, which can move the slice: work through the index from here on.
+		applyCapstoneMechanics(room, encounter, index, round)
+		enemy = &encounter.Enemies[index]
 		if enemy.hasMechanic(BossMechanicEnrage) && !enemy.Enraged && enemy.Health*100 <= enemy.MaxHealth*BossEnrageHealthPercent {
 			enemy.Enraged = true
 			enemy.DamageBonus += BossEnrageDamageBonus

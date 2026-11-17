@@ -160,7 +160,7 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return ChooseRoomEvent(room, actorID, command.ChoiceID, now)
 	case "choose_inter_floor":
 		return resolveInterFloorChoice(room, actorID, command.ChoiceID, now)
-	case "minigame", "choose_dungeon", "buy", "ready", "set_loadout":
+	case "minigame", "choose_boon", "choose_dungeon", "buy", "ready", "set_loadout":
 		return applyCampCommand(room, actorID, command, now)
 	default:
 		return ErrInvalidAction

@@ -36,6 +36,18 @@ var ThemeGhosttown = ThemeID{"ghosttown"}
 // ThemeWasteland is the Post-Apocalyptic Settlement art theme.
 var ThemeWasteland = ThemeID{"wasteland"}
 
+// ThemeNoir is the Noir City art theme.
+var ThemeNoir = ThemeID{"noir"}
+
+// ThemeArcade is the 8-Bit Arcade art theme.
+var ThemeArcade = ThemeID{"arcade"}
+
+// ThemeEldritch is the The Eldritch Castle art theme.
+var ThemeEldritch = ThemeID{"eldritch"}
+
+// ThemeInfernal is the The Infernal Citadel art theme.
+var ThemeInfernal = ThemeID{"infernal"}
+
 // CatacombsSkeletonSentinel is the Restless Sentinel sprite sheet.
 var CatacombsSkeletonSentinel = SpriteID{"catacombs/skeleton_sentinel"}
 
@@ -399,6 +411,138 @@ var WastelandScrapShieldbearer = SpriteID{"wasteland/scrap_shieldbearer"}
 // WastelandRadBehemoth is the The Rad Behemoth sprite sheet.
 var WastelandRadBehemoth = SpriteID{"wasteland/rad_behemoth"}
 
+// NoirFedoraThug is the Fedora Thug sprite sheet.
+var NoirFedoraThug = SpriteID{"noir/fedora_thug"}
+
+// NoirShadowDouble is the Shadow Double sprite sheet.
+var NoirShadowDouble = SpriteID{"noir/shadow_double"}
+
+// NoirCrookedCop is the Crooked Cop sprite sheet.
+var NoirCrookedCop = SpriteID{"noir/crooked_cop"}
+
+// NoirSmokeDame is the Smoke Dame sprite sheet.
+var NoirSmokeDame = SpriteID{"noir/smoke_dame"}
+
+// NoirAlleyBrute is the Alley Brute sprite sheet.
+var NoirAlleyBrute = SpriteID{"noir/alley_brute"}
+
+// NoirFlashbulbSnoop is the Flashbulb Snoop sprite sheet.
+var NoirFlashbulbSnoop = SpriteID{"noir/flashbulb_snoop"}
+
+// NoirTheMouthpiece is the The Mouthpiece sprite sheet.
+var NoirTheMouthpiece = SpriteID{"noir/the_mouthpiece"}
+
+// NoirTheCommissioner is the The Commissioner sprite sheet.
+var NoirTheCommissioner = SpriteID{"noir/the_commissioner"}
+
+// NoirTheRainKing is the The Rain King sprite sheet.
+var NoirTheRainKing = SpriteID{"noir/the_rain_king"}
+
+// NoirManInShadow is the The Man in the Shadow sprite sheet.
+var NoirManInShadow = SpriteID{"noir/man_in_shadow"}
+
+// NoirTheProjectionist is the The Projectionist sprite sheet.
+var NoirTheProjectionist = SpriteID{"noir/the_projectionist"}
+
+// ArcadePixelKnight is the Pixel Knight sprite sheet.
+var ArcadePixelKnight = SpriteID{"arcade/pixel_knight"}
+
+// ArcadeBitBat is the Bit Bat sprite sheet.
+var ArcadeBitBat = SpriteID{"arcade/bit_bat"}
+
+// ArcadeBrickGolem is the Brick Golem sprite sheet.
+var ArcadeBrickGolem = SpriteID{"arcade/brick_golem"}
+
+// ArcadeOneUpSprite is the 1-Up Sprite sprite sheet.
+var ArcadeOneUpSprite = SpriteID{"arcade/one_up_sprite"}
+
+// ArcadeChomperCube is the Chomper Cube sprite sheet.
+var ArcadeChomperCube = SpriteID{"arcade/chomper_cube"}
+
+// ArcadeGlitchSlime is the Glitch Slime sprite sheet.
+var ArcadeGlitchSlime = SpriteID{"arcade/glitch_slime"}
+
+// ArcadeShieldBlock is the Shield Block sprite sheet.
+var ArcadeShieldBlock = SpriteID{"arcade/shield_block"}
+
+// ArcadeMechaDrake is the Mecha Drake sprite sheet.
+var ArcadeMechaDrake = SpriteID{"arcade/mecha_drake"}
+
+// ArcadeHighScorer is the The High Scorer sprite sheet.
+var ArcadeHighScorer = SpriteID{"arcade/high_scorer"}
+
+// ArcadeTheFinalBoss is the The Final Boss sprite sheet.
+var ArcadeTheFinalBoss = SpriteID{"arcade/the_final_boss"}
+
+// ArcadeGlitchKing is the The Glitch King sprite sheet.
+var ArcadeGlitchKing = SpriteID{"arcade/glitch_king"}
+
+// EldritchRobedCultist is the Robed Cultist sprite sheet.
+var EldritchRobedCultist = SpriteID{"eldritch/robed_cultist"}
+
+// EldritchWhisperingEye is the Whispering Eye sprite sheet.
+var EldritchWhisperingEye = SpriteID{"eldritch/whispering_eye"}
+
+// EldritchFacelessKnight is the Faceless Knight sprite sheet.
+var EldritchFacelessKnight = SpriteID{"eldritch/faceless_knight"}
+
+// EldritchGraspingTentacle is the Grasping Tentacle sprite sheet.
+var EldritchGraspingTentacle = SpriteID{"eldritch/grasping_tentacle"}
+
+// EldritchDeepSpawn is the Spawn of the Deep sprite sheet.
+var EldritchDeepSpawn = SpriteID{"eldritch/deep_spawn"}
+
+// EldritchMadScholar is the Mad Scholar sprite sheet.
+var EldritchMadScholar = SpriteID{"eldritch/mad_scholar"}
+
+// EldritchWrithingMass is the Writhing Mass sprite sheet.
+var EldritchWrithingMass = SpriteID{"eldritch/writhing_mass"}
+
+// EldritchDreamingBishop is the The Dreaming Bishop sprite sheet.
+var EldritchDreamingBishop = SpriteID{"eldritch/dreaming_bishop"}
+
+// EldritchChoirOfMouths is the The Choir of Mouths sprite sheet.
+var EldritchChoirOfMouths = SpriteID{"eldritch/choir_of_mouths"}
+
+// EldritchTheSleeper is the The Sleeper Beneath sprite sheet.
+var EldritchTheSleeper = SpriteID{"eldritch/the_sleeper"}
+
+// EldritchUnwrittenLibrarian is the The Unwritten Librarian sprite sheet.
+var EldritchUnwrittenLibrarian = SpriteID{"eldritch/unwritten_librarian"}
+
+// InfernalCacklingImp is the Cackling Imp sprite sheet.
+var InfernalCacklingImp = SpriteID{"infernal/cackling_imp"}
+
+// InfernalHellhound is the Hellhound sprite sheet.
+var InfernalHellhound = SpriteID{"infernal/hellhound"}
+
+// InfernalBrimstoneKnight is the Brimstone Knight sprite sheet.
+var InfernalBrimstoneKnight = SpriteID{"infernal/brimstone_knight"}
+
+// InfernalAshWitch is the Ash Witch sprite sheet.
+var InfernalAshWitch = SpriteID{"infernal/ash_witch"}
+
+// InfernalPitBrute is the Pit Brute sprite sheet.
+var InfernalPitBrute = SpriteID{"infernal/pit_brute"}
+
+// InfernalSoulJailer is the Soul Jailer sprite sheet.
+var InfernalSoulJailer = SpriteID{"infernal/soul_jailer"}
+
+// InfernalCinderWretch is the Cinder Wretch sprite sheet.
+var InfernalCinderWretch = SpriteID{"infernal/cinder_wretch"}
+
+// InfernalHellforgeSmith is the The Hellforge Smith sprite sheet.
+var InfernalHellforgeSmith = SpriteID{"infernal/hellforge_smith"}
+
+// InfernalChainDuke is the The Chain Duke sprite sheet.
+var InfernalChainDuke = SpriteID{"infernal/chain_duke"}
+
+// InfernalArchfiend is the Archfiend Malgareth sprite sheet.
+var InfernalArchfiend = SpriteID{"infernal/archfiend"}
+
+// InfernalGluttonousMaw is the The Gluttonous Maw sprite sheet.
+var InfernalGluttonousMaw = SpriteID{"infernal/gluttonous_maw"}
+
 var themes = []Theme{
 	{ID: ThemeCatacombs, Name: "Forgotten Catacombs", Tagline: "Ancient ruins, undead, and forgotten horrors"},
 	{ID: ThemeScifi, Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI"},
@@ -411,6 +555,10 @@ var themes = []Theme{
 	{ID: ThemeArctic, Name: "Arctic Station", Tagline: "Frozen experiments, ice creatures and abandoned technology"},
 	{ID: ThemeGhosttown, Name: "Ghost Town", Tagline: "Revenants, cursed settlements and a frontier that never slept"},
 	{ID: ThemeWasteland, Name: "Post-Apocalyptic Settlement", Tagline: "Scavengers, improvised machines and mutated wildlife"},
+	{ID: ThemeNoir, Name: "Noir City", Tagline: "Rain, shadows and a city that never gives a straight answer"},
+	{ID: ThemeArcade, Name: "8-Bit Arcade", Tagline: "Blocky beasts, power-ups and a boss stage at the end of every level"},
+	{ID: ThemeEldritch, Name: "The Eldritch Castle", Tagline: "A drowned keep that dreams of the thing asleep beneath it"},
+	{ID: ThemeInfernal, Name: "The Infernal Citadel", Tagline: "Brimstone halls where demon princes keep court"},
 }
 
 var sprites = []Sprite{
@@ -535,4 +683,48 @@ var sprites = []Sprite{
 	{ID: WastelandRadRoachBrood, Theme: ThemeWasteland, CreatureID: "rad_roach_brood", Name: "Rad-Roach Brood", Boss: false, Sheet: "wasteland/rad_roach_brood.png", FrameSize: 64},
 	{ID: WastelandScrapShieldbearer, Theme: ThemeWasteland, CreatureID: "scrap_shieldbearer", Name: "Scrap Shield-bearer", Boss: false, Sheet: "wasteland/scrap_shieldbearer.png", FrameSize: 64},
 	{ID: WastelandRadBehemoth, Theme: ThemeWasteland, CreatureID: "rad_behemoth", Name: "The Rad Behemoth", Boss: true, Sheet: "wasteland/rad_behemoth.png", FrameSize: 128},
+	{ID: NoirFedoraThug, Theme: ThemeNoir, CreatureID: "fedora_thug", Name: "Fedora Thug", Boss: false, Sheet: "noir/fedora_thug.png", FrameSize: 64},
+	{ID: NoirShadowDouble, Theme: ThemeNoir, CreatureID: "shadow_double", Name: "Shadow Double", Boss: false, Sheet: "noir/shadow_double.png", FrameSize: 64},
+	{ID: NoirCrookedCop, Theme: ThemeNoir, CreatureID: "crooked_cop", Name: "Crooked Cop", Boss: false, Sheet: "noir/crooked_cop.png", FrameSize: 64},
+	{ID: NoirSmokeDame, Theme: ThemeNoir, CreatureID: "smoke_dame", Name: "Smoke Dame", Boss: false, Sheet: "noir/smoke_dame.png", FrameSize: 64},
+	{ID: NoirAlleyBrute, Theme: ThemeNoir, CreatureID: "alley_brute", Name: "Alley Brute", Boss: false, Sheet: "noir/alley_brute.png", FrameSize: 64},
+	{ID: NoirFlashbulbSnoop, Theme: ThemeNoir, CreatureID: "flashbulb_snoop", Name: "Flashbulb Snoop", Boss: false, Sheet: "noir/flashbulb_snoop.png", FrameSize: 64},
+	{ID: NoirTheMouthpiece, Theme: ThemeNoir, CreatureID: "the_mouthpiece", Name: "The Mouthpiece", Boss: false, Sheet: "noir/the_mouthpiece.png", FrameSize: 64},
+	{ID: NoirTheCommissioner, Theme: ThemeNoir, CreatureID: "the_commissioner", Name: "The Commissioner", Boss: true, Sheet: "noir/the_commissioner.png", FrameSize: 128},
+	{ID: NoirTheRainKing, Theme: ThemeNoir, CreatureID: "the_rain_king", Name: "The Rain King", Boss: true, Sheet: "noir/the_rain_king.png", FrameSize: 128},
+	{ID: NoirManInShadow, Theme: ThemeNoir, CreatureID: "man_in_shadow", Name: "The Man in the Shadow", Boss: true, Sheet: "noir/man_in_shadow.png", FrameSize: 128},
+	{ID: NoirTheProjectionist, Theme: ThemeNoir, CreatureID: "the_projectionist", Name: "The Projectionist", Boss: true, Sheet: "noir/the_projectionist.png", FrameSize: 128},
+	{ID: ArcadePixelKnight, Theme: ThemeArcade, CreatureID: "pixel_knight", Name: "Pixel Knight", Boss: false, Sheet: "arcade/pixel_knight.png", FrameSize: 64},
+	{ID: ArcadeBitBat, Theme: ThemeArcade, CreatureID: "bit_bat", Name: "Bit Bat", Boss: false, Sheet: "arcade/bit_bat.png", FrameSize: 64},
+	{ID: ArcadeBrickGolem, Theme: ThemeArcade, CreatureID: "brick_golem", Name: "Brick Golem", Boss: false, Sheet: "arcade/brick_golem.png", FrameSize: 64},
+	{ID: ArcadeOneUpSprite, Theme: ThemeArcade, CreatureID: "one_up_sprite", Name: "1-Up Sprite", Boss: false, Sheet: "arcade/one_up_sprite.png", FrameSize: 64},
+	{ID: ArcadeChomperCube, Theme: ThemeArcade, CreatureID: "chomper_cube", Name: "Chomper Cube", Boss: false, Sheet: "arcade/chomper_cube.png", FrameSize: 64},
+	{ID: ArcadeGlitchSlime, Theme: ThemeArcade, CreatureID: "glitch_slime", Name: "Glitch Slime", Boss: false, Sheet: "arcade/glitch_slime.png", FrameSize: 64},
+	{ID: ArcadeShieldBlock, Theme: ThemeArcade, CreatureID: "shield_block", Name: "Shield Block", Boss: false, Sheet: "arcade/shield_block.png", FrameSize: 64},
+	{ID: ArcadeMechaDrake, Theme: ThemeArcade, CreatureID: "mecha_drake", Name: "Mecha Drake", Boss: true, Sheet: "arcade/mecha_drake.png", FrameSize: 128},
+	{ID: ArcadeHighScorer, Theme: ThemeArcade, CreatureID: "high_scorer", Name: "The High Scorer", Boss: true, Sheet: "arcade/high_scorer.png", FrameSize: 128},
+	{ID: ArcadeTheFinalBoss, Theme: ThemeArcade, CreatureID: "the_final_boss", Name: "The Final Boss", Boss: true, Sheet: "arcade/the_final_boss.png", FrameSize: 128},
+	{ID: ArcadeGlitchKing, Theme: ThemeArcade, CreatureID: "glitch_king", Name: "The Glitch King", Boss: true, Sheet: "arcade/glitch_king.png", FrameSize: 128},
+	{ID: EldritchRobedCultist, Theme: ThemeEldritch, CreatureID: "robed_cultist", Name: "Robed Cultist", Boss: false, Sheet: "eldritch/robed_cultist.png", FrameSize: 64},
+	{ID: EldritchWhisperingEye, Theme: ThemeEldritch, CreatureID: "whispering_eye", Name: "Whispering Eye", Boss: false, Sheet: "eldritch/whispering_eye.png", FrameSize: 64},
+	{ID: EldritchFacelessKnight, Theme: ThemeEldritch, CreatureID: "faceless_knight", Name: "Faceless Knight", Boss: false, Sheet: "eldritch/faceless_knight.png", FrameSize: 64},
+	{ID: EldritchGraspingTentacle, Theme: ThemeEldritch, CreatureID: "grasping_tentacle", Name: "Grasping Tentacle", Boss: false, Sheet: "eldritch/grasping_tentacle.png", FrameSize: 64},
+	{ID: EldritchDeepSpawn, Theme: ThemeEldritch, CreatureID: "deep_spawn", Name: "Spawn of the Deep", Boss: false, Sheet: "eldritch/deep_spawn.png", FrameSize: 64},
+	{ID: EldritchMadScholar, Theme: ThemeEldritch, CreatureID: "mad_scholar", Name: "Mad Scholar", Boss: false, Sheet: "eldritch/mad_scholar.png", FrameSize: 64},
+	{ID: EldritchWrithingMass, Theme: ThemeEldritch, CreatureID: "writhing_mass", Name: "Writhing Mass", Boss: false, Sheet: "eldritch/writhing_mass.png", FrameSize: 64},
+	{ID: EldritchDreamingBishop, Theme: ThemeEldritch, CreatureID: "dreaming_bishop", Name: "The Dreaming Bishop", Boss: true, Sheet: "eldritch/dreaming_bishop.png", FrameSize: 128},
+	{ID: EldritchChoirOfMouths, Theme: ThemeEldritch, CreatureID: "choir_of_mouths", Name: "The Choir of Mouths", Boss: true, Sheet: "eldritch/choir_of_mouths.png", FrameSize: 128},
+	{ID: EldritchTheSleeper, Theme: ThemeEldritch, CreatureID: "the_sleeper", Name: "The Sleeper Beneath", Boss: true, Sheet: "eldritch/the_sleeper.png", FrameSize: 128},
+	{ID: EldritchUnwrittenLibrarian, Theme: ThemeEldritch, CreatureID: "unwritten_librarian", Name: "The Unwritten Librarian", Boss: true, Sheet: "eldritch/unwritten_librarian.png", FrameSize: 128},
+	{ID: InfernalCacklingImp, Theme: ThemeInfernal, CreatureID: "cackling_imp", Name: "Cackling Imp", Boss: false, Sheet: "infernal/cackling_imp.png", FrameSize: 64},
+	{ID: InfernalHellhound, Theme: ThemeInfernal, CreatureID: "hellhound", Name: "Hellhound", Boss: false, Sheet: "infernal/hellhound.png", FrameSize: 64},
+	{ID: InfernalBrimstoneKnight, Theme: ThemeInfernal, CreatureID: "brimstone_knight", Name: "Brimstone Knight", Boss: false, Sheet: "infernal/brimstone_knight.png", FrameSize: 64},
+	{ID: InfernalAshWitch, Theme: ThemeInfernal, CreatureID: "ash_witch", Name: "Ash Witch", Boss: false, Sheet: "infernal/ash_witch.png", FrameSize: 64},
+	{ID: InfernalPitBrute, Theme: ThemeInfernal, CreatureID: "pit_brute", Name: "Pit Brute", Boss: false, Sheet: "infernal/pit_brute.png", FrameSize: 64},
+	{ID: InfernalSoulJailer, Theme: ThemeInfernal, CreatureID: "soul_jailer", Name: "Soul Jailer", Boss: false, Sheet: "infernal/soul_jailer.png", FrameSize: 64},
+	{ID: InfernalCinderWretch, Theme: ThemeInfernal, CreatureID: "cinder_wretch", Name: "Cinder Wretch", Boss: false, Sheet: "infernal/cinder_wretch.png", FrameSize: 64},
+	{ID: InfernalHellforgeSmith, Theme: ThemeInfernal, CreatureID: "hellforge_smith", Name: "The Hellforge Smith", Boss: true, Sheet: "infernal/hellforge_smith.png", FrameSize: 128},
+	{ID: InfernalChainDuke, Theme: ThemeInfernal, CreatureID: "chain_duke", Name: "The Chain Duke", Boss: true, Sheet: "infernal/chain_duke.png", FrameSize: 128},
+	{ID: InfernalArchfiend, Theme: ThemeInfernal, CreatureID: "archfiend", Name: "Archfiend Malgareth", Boss: true, Sheet: "infernal/archfiend.png", FrameSize: 128},
+	{ID: InfernalGluttonousMaw, Theme: ThemeInfernal, CreatureID: "gluttonous_maw", Name: "The Gluttonous Maw", Boss: true, Sheet: "infernal/gluttonous_maw.png", FrameSize: 128},
 }

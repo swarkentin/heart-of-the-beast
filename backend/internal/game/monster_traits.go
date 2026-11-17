@@ -157,6 +157,7 @@ func traitDamageTaken(run *Run, encounter *Encounter, enemy *Enemy, damage, roun
 	if enemy.Phased {
 		damage = (damage + 1) / 2
 	}
+	damage = anchoredDamage(encounter, enemy, damage)
 	if encounter != nil {
 		guard := 0
 		for i := range encounter.Enemies {

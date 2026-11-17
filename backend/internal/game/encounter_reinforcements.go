@@ -17,6 +17,10 @@ var themeReinforcements = map[string][2]string{
 	"arctic":     {"husk-hound", "ice-wraith"},
 	"ghosttown":  {"phantom-coyote", "carrion-vulture"},
 	"wasteland":  {"rust-hound", "flame-rig"},
+	"noir":       {"fedora-thug", "shadow-double"},
+	"arcade":     {"pixel-knight", "bit-bat"},
+	"eldritch":   {"grasping-tentacle", "whispering-eye"},
+	"infernal":   {"cackling-imp", "ash-witch"},
 }
 
 // reinforcementBudgetCost is the authoring cost of one reinforcement minion.

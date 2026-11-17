@@ -1,6 +1,6 @@
 // Per-theme room styling: surface patterns, palettes, light fixtures and the signature props of each room kind.
 // A style is pure data; painter.mjs and props.mjs turn it into pixels. Catacombs and Sci-Fi additionally have
-// hand-authored props (see props.mjs); the other nine themes get their own palette, patterns and prop variants.
+// hand-authored props (see props.mjs); the other themes get their own palette, patterns and prop variants.
 //
 //   wall / floor / ceil : [pattern, [dark, mid, light]]
 //   fog                 : colour distant surfaces fade to
@@ -25,6 +25,10 @@ export const styles = {
   arctic: { wall: ["ice", ["#0a1626", "#1f4a6a", "#72aecb"]], floor: ["ice", ["#09121f", "#1b3f5e", "#5e9ab8"]], ceil: ["panel", ["#060e1a", "#102a42", "#244c6a"]], fog: [10, 24, 52], lamp: ["strip", "#d8f8ff"], door: "blast", event: "console", boss: "core", vault: "crate", accent: "#ff8a5a", dust: "#e8fbff" },
   ghosttown: { wall: ["plank", ["#1c110c", "#46301f", "#80593a"]], floor: ["plank", ["#150e09", "#3a2a1a", "#6a4a2c"]], ceil: ["plank", ["#0e0805", "#241810", "#3a2818"]], fog: [42, 22, 14], lamp: ["torch", "#ffc266"], door: "arch", event: "altar", boss: "gate", vault: "chest", accent: "#7dffd0", dust: "#d6c0a0" },
   wasteland: { wall: ["panel", ["#18130d", "#493a22", "#8c6c3a"]], floor: ["dirt", ["#14100a", "#3a2e1a", "#6e5630"]], ceil: ["panel", ["#0d0a07", "#2a2012", "#4a3a20"]], fog: [38, 28, 16], lamp: ["torch", "#ffb347"], door: "blast", event: "console", boss: "throne", vault: "crate", accent: "#9be84a", dust: "#d8c08a" },
+  noir: { wall: ["block", ["#0e0e0e", "#2e2e2e", "#6a6a6a"]], floor: ["checker", ["#0a0a0a", "#262626", "#5a5a5a"]], ceil: ["plank", ["#060606", "#161616", "#262626"]], fog: [18, 18, 18], lamp: ["bulb", "#f0f0f0"], door: "arch", event: "orb", boss: "throne", vault: "crate", accent: "#ffffff", dust: "#bcbcbc" },
+  arcade: { wall: ["pixel", ["#0c0c3c", "#1c2c8c", "#3c7cfc"]], floor: ["checker", ["#080824", "#1c1c5c", "#3c3cac"]], ceil: ["pixel", ["#04041c", "#0c0c3c", "#1c2c8c"]], fog: [8, 8, 48], lamp: ["strip", "#fcd848"], door: "blast", event: "console", boss: "core", vault: "chest", accent: "#fc3c3c", dust: "#fcfcfc" },
+  eldritch: { wall: ["organic", ["#0e0a18", "#2c2840", "#5a5070"]], floor: ["wave", ["#08060e", "#1e2a24", "#3e5a48"]], ceil: ["block", ["#06040c", "#16122a", "#2c2840"]], fog: [16, 10, 30], lamp: ["torch", "#9cff6a"], door: "organic", event: "altar", boss: "maw", vault: "chest", accent: "#c78bff", dust: "#c8e8b8" },
+  infernal: { wall: ["block", ["#140606", "#3a1414", "#7a2a20"]], floor: ["flag", ["#100404", "#3a1410", "#8a3a1a"]], ceil: ["block", ["#0a0202", "#220a0a", "#3a1414"]], fog: [52, 12, 6], lamp: ["torch", "#ff7a2a"], door: "portal", event: "altar", boss: "throne", vault: "chest", accent: "#ffd04a", dust: "#ffb080" },
 };
 
 // Per-kind room geometry for the first-person view, in world tiles. HW/CH/FH are the half-width, ceiling height

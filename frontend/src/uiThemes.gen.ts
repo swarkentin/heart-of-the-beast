@@ -2,7 +2,7 @@
 // Regenerate with `npm run art:build`.
 
 /** Dungeon themes with their own frames and wall tile under /art/ui/themes/<id>/. Other themes use the default kit. */
-export const UI_THEME_IDS: readonly string[] = ["scifi","mobster","sunken","clockwork","carnival","jungle","dreamscape","arctic","ghosttown","wasteland"];
+export const UI_THEME_IDS: readonly string[] = ["scifi","mobster","sunken","clockwork","carnival","jungle","dreamscape","arctic","ghosttown","wasteland","noir","arcade","eldritch","infernal"];
 
 /** The interface colours each theme swaps in, as CSS custom properties without the leading dashes. */
 export const UI_THEME_COLORS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -74,6 +74,34 @@ export const UI_THEME_COLORS: Readonly<Record<string, Readonly<Record<string, st
     "panel": "#1c160e",
     "pit": "#120e08",
     "stone": "#6e5630",
+    "edge": "#0a0714"
+  },
+  "noir": {
+    "gold": "#e8e8e8",
+    "panel": "#141414",
+    "pit": "#0a0a0a",
+    "stone": "#5a5a5a",
+    "edge": "#0a0714"
+  },
+  "arcade": {
+    "gold": "#fcd848",
+    "panel": "#0c0c2c",
+    "pit": "#06061a",
+    "stone": "#3c7cfc",
+    "edge": "#0a0714"
+  },
+  "eldritch": {
+    "gold": "#b8f08a",
+    "panel": "#120e1c",
+    "pit": "#0a0712",
+    "stone": "#5a4a7a",
+    "edge": "#0a0714"
+  },
+  "infernal": {
+    "gold": "#ffb43a",
+    "panel": "#1a0808",
+    "pit": "#100404",
+    "stone": "#8a2a22",
     "edge": "#0a0714"
   }
 };

@@ -81,6 +81,22 @@ var themeBriefings = map[string]themeBriefing{
 		"Out past the fence it's scavengers, scrap-beasts and things that used to be dogs. Mostly used to be.",
 		"Take what you can carry, burn what you can't, and if you see the Junk King, give him our regards. With a hammer.",
 	}},
+	"noir": {"A private eye with a voice like gravel in a coffee cup", []string{
+		"It was raining, the way it always rains in this city. The kind of rain that washes nothing clean.",
+		"Every alley has a gun in it and every gun has a story. Keep your hat low, your back to the wall, and trust nobody in a nice suit.",
+	}},
+	"arcade": {"A blinking INSERT COIN sign", []string{
+		"PLAYER ONE, PRESS START. PLAYER TWO, PRESS START. EVERYBODY ELSE, PLEASE STOP TOUCHING THE SCREEN.",
+		"Learn the patterns, grab the power-ups, and remember: the boss always has a weak point. Probably.",
+	}},
+	"eldritch": {"A cartographer whose maps keep redrawing themselves", []string{
+		"Four dungeons deep, the roads all bend toward the same black castle. It was not there yesterday. It is always there.",
+		"Something sleeps under the keep and the walls dream for it. Cut its limbs before you cut it, and do not be surprised when it wakes a second time.",
+	}},
+	"infernal": {"A demon notary, stamping your soul in triplicate", []string{
+		"Congratulations on your fourth conquest. The Archfiend requests the pleasure of your company, and your company's screaming.",
+		"His servants are lunch. Kill them before he eats them, or he grows fat on every one you leave alive.",
+	}},
 }
 
 // newDungeonBriefing describes the dungeon a run has just entered.
@@ -154,6 +170,10 @@ func bossAdvice(boss string, final FinalBossTemplate) []string {
 				name = "a " + monster.Name
 			}
 			advice = append(advice, fmt.Sprintf("At %d%% health it calls %s. Skills that hit every enemy earn their slot here.", BossSummonHealthPercent, name))
+		default:
+			if line := capstoneAdvice(mechanic, final); line != "" {
+				advice = append(advice, line)
+			}
 		}
 	}
 	return advice
@@ -169,7 +189,7 @@ func briefDungeon(run *Run) {
 }
 
 func validateThemeBriefings() error {
-	for _, theme := range PlayableDungeonThemes() {
+	for _, theme := range append(PlayableDungeonThemes(), CapstoneDungeonThemes()...) {
 		voice, ok := themeBriefings[theme.ID]
 		if !ok || voice.narrator == "" || len(voice.lines) == 0 {
 			return fmt.Errorf("playable theme %q has no briefing", theme.ID)

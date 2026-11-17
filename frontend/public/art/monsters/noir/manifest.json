@@ -1,0 +1,629 @@
+{
+  "id": "noir",
+  "name": "Noir City",
+  "tagline": "Rain, shadows and a city that never gives a straight answer",
+  "palette": [
+    "#1e1e1e",
+    "#5a5a5a",
+    "#a8a8a8",
+    "#f0f0f0"
+  ],
+  "creatures": [
+    {
+      "id": "fedora_thug",
+      "name": "Fedora Thug",
+      "tier": "monster",
+      "role": "Street muscle; a pistol-whip and a snub-nose from the hip",
+      "sheet": "noir/fedora_thug.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "shoot"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Pistol whip",
+      "special": "Snub-nose shot"
+    },
+    {
+      "id": "shadow_double",
+      "name": "Shadow Double",
+      "tier": "monster",
+      "role": "A man's shadow walking without him; cold touches and the lights going out",
+      "sheet": "noir/shadow_double.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "claw"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "wail"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Cold shoulder",
+      "special": "Lights out"
+    },
+    {
+      "id": "crooked_cop",
+      "name": "Crooked Cop",
+      "tier": "monster",
+      "role": "Protector; a nightstick, a tin badge and a palm that's always open",
+      "sheet": "noir/crooked_cop.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slam"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Nightstick",
+      "special": "Book 'em"
+    },
+    {
+      "id": "smoke_dame",
+      "name": "Smoke Dame",
+      "tier": "monster",
+      "role": "Support; a gown of cigarette smoke that hides and mends her friends",
+      "sheet": "noir/smoke_dame.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Ash flick",
+      "special": "Smoke screen"
+    },
+    {
+      "id": "alley_brute",
+      "name": "Alley Brute",
+      "tier": "monster",
+      "role": "Bruiser; waits in the dark with a brick and a grudge",
+      "sheet": "noir/alley_brute.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "roar"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Brick to the jaw",
+      "special": "Shoulder check"
+    },
+    {
+      "id": "flashbulb_snoop",
+      "name": "Flashbulb Snoop",
+      "tier": "monster",
+      "role": "Fuse; a press photographer whose flash powder goes off on the third shot",
+      "sheet": "noir/flashbulb_snoop.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "shoot"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Camera swing",
+      "special": "Flash powder"
+    },
+    {
+      "id": "the_mouthpiece",
+      "name": "The Mouthpiece",
+      "tier": "monster",
+      "role": "Warder; a crooked lawyer who throws an alibi over whoever is losing",
+      "sheet": "noir/the_mouthpiece.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Objection",
+      "special": "Airtight alibi"
+    },
+    {
+      "id": "the_commissioner",
+      "name": "The Commissioner",
+      "tier": "boss",
+      "role": "Boss: the man who owns the police; a gavel-fisted giant behind a wall of badges",
+      "sheet": "noir/the_commissioner.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "summon"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Gavel of the city",
+      "special": "Call the precinct"
+    },
+    {
+      "id": "the_rain_king",
+      "name": "The Rain King",
+      "tier": "boss",
+      "role": "Boss: an umbrella-crowned spirit of the storm drains; lances of rain and flooded gutters",
+      "sheet": "noir/the_rain_king.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "wail"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Downpour lance",
+      "special": "Flood the gutters"
+    },
+    {
+      "id": "man_in_shadow",
+      "name": "The Man in the Shadow",
+      "tier": "boss",
+      "role": "Boss: the face nobody sees; a silhouette the size of the alley that strangles the light",
+      "sheet": "noir/man_in_shadow.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "claw"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Shadow strangle",
+      "special": "Blackout"
+    },
+    {
+      "id": "the_projectionist",
+      "name": "The Projectionist",
+      "tier": "boss",
+      "role": "Lair boss; a film-reel head that flickers between frames, and a final reel it plays for everyone",
+      "sheet": "noir/the_projectionist.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "wail"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Reel lash",
+      "special": "The final reel"
+    }
+  ]
+}

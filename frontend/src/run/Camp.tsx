@@ -1,8 +1,10 @@
-// The camp between two floors of an expedition: a short mini-game for gold, then a shop and a look at what the
-// next floor holds. Everything here is a view of server state; every move is a command.
+// The camp between two floors of an expedition: after a castle boss a boon to claim, then a short mini-game for
+// gold, then a shop and a look at what the next floor holds. Between dungeons it also shows the expedition map.
+// Everything here is a view of server state; every move is a command.
 import { useEffect, useState, type ReactNode } from "react";
-import type { ApiCamp, ApiCommand, ApiFloorModifier, ApiMinigame, ApiMinigamePlay, ApiRun } from "../api";
+import type { ApiBoon, ApiCamp, ApiCommand, ApiFloorModifier, ApiMinigame, ApiMinigamePlay, ApiRun } from "../api";
 import { Icon } from "../lobby";
+import { ExpeditionMap } from "./ExpeditionMap";
 
 type Send = (command: ApiCommand) => Promise<unknown> | void;
 
@@ -78,6 +80,14 @@ function Game({ game, selfId, acting, busy, send }: { game: ApiMinigame; selfId:
   </>;
 }
 
+function Boons({ offers, chosen, acting, busy, send }: { offers: ApiBoon[]; chosen?: string; acting: boolean; busy: boolean; send: Send }) {
+  return <div className="rn-choices">{offers.map(boon => <button key={boon.id} className={"rn-choice" + (chosen === boon.id ? " rn-choice-mine" : "")} onClick={() => void send({ type: "choose_boon", choiceId: boon.id })} disabled={!acting || busy || Boolean(chosen)} aria-label={"Claim " + boon.name}>
+    <Icon id="empower" size={2} />
+    <span><strong>{boon.name}</strong><small>{boon.description}</small></span>
+    <em>{chosen === boon.id ? "CLAIMED" : ""}</em>
+  </button>)}</div>;
+}
+
 export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onCommand, onChangeSkills }: { camp: ApiCamp; run: ApiRun; selfId: string; acting: boolean; spectator: boolean; busy: boolean; timer: ReactNode; onCommand: Send; onChangeSkills?: () => void }) {
   const player = selfId ? run.players[selfId] : undefined;
   const gold = player?.gold ?? 0;
@@ -90,23 +100,36 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
   const chosen = camp.choices?.find(choice => choice.themeId === camp.nextThemeId);
   const myVote = camp.votes?.[selfId];
   const votesFor = (themeId: string) => Object.values(camp.votes ?? {}).filter(vote => vote === themeId).length;
+  const castleAhead = camp.choices?.some(choice => choice.capstone) ?? false;
+  const myBoons = (player?.boons ?? []).length;
+  const boonOffers = camp.boonOffers?.[selfId] ?? [];
+  const boonsChosen = Object.keys(camp.boonChoices ?? {}).length;
+  const boonsOffered = Object.keys(camp.boonOffers ?? {}).length;
+  const where = between ? "DUNGEON " + (run.dungeon || 1) + " CLEARED" : camp.boonOnly ? "FLOOR " + (camp.nextDepth - 1) + " CLEARED" : "HALFWAY DOWN";
+  const stage = camp.stage === "boon" ? "BOONS" : camp.stage === "game" ? (camp.game?.name ?? "").toUpperCase() : camp.stage === "crossroads" ? "CROSSROADS" : "SHOP";
   return <div className="rn-context rn-camp">
-    <p className="px-eyebrow">{between ? "DUNGEON " + (run.dungeon || 1) + " CLEARED" : "HALFWAY DOWN"} · CAMP · {camp.stage === "game" ? (camp.game?.name ?? "").toUpperCase() : camp.stage === "crossroads" ? "CROSSROADS" : "SHOP"}</p>
+    <p className="px-eyebrow">{where} · {camp.boonOnly ? "" : "CAMP · "}{stage}</p>
     {timer}
-    {camp.stage === "game" && camp.game ? <>
+    {between && camp.stage !== "boon" ? <ExpeditionMap run={run} /> : null}
+    {camp.stage === "boon" ? <>
+      <h2>Claim a boon</h2>
+      <p className="px-copy">The castle's power is loose. Each adventurer keeps one boon for the rest of the run.{boonsOffered > 1 ? " " + boonsChosen + "/" + boonsOffered + " claimed." : ""}</p>
+      {boonOffers.length > 0 ? <Boons offers={boonOffers} chosen={camp.boonChoices?.[selfId]} acting={acting} busy={busy} send={onCommand} /> : <p className="px-label">{spectator ? "THE PARTY IS CHOOSING BOONS" : "WAITING FOR THE PARTY"}</p>}
+    </> : camp.stage === "game" && camp.game ? <>
       <h2>A moment of respite</h2>
       <Game game={camp.game} selfId={selfId} acting={acting} busy={busy} send={onCommand} />
     </> : camp.stage === "crossroads" ? <>
-      <h2>Choose the next dungeon</h2>
-      <p className="px-copy">Its modifiers hold on every floor. The party goes where most votes point.</p>
+      <h2>{castleAhead ? "Choose your castle" : "Choose the next dungeon"}</h2>
+      <p className="px-copy">{castleAhead ? "Four dungeons down, the road ends at a castle: harder fights, every boss armed, and a boon for every boss you beat. " : ""}Its modifiers hold on every floor. The party goes where most votes point.</p>
       <div className="rn-choices">{(camp.choices ?? []).map(choice => <button key={choice.themeId} className={"rn-choice rn-dungeon" + (myVote === choice.themeId ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_dungeon", choiceId: choice.themeId })} disabled={!acting || busy} aria-label={"Vote for " + choice.name}>
         <Icon id="agility" size={2} />
-        <span><strong>{choice.name} · {choice.floors} FLOORS</strong><small>{choice.tagline}</small>
+        <span><strong>{choice.capstone ? "♜ " : ""}{choice.name} · {choice.floors} FLOORS</strong><small>{choice.tagline}</small>
           {choice.modifiers.map(modifier => <small key={modifier.id} className={"rn-mod-" + modifier.kind}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}. {modifier.description}</small>)}</span>
         <em>{votesFor(choice.themeId)} {myVote === choice.themeId ? "· YOURS" : ""}</em>
       </button>)}</div>
     </> : <>
       <h2>Spend your gold</h2>
+      {myBoons > 0 ? <p className="px-label">YOUR BOONS · {(player?.boons ?? []).map(id => id.replace(/-/g, " ").toUpperCase()).join(" · ")}</p> : null}
       <div className="rn-camp-next">
         <span className="px-label">NEXT: {chosen ? chosen.name.toUpperCase() + " · " : ""}FLOOR {camp.nextDepth} OF {floors}{last ? " · THE DUNGEON BOSS" : ""}</span>
         {next.length === 0 ? <span className="px-copy">No modifiers. A clean floor.</span> : <ul>{next.map(modifier => <li key={modifier.id} className={"rn-mod-" + modifier.kind}><b>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}.</b> {modifier.description}</li>)}</ul>}

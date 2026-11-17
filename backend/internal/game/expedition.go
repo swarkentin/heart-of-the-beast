@@ -44,6 +44,10 @@ func StartMultiLevelRunForTheme(room *Room, runID, themeID string, now time.Time
 	if len(room.PlayerIDs) == 0 || runID == "" {
 		return errors.New("room requires a player and run id")
 	}
+	if IsCapstoneTheme(themeID) {
+		// A castle is earned at the crossroads after four dungeons; it cannot be the first.
+		return fmt.Errorf("%w: %q", ErrThemeNotPlayable, themeID)
+	}
 	return startExpeditionWithSeed(room, runID, themeID, runSeed(runID), now)
 }
 
@@ -66,12 +70,13 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 	if !theme.Playable {
 		return fmt.Errorf("%w: %q", ErrThemeNotPlayable, themeID)
 	}
-	maxDepth := expeditionDepth(seed)
-	entryID, rooms := generateExpeditionFloor(themeID, seed, InitialDungeonDepth, maxDepth, len(room.PlayerIDs), nil)
+	maxDepth := dungeonFloors(seed, 1, themeID)
+	entryID, rooms := generateExpeditionFloor(themeID, seed, InitialDungeonDepth, maxDepth, len(room.PlayerIDs), nil, capstoneExtraDepth(themeID))
 	if err := beginRun(room, runID, now, themeID, rooms, entryID); err != nil {
 		return err
 	}
 	room.Run.Generator = ExpeditionGenerator
+	room.Run.DungeonThemes = []string{themeID}
 	room.Run.Seed = seed
 	room.Run.Depth = InitialDungeonDepth
 	room.Run.MaxDepth = maxDepth
@@ -97,7 +102,18 @@ func dungeonNumber(run *Run) int {
 	return run.Dungeon
 }
 
-func dungeonExtraDepth(run *Run) int { return (dungeonNumber(run) - 1) * DungeonExtraDepthStep }
+// dungeonExtraDepth is how much deeper than its floor the current dungeon's enemies fight: two floors per earlier
+// dungeon, and more again inside a capstone castle.
+func dungeonExtraDepth(run *Run) int {
+	return (dungeonNumber(run)-1)*DungeonExtraDepthStep + capstoneExtraDepth(run.Theme())
+}
+
+func capstoneExtraDepth(themeID string) int {
+	if IsCapstoneTheme(themeID) {
+		return CapstoneExtraDepth
+	}
+	return 0
+}
 
 // dungeonSeed is the generation seed of one dungeon of an expedition. The first dungeon uses the run seed.
 func dungeonSeed(seed uint64, dungeon int) uint64 {
@@ -147,6 +163,11 @@ func finishExpeditionFloor(room *Room, boss *DungeonRoom, round int, now time.Ti
 		openCamp(room, round, now)
 		return
 	}
+	if IsCapstoneTheme(run.Theme()) {
+		// Every castle boss is worth a boon, camp or no camp.
+		openBoonCamp(room, round, now)
+		return
+	}
 	// No camp on this floor, but beating its guardian is still a breather: without it the stretch between camps
 	// is pure attrition.
 	for _, playerID := range eligibleCombatPlayers(room) {
@@ -184,9 +205,10 @@ func descendExpedition(room *Room, now time.Time) {
 		// A new dungeon: new theme, new depth, its own modifiers, and only its own rooms.
 		run.Dungeon = dungeonNumber(run) + 1
 		run.ThemeID = camp.NextThemeID
+		run.DungeonThemes = append(run.DungeonThemes, camp.NextThemeID)
 		run.DungeonModifiers = camp.NextDungeonModifiers
 		run.Depth = 0
-		run.MaxDepth = expeditionDepth(dungeonSeed(run.Seed, run.Dungeon))
+		run.MaxDepth = dungeonFloors(run.Seed, run.Dungeon, run.ThemeID)
 		run.Rooms = make(map[string]*DungeonRoom)
 		modifiers = camp.NextModifiers
 	case camp != nil:
@@ -267,6 +289,8 @@ type DungeonChoice struct {
 	Tagline   string                `json:"tagline"`
 	Floors    int                   `json:"floors"`
 	Modifiers []ActiveFloorModifier `json:"modifiers"`
+	// Capstone marks a castle: harder, every boss armed, and a boon for every boss beaten.
+	Capstone bool `json:"capstone,omitempty"`
 }
 
 // DungeonChoiceCount is how many dungeons the crossroads offers.
@@ -277,7 +301,12 @@ const DungeonChoiceCount = 2
 func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []DungeonChoice {
 	rng := rand.New(rand.NewSource(int64(mixSeed(seed, uint64(nextDungeon), 0xc4055))))
 	var themes []DungeonThemeDefinition
-	for _, theme := range PlayableDungeonThemes() {
+	pool := PlayableDungeonThemes()
+	if IsCapstoneDungeon(nextDungeon) {
+		// After every fourth dungeon the road leads to a castle, and the party picks which.
+		pool = CapstoneDungeonThemes()
+	}
+	for _, theme := range pool {
 		if theme.ID != currentThemeID {
 			themes = append(themes, theme)
 		}
@@ -308,7 +337,7 @@ func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []D
 				break
 			}
 		}
-		choices = append(choices, DungeonChoice{ThemeID: theme.ID, Name: theme.Name, Tagline: theme.Tagline, Floors: expeditionDepth(dungeonSeed(seed, nextDungeon)), Modifiers: perk})
+		choices = append(choices, DungeonChoice{ThemeID: theme.ID, Name: theme.Name, Tagline: theme.Tagline, Floors: dungeonFloors(seed, nextDungeon, theme.ID), Modifiers: perk, Capstone: theme.Capstone})
 	}
 	return choices
 }

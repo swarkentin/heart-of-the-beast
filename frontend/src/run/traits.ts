@@ -40,6 +40,20 @@ export function traitTags(enemy: ApiEnemy): TraitTag[] {
         break;
     }
   }
+  // Capstone boss mechanics (backend capstone.go).
+  const mechanics = enemy.mechanics ?? [];
+  if (mechanics.includes("anchor")) {
+    tags.push(enemy.anchored
+      ? { id: "anchored", label: "ANCHORED", rule: "Held by its grasping limbs: it takes half damage while any of them stands. Cut them first.", tone: "bad" }
+      : { id: "anchored", label: "UNANCHORED", rule: "Its anchors are cut: hit it now, before they grow back.", tone: "good" });
+  }
+  if (enemy.anchor) tags.push({ id: "anchor", label: "ANCHOR", rule: "While it stands, its master takes half damage.", tone: "info" });
+  if (mechanics.includes("rebirth") && !enemy.reborn) tags.push({ id: "rebirth", label: "RISES AGAIN", rule: `The first time it falls it rises again at half health${enemy.rebirthLabel ? ": " + enemy.rebirthLabel : ""}.`, tone: "info" });
+  if (mechanics.includes("devour")) {
+    const turns = enemy.devourIn ?? 0;
+    tags.push({ id: "devour", label: turns === 1 ? "DEVOURS NEXT TURN" : "DEVOURS IN " + turns, rule: "Eats every servant still standing, healing and hitting harder for each one. Kill them before it feeds.", tone: turns === 1 ? "bad" : "info" });
+  }
+  if ((enemy.devoured ?? 0) > 0) tags.push({ id: "fed", label: "FED +" + enemy.devoured, rule: `It has eaten its servants: every hit lands ${enemy.devoured} harder.`, tone: "bad" });
   if ((enemy.shield ?? 0) > 0) tags.push({ id: "shield", label: "SHIELD " + enemy.shield, rule: `A ward absorbs the next ${enemy.shield} damage.`, tone: "info" });
   return tags;
 }

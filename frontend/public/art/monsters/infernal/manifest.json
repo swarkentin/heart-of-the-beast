@@ -1,0 +1,629 @@
+{
+  "id": "infernal",
+  "name": "The Infernal Citadel",
+  "tagline": "Brimstone halls where demon princes keep court",
+  "palette": [
+    "#241414",
+    "#8a2a22",
+    "#ff7a2a",
+    "#d8c8a8"
+  ],
+  "creatures": [
+    {
+      "id": "cackling_imp",
+      "name": "Cackling Imp",
+      "tier": "monster",
+      "role": "Striker; a winged pest with a pitchfork, and the archfiend's favourite snack",
+      "sheet": "infernal/cackling_imp.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Pitchfork jab",
+      "special": "Firebolt"
+    },
+    {
+      "id": "hellhound",
+      "name": "Hellhound",
+      "tier": "monster",
+      "role": "Striker; a basalt-plated hound that breathes the furnace it was born in",
+      "sheet": "infernal/hellhound.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spit"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "melt"
+        }
+      },
+      "attack": "Burning bite",
+      "special": "Brimstone breath"
+    },
+    {
+      "id": "brimstone_knight",
+      "name": "Brimstone Knight",
+      "tier": "monster",
+      "role": "Protector; a demon in black plate behind a shield of cinders",
+      "sheet": "infernal/brimstone_knight.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "crumble"
+        }
+      },
+      "attack": "Hellblade",
+      "special": "Shield of cinders"
+    },
+    {
+      "id": "ash_witch",
+      "name": "Ash Witch",
+      "tier": "monster",
+      "role": "Disruptor; a crone of cinders whose hexes rain ash over the whole party",
+      "sheet": "infernal/ash_witch.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "wail"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Hex bolt",
+      "special": "Choir of ash"
+    },
+    {
+      "id": "pit_brute",
+      "name": "Pit Brute",
+      "tier": "monster",
+      "role": "Bruiser; a horned slab of muscle with fists of cooling magma",
+      "sheet": "infernal/pit_brute.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "roar"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Molten fist",
+      "special": "Bellow"
+    },
+    {
+      "id": "soul_jailer",
+      "name": "Soul Jailer",
+      "tier": "monster",
+      "role": "Warder; swings a lantern of caged souls and binds them round its wounded allies",
+      "sheet": "infernal/soul_jailer.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "guard"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Chain lash",
+      "special": "Soul cage"
+    },
+    {
+      "id": "cinder_wretch",
+      "name": "Cinder Wretch",
+      "tier": "monster",
+      "role": "Fuse; a damned soul burning down like a wick, and it goes up on its third turn",
+      "sheet": "infernal/cinder_wretch.png",
+      "frame": {
+        "w": 64,
+        "h": 64
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 32,
+        "y": 61
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "claw"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Ash claw",
+      "special": "Immolate"
+    },
+    {
+      "id": "hellforge_smith",
+      "name": "The Hellforge Smith",
+      "tier": "boss",
+      "role": "Boss: the citadel's armourer, an anvil for a fist and slag in its veins",
+      "sheet": "infernal/hellforge_smith.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "smash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "spit"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "topple"
+        }
+      },
+      "attack": "Anvil strike",
+      "special": "Spray of slag"
+    },
+    {
+      "id": "chain_duke",
+      "name": "The Chain Duke",
+      "tier": "boss",
+      "role": "Boss: a demon noble hung with the chains of everyone it ever owned, and it still owns its servants",
+      "sheet": "infernal/chain_duke.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "slash"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "summon"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Hooked chains",
+      "special": "Lash of a thousand chains"
+    },
+    {
+      "id": "archfiend",
+      "name": "Archfiend Malgareth",
+      "tier": "boss",
+      "role": "Boss: the prince of the citadel; burning claws, a throne of wings, and servants it eats to grow stronger",
+      "sheet": "infernal/archfiend.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "claw"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "cast"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "explode"
+        }
+      },
+      "attack": "Hellfire claw",
+      "special": "Infernal judgement"
+    },
+    {
+      "id": "gluttonous_maw",
+      "name": "The Gluttonous Maw",
+      "tier": "boss",
+      "role": "Lair boss; a pit of spiked teeth that bites back at anyone who strikes it",
+      "sheet": "infernal/gluttonous_maw.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "vent"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "melt"
+        }
+      },
+      "attack": "Gnashing teeth",
+      "special": "Brimstone belch"
+    }
+  ]
+}
