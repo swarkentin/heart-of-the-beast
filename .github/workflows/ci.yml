@@ -77,15 +77,15 @@ jobs:
       - name: Check whether first-person art needs generation
         id: art
         run: |
-          git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}" --depth=1
-          changed_inputs=$(git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD | grep -c '^scripts/pixel-art/' || true)
+          generator_hash=$(find scripts/pixel-art -type f -name '*.mjs' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          recorded_hash=$(cat frontend/public/art/first-person/.generator.sha256 2>/dev/null || true)
           sprite_count=$(find frontend/public/art/first-person -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
-          if [ "$changed_inputs" -eq 0 ] && [ "$sprite_count" -eq 270 ] && [ -f docs/art/first-person-hands.png ]; then
+          if [ "$recorded_hash" = "$generator_hash" ] && [ "$sprite_count" -eq 270 ] && [ -f docs/art/first-person-hands.png ]; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo "All 270 sprites and the gallery exist; generator inputs are unchanged."
+            echo "All sprites match the current generator hash; skipping generation."
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
-            echo "Generating art (changed pixel-art inputs: $changed_inputs; existing sprites: $sprite_count)."
+            echo "Regenerating art (generator hash changed or assets incomplete; existing sprites: $sprite_count)."
           fi
       - name: Set up Node.js
         if: steps.art.outputs.needed == 'true'
@@ -100,6 +100,7 @@ jobs:
         run: |
           node scripts/pixel-art/build-interface.mjs
           node scripts/pixel-art/build-interface.mjs --gallery
+          find scripts/pixel-art -type f -name '*.mjs' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1 > frontend/public/art/first-person/.generator.sha256
       - name: Commit generated first-person assets
         if: steps.art.outputs.needed == 'true'
         run: |
