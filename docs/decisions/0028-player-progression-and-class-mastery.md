@@ -36,7 +36,7 @@ Run-only levels, stats, talents, gear, and temporary effects remain a fourth, st
 - Store the credential in browser-managed persistent storage (prefer IndexedDB or localStorage, not cookies as the progression database). It is a bearer secret and must not be exposed in URLs or logs.
 - Store profile progression in durable server persistence, not only in browser storage. Browser storage identifies the guest and can cache presentation state; it must not be the authority for reward balances or unlock eligibility.
 - Provide a user-visible export/recovery path before relying on guest profiles for substantial long-term progress. Browser data can be cleared or lost.
-- Optional account linking later attaches the existing guest profile to an authenticated account without resetting, duplicating, or losing class mastery, profile rank, cosmetics, achievements, or character/memorial records.
+- Optional account linking later attaches the existing guest profile to an authenticated account without resetting, duplicating, or losing class mastery, profile rank, cosmetics, achievements, or character/memorial records. Implemented with Discord in [ADR 0034](0034-optional-discord-sign-in.md), which links or switches profiles but never merges them.
 - Keep profile identity separate from room membership and per-run player tokens. A guest profile can join different rooms and devices only after account linking; same-browser persistence is the initial promise.
 
 ### Award integrity

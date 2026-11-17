@@ -386,3 +386,17 @@
   .px-sound-button .px-sound-text { display: none; }
   .px-sound-button { min-width: 32px; justify-content: center; }
 }
+
+/* Optional Discord sign-in (ADR 0034) */
+.px-account { display: grid; gap: 6px; padding: 8px; border: 1px solid #51466d; background: #0f0c1c; }
+.px-account p { margin: 0; color: var(--bone); font: 16px/1.3 var(--copy); }
+.px-account small { color: var(--muted); font: 14px/1.3 var(--copy); }
+.px-account-linked strong { margin-right: 6px; color: var(--gold); font: 10px/1.2 var(--display); letter-spacing: .06em; }
+.px-account-discord { justify-self: start; }
+.px-account-toast { position: fixed; z-index: 45; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(560px, calc(100% - 24px)); display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 16px/1.3 var(--copy); }
+.px-account-dialog { width: min(560px, 100%); display: grid; gap: 12px; }
+.px-account-dialog h2 { margin: 0; }
+.px-account-dialog p { margin: 0; font: 16px/1.4 var(--copy); }
+.px-account-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.px-account-compare > div { display: grid; gap: 4px; padding: 8px; border: 1px solid #51466d; background: var(--pit); }
+.px-account-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

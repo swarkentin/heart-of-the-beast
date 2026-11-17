@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
+import { AccountPanel } from "./account";
+import type { ApiLinkedAccount } from "./api";
 import { SoundButton } from "./audio";
 import { cooldownLabel, loadoutProblem, MAX_LOADOUT, skillsForClass, usableLoadout, type Skill } from "./combatAbilities";
 import { SKILL_ICON_ORDER } from "./skillIcons.gen";
@@ -10,7 +12,7 @@ import { SKILL_ICON_ORDER } from "./skillIcons.gen";
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
-export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[] };
+export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; accounts?: ApiLinkedAccount[] };
 /** A class look: armour tier (1-6) and colour variant. Both unlock with class mastery; the server validates them. */
 export type HeroSkin = { tier: number; variant: string };
 export type LobbySkinTier = { tier: number; rank: string; name: string; description: string; masteryLevel: number };
@@ -268,6 +270,7 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
   const rankXP = profile.adventurerXp % 100;
   const unlockedRewards = profile.unlockedCosmetics.slice().reverse().map(id => rewards.find(reward => reward.id === id)).filter((reward): reward is LobbyProfileReward => Boolean(reward));
   return <section className="px-profile-summary" aria-label="Adventurer progression">
+    <AccountPanel accounts={profile.accounts} />
     <form className="px-profile-name" onSubmit={saveName}><label htmlFor="profile-name">ADVENTURER NAME</label><div><input id="profile-name" value={name} maxLength={18} onChange={event => setName(event.target.value)} disabled={saving} /><button className="px-button px-button-small" type="submit" disabled={saving || !name.trim() || name.trim() === profile.displayName}>{saving ? "SAVING..." : "SAVE"}</button></div>{saveError ? <span role="alert" className="px-error">{saveError}</span> : null}</form>
     <div className="px-profile-head">
       <div><p className="px-eyebrow">YOUR ADVENTURER</p><strong className="px-profile-rank">RANK {profile.adventurerLevel}</strong></div>

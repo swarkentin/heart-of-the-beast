@@ -8,7 +8,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - Typical session target: 20–40 minutes. Dungeon levels target roughly 3–5 minutes.
 - Illustrated, high-definition pixel-art scenes with directional exploration.
 - Small parties, initially 1–4 players, with no mandatory class composition.
-- No account or third-party service required to play. Optional accounts may later support identity, achievements, and cosmetics.
+- No account or third-party service required to play. Optional Discord sign-in carries a profile across devices (ADR 0034); accounts may later support achievements and more.
 - Spectator viewing is independent of participation: people can watch a run through a shared viewing link/QR code without joining the party or creating a character.
 - Open-source and self-hostable, with Render and Neon as the initial prototype deployment.
 
@@ -113,7 +113,10 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [ ] Keep all nine launch classes available. Future class unlocks may use explicit profile milestones, achievements, quests, or class mastery, but grant content access only.
 - [x] Surface profile rank, class mastery, and earned rewards through the shared Profile menu on the title screen, party lobby, and combat screen; show each class's mastery during class selection.
 - [x] Add profile collection and recent-unlock views to the shared Profile menu.
-- [ ] Add export/recovery for guest progression and a safe guest-to-account linking path that preserves profile rank, class mastery, cosmetics, achievements, and character history.
+- [x] Add a safe guest-to-account linking path: optional Sign in with Discord links the browser's guest profile, or switches the device to the account's profile; profiles are never merged, and a device with its own progress asks first (ADR 0034).
+- [ ] Register the production Discord application with the `/auth/discord/callback` redirect and set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and `DISCORD_REDIRECT_URI` on the Render API service (ADR 0034).
+- [ ] Add sign-out for Discord-linked devices, so a shared computer can return to a fresh guest profile.
+- [ ] Add export/recovery for guest progression for players who do not sign in.
 - [ ] Keep individual character levels, generated names, lifetime records, and permadeath separate from profile rank and class mastery.
 - [ ] Add persistent guest-character creation and selection, with a memorable identity flow and lifetime record visible from the lobby.
 - [ ] Track each character's life story: dungeons entered, completed, escaped, deaths, revivals, bosses defeated, discoveries, and other notable milestones.
@@ -163,8 +166,9 @@ Progression scope, guest identity, reward integrity, and implementation sequence
 
 ## Phase 6 — Optional accounts
 
-- [ ] Guest-to-account identity linking that preserves persistent character level, name, unlocks, and achievements.
-- [ ] Cross-device synchronization of character progression and personalization.
+- [x] Guest-to-account identity linking that preserves profile rank, class mastery, and unlocks (Discord, ADR 0034). Character records will follow the profile when they exist.
+- [x] Cross-device profiles: every device signed in with the same Discord account uses the same server-side profile (ADR 0034).
+- [ ] Consider further sign-in providers (for example Google, or Sign in with Apple for a native iOS app) using the same identity model.
 - [ ] Achievements and run history, alongside the cosmetic unlock catalog introduced earlier.
 - [ ] Optional account benefits remain cosmetic and identity-focused; no pay-to-win progression.
 - [ ] Data export and deletion.

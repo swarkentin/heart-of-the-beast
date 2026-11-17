@@ -24,8 +24,10 @@ type Profile struct {
 	AdventurerLevel   int                     `json:"adventurerLevel"`
 	ClassMastery      map[string]ClassMastery `json:"classMastery"`
 	UnlockedCosmetics []string                `json:"unlockedCosmetics"`
-	CreatedAt         time.Time               `json:"createdAt"`
-	UpdatedAt         time.Time               `json:"updatedAt"`
+	// Accounts is filled in by the HTTP layer; repositories leave it empty.
+	Accounts  []LinkedAccount `json:"accounts"`
+	CreatedAt time.Time       `json:"createdAt"`
+	UpdatedAt time.Time       `json:"updatedAt"`
 }
 
 func cloneProfile(profile *Profile) (*Profile, error) {
@@ -42,6 +44,9 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 	}
 	if copy.UnlockedCosmetics == nil {
 		copy.UnlockedCosmetics = []string{}
+	}
+	if copy.Accounts == nil {
+		copy.Accounts = []LinkedAccount{}
 	}
 	return &copy, nil
 }

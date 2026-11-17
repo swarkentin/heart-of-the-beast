@@ -37,6 +37,24 @@ The service listens on port 8080 by default; set PORT to override it. GET /healt
 - At run completion or party defeat, the server awards Adventurer XP and mastery XP for the class played. A cleared encounter is required; completed expeditions receive an additional milestone award. A persistent award ledger makes each player's run award idempotent.
 - Profile state is stored in PostgreSQL. The browser retains only the opaque credential; it is not authoritative for progression values.
 
+## Optional Discord sign-in (ADR 0034)
+
+Sign-in is off unless all three variables are set:
+
+| Variable | Value |
+| --- | --- |
+| `DISCORD_CLIENT_ID` | OAuth2 client ID of your Discord application |
+| `DISCORD_CLIENT_SECRET` | Its client secret |
+| `DISCORD_REDIRECT_URI` | The game's `/auth/discord/callback` page, for example `http://localhost:5173/auth/discord/callback` locally. Register the same URI under OAuth2 → Redirects in the Discord developer portal. |
+
+`npm run dev:up` passes these through from your shell. Only the `identify` scope is requested and Discord tokens are never stored.
+
+- GET /auth/providers lists enabled providers (`{"providers":["discord"]}` or an empty list).
+- POST /auth/discord/start (profile credential in Authorization) returns the Discord authorization URL. Its `state` is single-use, expires after 10 minutes and only works from the browser that started it.
+- POST /auth/discord/complete with `{code, state}` finishes sign-in. `linked`: the Discord account was new and now owns this browser's profile (or already did). `switched`: the account already had a profile and this browser had no XP or mastery, so the response carries a new profile credential for the account's profile. `conflict`: this browser has its own progress; nothing has changed yet.
+- POST /auth/discord/resolve with `{state, choice}` settles a conflict: `abort` keeps the browser's guest profile, `use-account` switches it to the account's profile (new credential, as above). Profiles are never merged.
+- Profile responses include `accounts` (provider, username, linkedAt).
+
 Send credentials in Authorization: Bearer <token>. The initial deterministic dungeon has three encounters to exercise combat, directional transitions, and run completion. The room aggregate is persisted as JSONB with optimistic version checks, so reconnecting clients can fetch the latest snapshot after a process restart. This is an initial persistence boundary, not yet an event log or realtime subscription protocol.
 
 Example command bodies:

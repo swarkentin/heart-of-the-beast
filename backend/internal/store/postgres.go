@@ -124,10 +124,31 @@ func (p *Postgres) Save(ctx context.Context, room *game.Room, expectedVersion in
 	return nil
 }
 
+// profileIDForCredential resolves $1 (a credential hash) to a profile ID. A
+// profile's first guest credential lives on player_profiles; devices that
+// signed in to the same account have their own rows in profile_credentials.
+const profileIDForCredential = `
+	SELECT id FROM player_profiles WHERE credential_hash = $1
+	UNION ALL
+	SELECT profile_id FROM profile_credentials WHERE credential_hash = $1
+	LIMIT 1`
+
 func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash string, now time.Time) (*Profile, error) {
+	// A device that switched to a signed-in account resumes that profile.
+	var signedInProfileID string
+	err := p.db.QueryRowContext(ctx, `SELECT profile_id FROM profile_credentials WHERE credential_hash = $1`, credentialHash).Scan(&signedInProfileID)
+	if err == nil {
+		if _, err := p.db.ExecContext(ctx, `UPDATE player_profiles SET last_seen_at = $2 WHERE id = $1`, signedInProfileID, now.UTC()); err != nil {
+			return nil, err
+		}
+		return p.GetProfileByID(ctx, signedInProfileID)
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
 	var profile Profile
 	var masteryJSON, cosmeticsJSON []byte
-	err := p.db.QueryRowContext(ctx, `
+	err = p.db.QueryRowContext(ctx, `
 		INSERT INTO player_profiles (id, credential_hash, created_at, updated_at, last_seen_at)
 		VALUES ($1, $2, $3, $3, $3)
 		ON CONFLICT (credential_hash) DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at
@@ -159,7 +180,7 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 	var masteryJSON, cosmeticsJSON []byte
 	err := p.db.QueryRowContext(ctx, `
 		SELECT id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
-		FROM player_profiles WHERE credential_hash = $1
+		FROM player_profiles WHERE id = (`+profileIDForCredential+`)
 	`, credentialHash).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,
 		&masteryJSON, &cosmeticsJSON, &profile.CreatedAt, &profile.UpdatedAt,
@@ -190,7 +211,7 @@ func (p *Postgres) UpdateProfileName(ctx context.Context, credentialHash, name s
 	var masteryJSON, cosmeticsJSON []byte
 	err := p.db.QueryRowContext(ctx, `
 		UPDATE player_profiles SET display_name = $2, updated_at = $3
-		WHERE credential_hash = $1
+		WHERE id = (`+profileIDForCredential+`)
 		RETURNING id, display_name, adventurer_xp, adventurer_level, class_mastery, unlocked_cosmetics, created_at, updated_at
 	`, credentialHash, name, now.UTC()).Scan(
 		&profile.ID, &profile.DisplayName, &profile.AdventurerXP, &profile.AdventurerLevel,

@@ -27,10 +27,24 @@ type Memory struct {
 	rooms    map[string][]byte
 	profiles map[string]*Profile
 	awards   map[string]bool
+	// Optional sign-in state (ADR 0034). Extra device credentials are extra
+	// keys in profiles that point at the same *Profile.
+	identities map[string]memoryIdentity
+	signIns    map[string]SignIn
+}
+
+type memoryIdentity struct {
+	provider  string
+	profileID string
+	username  string
+	linkedAt  time.Time
 }
 
 func NewMemory() *Memory {
-	return &Memory{rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool)}
+	return &Memory{
+		rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool),
+		identities: make(map[string]memoryIdentity), signIns: make(map[string]SignIn),
+	}
 }
 
 func cloneRoom(room *game.Room) (*game.Room, error) {

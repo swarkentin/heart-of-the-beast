@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
+import { AccountContext, adoptCredential, completeDiscordSignIn, resolveDiscordSignIn, SignInConflictDialog, startDiscordSignIn, takeDiscordCallback, type SignInConflict, type SignInResult } from "./account";
+import { apiRequest, PROFILE_CREDENTIAL_KEY, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -8,7 +9,9 @@ import { RunScreen } from "./run/RunScreen";
 // Session, polling and commands. The screens themselves live in lobby.tsx and run/.
 
 const SESSION_KEY = "heart-of-the-beast.player-session";
-const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
+// Read once at load: Discord returns here after sign-in (ADR 0034).
+const DISCORD_CALLBACK = takeDiscordCallback();
+let discordCallbackStarted = false;
 
 function createProfileCredential(): string {
   const bytes = new Uint8Array(32);
@@ -44,8 +47,63 @@ export default function App() {
   const [chosenTheme, setChosenTheme] = useState("random");
   useEffect(() => { void apiRequest<{ themes: ApiTheme[] }>("/themes").then(result => setThemes(result.themes ?? [])).catch(() => undefined); }, []);
   const [profile, setProfile] = useState<ApiProfile | null>(null);
+  const [discordEnabled, setDiscordEnabled] = useState(false);
+  const [accountNotice, setAccountNotice] = useState(DISCORD_CALLBACK && "error" in DISCORD_CALLBACK ? DISCORD_CALLBACK.error : "");
+  const [signInConflict, setSignInConflict] = useState<SignInConflict | null>(null);
+  const [conflictBusy, setConflictBusy] = useState(false);
+  const [conflictError, setConflictError] = useState("");
+  useEffect(() => { void apiRequest<{ providers: string[] }>("/auth/providers").then(result => setDiscordEnabled((result.providers ?? []).includes("discord"))).catch(() => undefined); }, []);
+
+  function reloadProfile() {
+    const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+    if (!credential) return;
+    void apiRequest<ApiProfile>("/profile", credential, { method: "POST" }).then(setProfile).catch(() => { /* A later visit can retry loading the profile. */ });
+  }
+
+  function applySignIn(result: SignInResult) {
+    if (result.status === "linked") {
+      setProfile(result.profile);
+      setAccountNotice("Signed in with Discord. This profile now follows you to any device you sign in on.");
+    } else if (result.status === "switched") {
+      adoptCredential(result.credential);
+      setProfile(result.profile);
+      setAccountNotice("Signed in with Discord. This device now uses your Discord profile.");
+    } else if (result.status === "conflict") {
+      setConflictError("");
+      setSignInConflict(result);
+      reloadProfile();
+    } else {
+      setAccountNotice("Kept this device's progress. Your Discord account was not used.");
+      reloadProfile();
+    }
+  }
+
+  async function chooseSignIn(choice: "abort" | "use-account") {
+    if (!signInConflict) return;
+    setConflictBusy(true); setConflictError("");
+    try {
+      const result = await resolveDiscordSignIn(signInConflict.state, choice);
+      setSignInConflict(null);
+      applySignIn(result);
+    } catch (err) {
+      // Keeping this device's progress never needs the server, so it always closes the dialog.
+      if (choice === "abort") setSignInConflict(null);
+      else setConflictError(err instanceof Error ? err.message : "Could not use the Discord profile");
+    } finally { setConflictBusy(false); }
+  }
 
   useEffect(() => {
+    if (!DISCORD_CALLBACK || !("code" in DISCORD_CALLBACK)) return;
+    if (discordCallbackStarted) return;
+    discordCallbackStarted = true;
+    void completeDiscordSignIn(DISCORD_CALLBACK.code, DISCORD_CALLBACK.state)
+      .then(applySignIn)
+      .catch(err => { setAccountNotice(err instanceof Error ? err.message : "Discord sign-in failed"); reloadProfile(); });
+  }, []);
+
+  useEffect(() => {
+    // Returning from Discord: the sign-in effect above loads the right profile.
+    if (DISCORD_CALLBACK && "code" in DISCORD_CALLBACK) return;
     let active = true;
     try {
       let credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
@@ -73,7 +131,12 @@ export default function App() {
   const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
   const audioControls = <AudioControls settings={audio.settings} running={audio.running} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
   const sound = { settings: audio.settings, running: audio.running, toggle: audio.toggle };
-  const withSound = (screen: ReactElement) => <SoundContext.Provider value={sound}>{screen}</SoundContext.Provider>;
+  const accountState = { discordEnabled, canSignIn: !session && !spectator, startDiscord: startDiscordSignIn };
+  const withSound = (screen: ReactElement) => <SoundContext.Provider value={sound}><AccountContext.Provider value={accountState}>
+    {screen}
+    {accountNotice ? <div className="px-panel px-account-toast" role="status"><span>{accountNotice}</span><button type="button" className="px-button px-button-small" onClick={() => setAccountNotice("")}>OK</button></div> : null}
+    {signInConflict ? <SignInConflictDialog conflict={signInConflict} busy={conflictBusy} error={conflictError} onChoose={choice => void chooseSignIn(choice)} /> : null}
+  </AccountContext.Provider></SoundContext.Provider>;
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
