@@ -60,10 +60,46 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  generate-first-person-art:
+    name: Generate and commit first-person pixel art
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: lockfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Generate interface sprites and gallery
+        run: |
+          node scripts/pixel-art/build-interface.mjs
+          node scripts/pixel-art/build-interface.mjs --gallery
+      - name: Commit generated first-person assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/public/art/first-person docs/art/first-person-hands.png
+          if git diff --cached --quiet; then
+            echo "First-person pixel art is already up to date."
+          else
+            git commit -m "art: add generated first-person hand sprites"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          fi
+
   frontend:
     name: Frontend workspace checks
-    needs: lockfile
-    if: always() && (github.event_name == 'push' || needs.lockfile.result == 'success')
+    needs: [lockfile, generate-first-person-art]
+    if: always() && (github.event_name == 'push' || (needs.lockfile.result == 'success' && (needs.generate-first-person-art.result == 'success' || needs.generate-first-person-art.result == 'skipped')))
     runs-on: ubuntu-latest
     permissions:
       contents: read

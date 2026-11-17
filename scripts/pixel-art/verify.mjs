@@ -14,7 +14,7 @@ import { encodePNG } from "./engine.mjs";
 import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
 import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
-import { renderInterface, renderHero, skillIconsModule, SKILL_ICONS_TS_PATH, uiThemesModule, UI_THEMES_TS_PATH } from "./build-interface.mjs";
+import { renderInterface, renderHero, renderFirstPerson, skillIconsModule, SKILL_ICONS_TS_PATH, uiThemesModule, UI_THEMES_TS_PATH } from "./build-interface.mjs";
 import { heroes, TIERS, VARIANTS } from "./heroes.mjs";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art/monsters");
@@ -100,6 +100,14 @@ for (const [h, tier, variant] of heroSkins) {
     else if (!differs(frames.idle[0], frames[row][0])) fail(`[heroes] ${id}: ${row} is identical to idle`);
     else if (row !== "hurt" && frames[row].some((img) => touchesEdge(img))) fail(`[heroes] ${id}: ${row} touches the frame edge (clipped)`);
   }
+}
+// First-person arms use the same hero palette and skin pipeline; all variants must render distinctly.
+for (const h of heroes) for (const tier of TIERS) {
+  const base = renderFirstPerson(h, tier, "heraldic");
+  if (opaque(base) === 0) fail(`[first-person] ${h.id} t${tier}: empty sprite`);
+  if (base.w !== 128 || base.h !== 64) fail(`[first-person] ${h.id} t${tier}: expected 128x64 frame`);
+  if (tier > 1 && !differs(renderFirstPerson(h, tier - 1, "heraldic"), base)) fail(`[first-person] ${h.id}: tier ${tier} looks identical to tier ${tier - 1}`);
+  for (const v of VARIANTS.slice(1)) if (!differs(base, renderFirstPerson(h, tier, v.id))) fail(`[first-person] ${h.id} t${tier} ${v.id}: dye looks identical to heraldic`);
 }
 // Every tier must look different from the one before it, and every variant from the class colours.
 for (const h of heroes) for (const tier of TIERS) {
