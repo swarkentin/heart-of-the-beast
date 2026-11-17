@@ -5,7 +5,7 @@ import "testing"
 func TestResolveExperienceGainPreservesProgressionRules(t *testing.T) {
 	player := PlayerState{Experience: 54, Level: 1, MaxHealth: 30, Stats: PlayerStats{Power: 1}}
 	result := resolveExperienceGain(player, EncounterExperienceReward)
-	if result.Experience != 72 || result.Level != 2 || result.TalentPoints != 1 {
+	if result.Experience != 72 || result.Level != 2 {
 		t.Fatalf("unexpected first level transition: %+v", result)
 	}
 	if result.MaxHealth != 34 || result.Stats.Power != 2 || len(result.LevelUps) != 1 || result.LevelUps[0] != 2 {
@@ -19,7 +19,7 @@ func TestResolveExperienceGainPreservesProgressionRules(t *testing.T) {
 func TestResolveExperienceGainCanCrossMultipleLevelsInOrder(t *testing.T) {
 	player := PlayerState{Experience: 59, Level: 1, MaxHealth: 30, Stats: PlayerStats{Power: 1}}
 	result := resolveExperienceGain(player, 400)
-	if result.Experience != 459 || result.Level != 5 || result.TalentPoints != 4 {
+	if result.Experience != 459 || result.Level != 5 {
 		t.Fatalf("unexpected multi-level transition: %+v", result)
 	}
 	want := []int{2, 3, 4, 5}
@@ -37,14 +37,14 @@ func TestResolveExperienceGainCanCrossMultipleLevelsInOrder(t *testing.T) {
 }
 
 func TestResolveExperienceGainAtLevelCapAndForNonPositiveRewards(t *testing.T) {
-	player := PlayerState{Experience: 500, Level: 5, TalentPoints: 4, MaxHealth: 38, Stats: PlayerStats{Power: 3, Focus: 3, Agility: 1}}
+	player := PlayerState{Experience: 500, Level: 5, MaxHealth: 38, Stats: PlayerStats{Power: 3, Focus: 3, Agility: 1}}
 	for _, amount := range []int{0, -10, 25} {
 		result := resolveExperienceGain(player, amount)
 		wantExperience := player.Experience
 		if amount > 0 {
 			wantExperience += amount
 		}
-		if result.Experience != wantExperience || result.Level != 5 || result.TalentPoints != 4 || len(result.LevelUps) != 0 {
+		if result.Experience != wantExperience || result.Level != 5 || len(result.LevelUps) != 0 {
 			t.Fatalf("unexpected level-cap/non-positive result for %d XP: %+v", amount, result)
 		}
 		if result.MaxHealth != player.MaxHealth || result.Stats != player.Stats {

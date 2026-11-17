@@ -58,7 +58,7 @@ func TestRoomLifecycleAndReadOnlySpectator(t *testing.T) {
 		t.Fatalf("spectate: %d %s", spectateResponse.Code, spectateResponse.Body.String())
 	}
 
-	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"attack","targetId":"sentinel"}`))
+	invalid := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/commands", bytes.NewBufferString(`{"type":"combat","round":1,"action":"skill","skill":"skill.strike","targetId":"sentinel"}`))
 	invalid.Header.Set("Authorization", "Bearer "+created.SpectatorToken)
 	invalidResponse := httptest.NewRecorder()
 	handler.ServeHTTP(invalidResponse, invalid)
@@ -500,6 +500,6 @@ func attackEntryEnemy(t *testing.T, startBody []byte, round int) string {
 			break
 		}
 	}
-	body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "attack", "targetId": target})
+	body, _ := json.Marshal(map[string]any{"type": "combat", "round": round, "action": "skill", "skill": "skill.strike", "targetId": target})
 	return string(body)
 }

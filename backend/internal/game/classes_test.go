@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -23,27 +24,26 @@ func TestClassCatalogIsValidAndContainsNineInitialClasses(t *testing.T) {
 func TestValidateClassCatalogRejectsDuplicateIDsAndBrokenReferences(t *testing.T) {
 	archetypes := ArchetypeCatalog()
 	classes := ClassCatalog()
-	abilities := ClassAbilityCatalog()
 	passives := ClassPassiveCatalog()
 	equipment := EquipmentCatalog()
 	availability := ClassAvailabilityCatalog()
 
 	duplicate := append([]ClassDefinition(nil), classes...)
 	duplicate = append(duplicate, classes[0])
-	if err := ValidateClassCatalog(archetypes, duplicate, abilities, passives, equipment, availability); err == nil {
+	if err := ValidateClassCatalog(archetypes, duplicate, passives, equipment, availability); err == nil {
 		t.Fatal("expected duplicate class ID to fail validation")
 	}
 
 	broken := append([]ClassDefinition(nil), classes...)
-	broken[0].SignatureAbilityID = "missing.ability"
-	if err := ValidateClassCatalog(archetypes, broken, abilities, passives, equipment, availability); err == nil {
-		t.Fatal("expected missing ability reference to fail validation")
+	broken[0].PassiveID = "missing.passive"
+	if err := ValidateClassCatalog(archetypes, broken, passives, equipment, availability); err == nil {
+		t.Fatal("expected missing passive reference to fail validation")
 	}
 
 	locked := ClassAvailabilityCatalog()
 	locked[0].InitiallyAvailable = false
 	locked[0].UnlockPolicyID = "unlock.test"
-	if err := ValidateClassCatalog(archetypes, classes, abilities, passives, equipment, locked); err != nil {
+	if err := ValidateClassCatalog(archetypes, classes, passives, equipment, locked); err != nil {
 		t.Fatalf("locked class with policy should validate: %v", err)
 	}
 }
@@ -119,23 +119,26 @@ func TestStartRunSnapshotsSelectedClassBuild(t *testing.T) {
 	}
 }
 
-func TestClassAbilityOperationCatalogCoversEverySignatureAbility(t *testing.T) {
-	if err := validateClassAbilityOperationCatalog(classAbilities, defaultClassAbilityOperationCatalog); err != nil {
-		t.Fatalf("validate ability operations: %v", err)
+func TestStartRunGivesEachAdventurerTheirChosenSkills(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	room := &Room{
+		PlayerIDs:        []string{"player-1", "player-2"},
+		PlayerClasses:    map[string]string{"player-1": ClassCleric, "player-2": ClassRanger},
+		PlayerArchetypes: map[string]string{"player-1": "support", "player-2": "damage"},
+		Presence:         map[string]PlayerPresence{"player-1": {LastSeenAt: now}, "player-2": {LastSeenAt: now}},
 	}
-	broken := append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
-	broken[0].Operations = nil
-	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
-		t.Fatal("expected empty operation list to fail validation")
+	SetPlayerMastery(room, "player-1", 3)
+	chosen := []string{"cleric.smite", "cleric.rejuvenate", SkillDefend}
+	if err := SetPlayerLoadout(room, "player-1", chosen); err != nil {
+		t.Fatalf("set loadout: %v", err)
 	}
-	broken = append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
-	broken[0].TargetPolicy = "arbitrary"
-	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
-		t.Fatal("expected invalid target policy to fail validation")
+	if err := StartRun(room, "run-1", now); err != nil {
+		t.Fatalf("start run: %v", err)
 	}
-	broken = append([]ClassAbilityOperationDefinition(nil), defaultClassAbilityOperationCatalog...)
-	broken[4].Operations = append(broken[4].Operations, ClassAbilityOperation{Kind: ClassAbilityOpModeChoice, Mode: "lightning"})
-	if err := validateClassAbilityOperationCatalog(classAbilities, broken); err == nil {
-		t.Fatal("expected unsupported mode operation to fail validation")
+	if got := room.Run.Players["player-1"].Skills; strings.Join(got, ",") != strings.Join(chosen, ",") {
+		t.Fatalf("cleric skills = %v, want %v", got, chosen)
+	}
+	if got := room.Run.Players["player-2"].Skills; strings.Join(got, ",") != strings.Join(DefaultLoadout(ClassRanger, 1), ",") {
+		t.Fatalf("ranger without a chosen bar should get the default one, got %v", got)
 	}
 }

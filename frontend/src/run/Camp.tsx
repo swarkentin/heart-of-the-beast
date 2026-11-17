@@ -78,7 +78,7 @@ function Game({ game, selfId, acting, busy, send }: { game: ApiMinigame; selfId:
   </>;
 }
 
-export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onCommand }: { camp: ApiCamp; run: ApiRun; selfId: string; acting: boolean; spectator: boolean; busy: boolean; timer: ReactNode; onCommand: Send }) {
+export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onCommand, onChangeSkills }: { camp: ApiCamp; run: ApiRun; selfId: string; acting: boolean; spectator: boolean; busy: boolean; timer: ReactNode; onCommand: Send; onChangeSkills?: () => void }) {
   const player = selfId ? run.players[selfId] : undefined;
   const gold = player?.gold ?? 0;
   const bought = camp.purchases?.[selfId] ?? [];
@@ -118,6 +118,7 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
           <span><strong>{item.name}</strong><small>{item.description}</small></span><em>{soldOut ? "BOUGHT" : item.price + " GOLD"}</em>
         </button>;
       })}</div> : <p className="px-label">{spectator ? "THE PARTY IS SHOPPING" : player && player.health <= 0 ? "YOU ARE DOWN · AN ALLY CAN BUY A REVIVAL DRAUGHT" : "THE PARTY IS SHOPPING"}</p>}
+      {onChangeSkills ? <div className="rn-choices"><button className="px-button" onClick={onChangeSkills} disabled={busy || ready}>CHANGE SKILLS FOR THE NEXT DUNGEON</button></div> : null}
       {acting ? <div className="rn-choices"><button className="px-button px-button-primary" onClick={() => void onCommand({ type: "ready" })} disabled={busy || ready}>{ready ? "READY · WAITING FOR THE PARTY" : chosen ? "ENTER " + chosen.name.toUpperCase() : last ? "DESCEND TO THE LAST FLOOR" : "DESCEND TO FLOOR " + camp.nextDepth}</button></div> : null}
     </>}
   </div>;

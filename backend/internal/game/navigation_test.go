@@ -18,7 +18,7 @@ func coopExploringRoom(t *testing.T, playerIDs ...string) (*Room, time.Time) {
 	for index, playerID := range playerIDs {
 		action := Command{Type: "combat", Round: 1, Action: "defend"}
 		if index < 2 {
-			action = Command{Type: "combat", Round: 1, Action: "attack", TargetID: "sentinel"}
+			action = Command{Type: "combat", Round: 1, Action: "skill", Skill: SkillStrike, TargetID: "sentinel"}
 		}
 		if err := ApplyCommand(room, playerID, action, now); err != nil {
 			t.Fatal(err)

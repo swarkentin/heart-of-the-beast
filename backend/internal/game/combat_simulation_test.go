@@ -1,6 +1,7 @@
 package game
 
 import (
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -97,25 +98,18 @@ func TestSummarizeCombatBatchUsesNearestRankDistributions(t *testing.T) {
 	}
 }
 
-func TestSimulateCombatAppliesTalentAndPassiveAttackBonuses(t *testing.T) {
+func TestSimulateCombatAppliesPassiveAttackBonuses(t *testing.T) {
 	base := simulationFixture(t)
 	base.Enemies[0].Health = 100
 	base.Enemies[0].MaxHealth = 100
-
-	talentBuild := base
-	talentBuild.Players = append([]PlayerState(nil), base.Players...)
-	talentBuild.Players[0].Talents = []string{"damage-heavy-hands"}
 
 	passiveBuild := base
 	passiveBuild.Players = append([]PlayerState(nil), base.Players...)
 	passiveBuild.Players[0].Health = 10
 	passiveBuild.Players[0].ClassBuild = &ClassBuildSnapshot{PassiveID: "passive.bloodied-strength"}
+	passiveBuild.Players[0].Skills = []string{SkillStrike, SkillDefend}
 
 	baseReport, err := SimulateCombat(base, 7, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	talentReport, err := SimulateCombat(talentBuild, 7, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,16 +117,12 @@ func TestSimulateCombatAppliesTalentAndPassiveAttackBonuses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if got := talentReport.PlayerDamageDealt - baseReport.PlayerDamageDealt; got != 3 {
-		t.Fatalf("damage-heavy-hands should add 3 attack damage, got delta %d", got)
-	}
 	if got := passiveReport.PlayerDamageDealt - baseReport.PlayerDamageDealt; got != 3 {
-		t.Fatalf("bloodied-strength should add 3 attack damage below half health, got delta %d", got)
+		t.Fatalf("bloodied-strength should add 3 damage below half health, got delta %d", got)
 	}
 }
 
-func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
+func TestSimulateCombatAppliesPassiveMitigation(t *testing.T) {
 	base := simulationFixture(t)
 	base.Players[0].Health = 30
 	base.Players[0].MaxHealth = 30
@@ -146,6 +136,7 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	passiveBuild.Players = append([]PlayerState(nil), base.Players...)
 	passiveBuild.Enemies = append([]Enemy(nil), base.Enemies...)
 	passiveBuild.Players[0].ClassBuild = &ClassBuildSnapshot{PassiveID: "passive.arcane-resistance"}
+	passiveBuild.Players[0].Skills = []string{SkillStrike, SkillDefend}
 
 	baseReport, err := SimulateCombat(base, 11, 1)
 	if err != nil {
@@ -155,83 +146,109 @@ func TestSimulateCombatAppliesTalentAndPassiveMitigation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if passiveReport.PlayerDamageReceived >= baseReport.PlayerDamageReceived {
 		t.Fatalf("arcane resistance should reduce soul-drain damage: base=%d passive=%d", baseReport.PlayerDamageReceived, passiveReport.PlayerDamageReceived)
 	}
 }
 
-func TestSimulationClassAbilityPolicyCoversEverySignatureEffect(t *testing.T) {
-	tests := []struct {
-		name       string
-		effectID   string
-		mode       string
-		configure  func(*PlayerState, map[string]*PlayerState, []Enemy)
-		wantTarget string
-	}{
-		{name: "guard", effectID: "combat.guard", configure: func(p *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 10, TargetPlayerID: p.ID}
-		}},
-		{name: "counter", effectID: "combat.counter", configure: func(p *PlayerState, _ map[string]*PlayerState, _ []Enemy) {
-			p.ClassCombat.DamageTakenLastRound = 4
-		}, wantTarget: "enemy"},
-		{name: "ward", effectID: "combat.ward", configure: func(p *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 10, TargetPlayerID: p.ID}
-		}},
-		{name: "precision", effectID: "combat.precision", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 4}
-		}, wantTarget: "enemy"},
-		{name: "elemental", effectID: "combat.elemental", mode: "frost", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 8, Interruptible: true}
-		}, wantTarget: "enemy"},
-		{name: "disrupt", effectID: "combat.disrupt", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 4}
-		}, wantTarget: "enemy"},
-		{name: "heal", effectID: "combat.heal", configure: func(p *PlayerState, _ map[string]*PlayerState, _ []Enemy) {
-			p.Health = 20
-		}, wantTarget: "hero"},
-		{name: "command", effectID: "combat.command", configure: func(_ *PlayerState, _ map[string]*PlayerState, _ []Enemy) {}, wantTarget: "enemy"},
-		{name: "companion", effectID: "combat.companion", mode: "disrupt", configure: func(_ *PlayerState, _ map[string]*PlayerState, enemies []Enemy) {
-			enemies[0].Intent = &EnemyIntent{Damage: 8, Interruptible: true}
-		}, wantTarget: "enemy"},
+// policyRoom is a one-encounter room for checking what the skill policy chooses.
+func policyRoom(players map[string]*PlayerState, enemies []Enemy) *Room {
+	ids := sortedPlayerIDs(players)
+	room := &Room{
+		ID: simulationRoomID, PlayerIDs: ids, Presence: map[string]PlayerPresence{},
+		Run: &Run{
+			ID: simulationRoomID, Phase: PhaseCombat, CurrentRoomID: simulationRoomID, Players: players, Flags: map[string]bool{},
+			CombatRound: &CombatRound{Number: 1, Actions: map[string]Command{}},
+			Rooms: map[string]*DungeonRoom{simulationRoomID: {ID: simulationRoomID, RoomType: "combat", Encounter: &Encounter{
+				Status: EncounterActive, Enemies: enemies,
+			}}},
+		},
 	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			player := &PlayerState{ID: "hero", Health: 30, MaxHealth: 30, Stats: PlayerStats{Focus: 2}}
-			players := map[string]*PlayerState{"hero": player, "ally": {ID: "ally", Health: 30, MaxHealth: 30}}
-			enemies := []Enemy{{ID: "enemy", Health: 20, MaxHealth: 20}}
-			player.ClassBuild = &ClassBuildSnapshot{SignatureAbilityID: signatureAbilityIDForEffect(test.effectID)}
-			test.configure(player, players, enemies)
-			command, ok := simulationClassAbilityCommand(player, players, enemies, 0, "hero")
-			if !ok {
-				t.Fatal("expected policy to select signature ability")
-			}
-			if command.Action != "ability" {
-				t.Fatalf("got action %q", command.Action)
-			}
-			if test.mode != "" && command.Mode != test.mode {
-				t.Fatalf("got mode %q, want %q", command.Mode, test.mode)
-			}
-			if test.wantTarget != "" && command.TargetID != test.wantTarget {
-				t.Fatalf("got target %q, want %q", command.TargetID, test.wantTarget)
-			}
-		})
-	}
+	return room
 }
 
-func signatureAbilityIDForEffect(effectID string) string {
-	for _, ability := range classAbilities {
-		if ability.EffectID == effectID {
-			return ability.ID
+func classPlayer(t *testing.T, id, classID string, mastery int) *PlayerState {
+	t.Helper()
+	definition, ok := findClass(classID)
+	if !ok {
+		t.Fatalf("unknown class %q", classID)
+	}
+	player := newPlayerStateForClass(id, definition)
+	player.Skills = SkillIDsUpTo(classID, mastery)
+	return player
+}
+
+// SkillIDsUpTo is every skill of a class unlocked at a mastery level, truncated to a bar.
+func SkillIDsUpTo(classID string, mastery int) []string {
+	var ids []string
+	for _, definition := range SkillsForClass(classID) {
+		if definition.MasteryLevel <= mastery && len(ids) < MaxLoadoutSkills {
+			ids = append(ids, definition.ID)
 		}
 	}
-	return ""
+	return ids
 }
 
-func TestSimulateCombatExecutesSignatureAbilityAndReportsUse(t *testing.T) {
+func TestSkillPolicyInterruptsHealsAndProtects(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+
+	ranger := classPlayer(t, "hero", ClassRanger, 1)
+	enemies := []Enemy{{ID: "foe", Name: "Foe", Health: 20, MaxHealth: 20, Behavior: "skeleton", Intent: &EnemyIntent{Damage: 8, Interruptible: true, Label: "Big Swing", TargetPlayerID: "hero"}}}
+	command := skillPolicyCommand(policyRoom(map[string]*PlayerState{"hero": ranger}, enemies), "hero", 1, rng)
+	if command.Skill != "ranger.pinning-shot" || command.TargetID != "foe" {
+		t.Fatalf("ranger should interrupt the telegraph, chose %+v", command)
+	}
+
+	cleric := classPlayer(t, "cleric", ClassCleric, 1)
+	ally := classPlayer(t, "ally", ClassBulwark, 1)
+	ally.Health = 8
+	enemies = []Enemy{{ID: "foe", Name: "Foe", Health: 20, MaxHealth: 20, Behavior: "skeleton", Intent: &EnemyIntent{Damage: 3, TargetPlayerID: "cleric"}}}
+	command = skillPolicyCommand(policyRoom(map[string]*PlayerState{"cleric": cleric, "ally": ally}, enemies), "cleric", 1, rng)
+	if command.Skill != "cleric.renewal" || command.TargetID != "ally" {
+		t.Fatalf("cleric should heal the wounded ally, chose %+v", command)
+	}
+
+	bulwark := classPlayer(t, "tank", ClassBulwark, 1)
+	bulwark.Health = 6
+	enemies = []Enemy{{ID: "foe", Name: "Foe", Health: 40, MaxHealth: 40, Behavior: "skeleton", Intent: &EnemyIntent{Damage: 9, TargetPlayerID: "tank"}}}
+	command = skillPolicyCommand(policyRoom(map[string]*PlayerState{"tank": bulwark}, enemies), "tank", 1, rng)
+	if command.Skill != "bulwark.shield-wall" {
+		t.Fatalf("bulwark facing a killing blow should raise Shield Wall, chose %+v", command)
+	}
+}
+
+func TestSkillPolicyCommandsAreAlwaysValidForEveryClassAndRank(t *testing.T) {
+	rng := rand.New(rand.NewSource(3))
+	for _, class := range ClassCatalog() {
+		for _, mastery := range []int{1, 5, 15} {
+			hero := classPlayer(t, "hero", class.ID, mastery)
+			ally := classPlayer(t, "ally", ClassCleric, 1)
+			ally.Health = 0
+			enemies := []Enemy{
+				{ID: "a", Name: "A", Health: 9, MaxHealth: 20, Behavior: "skeleton", Intent: &EnemyIntent{Damage: 6, Interruptible: true, TargetPlayerID: "hero"}},
+				{ID: "b", Name: "B", Health: 20, MaxHealth: 20, Behavior: "skeleton"},
+			}
+			room := policyRoom(map[string]*PlayerState{"hero": hero, "ally": ally}, enemies)
+			for round := 0; round < 6; round++ {
+				command := skillPolicyCommand(room, "hero", 1, rng)
+				if command.Action == "skill" {
+					if err := validateSkillCommand(room, hero, room.Run.Rooms[simulationRoomID].Encounter, command); err != nil {
+						t.Fatalf("%s rank %d: policy chose invalid %+v: %v", class.ID, mastery, command, err)
+					}
+					definition, _ := findSkill(command.Skill)
+					if definition.Cooldown > 0 {
+						hero.ClassCombat.Cooldowns = map[string]int{command.Skill: definition.Cooldown + 1}
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestSimulateCombatExecutesClassSkillsAndReportsUse(t *testing.T) {
 	snapshot := simulationFixture(t)
-	snapshot.Players[0].ClassBuild = &ClassBuildSnapshot{SignatureAbilityID: "ability.elemental-surge"}
+	snapshot.Players[0].ClassBuild = &ClassBuildSnapshot{ClassID: ClassArcanist, PassiveID: "passive.arcane-focus"}
+	snapshot.Players[0].Skills = DefaultLoadout(ClassArcanist, 1)
 	snapshot.Enemies[0].Health = 100
 	snapshot.Enemies[0].MaxHealth = 100
 
@@ -239,11 +256,11 @@ func TestSimulateCombatExecutesSignatureAbilityAndReportsUse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.AbilityUses["combat.elemental"] != 1 {
-		t.Fatalf("expected elemental surge to be used once, got %#v", report.AbilityUses)
+	if report.AbilityUses["arcanist.fireball"] != 1 {
+		t.Fatalf("expected Fireball to be cast once, got %#v", report.AbilityUses)
 	}
 	if report.PlayerDamageDealt <= 0 {
-		t.Fatalf("expected signature ability to deal damage, got %#v", report)
+		t.Fatalf("expected Fireball to deal damage, got %#v", report)
 	}
 }
 

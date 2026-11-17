@@ -9,13 +9,13 @@ func TestResolveAttackDamage(t *testing.T) {
 		want  AttackDamageTransition
 	}{
 		{
-			name: "combines base bonuses marked damage resolve telegraph and room strike",
+			name: "combines base bonuses marked damage resolve and room strike",
 			input: AttackDamageInput{
 				BaseDamage: 8, BonusDamage: 2, MarkedDamage: 3, IncludeMarkedDamage: true,
 				ConsumeMarkedDamage: true, ResolveReady: true, UseResolve: true,
-				ResolveBonus: 3, Telegraph: true, TelegraphBonus: 2, StrikeBonus: 1,
+				ResolveBonus: 3, StrikeBonus: 1,
 			},
-			want: AttackDamageTransition{Damage: 19, RemainingMarkedDamage: 0, ResolveReady: false},
+			want: AttackDamageTransition{Damage: 17, RemainingMarkedDamage: 0, ResolveReady: false},
 		},
 		{
 			name:  "ordinary attack preserves resolve when it is not enabled",
@@ -52,12 +52,6 @@ func TestResolveAttackDamage(t *testing.T) {
 	}
 }
 
-func TestResolveInterruptDamage(t *testing.T) {
-	if got := resolveInterruptDamage(4, 2, 3); got != 9 {
-		t.Fatalf("resolveInterruptDamage = %d, want 9", got)
-	}
-}
-
 func TestResolveIncomingDamage(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -65,9 +59,9 @@ func TestResolveIncomingDamage(t *testing.T) {
 		want  IncomingDamageTransition
 	}{
 		{
-			name: "talent and passive reductions apply before ward, without treating agility as armor",
+			name: "passive reductions apply before ward, without treating agility as armor",
 			input: IncomingDamageInput{
-				IntentDamage: 12, TalentReduction: 1, PassiveReduction: 1, Ward: 3, WardReflect: 2,
+				IntentDamage: 12, PassiveReduction: 2, Ward: 3, WardReflect: 2,
 			},
 			want: IncomingDamageTransition{Damage: 7, Blocked: 5, WardAbsorbed: 3, WardRemaining: 0, WardReflect: 2},
 		},
@@ -75,7 +69,7 @@ func TestResolveIncomingDamage(t *testing.T) {
 			name: "ward absorbs before guard and guard consumes one hit",
 			input: IncomingDamageInput{
 				IntentDamage: 10, Ward: 3, WardReflect: 2, Guarding: true,
-				GuardReduction: 4, GuardBonus: 1, TalentGuardReduction: 1, PartyGuardReduction: 1,
+				GuardReduction: 4, GuardBonus: 2, PartyGuardReduction: 1,
 			},
 			want: IncomingDamageTransition{
 				Damage: 0, Blocked: 10, WardAbsorbed: 3, WardRemaining: 0, WardReflect: 2,

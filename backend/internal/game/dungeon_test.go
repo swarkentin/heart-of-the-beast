@@ -127,7 +127,7 @@ func TestFloorBossesOpenIntermissionUntilFinalDepth(t *testing.T) {
 	run.Phase = PhaseCombat
 	run.Rooms["warden"].Encounter.Enemies[0].Health = 1
 	startCombatRound(room, now)
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: "warden"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: "warden"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if run.Phase != PhaseIntermission || !run.PendingInterFloorChoice || run.CompletedAt != nil {
@@ -145,7 +145,7 @@ func TestFloorBossesOpenIntermissionUntilFinalDepth(t *testing.T) {
 	run.PendingInterFloorChoice = false
 	run.InterFloorVote = nil
 	startCombatRound(room, now)
-	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "attack", TargetID: "d3-warden"}, now); err != nil {
+	if err := ApplyCommand(room, "player-1", Command{Type: "combat", Round: run.CombatRound.Number, Action: "skill", Skill: SkillStrike, TargetID: "d3-warden"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if run.Phase != PhaseCompleted || run.CompletedAt == nil {

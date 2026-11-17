@@ -136,7 +136,7 @@ func TestPostgresPlayerPresenceLifecycle(t *testing.T) {
 	if _, exists := readPresence(spectated)[guest.PlayerID]; !exists {
 		t.Fatal("spectator snapshot should include party presence")
 	}
-	command := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.SpectatorToken, []byte(`{"type":"combat","action":"attack","targetId":"sentinel"}`))
+	command := request(http.MethodPost, "/rooms/"+host.Room.ID+"/commands", host.SpectatorToken, []byte(`{"type":"combat","action":"skill","skill":"skill.strike","targetId":"sentinel"}`))
 	if command.Code != http.StatusUnauthorized {
 		t.Fatalf("spectator command should be rejected, got %d", command.Code)
 	}

@@ -7,8 +7,10 @@ export const NO_FX: CardFx = { hurt: 0, heal: 0, pops: [] };
 const ACCENTS: Record<string, string> = { bulwark: "#8fe6c4", juggernaut: "#ff9a4d", spellguard: "#8fd6ff", assassin: "#ff8fc0", arcanist: "#c9a4ff", ranger: "#b6e87a", cleric: "#ffe08a", tactician: "#8ee0dc", beastcaller: "#a6e88f" };
 
 /** One party member on the border of the screen: portrait, health, statuses, incoming threats and round state. */
-export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean }; onAid?: (id: string) => void; kit?: { name: string; description: string }[]; displayName?: string }) {
+export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean; fallen?: boolean }; onAid?: (id: string) => void; kit?: { name: string; description: string }[]; displayName?: string }) {
   const ratio = Math.max(0, Math.min(1, member.health / member.maxHealth));
+  // An ally skill picks a living portrait; a revive picks a fallen one.
+  const canAid = Boolean(aid && (aid.fallen ? !member.alive && !member.isSelf : member.alive));
   const who = (member.isSelf ? "You, " : "Player " + member.position + ", ") + member.className;
   const body = <>
     <span className="rn-card-head"><b>P{member.position}</b><strong title={member.className}>{displayName || member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
@@ -31,11 +33,11 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     {member.statuses.length > 0 ? <span className="rn-statuses">{member.statuses.map(status => <span key={status.id} className={"rn-status rn-status-" + status.tone}><Icon id={status.icon} size={1} />{status.label}</span>)}</span> : null}
     {member.threats.length > 0 ? <span className="rn-incoming"><Icon id="threat" size={1} /><span>{member.threats.map(threat => threat.label + " " + threat.damage).join(" · ")}</span></span> : null}
     {kit && kit.length > 0 ? <span className="rn-kit">{kit.map((item, index) => <span key={item.name}><Icon id={index === 0 ? "arcane" : "empower"} size={1} /><span><b>{item.name}</b>{item.description}</span></span>)}</span> : null}
-    {aid && member.alive ? <span className="rn-aid">{aid.label}{member.isSelf ? " SELF" : ""}</span> : null}
+    {canAid ? <span className="rn-aid">{aid?.label}{member.isSelf ? " SELF" : ""}</span> : null}
   </>;
   const className = "rn-card px-panel" + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
   const style = { "--accent": ACCENTS[member.classId || ""] || "#d6a64d", order } as unknown as CSSProperties;
-  return aid && onAid && member.alive
+  return aid && onAid && canAid
     ? <button type="button" className={className + " rn-card-aid"} style={style} onClick={() => onAid(member.id)} disabled={aid.disabled} aria-label={aid.label + " " + who}>{body}</button>
     : <div className={className} style={style} role="group" aria-label={who}>{body}</div>;
 }

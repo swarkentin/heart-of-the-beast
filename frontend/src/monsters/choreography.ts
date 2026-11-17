@@ -150,8 +150,11 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
           else playerCues.push({ type: "playerBlock", amount: event.amount ?? 0, playerId: event.targetId });
         }
         break;
+      // An interrupted, stunned or staggered enemy freezes in place.
+      case "player_interrupt":
+      case "skill_control":
       case "elemental_frost": {
-        const target = enemies.find((enemy) => event.message.includes(" " + enemy.name));
+        const target = event.targetId ? enemies.find((enemy) => enemy.id === event.targetId) : enemies.find((enemy) => event.message.includes(" " + enemy.name));
         if (target) freezes.push({ type: "freeze", enemyId: target.id });
         break;
       }

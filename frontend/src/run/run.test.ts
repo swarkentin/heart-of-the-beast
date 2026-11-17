@@ -7,11 +7,11 @@ import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
   id: "run", phase: "combat", currentRoomId: "a", rooms: {}, lastCombatEvents: [],
-  combatRound: { number: 3, startedAt: "", deadline: "", actions: { p2: { type: "combat", action: "attack", targetId: "e1" } } },
+  combatRound: { number: 3, startedAt: "", deadline: "", actions: { p2: { type: "combat", action: "skill", skill: "skill.strike", targetId: "e1" } } },
   players: {
-    p1: { id: "p1", health: 30, maxHealth: 36, archetype: "tank", experience: 60, level: 2, talentPoints: 0, talents: [], stats: { power: 2, focus: 1, agility: 1 }, guarding: true, classCombat: { resolveReady: true } },
-    p2: { id: "p2", health: 9, maxHealth: 27, archetype: "damage", experience: 0, level: 1, talentPoints: 0, talents: [], stats: { power: 3, focus: 1, agility: 1 }, classCombat: { ward: 4 } },
-    p3: { id: "p3", health: 0, maxHealth: 31, archetype: "support", experience: 0, level: 1, talentPoints: 0, talents: [], stats: { power: 1, focus: 3, agility: 1 } },
+    p1: { id: "p1", health: 30, maxHealth: 36, archetype: "tank", experience: 60, level: 2, stats: { power: 2, focus: 1, agility: 1 }, guarding: true, classCombat: { resolveReady: true } },
+    p2: { id: "p2", health: 9, maxHealth: 27, archetype: "damage", experience: 0, level: 1, stats: { power: 3, focus: 1, agility: 1 }, classCombat: { ward: 4 } },
+    p3: { id: "p3", health: 0, maxHealth: 31, archetype: "support", experience: 0, level: 1, stats: { power: 1, focus: 3, agility: 1 } },
   },
   ...over,
 });
@@ -28,7 +28,7 @@ test("party members get a pose, statuses, threats and round state from the snaps
   assert.equal(self.round, "choosing");
   assert.equal(ally.pose, "injured", "a third of health or less is injured");
   assert.equal(ally.round, "ready");
-  assert.equal(ally.chosen?.label, "STRIKE");
+  assert.equal(ally.chosen?.label, "SKILL");
   assert.ok(ally.statuses.some(status => status.id === "ward") && ally.statuses.some(status => status.id === "wounded"));
   assert.equal(fallen.pose, "down");
   assert.equal(fallen.round, "down");

@@ -70,14 +70,15 @@ func TestSimulateRunBatchSummarizesDepthReachProbability(t *testing.T) {
 	}
 }
 
-func TestTacticalSpellguardUsesRunicWardAgainstModerateIncomingDamage(t *testing.T) {
+func TestTacticalSpellguardWardsAgainstAKillingBlow(t *testing.T) {
 	room, _ := newClassCombatTestRoom(t, ClassSpellguard, "player-1")
 	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
-	enemy.Intent = &EnemyIntent{Damage: 4, TargetPlayerID: "player-1"}
+	enemy.Intent = &EnemyIntent{Damage: 8, TargetPlayerID: "player-1"}
+	room.Run.Players["player-1"].Health = 6
 
-	command := tacticalCombatCommand(room, "player-1", 1, rand.New(rand.NewSource(1)))
-	if command.Action != "ability" {
-		t.Fatalf("Spellguard should use Runic Ward against a meaningful incoming hit, got %+v", command)
+	command := skillPolicyCommand(room, "player-1", 1, rand.New(rand.NewSource(1)))
+	if command.Skill != "spellguard.runic-ward" {
+		t.Fatalf("Spellguard should raise Runic Ward against a killing blow, got %+v", command)
 	}
 }
 

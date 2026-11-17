@@ -158,12 +158,46 @@ button.rn-card { cursor: pointer; background: none; }
 .rn-choice:disabled { opacity: .6; cursor: not-allowed; }
 .rn-choice-mine { box-shadow: inset 0 3px 0 #3d3658, inset 0 -4px 0 #17132a, 0 0 0 2px var(--gold); }
 
-/* ---------- talents ---------- */
-.rn-talent-head { grid-template-columns: 1fr auto; }
-.rn-talent { width: 100%; border: 0; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.rn-talent-on { box-shadow: inset 0 3px 0 #05030a, inset 0 -3px 0 #2a2440, 0 0 0 3px var(--gold); }
-.rn-talent-known { color: var(--good); cursor: default; } .rn-talent-locked { opacity: .5; cursor: not-allowed; }
-.rn-talent-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+/* ---------- skill bar ---------- */
+.rn-act-icon { position: relative; display: inline-grid; flex: none; }
+.rn-act-cd { position: absolute; inset: 0; display: grid; place-items: center; background: #05030ab8; color: var(--ink); font: 400 12px/1 var(--display); text-shadow: 0 2px 0 #05030a; }
+.rn-act-guard { border-image-source: url("/art/ui/button.png"); }
+.rn-act-control { border-image-source: url("/art/ui/button-primary.png"); color: #2a1a08; } .rn-act-control strong { text-shadow: 0 1px 0 #f3d38c; } .rn-act-control small { color: #4a3210; }
+.rn-act-support small { color: #c8f0c0; }
+.rn-act-armed { outline: 3px dashed var(--good); outline-offset: 2px; filter: brightness(1.15); }
+/* An interrupt with an interruptible move in front of it glows: this is the moment to use it. */
+.rn-act-opening { animation: rn-opening 1s steps(2, jump-none) infinite; }
+@keyframes rn-opening { 50% { box-shadow: 0 0 0 3px var(--ember), 0 0 12px var(--ember); } }
+.rn-inspect b { color: var(--gold); font-weight: 400; }
+
+/* ---------- dungeon briefing ---------- */
+.rn-intro { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; align-content: safe center; gap: 18px; padding: 16px; overflow: hidden auto; background: #05030a; }
+.rn-intro-art { position: absolute; inset: 0; background: center / cover no-repeat; image-rendering: pixelated; opacity: .55; animation: rn-intro-pan 24s linear both; }
+@keyframes rn-intro-pan { from { transform: scale(1.12); } to { transform: scale(1); } }
+.rn-intro-iris { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, transparent 0, transparent var(--iris, 0%), #05030a calc(var(--iris, 0%) + 1%)); animation: rn-iris 1.4s steps(14) both; }
+@property --iris { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@keyframes rn-iris { from { --iris: 0%; } to { --iris: 80%; } }
+.rn-intro-title { position: relative; display: grid; justify-items: center; gap: 8px; text-align: center; animation: rn-intro-rise .9s steps(6) .35s both; }
+.rn-intro-title h2 { margin: 0; color: var(--bone); font: 400 clamp(18px, 3.4vw, 34px)/1.3 var(--display); text-shadow: 0 4px 0 #05030a, 0 0 18px #d6a64d66; }
+.rn-intro-title p { margin: 0; color: var(--ink); font-size: 24px; }
+@keyframes rn-intro-rise { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+.rn-intro-card .rn-intro-voice p, .rn-intro-card { animation: rn-intro-rise .5s steps(4) both; }
+.rn-intro-card { position: relative; width: min(860px, 100%); display: grid; gap: 12px; background: #120e22f0; }
+.rn-intro-voice { display: grid; gap: 6px; }
+.rn-intro-voice p { margin: 0; color: var(--ink); line-height: 1.1; }
+.rn-intro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.rn-intro-grid > div { display: grid; gap: 4px; align-content: start; padding: 8px 10px; background: var(--pit); box-shadow: inset 0 3px 0 #05030a, inset 0 -3px 0 #2a2440; }
+.rn-intro-grid .px-label { display: flex; align-items: center; gap: 6px; }
+.rn-intro-grid ul { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: #d9d1e6; line-height: 1.05; }
+.rn-intro-boss strong { color: var(--bad); font: 400 12px/1.5 var(--display); }
+.rn-intro-boss small { color: var(--muted); font-size: 18px; }
+.rn-intro-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rn-intro-skip { position: relative; color: var(--muted); font-size: 18px; letter-spacing: .2em; animation: rn-auto 1.2s steps(2, jump-none) infinite; }
+.rn-intro-at-wipe { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) {
+  .rn-intro-art, .rn-intro-iris, .rn-intro-title, .rn-intro-card, .rn-intro-voice p, .rn-act-opening, .rn-intro-skip { animation: none; }
+  .rn-intro-iris { --iris: 80%; }
+}
 
 /* ---------- large screens: the whole board steps up the pixel grid (2x art becomes 3x, then 4x) ---------- */
 @media (min-width: 1900px) and (min-height: 1000px) {

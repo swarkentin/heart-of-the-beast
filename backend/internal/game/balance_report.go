@@ -70,7 +70,7 @@ func GenerateBalanceReport(seedCount int, firstSeed int64) (BalanceReport, error
 		SeedCount: seedCount,
 		FirstSeed: firstSeed,
 		LastSeed:  firstSeed + int64(seedCount) - 1,
-		Policy:    "deterministic baseline policy: situational signature abilities, interrupt dangerous telegraphs, defend against high incoming pressure, otherwise focus lowest-health target",
+		Policy:    "live round engine with the shared skill policy and starting loadouts: interrupt dangerous telegraphs, revive and heal the wounded, protect against killing blows, otherwise the most valuable ready skill on the weakest enemy",
 	}
 	for _, encounterID := range balanceEncounterIDs {
 		for _, class := range classes {
@@ -119,7 +119,7 @@ func balancePlayers(definitions []ClassDefinition) ([]PlayerState, []string, err
 			Archetype:      definition.ArchetypeID,
 			ClassBuild:     &build,
 			Level:          1,
-			Talents:        []string{},
+			Skills:         DefaultLoadout(definition.ID, 1),
 			Stats:          build.Stats,
 		})
 		classIDs = append(classIDs, definition.ID)

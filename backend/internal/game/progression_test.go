@@ -22,11 +22,11 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		grantEncounterExperience(room, i+1)
 	}
-	if player.Experience != 3*EncounterExperienceReward || player.Level != 1 || player.TalentPoints != 0 {
+	if player.Experience != 3*EncounterExperienceReward || player.Level != 1 {
 		t.Fatalf("early encounters should not immediately level a new character: %+v", player)
 	}
 	grantEncounterExperience(room, 4)
-	if player.Experience != 4*EncounterExperienceReward || player.Level != 2 || player.TalentPoints != 1 {
+	if player.Experience != 4*EncounterExperienceReward || player.Level != 2 {
 		t.Fatalf("four regular encounters should earn the first level: %+v", player)
 	}
 	if player.MaxHealth != 34 || player.Health != 30 || player.Stats.Power != 1 {
@@ -36,7 +36,7 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		grantEncounterExperience(room, i+5)
 	}
-	if player.Experience != 9*EncounterExperienceReward || player.Level != 3 || player.TalentPoints != 2 {
+	if player.Experience != 9*EncounterExperienceReward || player.Level != 3 {
 		t.Fatalf("the next level should require a sustained run of encounters: %+v", player)
 	}
 	if player.Stats.Focus != 2 {
@@ -91,60 +91,5 @@ func TestSelectArchetypeOnlyBeforeRun(t *testing.T) {
 	room.Run = &Run{}
 	if err := SelectArchetype(room, "player-1", "damage"); !errors.Is(err, ErrArchetypeLocked) {
 		t.Fatalf("expected locked archetype, got %v", err)
-	}
-}
-
-func TestChooseTalentChecksArchetypeLevelAndPrerequisite(t *testing.T) {
-	room := progressionRoom()
-	player := newPlayerState("player-1", "tank")
-	player.Level = 2
-	player.TalentPoints = 1
-	player.Health = 20
-	room.Run = &Run{Phase: PhaseExploring, Players: map[string]*PlayerState{"player-1": player}}
-
-	if err := ChooseTalent(room, "player-1", "damage-heavy-hands"); !errors.Is(err, ErrInvalidTalent) {
-		t.Fatalf("expected archetype mismatch, got %v", err)
-	}
-	if err := ChooseTalent(room, "player-1", "tank-thorns"); !errors.Is(err, ErrTalentLocked) {
-		t.Fatalf("expected tier/prerequisite lock, got %v", err)
-	}
-	if err := ChooseTalent(room, "player-1", "tank-bulwark"); err != nil {
-		t.Fatalf("choose Bulwark: %v", err)
-	}
-	if player.MaxHealth != 36 || player.Health != 20 || player.TalentPoints != 0 {
-		t.Fatalf("Bulwark did not apply its health bonus: %+v", player)
-	}
-	if err := ChooseTalent(room, "player-1", "tank-bulwark"); !errors.Is(err, ErrNoTalentPoints) {
-		t.Fatalf("expected no points after spending, got %v", err)
-	}
-
-	player.Level = 3
-	player.TalentPoints = 1
-	if err := ChooseTalent(room, "player-1", "tank-thorns"); err != nil {
-		t.Fatalf("choose Thorns after Bulwark: %v", err)
-	}
-	if bonusesFor(player).ReflectDamage != 2 {
-		t.Fatalf("Thorns effect missing: %+v", bonusesFor(player))
-	}
-}
-
-func TestSupportTalentsBenefitTheWholeLivingParty(t *testing.T) {
-	room := progressionRoom()
-	support := newPlayerState("player-1", "support")
-	ally := newPlayerState("player-2", "damage")
-	ally.Health = 20
-	room.PlayerIDs = append(room.PlayerIDs, "player-2")
-	room.Presence["player-2"] = PlayerPresence{LastSeenAt: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
-	support.Talents = []string{"support-protective-ward", "support-rallying-cry"}
-	room.Run = &Run{Players: map[string]*PlayerState{"player-1": support, "player-2": ally}}
-
-	bonuses := partyBonusesFor(room)
-	if bonuses.PartyGuardReduction != 2 || bonuses.PartyEncounterHeal != 2 {
-		t.Fatalf("support party auras missing: %+v", bonuses)
-	}
-	support.Health = 0
-	bonuses = partyBonusesFor(room)
-	if bonuses.PartyGuardReduction != 0 || bonuses.PartyEncounterHeal != 0 {
-		t.Fatalf("downed support should not maintain party auras: %+v", bonuses)
 	}
 }

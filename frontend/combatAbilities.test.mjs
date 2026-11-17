@@ -1,71 +1,61 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getSignatureAbility, partySupportCommand, signatureCommand, signatureTargetId } from "./src/combatAbilities.ts";
+import { cooldownLabel, cooldownLeft, defaultLoadout, loadoutProblem, needsTarget, skillCommand, skillsForClass, usableLoadout } from "./src/combatAbilities.ts";
 
-const classAbilities = {
-  bulwark: "ability.shield-wall",
-  juggernaut: "ability.reckoning",
-  spellguard: "ability.runic-ward",
-  assassin: "ability.exploit-weakness",
-  arcanist: "ability.elemental-surge",
-  ranger: "ability.pinning-shot",
-  cleric: "ability.renewal",
-  tactician: "ability.commanding-strike",
-  beastcaller: "ability.companion-command",
-};
-const ids = Object.values(classAbilities);
+// A small slice of the server catalog in its JSON shape.
+const s = (id, classId, masteryLevel, cooldown, target = "enemy") => ({ id, classId, name: id, description: "", rules: "", icon: "strike", tone: "strike", target, cooldown, masteryLevel });
+const catalog = [
+  s("skill.defend", undefined, 1, 0, "self"),
+  s("ranger.quick-shot", "ranger", 1, 0),
+  s("ranger.pinning-shot", "ranger", 1, 3),
+  s("ranger.aimed-shot", "ranger", 1, 2),
+  s("ranger.volley", "ranger", 2, 3, "all_enemies"),
+  s("ranger.hunters-mark", "ranger", 3, 2),
+  s("ranger.barbed-arrow", "ranger", 5, 2),
+  s("ranger.concussive-shot", "ranger", 8, 4),
+  s("cleric.renewal", "cleric", 1, 3, "ally"),
+];
 
-test("every class catalog ability maps to a combat UI definition", () => {
-  assert.equal(Object.keys(classAbilities).length, 9);
-  for (const [classId, id] of Object.entries(classAbilities)) {
-    const ability = getSignatureAbility(id);
-    assert.ok(ability, `${classId} -> ${id} should map to an action`);
-    assert.ok(ability.details.length > 20);
-  }
+test("a class bar lists starting skills, then Defend, then mastery unlocks", () => {
+  assert.deepEqual(skillsForClass(catalog, "ranger").map(skill => skill.id), [
+    "ranger.quick-shot", "ranger.pinning-shot", "ranger.aimed-shot", "skill.defend",
+    "ranger.volley", "ranger.hunters-mark", "ranger.barbed-arrow", "ranger.concussive-shot",
+  ]);
 });
 
-test("only Arcanist and Beastcaller expose their required modes", () => {
-  assert.deepEqual(getSignatureAbility("ability.elemental-surge").modes, ["fire", "frost"]);
-  assert.deepEqual(getSignatureAbility("ability.companion-command").modes, ["attack", "defend", "disrupt"]);
-  for (const id of ids.filter(id => !["ability.elemental-surge", "ability.companion-command"].includes(id))) {
-    assert.equal(getSignatureAbility(id).modes, undefined);
-  }
+test("the default bar grows with mastery and stops at six", () => {
+  assert.equal(defaultLoadout(catalog, "ranger", 1).length, 4);
+  assert.deepEqual(defaultLoadout(catalog, "ranger", 15).slice(4), ["ranger.volley", "ranger.hunters-mark"]);
+  assert.equal(defaultLoadout(catalog, "ranger", 15).length, 6);
 });
 
-test("target selection follows the server ability policy", () => {
-  assert.equal(signatureTargetId("self", "", "enemy-1", "ally-2"), "");
-  assert.equal(signatureTargetId("enemy", "", "enemy-1", ""), "enemy-1");
-  assert.equal(signatureTargetId("player_optional", "", "", "ally-2"), "ally-2");
-  assert.equal(signatureTargetId("player_optional", "", "", ""), "");
-  assert.equal(signatureTargetId("mode_target", "attack", "enemy-1", ""), "enemy-1");
-  assert.equal(signatureTargetId("mode_target", "disrupt", "enemy-2", ""), "enemy-2");
-  assert.equal(signatureTargetId("mode_target", "defend", "", "ally-2"), "ally-2");
-  assert.equal(signatureTargetId("mode_target", "defend", "", ""), "");
+test("loadout checks mirror the server", () => {
+  assert.equal(loadoutProblem(catalog, "ranger", 1, ["ranger.quick-shot", "skill.defend"]), "");
+  assert.match(loadoutProblem(catalog, "ranger", 1, []), /at least one/);
+  assert.match(loadoutProblem(catalog, "ranger", 2, ["ranger.quick-shot", "ranger.hunters-mark"]), /mastery 3/);
+  assert.match(loadoutProblem(catalog, "ranger", 15, ["ranger.quick-shot", "cleric.renewal"]), /another class/);
+  assert.match(loadoutProblem(catalog, "ranger", 15, ["ranger.aimed-shot", "ranger.pinning-shot"]), /no cooldown/);
+  assert.match(loadoutProblem(catalog, "ranger", 1, ["ranger.quick-shot", "ranger.quick-shot"]), /once/);
 });
 
-test("commands contain only the server-authoritative ability choices", () => {
-  assert.deepEqual(signatureCommand(getSignatureAbility("ability.elemental-surge"), 4, "frost", "enemy-1", ""), {
-    type: "combat", round: 4, action: "ability", mode: "frost", targetId: "enemy-1",
-  });
-  assert.deepEqual(signatureCommand(getSignatureAbility("ability.companion-command"), 2, "defend", "", "ally-2"), {
-    type: "combat", round: 2, action: "ability", mode: "defend", targetId: "ally-2",
-  });
-  assert.deepEqual(signatureCommand(getSignatureAbility("ability.shield-wall"), 1, "", "", ""), {
-    type: "combat", round: 1, action: "ability",
-  });
+test("a remembered bar the profile has not earned falls back to the default", () => {
+  assert.deepEqual(usableLoadout(catalog, "ranger", 1, ["ranger.quick-shot", "ranger.volley"]), defaultLoadout(catalog, "ranger", 1));
+  assert.deepEqual(usableLoadout(catalog, "ranger", 2, ["ranger.quick-shot", "ranger.volley"]), ["ranger.quick-shot", "ranger.volley"]);
 });
 
-test("party roster support actions submit directly to the tapped living ally", () => {
-  assert.deepEqual(partySupportCommand(getSignatureAbility("ability.renewal"), 3, "player-2"), {
-    type: "combat", round: 3, action: "ability", targetId: "player-2",
-  });
-  assert.deepEqual(partySupportCommand(getSignatureAbility("ability.companion-command"), 5, "player-3"), {
-    type: "combat", round: 5, action: "ability", mode: "defend", targetId: "player-3",
-  });
+test("skill commands carry the skill and only a real target", () => {
+  assert.deepEqual(skillCommand({ id: "ranger.aimed-shot" }, 4, "enemy-1"), { type: "combat", round: 4, action: "skill", skill: "ranger.aimed-shot", targetId: "enemy-1" });
+  assert.deepEqual(skillCommand({ id: "skill.defend" }, 2), { type: "combat", round: 2, action: "skill", skill: "skill.defend" });
+  assert.equal(needsTarget("enemy"), true);
+  assert.equal(needsTarget("fallen"), true);
+  assert.equal(needsTarget("ally"), false);
+  assert.equal(needsTarget("all_enemies"), false);
 });
 
-test("unknown or legacy players without a class ability keep universal actions only", () => {
-  assert.equal(getSignatureAbility(undefined), undefined);
-  assert.equal(getSignatureAbility("retired.ability"), undefined);
-  assert.equal(getSignatureAbility("toString"), undefined);
+test("cooldowns read plainly", () => {
+  assert.equal(cooldownLeft({ "ranger.aimed-shot": 2 }, "ranger.aimed-shot"), 2);
+  assert.equal(cooldownLeft(undefined, "ranger.aimed-shot"), 0);
+  assert.equal(cooldownLabel({ cooldown: 0 }), "No cooldown");
+  assert.equal(cooldownLabel({ cooldown: 3 }), "3-round cooldown");
+  assert.equal(cooldownLabel({ cooldown: 99 }), "Once a fight");
 });

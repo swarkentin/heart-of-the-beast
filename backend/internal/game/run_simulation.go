@@ -77,7 +77,7 @@ type RunSimulationBatchReport struct {
 
 const RandomRunPolicyDescription = "uniform random choice among currently legal combat actions, targets, room exits, room-event choices, camp mini-game moves and affordable shop purchases; this is a deliberately unskilled baseline, not human play"
 
-const TacticalRunPolicyDescription = "tactical combat (interrupt each interruptible telegraph once, use the signature ability when it fits the situation, defend against a killing blow and, half the time, a heavy hit, otherwise focus the weakest enemy) and invests in affordable permanent Strike upgrades up to the run cap, then buys healing or revival when needed; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
+const TacticalRunPolicyDescription = "tactical combat (the shared skill policy: interrupt dangerous telegraphs while interrupts are off cooldown, revive and heal the wounded, protect against killing blows, otherwise the most valuable ready skill on the weakest enemy) with starting loadouts, and invests in affordable permanent Strike upgrades up to the run cap, then buys healing or revival when needed; routes, room events and mini-games stay random. A stand-in for attentive play, not optimal play"
 
 // RunPolicy names how a full-run simulation makes decisions.
 type RunPolicy string
@@ -170,9 +170,9 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				}
 				var command Command
 				if policy == RunPolicyTactical {
-					command = tacticalCombatCommand(room, playerID, round, rng)
+					command = skillPolicyCommand(room, playerID, round, rng)
 				} else {
-					candidates := randomCombatCommands(room, playerID, round)
+					candidates := randomSkillCommands(room, playerID, round)
 					if len(candidates) == 0 {
 						candidates = []Command{{Type: "combat", Round: round, Action: "defend"}}
 					}
@@ -187,15 +187,16 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				if damage > 0 {
 					metrics.DamageDealt += damage
 				}
-				switch command.Action {
-				case "attack":
-					metrics.Attacks++
-				case "ability":
-					metrics.Abilities++
-				case "interrupt":
-					metrics.Interrupts++
-				case "defend":
+				definition, _ := findSkill(command.Skill)
+				switch {
+				case command.Action == "defend" || command.Skill == SkillDefend:
 					metrics.Defends++
+				case definition.Basic:
+					metrics.Attacks++
+				case SkillInterrupts(definition):
+					metrics.Interrupts++
+				default:
+					metrics.Abilities++
 				}
 				combatMetrics[playerID] = metrics
 			}
@@ -431,87 +432,6 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 		return Command{Type: "buy", ChoiceID: affordable[choice].ID}, true
 	}
 	return Command{Type: "ready"}, true
-}
-
-func randomCombatCommands(room *Room, playerID string, round int) []Command {
-	run := room.Run
-	player := run.Players[playerID]
-	current := run.Rooms[run.CurrentRoomID]
-	if player == nil || current == nil || current.Encounter == nil {
-		return nil
-	}
-	commands := []Command{
-		{Type: "combat", Round: round, Action: "defend"},
-	}
-	for _, enemy := range current.Encounter.Enemies {
-		if enemy.Health <= 0 {
-			continue
-		}
-		commands = append(commands, Command{Type: "combat", Round: round, Action: "attack", TargetID: enemy.ID})
-		if enemy.Intent != nil && enemy.Intent.Interruptible {
-			commands = append(commands, Command{Type: "combat", Round: round, Action: "interrupt", TargetID: enemy.ID})
-		}
-	}
-	if player.ClassBuild == nil {
-		return commands
-	}
-	ability, ok := findClassAbility(player.ClassBuild.SignatureAbilityID)
-	if !ok {
-		return commands
-	}
-	handler := classAbilityHandlers[ability.EffectID]
-	modes := append([]string(nil), handler.modes...)
-	if len(modes) == 0 {
-		modes = []string{""}
-	}
-	for _, mode := range modes {
-		switch handler.target {
-		case "none":
-			candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode}
-			if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-				commands = append(commands, candidate)
-			}
-		case "enemy":
-			for _, enemy := range current.Encounter.Enemies {
-				candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode, TargetID: enemy.ID}
-				if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-					commands = append(commands, candidate)
-				}
-			}
-		case "player_optional":
-			candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode}
-			if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-				commands = append(commands, candidate)
-			}
-			for _, targetID := range room.PlayerIDs {
-				candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode, TargetID: targetID}
-				if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-					commands = append(commands, candidate)
-				}
-			}
-		case "mode_target":
-			if mode == "defend" {
-				candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode}
-				if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-					commands = append(commands, candidate)
-				}
-				for _, targetID := range room.PlayerIDs {
-					candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode, TargetID: targetID}
-					if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-						commands = append(commands, candidate)
-					}
-				}
-			} else {
-				for _, enemy := range current.Encounter.Enemies {
-					candidate := Command{Type: "combat", Round: round, Action: "ability", Mode: mode, TargetID: enemy.ID}
-					if validateClassAbilityCommand(player, current.Encounter, candidate, run.Players) == nil {
-						commands = append(commands, candidate)
-					}
-				}
-			}
-		}
-	}
-	return commands
 }
 
 // SimulationDepthLimit is the deepest total floor (across dungeons) a batch report gives a reach rate for.

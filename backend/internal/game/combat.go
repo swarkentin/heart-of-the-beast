@@ -20,6 +20,9 @@ const (
 	EncounterRecoveryPercent = 30
 )
 
+// maxCombatEvents bounds the events a snapshot carries. Skills describe more of a round than three buttons did.
+const maxCombatEvents = 48
+
 var (
 	ErrRoundActionSubmitted = errors.New("an action has already been submitted for this round")
 	ErrStaleCombatRound     = errors.New("combat action belongs to an expired round")
@@ -60,7 +63,7 @@ func startCombatRound(room *Room, now time.Time) {
 				intent.Damage = 1
 			}
 		}
-		enemy.Intent = intent
+		enemy.Intent = applyEnemyRoundStart(room, enemy, intent, run.CombatRoundNumber)
 	}
 }
 
@@ -93,32 +96,21 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 	if _, exists := run.CombatRound.Actions[actorID]; exists {
 		return ErrRoundActionSubmitted
 	}
-	if command.Action != "attack" && command.Action != "defend" && command.Action != "interrupt" && command.Action != "ability" {
-		return ErrInvalidAction
-	}
-	if command.Action != "ability" && command.Mode != "" {
-		return ErrInvalidAction
-	}
-	if command.Action == "attack" || command.Action == "interrupt" {
+	switch command.Action {
+	case "defend":
+		if command.Mode != "" || command.Skill != "" {
+			return ErrInvalidAction
+		}
+	case "skill":
 		current := run.Rooms[run.CurrentRoomID]
 		if current == nil || current.Encounter == nil || current.Encounter.Status != EncounterActive {
 			return ErrInvalidPhase
 		}
-		if !hasLivingEnemy(current.Encounter, command.TargetID) {
-			return ErrInvalidTarget
-		}
-		if command.Action == "interrupt" && !hasInterruptibleIntent(current.Encounter, command.TargetID) {
-			return ErrInvalidTarget
-		}
-	}
-	if command.Action == "ability" {
-		current := run.Rooms[run.CurrentRoomID]
-		if current == nil || current.Encounter == nil || current.Encounter.Status != EncounterActive {
-			return ErrInvalidPhase
-		}
-		if err := validateClassAbilityCommand(player, current.Encounter, command, run.Players); err != nil {
+		if err := validateSkillCommand(room, player, current.Encounter, command); err != nil {
 			return err
 		}
+	default:
+		return ErrInvalidAction
 	}
 	run.CombatRound.Actions[actorID] = command
 	if allCombatActionsSubmitted(room) {
@@ -180,81 +172,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 		if !submitted {
 			action = Command{Type: "combat", Action: "defend"}
 		}
-		if action.Action != "ability" {
-			player.ClassCombat.ArcaneCharges = 0
+		if action.Action == "skill" {
+			if err := applySkill(room, player, action, roundNumber); err != nil {
+				addCombatEvent(run, roundNumber, "class_ability_failed", adventurerLabel(room, playerID)+" could not use that skill.")
+			}
+			continue
 		}
-		switch action.Action {
-		case "attack":
-			for i := range current.Encounter.Enemies {
-				enemy := &current.Encounter.Enemies[i]
-				if enemy.ID != action.TargetID || enemy.Health <= 0 {
-					continue
-				}
-				attack := resolveAttackDamage(AttackDamageInput{
-					BaseDamage:          strikeBaseDamage(run, player),
-					BonusDamage:         bonusesFor(player).AttackDamage + classPassiveEffects(player, enemy, nil).AttackDamage,
-					MarkedDamage:        enemy.MarkedDamage,
-					IncludeMarkedDamage: true,
-					ConsumeMarkedDamage: true,
-					ResolveReady:        player.ClassCombat.ResolveReady,
-					UseResolve:          true,
-					ResolveBonus:        3,
-					Telegraph:           enemy.Intent != nil && enemy.Intent.Interruptible,
-					TelegraphBonus:      bonusesFor(player).AttackVsTelegraph,
-					StrikeBonus:         defaultRunEffectCatalog.StrikeBonus(run, run.CurrentRoomID),
-				})
-				damage := absorbWithBarrier(run, enemy, attack.Damage, roundNumber)
-				enemy.MarkedDamage = attack.RemainingMarkedDamage
-				player.ClassCombat.ResolveReady = attack.ResolveReady
-				transition := resolveHealthDamage(enemy.Health, damage)
-				enemy.Health = transition.Health
-				actualDamage := transition.Applied
-				addCombatImpact(run, roundNumber, "player_attack", adventurerLabel(room, playerID)+" hits "+enemy.Name+" for "+itoa(actualDamage)+" damage.", "damage", enemy.ID, "enemy", actualDamage)
-				if enemy.Health == 0 {
-					enemy.Intent = nil
-					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.")
-				}
-				break
-			}
-		case "interrupt":
-			for i := range current.Encounter.Enemies {
-				enemy := &current.Encounter.Enemies[i]
-				if enemy.ID == action.TargetID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
-					label := enemy.Intent.Label
-					damage := resolveInterruptDamage(player.Stats.Focus, bonusesFor(player).InterruptDamage, classPassiveEffects(player, enemy, enemy.Intent).InterruptDamage)
-					if damage > 0 {
-						transition := resolveHealthDamage(enemy.Health, damage)
-						enemy.Health = transition.Health
-						actualDamage := transition.Applied
-						addCombatImpact(run, roundNumber, "player_interrupt_damage", enemy.Name+" takes "+itoa(actualDamage)+" interrupt damage.", "damage", enemy.ID, "enemy", actualDamage)
-					}
-					enemy.Intent = nil
-					addCombatEvent(run, roundNumber, "player_interrupt", adventurerLabel(room, playerID)+" interrupts "+label+" from "+enemy.Name+"!")
-					if enemy.Health == 0 {
-						addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated. Its attack is stopped.")
-					}
-					break
-				}
-			}
-		case "ability":
-			if err := applyClassAbility(room, player, action, roundNumber); err != nil {
-				addCombatEvent(run, roundNumber, "class_ability_failed", adventurerLabel(room, playerID)+" could not use its class ability.")
-			}
-		case "defend":
-			player.Guarding = true
-			guard := player.GuardReduction + bonusesFor(player).GuardReduction + partyBonusesFor(room).PartyGuardReduction + floorRulesFor(run).PlayerGuard
-			if guard <= 0 {
-				guard = GuardDamageReduction
-			}
-			message := adventurerLabel(room, playerID) + " braces, blocking up to " + itoa(guard) + " damage from the next hit."
-			if !submitted {
-				message = adventurerLabel(room, playerID) + " ran out of time and defends automatically, blocking up to " + itoa(guard) + " damage from the next hit."
-			}
-			addCombatEvent(run, roundNumber, "player_defend", message)
-			last := &run.LastCombatEvents[len(run.LastCombatEvents)-1]
-			last.ActorID = playerID
-			last.Auto = !submitted
-		}
+		player.ClassCombat.ArcaneCharges = 0
+		defend(room, player, submitted, roundNumber)
 	}
 
 	// Surviving enemies execute the intentions players saw during the action
@@ -277,7 +202,6 @@ func resolveCombatRound(room *Room, now time.Time) {
 			}
 			mitigation := resolveIncomingDamage(IncomingDamageInput{
 				IntentDamage:          intent.Damage,
-				TalentReduction:       bonusesFor(player).DamageReduction,
 				PassiveReduction:      classPassiveEffects(player, enemy, &intent).DamageReduction,
 				Ward:                  player.ClassCombat.Ward,
 				WardReflect:           player.ClassCombat.WardReflect,
@@ -285,8 +209,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				GuardReduction:        player.GuardReduction,
 				DefaultGuardReduction: GuardDamageReduction,
 				GuardBonus:            player.ClassCombat.GuardBonus,
-				TalentGuardReduction:  bonusesFor(player).GuardReduction,
-				PartyGuardReduction:   partyBonusesFor(room).PartyGuardReduction + floorRulesFor(run).PlayerGuard,
+				PartyGuardReduction:   floorRulesFor(run).PlayerGuard,
 			})
 			damage := mitigation.Damage
 			wardReflect := mitigation.WardReflect
@@ -316,7 +239,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			} else {
 				addCombatEvent(run, roundNumber, "enemy_attack", message)
 			}
-			reflectDamage := bonusesFor(player).ReflectDamage + wardReflect
+			reflectDamage := player.ClassCombat.Thorns + wardReflect
 			if reflectDamage > 0 && enemy.Health > 0 {
 				transition := resolveHealthDamage(enemy.Health, reflectDamage)
 				enemy.Health = transition.Health
@@ -344,20 +267,12 @@ func resolveCombatRound(room *Room, now time.Time) {
 	}
 
 	applyCompanionInstinct(room, roundNumber)
-	for _, player := range run.Players {
-		player.Guarding = false
-		player.ClassCombat.GuardBonus = 0
-		if player.ClassCombat.AbilityCooldown > 0 {
-			player.ClassCombat.AbilityCooldown--
-		}
-	}
+	endCombatRound(room, current.Encounter, roundNumber)
 
 	if allEnemiesDefeated(current.Encounter) {
 		current.Encounter.Status = EncounterCleared
-		// Every fight starts with signature abilities ready.
-		for _, player := range run.Players {
-			player.ClassCombat.AbilityCooldown = 0
-		}
+		// Every fight starts with every skill ready.
+		resetFightStatuses(run)
 		applyEncounterReward(room, current, roundNumber)
 		current.Cleared = true
 		grantEncounterExperience(room, roundNumber)
@@ -378,7 +293,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if run.Generator >= ExpeditionGenerator {
 				recovery = player.MaxHealth * EncounterRecoveryPercent / 100
 			}
-			heal := rules.healing(recovery + bonusesFor(player).EncounterHeal + classPassiveEffects(player, nil, nil).EncounterHeal + partyBonusesFor(room).PartyEncounterHeal + rules.EncounterHeal)
+			heal := rules.healing(recovery + classPassiveEffects(player, nil, nil).EncounterHeal + rules.EncounterHeal)
 			if heal > 0 {
 				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
 				player.Health = transition.Health
@@ -481,8 +396,8 @@ func adventurerLabel(room *Room, playerID string) string {
 
 func addCombatEvent(run *Run, round int, kind, message string) {
 	run.LastCombatEvents = append(run.LastCombatEvents, CombatEvent{Round: round, Kind: kind, Message: message})
-	if len(run.LastCombatEvents) > 32 {
-		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-32:]...)
+	if len(run.LastCombatEvents) > maxCombatEvents {
+		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-maxCombatEvents:]...)
 	}
 }
 
@@ -491,8 +406,8 @@ func addCombatImpact(run *Run, round int, kind, message, effect, targetID, targe
 		Round: round, Kind: kind, Message: message, Effect: effect,
 		TargetID: targetID, TargetType: targetType, Amount: amount,
 	})
-	if len(run.LastCombatEvents) > 32 {
-		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-32:]...)
+	if len(run.LastCombatEvents) > maxCombatEvents {
+		run.LastCombatEvents = append([]CombatEvent(nil), run.LastCombatEvents[len(run.LastCombatEvents)-maxCombatEvents:]...)
 	}
 }
 
@@ -509,15 +424,6 @@ func itoa(value int) string {
 		digits[left], digits[right] = digits[right], digits[left]
 	}
 	return string(digits)
-}
-
-func hasInterruptibleIntent(encounter *Encounter, enemyID string) bool {
-	for _, enemy := range encounter.Enemies {
-		if enemy.ID == enemyID && enemy.Health > 0 && enemy.Intent != nil && enemy.Intent.Interruptible {
-			return true
-		}
-	}
-	return false
 }
 
 func hasLivingEnemy(encounter *Encounter, enemyID string) bool {

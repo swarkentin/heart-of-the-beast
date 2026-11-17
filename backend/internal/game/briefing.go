@@ -1,0 +1,179 @@
+package game
+
+import (
+	"fmt"
+	"sort"
+	"time"
+)
+
+// A dungeon briefing is the intro the party sees on entering a dungeon: a few lines in the voice of whoever sent
+// them down there, what lives inside, and a dossier on the boss at the bottom with advice drawn from the boss's
+// real mechanics. It is generated once per dungeon and stored on the run, so every client shows the same one.
+
+// DungeonBriefingWindow is extra time on the first round of every dungeon, so reading the briefing never costs
+// anyone their first turn.
+const DungeonBriefingWindow = 10 * time.Second
+
+type DungeonBriefing struct {
+	Dungeon  int      `json:"dungeon"`
+	ThemeID  string   `json:"themeId"`
+	Name     string   `json:"name"`
+	Tagline  string   `json:"tagline"`
+	Narrator string   `json:"narrator"`
+	Lines    []string `json:"lines"`
+	Floors   int      `json:"floors"`
+	// Threats are the names of the creatures the dungeon's halls hold.
+	Threats  []string `json:"threats"`
+	Boss     string   `json:"boss"`
+	BossLair string   `json:"bossLair"`
+	// Advice is one tip per boss mechanic, naming the boss's own moves.
+	Advice    []string              `json:"advice"`
+	Modifiers []ActiveFloorModifier `json:"modifiers,omitempty"`
+}
+
+type themeBriefing struct {
+	narrator string
+	lines    []string
+}
+
+var themeBriefings = map[string]themeBriefing{
+	"catacombs": {"Brother Ossic, last keeper of the upper crypts", []string{
+		"Right. Torches lit? Good. Down there the dead have stopped staying dead, and frankly it is ruining the ambience.",
+		"Bring your own light, mind the bones that move, and if something asks you to bleed on an altar, consider saying no.",
+	}},
+	"scifi": {"FACILITY AI, cheerfully", []string{
+		"Welcome, unauthorised personnel! Containment has been breached on every level. This is fine.",
+		"Please do not feed the specimens. Please do not let the specimens feed on you. Please enjoy your visit.",
+	}},
+	"mobster": {"A nervous informant in a wet trench coat", []string{
+		"Listen, you didn't hear it from me. The family's got the whole underworld locked down tighter than a speakeasy door.",
+		"Goons on every corner, tommy guns in every violin case. Hit 'em fast, and whatever you do, don't owe 'em money.",
+	}},
+	"sunken": {"The Tide-Herald, gurgling", []string{
+		"The old kingdom sank in a single night, and its people learned to breathe water. They did not learn to be friendly.",
+		"Hold your breath when you must, keep your blade dry when you can, and never answer the singing.",
+	}},
+	"clockwork": {"Chief Artificer Brasswhistle", []string{
+		"Every gear in the Empire turns on schedule, and you, I'm afraid, are not on the schedule.",
+		"Its guardians strike with perfect timing. Learn the rhythm, break the rhythm, then break the guardians.",
+	}},
+	"carnival": {"The Ringmaster's voice, from everywhere at once", []string{
+		"Step right up, step right down, step right into the GREATEST SHOW BELOW THE EARTH!",
+		"Tickets are free. Leaving is extra. Do clap for the clowns; they get so very upset when you don't.",
+	}},
+	"jungle": {"Xenobiologist Dr. Imre Vash, whispering", []string{
+		"Everything in this jungle glows, and everything that glows is hungry. I have catalogued four hundred species of teeth.",
+		"Move quietly. Strike first. If the plants start following you, that is normal. If they start talking, run.",
+	}},
+	"dreamscape": {"A voice that sounds a lot like your own", []string{
+		"You fell asleep. Don't worry, everyone does. The trouble is that here, the nightmares are awake.",
+		"Up may be down. Doors may be mouths. Trust your party, not your eyes, and try very hard not to blink.",
+	}},
+	"arctic": {"Station Commander Halvorsen, over crackling radio", []string{
+		"Station Nine went dark three weeks ago. The last transmission was screaming and the sound of ice cracking.",
+		"It's minus sixty down there and whatever they were growing in the labs likes it that way. Keep moving or freeze.",
+	}},
+	"ghosttown": {"An old prospector, rocking on a porch that isn't there", []string{
+		"This town died at high noon, partner, and it's been reliving that noon ever since.",
+		"The sheriff's a revenant, the saloon's haunted and the gunslingers never miss twice. Draw quick, or join 'em.",
+	}},
+	"wasteland": {"Mayor Rustjaw of the last settlement", []string{
+		"Out past the fence it's scavengers, scrap-beasts and things that used to be dogs. Mostly used to be.",
+		"Take what you can carry, burn what you can't, and if you see the Junk King, give him our regards. With a hammer.",
+	}},
+}
+
+// newDungeonBriefing describes the dungeon a run has just entered.
+func newDungeonBriefing(run *Run) *DungeonBriefing {
+	themeID := run.Theme()
+	theme, _ := defaultDungeonThemeCatalog.Theme(themeID)
+	voice := themeBriefings[themeID]
+	briefing := &DungeonBriefing{
+		Dungeon: dungeonNumber(run), ThemeID: themeID, Name: theme.Name, Tagline: theme.Tagline,
+		Narrator: voice.narrator, Lines: append([]string(nil), voice.lines...), Floors: run.MaxDepth,
+		Modifiers: append([]ActiveFloorModifier(nil), run.DungeonModifiers...),
+	}
+	expedition, err := defaultExpeditionThemeCatalog.Theme(themeID)
+	if err != nil {
+		return briefing
+	}
+	briefing.Threats = expeditionThreats(expedition)
+	briefing.BossLair = expedition.Final.RoomName
+	boss := ""
+	if encounter, err := defaultEncounterCatalog.Encounter(expedition.Final.EncounterID); err == nil {
+		for _, spawn := range encounter.Enemies {
+			if monster, err := defaultMonsterCatalog.Monster(spawn.MonsterID); err == nil && monster.Role == MonsterRoleBoss {
+				boss = monster.Name
+			}
+		}
+	}
+	briefing.Boss = boss
+	briefing.Advice = bossAdvice(boss, expedition.Final)
+	return briefing
+}
+
+// expeditionThreats lists the distinct non-boss creatures of a dungeon's ordinary encounters, up to five.
+func expeditionThreats(theme ExpeditionTheme) []string {
+	seen := map[string]bool{}
+	var names []string
+	for _, encounterID := range append(append(append([]string(nil), theme.Light...), theme.Standard...), theme.Heavy...) {
+		encounter, err := defaultEncounterCatalog.Encounter(encounterID)
+		if err != nil {
+			continue
+		}
+		for _, spawn := range encounter.Enemies {
+			monster, err := defaultMonsterCatalog.Monster(spawn.MonsterID)
+			if err != nil || monster.Role == MonsterRoleBoss || seen[monster.Name] {
+				continue
+			}
+			seen[monster.Name] = true
+			names = append(names, monster.Name)
+		}
+	}
+	sort.Strings(names)
+	if len(names) > 5 {
+		names = names[:5]
+	}
+	return names
+}
+
+func bossAdvice(boss string, final FinalBossTemplate) []string {
+	if boss == "" {
+		boss = "The boss"
+	}
+	advice := []string{fmt.Sprintf("Below %d%% health %s enrages and every hit lands %d harder. Save your big skills for the finish.", BossEnrageHealthPercent, boss, BossEnrageDamageBonus)}
+	for _, mechanic := range final.Mechanics {
+		switch mechanic {
+		case BossMechanicBarrier:
+			advice = append(advice, fmt.Sprintf("Every %d turns it raises %s. Basic attacks bounce off it; every other skill cuts straight through.", BossBarrierEveryTurns, final.BarrierLabel))
+		case BossMechanicCataclysm:
+			advice = append(advice, fmt.Sprintf("Every %d turns it unleashes %s on the whole party. Bring an interrupt, and keep it off cooldown for that turn.", BossCataclysmEveryTurns, final.CataclysmLabel))
+		case BossMechanicSummon:
+			name := "reinforcements"
+			if monster, err := defaultMonsterCatalog.Monster(final.SummonMonsterID); err == nil {
+				name = "a " + monster.Name
+			}
+			advice = append(advice, fmt.Sprintf("At %d%% health it calls %s. Skills that hit every enemy earn their slot here.", BossSummonHealthPercent, name))
+		}
+	}
+	return advice
+}
+
+// briefDungeon records the briefing of the dungeon a run has just entered and gives its first round the
+// briefing window.
+func briefDungeon(run *Run) {
+	run.Briefing = newDungeonBriefing(run)
+	if run.CombatRound != nil {
+		run.CombatRound.Deadline = run.CombatRound.Deadline.Add(DungeonBriefingWindow)
+	}
+}
+
+func validateThemeBriefings() error {
+	for _, theme := range PlayableDungeonThemes() {
+		voice, ok := themeBriefings[theme.ID]
+		if !ok || voice.narrator == "" || len(voice.lines) == 0 {
+			return fmt.Errorf("playable theme %q has no briefing", theme.ID)
+		}
+	}
+	return nil
+}

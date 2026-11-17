@@ -14,7 +14,7 @@ import { encodePNG } from "./engine.mjs";
 import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
 import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
-import { renderInterface, renderHero } from "./build-interface.mjs";
+import { renderInterface, renderHero, skillIconsModule, SKILL_ICONS_TS_PATH } from "./build-interface.mjs";
 import { heroes, TIERS, VARIANTS } from "./heroes.mjs";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../../frontend/public/art/monsters");
@@ -83,6 +83,7 @@ for (const [path, data] of Object.entries(a1)) {
   if (!existsSync(file)) fail(`[interface] ${path}: missing on disk - run npm run art:build`);
   else if (sha(readFileSync(file)) !== sha(data)) fail(`[interface] ${path}: stale on disk - run npm run art:build`);
 }
+if (!existsSync(SKILL_ICONS_TS_PATH) || readFileSync(SKILL_ICONS_TS_PATH, "utf8") !== skillIconsModule()) fail("[interface] frontend/src/skillIcons.gen.ts: stale - run npm run art:build");
 const heroIds = new Set();
 const heroSkins = heroes.flatMap((h) => TIERS.flatMap((tier) => VARIANTS.map((v) => [h, tier, v.id])));
 for (const h of heroes) { if (heroIds.has(h.id)) fail(`[heroes] ${h.id}: duplicate hero id`); heroIds.add(h.id); }

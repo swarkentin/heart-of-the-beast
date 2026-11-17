@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess, type TalentChoice } from "./api";
+import { apiRequest, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -7,20 +7,6 @@ import { RunScreen } from "./run/RunScreen";
 
 // Session, polling and commands. The screens themselves live in lobby.tsx and run/.
 
-const talentChoices: TalentChoice[] = [
-  { id: "support-disruption", archetype: "support", name: "Disruption", description: "Interrupts deal 4 additional damage.", tier: 1 },
-  { id: "support-protective-ward", archetype: "support", name: "Protective Ward", description: "All party members block 2 additional damage when defending.", tier: 1 },
-  { id: "support-expose-weakness", archetype: "support", name: "Expose Weakness", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "support-disruption" },
-  { id: "support-rallying-cry", archetype: "support", name: "Rallying Cry", description: "All living party members recover 2 health after clearing an encounter.", tier: 2, requires: "support-protective-ward" },
-  { id: "damage-heavy-hands", archetype: "damage", name: "Heavy Hands", description: "Attacks deal 3 additional damage.", tier: 1 },
-  { id: "damage-precision", archetype: "damage", name: "Precision", description: "Attacks deal 2 additional damage.", tier: 1 },
-  { id: "damage-opportunist", archetype: "damage", name: "Opportunist", description: "Deal 4 extra damage to enemies with a telegraphed move.", tier: 2, requires: "damage-precision" },
-  { id: "damage-counterstrike", archetype: "damage", name: "Counterstrike", description: "Interrupts deal 4 additional damage.", tier: 2, requires: "damage-heavy-hands" },
-  { id: "tank-bulwark", archetype: "tank", name: "Bulwark", description: "+6 maximum health.", tier: 1 },
-  { id: "tank-braced-stance", archetype: "tank", name: "Braced Stance", description: "Defend blocks 3 additional damage.", tier: 1 },
-  { id: "tank-thorns", archetype: "tank", name: "Thorns", description: "Reflect 2 damage when struck.", tier: 2, requires: "tank-bulwark" },
-  { id: "tank-unyielding", archetype: "tank", name: "Unyielding", description: "Defend blocks 3 additional damage.", tier: 2, requires: "tank-braced-stance" },
-];
 const SESSION_KEY = "heart-of-the-beast.player-session";
 const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
 
@@ -176,25 +162,27 @@ export default function App() {
     } finally { setBusy(false); }
   }
 
-  async function selectClass(classId: string, skin?: HeroSkin) {
+  async function selectClass(classId: string, skin?: HeroSkin, skillIds?: string[]) {
     if (!session || busy || run) return;
     setBusy(true); setError("");
     try {
-      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class", session.playerToken, { method: "POST", body: JSON.stringify(skin ? { classId, tier: skin.tier, variant: skin.variant } : { classId }) });
+      const body = { classId, ...(skin ? { tier: skin.tier, variant: skin.variant } : {}), ...(skillIds?.length ? { skillIds } : {}) };
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/class", session.playerToken, { method: "POST", body: JSON.stringify(body) });
       setSnapshot(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not select class");
     } finally { setBusy(false); }
   }
 
-  async function chooseTalent(talentId: string): Promise<boolean> {
-    if (!talentId || !session || busy || spectator) return false;
+  /** Saves the lobby skill bar; the server checks every skill against the profile's class mastery. */
+  async function saveLoadout(skillIds: string[]): Promise<boolean> {
+    if (!session || busy || run || spectator) return false;
     setBusy(true); setError("");
     try {
-      setSnapshot(await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/talents", session.playerToken, { method: "POST", body: JSON.stringify({ talentId }) }));
+      setSnapshot(await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/loadout", session.playerToken, { method: "POST", body: JSON.stringify({ skillIds }) }));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not choose talent");
+      setError(err instanceof Error ? err.message : "Could not save those skills");
       return false;
     } finally { setBusy(false); }
   }
@@ -260,9 +248,9 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} talents={talentChoices} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin) => void selectClass(classId, skin)} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
+    return <PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />;
   }
 
-  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} talents={talentChoices} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
-    onCommand={sendCommand} onChooseTalent={chooseTalent} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />;
+  return <RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
+    onCommand={sendCommand} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />;
 }
