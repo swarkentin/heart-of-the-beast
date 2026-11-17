@@ -30,6 +30,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
 - [x] Establish responsive scene, character, enemy, and HUD presentation rules.
 - [x] Choose first-person-inspired forward-facing player camera for exploration and combat; separate cinematic spectator renderer over shared game state.
 - [x] Decide spectator access is independent of player participation, with a server-enforced read-only connection.
+- [x] Check in Claude Code project skills (`.claude/skills/`) for repeatable work: balance simulation (`hotb-balance-simulation`), new themes (`hotb-theme-generation`) and new monsters or bosses (`hotb-monster-generation`, with a sprite preview script). Keep them current when the pipeline changes.
 
 ## Phase 1 — Playable multiplayer/solo vertical slice
 
