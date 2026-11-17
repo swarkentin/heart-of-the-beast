@@ -4,8 +4,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { ApiBoon, ApiCamp, ApiCommand, ApiFloorModifier, ApiMinigame, ApiMinigamePlay, ApiRun } from "../api";
 import { Icon } from "../lobby";
-import { themeTitle } from "../scenes";
-import { expeditionMap } from "./expeditionMap.ts";
+import { ExpeditionMap } from "./ExpeditionMap";
 
 type Send = (command: ApiCommand) => Promise<unknown> | void;
 
@@ -79,17 +78,6 @@ function Game({ game, selfId, acting, busy, send }: { game: ApiMinigame; selfId:
     {game.kind === "dice" ? <Dice {...props} /> : game.kind === "chests" ? <Chests {...props} /> : <Echo {...props} />}
     {play.done ? <p className="px-copy" role="status"><b className="rn-pot">+{play.gold} GOLD</b> {play.result} {others.some(item => !item.done) ? "Waiting for the rest of the party." : ""}</p> : null}
   </>;
-}
-
-/** The road through the current group of four dungeons to the castle that crowns it. */
-export function ExpeditionMap({ run }: { run: ApiRun }) {
-  const stops = expeditionMap(run);
-  return <ol className="rn-map" aria-label="Expedition map">
-    {stops.map(stop => <li key={stop.dungeon} className={"rn-map-stop rn-map-" + stop.state + (stop.capstone ? " rn-map-castle" : "")} aria-current={stop.state === "current" || stop.state === "next" ? "step" : undefined}>
-      <span className="rn-map-mark" aria-hidden="true">{stop.capstone ? "♜" : stop.state === "cleared" ? "✓" : stop.dungeon}</span>
-      <small>{stop.themeId ? themeTitle(stop.themeId) : stop.capstone ? "THE CASTLE" : stop.state === "next" ? "YOUR CHOICE" : "UNKNOWN"}</small>
-    </li>)}
-  </ol>;
 }
 
 function Boons({ offers, chosen, acting, busy, send }: { offers: ApiBoon[]; chosen?: string; acting: boolean; busy: boolean; send: Send }) {

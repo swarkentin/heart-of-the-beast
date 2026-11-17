@@ -5,7 +5,8 @@ import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
 import { traitTags } from "./traits.ts";
 import { progressReport } from "./progress.ts";
-import { expeditionMap } from "./expeditionMap.ts";
+import { expeditionMap } from "./expeditionRoad.ts";
+import { interruptTarget } from "./interrupts.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -167,4 +168,16 @@ test("capstone bosses show their mechanics as tags", () => {
   assert.equal(traitTags({ ...boss, mechanics: ["rebirth"], reborn: true }).length, 0);
   assert.deepEqual(traitTags({ ...boss, mechanics: ["legion", "devour"], devourIn: 1, devoured: 2 }).map(t => t.label), ["DEVOURS NEXT TURN", "FED +2"]);
   assert.deepEqual(traitTags({ ...boss, anchor: true }).map(t => t.label), ["ANCHOR"]);
+});
+
+test("an interrupt goes to the enemy that is telegraphing an interruptible move", () => {
+  const foes = [
+    { id: "a", hp: 5, interruptible: false, rawIntent: { damage: 3 } },
+    { id: "b", hp: 5, interruptible: true, rawIntent: { damage: 6 } },
+    { id: "c", hp: 5, interruptible: true, rawIntent: { damage: 9 } },
+    { id: "d", hp: 0, interruptible: true, rawIntent: { damage: 20 } },
+  ];
+  assert.equal(interruptTarget(foes, "b")?.id, "b", "the selected target when it can be interrupted");
+  assert.equal(interruptTarget(foes, "a")?.id, "c", "otherwise the hardest-hitting interruptible enemy");
+  assert.equal(interruptTarget(foes.map(foe => ({ ...foe, interruptible: false })), "a"), undefined, "nothing to cancel");
 });

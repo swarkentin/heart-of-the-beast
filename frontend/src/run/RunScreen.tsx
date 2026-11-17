@@ -11,6 +11,7 @@ import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
+import { interruptTarget } from "./interrupts.ts";
 import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
@@ -187,16 +188,18 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const fallen = party.filter(member => !member.alive && !member.isSelf && member.online);
   const actions: ActionDef[] = [];
   if (round && player) {
-    const n = round.number, foe = livingTarget, foeName = foe?.name ?? "no target";
+    const n = round.number, opening = interruptTarget(living, livingTarget?.id);
     for (const id of player.skills ?? []) {
       const skill = skillById.get(id);
       if (!skill) continue;
       const left = cooldownLeft(cooldowns, id);
       const interrupts = skill.effects?.some(effect => effect.kind === "interrupt") ?? false;
+      // An interrupt goes to whichever enemy is telegraphing an interruptible move, so the button can say so.
+      const foe = interrupts && opening ? opening : livingTarget, foeName = foe?.name ?? "no target";
       let hint = "", command: ApiCommand | undefined, pick: ActionDef["pick"], disabled = left > 0;
       switch (skill.target) {
         case "enemy":
-          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
+          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
           disabled ||= !foe;
           command = foe ? skillCommand(skill, n, foe.id) : undefined;
           break;
@@ -213,7 +216,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           if (fallen.length === 1) command = skillCommand(skill, n, fallen[0].id); else pick = "fallen";
           break;
       }
-      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && Boolean(foe?.interruptible) && left === 0, command, pick });
+      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && skill.target === "enemy" && Boolean(opening) && left === 0, command, pick });
     }
   }
   const send = (key: string, command: ApiCommand) => {
@@ -370,6 +373,6 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
       onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
     <Celebrations items={report.celebrations} theme={room.themeId || run.themeId} />
-    {run.briefing ? <DungeonIntro briefing={run.briefing} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
+    {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

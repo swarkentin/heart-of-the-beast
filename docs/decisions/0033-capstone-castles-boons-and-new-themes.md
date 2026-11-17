@@ -82,10 +82,20 @@ backlog still listed noir and stranger combinations.
 
 ### The expedition map
 
-- The run now records the theme of every dungeon it enters (`Run.DungeonThemes`). Between dungeons, the camp
-  shows the current group of four and the castle at its end. The map marks cleared dungeons, where the party is,
-  the dungeon being chosen, and the dungeons still ahead (`frontend/src/run/expeditionMap.ts`).
+- The run now records the theme of every dungeon it enters (`Run.DungeonThemes`). The map shows the current group
+  of four and the castle at its end, marking cleared dungeons, where the party is, the dungeon being chosen, and
+  the dungeons still ahead (`frontend/src/run/expeditionRoad.ts`).
+- The map is shown in every dungeon's briefing from the first one ("The road ahead", with how many dungeons are
+  left before the castle), so the party sees what it is working toward as soon as the run starts. It is shown
+  again at the camp between dungeons.
 - A map of the current floor's discovered rooms is still on the roadmap.
+
+### Interrupt cue
+
+- When an enemy is telegraphing an interruptible move and an interrupt skill on the bar is ready, that button
+  shows a subtle ember outline. It targets the telegraphing enemy even if another one is selected (the selected
+  target first, then the hardest-hitting interruptible enemy), and its hint names the move it cancels
+  (`frontend/src/run/interrupts.ts`).
 
 ## Consequences
 

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import type { ApiBriefing } from "../api";
+import type { ApiBriefing, ApiRun } from "../api";
+import { ExpeditionMap, roadToCastle } from "./ExpeditionMap";
 import { Icon } from "../lobby";
 import { backdropUrl } from "../scenes";
 import { themeVars } from "../uiTheme";
 
 // The briefing that opens each dungeon of a run (not each floor). An iris wipe over the dungeon's entrance art
 // carries its title, then a briefing card says what waits below: the narrator's lines, threats, the boss and the
-// floor modifiers. The server gives the first round of each dungeon extra time, so reading it never costs a turn.
+// floor modifiers, with the expedition map: the road through this group of dungeons to its castle. The server gives the first round of each dungeon extra time, so reading it never costs a turn.
 
 const SEEN_KEY = "hotb.briefingsSeen";
 const AUTO_CLOSE_MS = 22000;
@@ -16,7 +17,7 @@ const WIPE_MS = 1700;
 function seen(): string[] { try { return JSON.parse(window.sessionStorage.getItem(SEEN_KEY) || "[]") as string[]; } catch { return []; } }
 function markSeen(key: string) { try { window.sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seen().slice(-20), key])); } catch { /* storage unavailable: shown once per mount instead */ } }
 
-export function DungeonIntro({ briefing, runId, active, onOpenChange }: { briefing: ApiBriefing; runId: string; active: boolean; onOpenChange?: (open: boolean) => void }) {
+export function DungeonIntro({ briefing, run, runId, active, onOpenChange }: { briefing: ApiBriefing; run?: ApiRun; runId: string; active: boolean; onOpenChange?: (open: boolean) => void }) {
   const key = runId + ":" + briefing.dungeon;
   const [open, setOpen] = useState<string>("");
   const [stage, setStage] = useState<"wipe" | "card">("wipe");
@@ -56,6 +57,7 @@ export function DungeonIntro({ briefing, runId, active, onOpenChange }: { briefi
         <span className="px-label">BRIEFING · {briefing.narrator.toUpperCase()}</span>
         {briefing.lines.map((line, index) => <p key={index} style={{ animationDelay: index * 0.45 + "s" }}>{line}</p>)}
       </div>
+      {run ? <div className="rn-intro-road"><span className="px-label"><Icon id="focus" size={1} /> THE ROAD AHEAD</span><ExpeditionMap run={run} /><small>{roadToCastle(run)}</small></div> : null}
       <div className="rn-intro-grid">
         {briefing.threats && briefing.threats.length > 0 ? <div><span className="px-label"><Icon id="threat" size={1} /> WHAT LURKS</span><ul>{briefing.threats.map(threat => <li key={threat}>{threat}</li>)}</ul></div> : null}
         <div className="rn-intro-boss"><span className="px-label"><Icon id="damage" size={1} /> AT THE BOTTOM</span><strong>{briefing.boss}</strong><small>{briefing.bossLair}</small></div>
