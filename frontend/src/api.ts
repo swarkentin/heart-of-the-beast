@@ -15,6 +15,7 @@ export type ApiPlayer = { id: string; health: number; maxHealth: number; archety
 export type ApiCombatAction = { type: string; action: string; skill?: string; targetId?: string };
 export type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, ApiCombatAction> };
 export type ApiVote = { startedAt: string; deadline: string; votes: Record<string, string> };
+export type ApiRoomEventVote = ApiVote & { eventId: string };
 /** A level-wide rule in force on one floor of an expedition. */
 export type ApiFloorModifier = { id: string; name: string; description: string; kind: "debuff" | "perk" };
 /** One adventurer's copy of the camp mini-game. `chests` holds -1 for a shut chest, 0 for the mimic, else gold. */
@@ -31,7 +32,7 @@ export type ApiCamp = { stage: "boon" | "game" | "crossroads" | "shop"; boonOffe
 export type ApiTheme = { id: string; name: string; tagline: string };
 /** The intro a party sees on entering a dungeon: a voice from above, what lives below and the boss dossier. */
 export type ApiBriefing = { dungeon: number; themeId: string; name: string; tagline: string; narrator: string; lines: string[]; floors: number; threats?: string[]; boss: string; bossLair: string; advice?: string[]; modifiers?: ApiFloorModifier[] };
-export type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; generator?: number; dungeon?: number; dungeonsCleared?: number; dungeonThemes?: string[]; floorsCleared?: number; rank?: string; floorModifiers?: ApiFloorModifier[]; camp?: ApiCamp; pendingInterFloorChoice?: boolean; interFloorVote?: ApiVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiVote; lastCombatEvents?: ApiCombatEvent[]; briefing?: ApiBriefing };
+export type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" | "exploring" | "intermission" | "completed" | "failed"; depth?: number; maxDepth?: number; musicIntensity?: number; generator?: number; dungeon?: number; dungeonsCleared?: number; dungeonThemes?: string[]; floorsCleared?: number; rank?: string; floorModifiers?: ApiFloorModifier[]; camp?: ApiCamp; pendingInterFloorChoice?: boolean; interFloorVote?: ApiVote; eventVote?: ApiRoomEventVote; currentRoomId: string; rooms: Record<string, ApiDungeonRoom>; players: Record<string, ApiPlayer>; flags?: Record<string, boolean>; combatRound?: ApiCombatRound; navigationVote?: ApiVote; lastCombatEvents?: ApiCombatEvent[]; briefing?: ApiBriefing };
 export type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 /** The lasting XP a finished run earned each adventurer who stayed to its end, and where it came from. */
 export type ApiRunProgress = { xp: number; encounters: number; floors: number; dungeons: number; completionBonus?: number };
