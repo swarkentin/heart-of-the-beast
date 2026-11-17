@@ -32,7 +32,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
             <image className="sprite-sheet" href={"/art/heroes/" + heroArt(member.classId, member.skin) + ".png"} width={member.classId ? 384 : 256} height={member.classId ? 384 : 64} />
           </svg>
         </g>;
-      })}</g>}
+      })}</g> : null}
       <EnemyStage key={roomId} view={view} enemies={enemies} events={events} target={onTarget ? target : undefined} onTarget={onTarget} onPartyImpact={onPartyImpact} />
       {view === "player" ? <image className="rn-first-person-sprite" href={handsSrc} x={270} y={350} width={560} height={280} imageRendering="pixelated" preserveAspectRatio="xMidYMid meet" /> : null}
     </svg>
