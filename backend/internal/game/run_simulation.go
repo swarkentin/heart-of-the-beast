@@ -220,8 +220,12 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					break
 				}
 				choice := current.Event.Choices[rng.Intn(len(current.Event.Choices))]
-				if err := ApplyCommand(room, eligible[rng.Intn(len(eligible))], Command{Type: "choose_event", ChoiceID: choice.ID}, now); err != nil {
-					return RunSimulationReport{}, fmt.Errorf("seed %d room event %s: %w", seed, current.Event.ID, err)
+				// Give every eligible adventurer the same simulated preference so the
+				// event vote resolves without injecting random tie-break noise.
+				for _, playerID := range eligible {
+					if err := ApplyCommand(room, playerID, Command{Type: "choose_event", ChoiceID: choice.ID}, now); err != nil {
+						return RunSimulationReport{}, fmt.Errorf("seed %d room event %s: %w", seed, current.Event.ID, err)
+					}
 				}
 				break
 			}
