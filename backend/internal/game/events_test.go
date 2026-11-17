@@ -35,6 +35,86 @@ func TestRoomEventRewardsAreAuthoritativeAndPartyWide(t *testing.T) {
 	}
 }
 
+func coopEventRoom(t *testing.T, playerIDs ...string) (*Room, time.Time) {
+	t.Helper()
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	room := newTestRoom()
+	room.PlayerIDs = playerIDs
+	if err := StartRun(room, "run-event-vote", now); err != nil {
+		t.Fatal(err)
+	}
+	room.Run.CurrentRoomID = "archive"
+	room.Run.Phase = PhaseExploring
+	room.Run.CombatRound = nil
+	startRoomEventVote(room, now)
+	if room.Run.EventVote == nil {
+		t.Fatal("a multi-option event for a party should open a vote")
+	}
+	return room, now
+}
+
+func TestCoopRoomEventVoteUsesMajorityAfterEveryPlayerVotes(t *testing.T) {
+	room, now := coopEventRoom(t, "player-1", "player-2", "player-3")
+	if err := ChooseRoomEvent(room, "player-1", "study", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ChooseRoomEvent(room, "player-2", "leave", now); err != nil {
+		t.Fatal(err)
+	}
+	if room.Run.Rooms["archive"].Event.Resolved {
+		t.Fatal("the event should remain open until every eligible player votes or time expires")
+	}
+	if err := ChooseRoomEvent(room, "player-3", "study", now); err != nil {
+		t.Fatal(err)
+	}
+	if !room.Run.Flags["warden_weakness"] {
+		t.Fatal("two votes for study should win the party decision")
+	}
+	if room.Run.EventVote != nil || !room.Run.Rooms["archive"].Event.Resolved {
+		t.Fatal("the winning choice should resolve the event and clear its vote")
+	}
+}
+
+func TestRoomEventVoteCanBeChangedAndDeadlineUsesSubmittedVotes(t *testing.T) {
+	room, now := coopEventRoom(t, "player-1", "player-2")
+	if err := ChooseRoomEvent(room, "player-1", "study", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ChooseRoomEvent(room, "player-1", "leave", now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if !AdvanceRoomEventVote(room, now.Add(RoomEventVoteWindow)) {
+		t.Fatal("the event vote should resolve at its deadline")
+	}
+	if room.Run.Flags["warden_weakness"] {
+		t.Fatal("a changed vote for leave should replace the earlier study vote")
+	}
+	if room.Run.EventVote != nil || !room.Run.Rooms["archive"].Event.Resolved {
+		t.Fatal("deadline resolution should clear the vote and resolve the event")
+	}
+}
+
+func TestRoomEventVoteTieAndNoVoteFallbacksResolve(t *testing.T) {
+	tied, now := coopEventRoom(t, "player-1", "player-2")
+	if err := ChooseRoomEvent(tied, "player-1", "study", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := ChooseRoomEvent(tied, "player-2", "leave", now); err != nil {
+		t.Fatal(err)
+	}
+	if !tied.Run.Rooms["archive"].Event.Resolved {
+		t.Fatal("a fully submitted tie should resolve immediately")
+	}
+
+	empty, now := coopEventRoom(t, "player-1", "player-2")
+	if !AdvanceRoomEventVote(empty, now.Add(RoomEventVoteWindow)) {
+		t.Fatal("a vote with no submissions should resolve at its deadline")
+	}
+	if !empty.Run.Rooms["archive"].Event.Resolved || empty.Run.EventVote != nil {
+		t.Fatal("the no-vote fallback should resolve one available choice")
+	}
+}
+
 func TestEventRoomCannotBeSkippedWithoutResolvingChoice(t *testing.T) {
 	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 	room := newTestRoom()
