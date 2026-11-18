@@ -233,6 +233,28 @@ func findBossMonster() (string, bool) {
 	return "", false
 }
 
+func TestBulwarkShieldWallProvidesSustainWhenWounded(t *testing.T) {
+	room, _ := newClassCombatTestRoom(t, ClassBulwark)
+	run := room.Run
+	player := run.Players["player-1"]
+	player.Health = 15
+	enemy := &run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Health, enemy.MaxHealth = 200, 200
+	enemy.Intent = &EnemyIntent{Kind: "heavy", Label: "Crushing blow", Damage: 8, TargetPlayerID: player.ID}
+
+	command := skillPolicyCommand(room, player.ID, run.CombatRound.Number, rand.New(rand.NewSource(1)))
+	if command.Skill != "bulwark.shield-wall" {
+		t.Fatalf("a wounded Bulwark should use Shield Wall to recover, got %+v", command)
+	}
+	before := player.Health
+	if err := SubmitCombatAction(room, player.ID, command, run.CombatRound.StartedAt); err != nil {
+		t.Fatalf("submit Shield Wall: %v", err)
+	}
+	if player.Health != before+1 {
+		t.Fatalf("Shield Wall should restore 1 health after the guarded round: before %d, after %d", before, player.Health)
+	}
+}
+
 func TestTauntDrawsSingleTargetAttacksForItsDuration(t *testing.T) {
 	room, _ := newClassCombatTestRoom(t, ClassBulwark, "player-1", "player-2")
 	run := room.Run
