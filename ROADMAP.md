@@ -14,7 +14,7 @@ This roadmap is a living plan, not a promise that every idea will ship. We prior
  
 ## Next up — prioritized product work
 
-These are the current priorities, not a promise that each item ships in strict isolation. Reorder as playtesting and implementation evidence changes. Routine real-device testing, regression checks, and continuous QA are expected for every change and are not standalone roadmap milestones.
+These are the current priorities, not a promise that each item ships in strict isolation. Reorder as playtesting and implementation evidence changes. Priorities 2 and 3 are intentionally parallel, coupled workstreams: combat changes should be designed alongside the measurement and simulation improvements needed to evaluate them. Routine real-device testing, regression checks, and continuous QA are expected for every change and are not standalone roadmap milestones.
 
 1. **Close the multiplayer usability gaps.**
    - [x] Make every multi-option room/event decision party-voted and server-authoritative, using a 15-second vote window, visible party choices/tallies, vote changes, random tie/no-vote fallback, and immediate solo resolution. This includes trade-off choices such as +1 Strike / -2 Guard; do not silently let one player decide for everyone.
@@ -24,23 +24,23 @@ These are the current priorities, not a promise that each item ships in strict i
    - [ ] Finish shareable party invitations (PR #87) and pre-adventure spectator links (PR #94); verify the complete host/guest/spectator journey.
    - [ ] After the current four-player experience is solid, design larger active parties. Do not simply raise the cap: revisit encounter composition, telegraph readability, action windows, UI density, and network/state scaling.
 
-2. **Make combat and monsters more engaging.**
+2. **Improve combat depth, encounter quality, and balance (in parallel with #3).**
    - [ ] Improve monster identity through distinct behaviours, target selection, support actions, interrupts, phases, environmental interactions, and complementary formations.
    - [ ] Make combat choices more consequential and readable; expand the tactical verbs gradually (consumables, aid/recovery, defensive interactions) without introducing MMO-style role requirements or resource-management sprawl.
    - [ ] Tune encounter pacing, monster durability/damage, player survivability, status effects, and reward cadence together. Prefer interesting mechanics over inflated health.
    - [ ] Playtest boss mechanics and floor guardians; ensure each major encounter teaches, tests, or remixes mechanics players can understand and counter.
 
-3. **Build a balance-tuning workbench.**
+3. **Build the balance-tuning workbench (in parallel with #2).**
    - [ ] Consolidate and document tunable parameters for monsters, abilities, classes, encounter budgets, party scaling, floors, modifiers, XP, rewards, and economy in versioned, data-driven configuration. Identify remaining hard-coded knobs and migrate them incrementally.
    - [ ] Make simulation reports explain the effective parameter set, scenario/episode seed, party composition, theme, policy, and outcome metrics; retain reproducible baselines and meaningful regression thresholds.
    - [ ] Add an episode-based optimization loop for LLM-assisted tuning: propose a small parameter diff, run representative seeded episodes (solo, duos, trios, four-player parties; themes and depth bands), compare against baseline and safety/quality guardrails, and summarize trade-offs.
    - [ ] Keep the loop deterministic, bounded, reproducible, and reviewable. LLMs may suggest changes and analyze results; they must not silently change balance or promote parameters without human review.
    - [ ] Include actual playtest feedback alongside simulation results; simulation policies are proxies, not substitutes for human play.
 
-4. **Strengthen persistent progression after optional authentication lands.**
-   - [ ] Complete and merge optional Discord authentication (PR #101), then verify guest-to-account linking, conflict handling, cross-device profile access, and recovery.
+4. **Strengthen persistent progression and character identity.**
+   - [x] Configure and launch production Discord authentication; verify guest-to-account linking, conflict handling, and cross-device profile access (PR #101, ADR 0034).
+   - [ ] Add sign-out for Discord-linked devices, so a shared computer can return to a fresh guest profile.
    - [ ] Move best expedition distance/rank from browser-only storage to the server-side profile and show it in the Profile menu.
-   - [ ] Add guest-profile export/recovery and data export/deletion.
    - [ ] Continue tuning Adventurer Rank and class mastery pacing; expand mastery-based unlocks and cosmetics without talent trees, mandatory roles, or power-gated classes.
    - [ ] Keep lifetime character identity/records and permadeath as a separate, deliberate progression layer; define resurrection and retirement semantics before implementing the full character-life system.
 
@@ -164,9 +164,8 @@ These are the current priorities, not a promise that each item ships in strict i
 - [x] Surface profile rank, class mastery, and earned rewards through the shared Profile menu on the title screen, party lobby, and combat screen; show each class's mastery during class selection.
 - [x] Add profile collection and recent-unlock views to the shared Profile menu.
 - [x] Add a safe guest-to-account linking path: optional Sign in with Discord links the browser's guest profile, or switches the device to the account's profile; profiles are never merged, and a device with its own progress asks first (ADR 0034).
-- [ ] Register the production Discord application with the `/auth/discord/callback` redirect and set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and `DISCORD_REDIRECT_URI` on the Render API service (ADR 0034).
+- [x] Register the production Discord application with the `/auth/discord/callback` redirect and configure `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and `DISCORD_REDIRECT_URI` on the Render API service (ADR 0034).
 - [ ] Add sign-out for Discord-linked devices, so a shared computer can return to a fresh guest profile.
-- [ ] Add export/recovery for guest progression for players who do not sign in.
 - [ ] Keep individual character levels, generated names, lifetime records, and permadeath separate from profile rank and class mastery.
 - [ ] Add persistent guest-character creation and selection, with a memorable identity flow and lifetime record visible from the lobby.
 - [ ] Track each character's life story: dungeons entered, completed, escaped, deaths, revivals, bosses defeated, discoveries, and other notable milestones.
