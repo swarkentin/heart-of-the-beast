@@ -23,7 +23,7 @@ func TestRenderMarkdownOmitsFindingsAndSuggestedInvestigations(t *testing.T) {
 		}},
 	}
 
-	markdown := renderMarkdown(report)
+	markdown := renderMarkdown(report, nil)
 	if strings.Contains(markdown, "Findings and suggested investigations") {
 		t.Fatal("balance report still includes the findings section")
 	}
