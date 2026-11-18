@@ -43,20 +43,20 @@ func TestRenderMarkdownIncludesCombatAndEndlessClassCharts(t *testing.T) {
 	endless := &EndlessReport{}
 	endless.Scenarios = append(endless.Scenarios,
 		struct {
-			Party []string `json:"party"`
-			PartySize int `json:"partySize"`
-			Policy string `json:"policy"`
-			Runs int `json:"runs"`
-			Completed int `json:"completed"`
-			MedianDepth int `json:"medianDepth"`
+			Party       []string `json:"party"`
+			PartySize   int      `json:"partySize"`
+			Policy      string   `json:"policy"`
+			Runs        int      `json:"runs"`
+			Completed   int      `json:"completed"`
+			MedianDepth int      `json:"medianDepth"`
 		}{Party: []string{"arcanist"}, PartySize: 1, Policy: "tactical", Runs: 10, Completed: 7, MedianDepth: 6},
 		struct {
-			Party []string `json:"party"`
-			PartySize int `json:"partySize"`
-			Policy string `json:"policy"`
-			Runs int `json:"runs"`
-			Completed int `json:"completed"`
-			MedianDepth int `json:"medianDepth"`
+			Party       []string `json:"party"`
+			PartySize   int      `json:"partySize"`
+			Policy      string   `json:"policy"`
+			Runs        int      `json:"runs"`
+			Completed   int      `json:"completed"`
+			MedianDepth int      `json:"medianDepth"`
 		}{Party: []string{"bulwark"}, PartySize: 1, Policy: "tactical", Runs: 10, Completed: 4, MedianDepth: 3},
 	)
 
