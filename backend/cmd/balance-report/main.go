@@ -44,7 +44,7 @@ func main() {
 	if err := os.WriteFile(*jsonPath, append(encoded, '\n'), 0644); err != nil {
 		fatal(err)
 	}
-	markdown := renderMarkdown(report, comparison)
+	markdown := renderMarkdown(report)
 	if err := os.WriteFile(*markdownPath, []byte(markdown), 0644); err != nil {
 		fatal(err)
 	}
@@ -54,24 +54,14 @@ func main() {
 	}
 }
 
-func renderMarkdown(report game.BalanceReport, comparison *game.BalanceComparison) string {
+func renderMarkdown(report game.BalanceReport) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Combat balance report\n\n")
 	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount)
-	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat findings as investigation prompts and validate with playtests.\n\n", report.Policy)
+	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat results as directional and validate with playtests.\n\n", report.Policy)
 	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|\n")
 	for _, s := range report.Scenarios {
 		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
-	}
-	b.WriteString("\n## Findings and suggested investigations\n\n")
-	if comparison == nil {
-		b.WriteString("No historical baseline supplied. This report is suitable as the first recorded baseline. Extreme win/wipe rates should still be reviewed before accepting it.\n")
-	} else if len(comparison.Findings) == 0 {
-		b.WriteString("No findings.\n")
-	} else {
-		for _, finding := range comparison.Findings {
-			fmt.Fprintf(&b, "- **%s — %s (%s):** %s\n", strings.ToUpper(finding.Severity), finding.ScenarioID, finding.Metric, finding.Message)
-		}
 	}
 	b.WriteString("\n## Interpretation\n\n")
 	b.WriteString("A changed metric is not automatically a balance defect. Review the scenario, compare the relevant class/party composition, inspect combat logs and shared transition tests, then validate candidate changes with solo and co-op playtests. Do not automatically modify authored stats from this report.\n")
