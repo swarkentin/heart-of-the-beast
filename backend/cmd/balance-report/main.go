@@ -113,7 +113,7 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 		for _, classID := range classes {
 			values := combatRates[classID]; var total float64
 			for _, value := range values { total += value }
-			labels = append(labels, strings.Title(strings.ReplaceAll(classID, "-", " ")))
+			labels = append(labels, fmt.Sprintf("%q", strings.Title(strings.ReplaceAll(classID, "-", " "))))
 			combatValues = append(combatValues, fmt.Sprintf("%.1f", total/float64(len(values))))
 			clear, ok := endlessClear[classID]
 			if !ok { clearValues = append(clearValues, "0"); depthValues = append(depthValues, "0") } else { clearValues = append(clearValues, fmt.Sprintf("%.1f", clear)); depthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID]))) }
