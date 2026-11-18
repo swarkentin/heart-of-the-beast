@@ -97,7 +97,9 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 		for _, scenario := range report.Scenarios {
 			if scenario.PartySize == 1 && len(scenario.ClassIDs) == 1 {
 				classID := scenario.ClassIDs[0]
-				if _, ok := combatRates[classID]; !ok {\n\t\t\t\t\tclasses = append(classes, classID)\n\t\t\t\t}
+				if _, ok := combatRates[classID]; !ok {
+					classes = append(classes, classID)
+				}
 				combatRates[classID] = append(combatRates[classID], scenario.Summary.WinRate*100)
 			}
 		}
@@ -115,12 +117,21 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 		clearValues := make([]string, 0, len(classes))
 		depthValues := make([]string, 0, len(classes))
 		for _, classID := range classes {
-			values := combatRates[classID]; var total float64
-			for _, value := range values { total += value }
+			values := combatRates[classID]
+			var total float64
+			for _, value := range values {
+				total += value
+			}
 			labels = append(labels, fmt.Sprintf("%q", strings.Title(strings.ReplaceAll(classID, "-", " "))))
 			combatValues = append(combatValues, fmt.Sprintf("%.1f", total/float64(len(values))))
 			clear, ok := endlessClear[classID]
-			if !ok {\n\t\t\t\tclearValues = append(clearValues, "0")\n\t\t\t\tdepthValues = append(depthValues, "0")\n\t\t\t} else {\n\t\t\t\tclearValues = append(clearValues, fmt.Sprintf("%.1f", clear))\n\t\t\t\tdepthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID])))\n\t\t\t}
+			if !ok {
+				clearValues = append(clearValues, "0")
+				depthValues = append(depthValues, "0")
+			} else {
+				clearValues = append(clearValues, fmt.Sprintf("%.1f", clear))
+				depthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID])))
+			}
 		}
 		if len(classes) > 0 {
 			fmt.Fprintf(&b, "### Win/completion rate by class (%%)\n\n```mermaid\nxychart-beta\n    x-axis [%s]\n    y-axis Rate 0 --> 100\n    bar [%s]\n    line [%s]\n```\n\n", strings.Join(labels, ", "), strings.Join(combatValues, ", "), strings.Join(clearValues, ", "))
