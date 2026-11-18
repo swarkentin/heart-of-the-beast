@@ -1,5 +1,14 @@
 export type RetryOptions = { attempts?: number; delayMs?: number };
 
+export type TimestampedProfile = { updatedAt: string };
+
+/** True only when the server says the profile changed after the captured baseline. */
+export function profileUpdatedAfter(value: TimestampedProfile, baseline: TimestampedProfile): boolean {
+  const updatedAt = Date.parse(value.updatedAt);
+  const baselineUpdatedAt = Date.parse(baseline.updatedAt);
+  return Number.isFinite(updatedAt) && Number.isFinite(baselineUpdatedAt) && updatedAt > baselineUpdatedAt;
+}
+
 /**
  * Re-read a value until it reflects an expected state. Every response is published immediately so
  * the UI can recover as soon as the server-side write becomes visible.
