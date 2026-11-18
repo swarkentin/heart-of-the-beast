@@ -83,12 +83,6 @@ type EndlessReport struct {
 func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Combat balance report\n\n")
-	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount)
-	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat results as directional and validate with playtests.\n\n", report.Policy)
-	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|\n")
-	for _, s := range report.Scenarios {
-		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
-	}
 	if endless != nil {
 		b.WriteString("\n## Class performance: combat vs endless expeditions\n\n")
 		b.WriteString("Solo class results only; combat is the mean win rate across the encounter suite, while endless is first-dungeon completion under the tactical policy. These are separate simulations, so compare directionally.\n\n")
@@ -138,6 +132,13 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 			b.WriteString("Bars: mean solo combat encounter win rate. Line: solo endless first-dungeon completion rate (tactical policy).\n\n")
 			fmt.Fprintf(&b, "### Endless expedition median depth by class (tactical policy)\n\n```mermaid\nxychart-beta\n    x-axis [%s]\n    y-axis MedianDepth 0 --> %d\n    bar [%s]\n```\n\n", strings.Join(labels, ", "), maxInt(endlessDepth), strings.Join(depthValues, ", "))
 		}
+	}
+
+	fmt.Fprintf(&b, "- Report version: %d\n- Scenarios: %d\n- Seeds per scenario: %d (seeds %d–%d)\n- Simulated encounters: %d\n\n", report.Version, len(report.Scenarios), report.SeedCount, report.FirstSeed, report.LastSeed, len(report.Scenarios)*report.SeedCount)
+	fmt.Fprintf(&b, "> Policy limitation: %s. This is a deterministic baseline policy, not a model of optimal or human play. Treat results as directional and validate with playtests.\n\n", report.Policy)
+	fmt.Fprintf(&b, "| Scenario | Party | Win rate | Wipe rate | Median rounds | P90 rounds | Median health left | Median healing |\n|---|---:|---:|---:|---:|---:|---:|---:|\n")
+	for _, s := range report.Scenarios {
+		fmt.Fprintf(&b, "| %s | %d | %.0f%% | %.0f%% | %d | %d | %d%% | %d |\n", s.ID, s.PartySize, s.Summary.WinRate*100, s.WipeRate*100, s.Summary.MedianRounds, s.Summary.P90Rounds, s.MedianRemainingHealthPct, s.MedianHealing)
 	}
 
 	b.WriteString("\n## Interpretation\n\n")
