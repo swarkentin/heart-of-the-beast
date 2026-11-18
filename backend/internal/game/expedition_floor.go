@@ -282,7 +282,11 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 	pick := func(ids []string) string { return ids[rng.Intn(len(ids))] }
 
 	// 1. Shape, and what kind of room sits in each slot of the middle layers.
+	// The finale is deliberately a compact gauntlet: entry, one signature bonus room, then the boss.
 	shape := floorShapes[rng.Intn(len(floorShapes))]
+	if final {
+		shape = []int{1}
+	}
 	type slot struct {
 		layer, index int
 		kind         floorRoomKind
@@ -296,26 +300,28 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 	// Every layer keeps at least one fight, so no route can skip the floor. The other slots are candidates for
 	// the special rooms: always one discovery, then sometimes a second discovery, a vault and a champion.
 	var candidates []int
-	for layer, width := range shape {
-		keep := rng.Intn(width)
-		for index := 0; index < width; index++ {
-			if index != keep {
-				candidates = append(candidates, slotIndex(shape, layer, index))
+	if final {
+		candidates = []int{0}
+	} else {
+		for layer, width := range shape {
+			keep := rng.Intn(width)
+			for index := 0; index < width; index++ {
+				if index != keep {
+					candidates = append(candidates, slotIndex(shape, layer, index))
+				}
 			}
 		}
+		rng.Shuffle(len(candidates), func(i, j int) { candidates[i], candidates[j] = candidates[j], candidates[i] })
 	}
-	rng.Shuffle(len(candidates), func(i, j int) { candidates[i], candidates[j] = candidates[j], candidates[i] })
 	specials := []floorRoomKind{floorRoomDiscovery}
 	if final {
-		// The fourth floor usually has one extra detour before its mandatory dungeon boss. It may be
-		// a vault, champion, lair boss, or a second discovery/puzzle; the detour never adds a floor.
-		if rng.Intn(100) < 85 && len(candidates) > 1 {
-			bonusKinds := []floorRoomKind{floorRoomVault, floorRoomElite, floorRoomDiscovery}
-			if theme.Lair.EncounterID != "" {
-				bonusKinds = append(bonusKinds, floorRoomLair)
-			}
-			specials = append(specials, bonusKinds[rng.Intn(len(bonusKinds))])
+		// Every finale has exactly one signature bonus room before its mandatory dungeon boss.
+		// Its seeded type varies between a vault, champion, lair boss, or discovery/puzzle.
+		bonusKinds := []floorRoomKind{floorRoomVault, floorRoomElite, floorRoomDiscovery}
+		if theme.Lair.EncounterID != "" {
+			bonusKinds = append(bonusKinds, floorRoomLair)
 		}
+		specials = []floorRoomKind{bonusKinds[rng.Intn(len(bonusKinds))]}
 	} else {
 		if rng.Intn(100) < 35+5*depth {
 			specials = append(specials, floorRoomVault)
@@ -386,8 +392,10 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		}
 		rooms[id] = room
 	}
-	rooms[guardID] = &DungeonRoom{ID: guardID, ThemeID: themeID, Name: theme.Guard.Name, Floor: floor, RoomType: "encounter", Description: theme.Guard.Description, Encounter: encounter(guardID, pick(theme.Heavy), 0)}
-	hints[guardID] = "guard"
+	if !final {
+		rooms[guardID] = &DungeonRoom{ID: guardID, ThemeID: themeID, Name: theme.Guard.Name, Floor: floor, RoomType: "encounter", Description: theme.Guard.Description, Encounter: encounter(guardID, pick(theme.Heavy), 0)}
+		hints[guardID] = "guard"
+	}
 
 	boss := theme.Guardians[(depth-1)%len(theme.Guardians)]
 	hints[bossID] = "boss"
@@ -440,10 +448,16 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 			}
 		}
 	}
-	for _, id := range layers[len(layers)-1] {
-		connect(id, guardID)
+	if final {
+		for _, id := range layers[len(layers)-1] {
+			connect(id, bossID)
+		}
+	} else {
+		for _, id := range layers[len(layers)-1] {
+			connect(id, guardID)
+		}
+		connect(guardID, bossID)
 	}
-	connect(guardID, bossID)
 	return entryID, rooms
 }
 

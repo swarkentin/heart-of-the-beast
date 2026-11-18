@@ -13,10 +13,11 @@ discovery room only gave things away. There was nothing to earn on a floor and n
 ## Decision
 
 A run is now an **expedition**: an endless chain of dungeons. Each ordinary dungeon is **exactly four floors** in
-one of the **eleven themes**. Floors one through three retain the standard seeded generator; floor four is the
-finale, with an 85% chance of an optional bonus room (vault, champion, lair boss or extra discovery/puzzle) before
-the mandatory dungeon boss. The boss has 30% bonus health (up from 20%) and its existing enrage plus signature
-mechanics. Capstone castles also remain four floors. The expedition ends only when the party falls; how far it got is the result.
+one of the **eleven themes**. Floors one through three retain the standard seeded generator; floor four is a
+fixed three-room finale: an entry encounter, exactly one seeded signature bonus room (vault, champion, lair boss
+or discovery/puzzle), then the mandatory dungeon boss. It skips the ordinary variable graph and guard encounter,
+so the final push is short and consistent while the bonus-room content changes by seed. The boss has 30% bonus
+health (up from 20%) and its existing enrage plus signature mechanics. Capstone castles also remain four floors. The expedition ends only when the party falls; how far it got is the result.
 
 1. **The loop.** Clear floors down to the dungeon boss. Beating it opens a camp and then a **crossroads**: two
    other themes are offered, each with its own modifiers that hold on every floor of that dungeon (one perk, plus
@@ -33,10 +34,10 @@ mechanics. Capstone castles also remain four floors. The expedition ends only wh
 3. **Content and shape are separate.** `ExpeditionTheme` (`expedition_content.go`) holds a theme's authored
    content: entry rooms, six halls, three discoveries, a vault, a champion room, a guard room, which encounters are
    light, standard, heavy and elite, two floor guardians and the dungeon boss. `generateExpeditionFloor`
-   (`expedition_floor.go`) decides shape: one of seven layered layouts with two or three route decisions, special
-   rooms placed by seed, and exits that say what kind of room they lead to. A floor has 7–9 rooms; every route
-   fights at least at the entry, the guard room and the boss; every floor has at least one discovery. Randomness
-   only ever picks among authored options. Validation runs at server start and in tests.
+   (`expedition_floor.go`) gives floors one through three one of seven layered layouts with seeded special rooms
+   and readable exits. Each has 7–9 rooms and every route fights at the entry, guard and guardian. Floor four has
+   exactly three rooms in a fixed sequence: entry, one seeded signature bonus room, boss. Randomness only ever
+   picks among authored options. Validation runs at server start and in tests.
 4. **Floor modifiers** (`floor_modifier_catalog.go`). On top of the dungeon's modifiers, floors below the first
    carry debuffs by depth — one on floors 2–3 and two on floor 4 — and 40% also carry a perk. A
    modifier is data: signed adjustments to enemy damage and health, Strike, Guard, gold, healing, healing after
