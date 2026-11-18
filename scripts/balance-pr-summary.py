@@ -10,19 +10,29 @@ def read_json(path):
         return json.load(handle)
 
 
-def chart(labels, title, axis_label, maximum, series):
+def chart(labels, title, subtitle, values):
     if not labels:
         return f"### {title}\n\n_No comparable data._\n"
     quoted = ", ".join(json.dumps(label) for label in labels)
+    fence = chr(96) * 3
     lines = [
-        f"### {title}", "", "```mermaid", "xychart-beta",
+        f"### {title}",
+        "",
+        subtitle,
+        "",
+        fence + "mermaid",
+        "xychart-beta",
         f"    x-axis [{quoted}]",
-        f'    y-axis "{axis_label}" 0 --> {max(1, maximum)}',
+        '    y-axis "Rate (%)" 0 --> 100',
+        f"    bar [{', '.join(f'{value:.1f}' for value in values)}]",
+        fence,
+        "",
+        "**Values:** " + " · ".join(
+            f"{label}: {value:.1f}%" for label, value in zip(labels, values)
+        ),
+        "",
     ]
-    for kind, values in series:
-        lines.append(f"    {kind} [{', '.join(f'{value:.1f}' for value in values)}]")
-    lines.append("```")
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines)
 
 
 def solo_endless(report):
@@ -87,23 +97,38 @@ def main():
 
     current_combat = [new_combat[c] for c in classes]
     current_clear = [clear_rate(new_endless[c]) for c in classes]
-    current_depth = [new_endless[c]["medianDepth"] for c in classes]
+    combat_encounters = len({
+        scenario.get("encounterId")
+        for scenario in after["scenarios"]
+        if scenario.get("partySize") == 1
+        and len(scenario.get("classIds", [])) == 1
+    })
+    combat_seeds = after.get("seedCount", 0)
+    endless_runs = max((new_endless[c].get("runs", 0) for c in classes), default=0)
 
     lines = [
         "<!-- balance-regression-dashboard -->",
         "## Combat balance regression dashboard",
         "",
-        f"Branch point: `{args.base_sha[:10]}` · PR head: `{args.head_sha[:10]}`.",
+        f"Branch point: {args.base_sha[:10]} · PR head: {args.head_sha[:10]}.",
         "Both revisions were simulated with identical seed ranges and settings.",
         "",
-        chart(labels, "Current solo class performance: combat vs. endless completion",
-              "Rate (%)", 100, [("bar", current_combat), ("line", current_clear)]),
-        "Bars: mean solo encounter win rate across the encounter suite. Line: solo endless first-dungeon clear rate (tactical policy).",
-        "",
-        chart(labels, "Current solo endless expedition median depth",
-              "Median depth", max(current_depth, default=1), [("bar", current_depth)]),
-        "",
+        chart(
+            labels,
+            "Solo encounter win rate",
+            f"Mean win rate across {combat_encounters} encounter types · "
+            f"{combat_seeds} seeds each ({combat_encounters * combat_seeds} simulated fights per class).",
+            current_combat,
+        ),
+        chart(
+            labels,
+            "Solo endless first-dungeon completion",
+            f"Share of tactical-policy expeditions clearing dungeon one · "
+            f"{endless_runs} seeded expeditions per class.",
+            current_clear,
+        ),
         "### Absolute results and changes by class",
+
         "",
         "| Class | Combat win rate: base → PR (Δ pp) | Endless clear: base → PR (Δ pp) | Median depth: base → PR (Δ) |",
         "|---|---:|---:|---:|",
