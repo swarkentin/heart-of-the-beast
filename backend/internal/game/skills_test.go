@@ -236,6 +236,8 @@ func findBossMonster() (string, bool) {
 func TestTauntDrawsSingleTargetAttacksForItsDuration(t *testing.T) {
 	room, _ := newClassCombatTestRoom(t, ClassBulwark, "player-1", "player-2")
 	run := room.Run
+	// Challenge is an early mastery unlock, not part of a new Bulwark's starting bar.
+	run.Players["player-1"].Skills = append(run.Players["player-1"].Skills, "bulwark.challenge")
 	enemy := &run.Rooms["entry"].Encounter.Enemies[0]
 	enemy.Health, enemy.MaxHealth = 200, 200
 	enemy.Intent = &EnemyIntent{Kind: "strike", Label: "Strike", Damage: 6, TargetPlayerID: "player-2"}
