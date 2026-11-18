@@ -102,6 +102,44 @@ def depth_reach_summary(scenario):
     furthest_text = f"D{furthest} ({reached_count}/{scenario.get('runs', 0)} runs)"
     return " · ".join(segments), half_depth, drop_text, furthest_text
 
+
+def depth_progression_chart(classes, scenarios):
+    """Render one comparable reach-rate line per solo class."""
+    if not classes:
+        return "### Endless depth reached by class\\n\\n_No comparable data._\\n"
+
+    max_depth = max(
+        (int(depth) for class_id in classes
+         for depth in scenarios[class_id].get("depthReachRates", {})),
+        default=0,
+    )
+    if max_depth == 0:
+        return "### Endless depth reached by class\\n\\n_No depth data._\\n"
+
+    depth_labels = ", ".join(json.dumps(f"D{depth}") for depth in range(1, max_depth + 1))
+    fence = chr(96) * 3
+    lines = [
+        "### Endless depth reached by class",
+        "",
+        "Share of solo tactical-policy runs that reach each depth. Each line is a class; a steeper drop means more runs are ending at that point.",
+        "",
+        fence + "mermaid",
+        "xychart-beta",
+        '    x-axis "Endless depth" [' + depth_labels + "]",
+        '    y-axis "Runs reaching depth (%)" 0 --> 100',
+    ]
+    for class_id in classes:
+        rates = scenarios[class_id].get("depthReachRates", {})
+        values = [
+            float(rates.get(str(depth), rates.get(depth, 0))) * 100
+            for depth in range(1, max_depth + 1)
+        ]
+        series = ", ".join(f"{value:.1f}" for value in values)
+        label = class_id.replace("-", " ").title()
+        lines.append(f'    line {json.dumps(label)} [{series}]')
+    lines.extend([fence, ""])
+    return "\\n".join(lines)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline-combat", required=True)
@@ -170,6 +208,7 @@ def main():
             f"{endless_runs} seeded expeditions per class.",
             current_clear,
         ),
+        depth_progression_chart(classes, new_endless),
         "### Absolute results and changes by class",
 
         "",
