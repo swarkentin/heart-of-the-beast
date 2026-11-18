@@ -274,7 +274,7 @@ var skillCatalog = []SkillDefinition{
 
 	// ---- Tactician: disruption and amplifying allies. ----
 	basic(skill(ClassTactician, "tactician.rapier-thrust", "Rapier Thrust", 1, SkillTargetEnemy, 0, "strike", "strike", "Quick and precise.", dmg(BasicAttackDamage, statPower))),
-	skill(ClassTactician, "tactician.commanding-strike", "Commanding Strike", 1, SkillTargetEnemy, 1, "control", "control", "Hit, weaken and expose a foe for the party, without dropping your guard.", dmg(5, statPower), weaken(2), mark(3), on(ScopeSelf, guard(2))),
+	skill(ClassTactician, "tactician.commanding-strike", "Commanding Strike", 1, SkillTargetEnemy, 1, "control", "control", "Hit, weaken and expose a foe for the party, without dropping your guard.", dmg(5, statPower), weaken(2), mark(3), on(ScopeSelf, guard(1))),
 	skill(ClassTactician, "tactician.countermand", "Countermand", 1, SkillTargetEnemy, 2, "control", "control", "See the move coming and call it off.", dmg(3, statPower), interrupt(4)),
 	skill(ClassTactician, "tactician.rally", "Rally", 2, SkillTargetParty, 3, "empower", "support", "A shout that lifts every blade.", empower(3)),
 	skill(ClassTactician, "tactician.coordinated-assault", "Coordinated Assault", 3, SkillTargetEnemy, 2, "threat", "control", "Point, and the whole party knows where to hit.", mark(6)),
