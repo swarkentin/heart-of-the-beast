@@ -71,7 +71,7 @@ const (
 	// EliteHealthPercent is the extra health of a champion-room encounter.
 	EliteHealthPercent = 30
 	// FinalBossHealthPercent is the extra health of the dungeon boss.
-	FinalBossHealthPercent = 20
+	FinalBossHealthPercent = 30
 )
 
 type ExpeditionThemeCatalog struct {
