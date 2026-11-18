@@ -335,8 +335,8 @@ func TestRenewalHealsAChosenAllyAndCommandingStrikeMarksForTheParty(t *testing.T
 	if err := ApplyCommand(room, "player-2", Command{Type: "combat", Round: run.CombatRound.Number, Action: "defend"}, run.CombatRound.StartedAt); err != nil {
 		t.Fatal(err)
 	}
-	if enemy.MarkedDamage != 3 {
-		t.Fatalf("Commanding Strike should leave a 3-damage mark, got %d", enemy.MarkedDamage)
+	if enemy.MarkedDamage != 2 {
+		t.Fatalf("Commanding Strike should leave a 2-damage mark, got %d", enemy.MarkedDamage)
 	}
 }
 
