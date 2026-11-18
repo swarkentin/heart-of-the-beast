@@ -71,12 +71,12 @@ func main() {
 
 type EndlessReport struct {
 	Scenarios []struct {
-		Party []string `json:"party"`
-		PartySize int `json:"partySize"`
-		Policy string `json:"policy"`
-		Runs int `json:"runs"`
-		Completed int `json:"completed"`
-		MedianDepth int `json:"medianDepth"`
+		Party       []string `json:"party"`
+		PartySize   int      `json:"partySize"`
+		Policy      string   `json:"policy"`
+		Runs        int      `json:"runs"`
+		Completed   int      `json:"completed"`
+		MedianDepth int      `json:"medianDepth"`
 	} `json:"scenarios"`
 }
 
