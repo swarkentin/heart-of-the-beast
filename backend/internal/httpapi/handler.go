@@ -532,6 +532,13 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 				writeStoreError(w, err)
 				return
 			}
+			// A heartbeat can observe the terminal room between its save and the
+			// command handler's progression award. Make terminal snapshots safe
+			// for clients to use as the signal to refresh their profile.
+			if err := h.awardRunProgress(r.Context(), latest); err != nil {
+				writeError(w, http.StatusInternalServerError, "could not save progression")
+				return
+			}
 			writeJSON(w, http.StatusOK, publicRoom(latest, h.now()))
 			return
 		}
