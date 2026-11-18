@@ -42,9 +42,9 @@ func main() {
 	var endless *EndlessReport
 	if *endlessPath != "" {
 		data, err := os.ReadFile(*endlessPath)
-		if err != nil { fatal(fmt.Errorf("read endless report: %w", err)) }
+		if err != nil {\n\t\t\tfatal(fmt.Errorf("read endless report: %w", err))\n\t\t}
 		var value EndlessReport
-		if err := json.Unmarshal(data, &value); err != nil { fatal(fmt.Errorf("decode endless report: %w", err)) }
+		if err := json.Unmarshal(data, &value); err != nil {\n\t\t\tfatal(fmt.Errorf("decode endless report: %w", err))\n\t\t}
 		endless = &value
 	}
 
@@ -93,7 +93,7 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 		for _, scenario := range report.Scenarios {
 			if scenario.PartySize == 1 && len(scenario.ClassIDs) == 1 {
 				classID := scenario.ClassIDs[0]
-				if _, ok := combatRates[classID]; !ok { classes = append(classes, classID) }
+				if _, ok := combatRates[classID]; !ok {\n\t\t\t\t\tclasses = append(classes, classID)\n\t\t\t\t}
 				combatRates[classID] = append(combatRates[classID], scenario.Summary.WinRate*100)
 			}
 		}
@@ -102,7 +102,7 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 		endlessDepth := make(map[string]float64)
 		for _, scenario := range endless.Scenarios {
 			if scenario.PartySize == 1 && len(scenario.Party) == 1 && scenario.Policy == "tactical" && scenario.Runs > 0 {
-				endlessClear[scenario.Party[0]] = float64(scenario.Completed)/float64(scenario.Runs)*100
+				endlessClear[scenario.Party[0]] = float64(scenario.Completed) / float64(scenario.Runs) * 100
 				endlessDepth[scenario.Party[0]] = float64(scenario.MedianDepth)
 			}
 		}
@@ -116,7 +116,7 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 			labels = append(labels, fmt.Sprintf("%q", strings.Title(strings.ReplaceAll(classID, "-", " "))))
 			combatValues = append(combatValues, fmt.Sprintf("%.1f", total/float64(len(values))))
 			clear, ok := endlessClear[classID]
-			if !ok { clearValues = append(clearValues, "0"); depthValues = append(depthValues, "0") } else { clearValues = append(clearValues, fmt.Sprintf("%.1f", clear)); depthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID]))) }
+			if !ok {\n\t\t\t\tclearValues = append(clearValues, "0")\n\t\t\t\tdepthValues = append(depthValues, "0")\n\t\t\t} else {\n\t\t\t\tclearValues = append(clearValues, fmt.Sprintf("%.1f", clear))\n\t\t\t\tdepthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID])))\n\t\t\t}
 		}
 		if len(classes) > 0 {
 			fmt.Fprintf(&b, "### Win/completion rate by class (%%)\n\n```mermaid\nxychart-beta\n    x-axis [%s]\n    y-axis Rate 0 --> 100\n    bar [%s]\n    line [%s]\n```\n\n", strings.Join(labels, ", "), strings.Join(combatValues, ", "), strings.Join(clearValues, ", "))
@@ -132,7 +132,7 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 
 func maxInt(values map[string]float64) int {
 	maximum := 1
-	for _, value := range values { if int(value) > maximum { maximum = int(value) } }
+	for _, value := range values {\n\t\tif int(value) > maximum {\n\t\t\tmaximum = int(value)\n\t\t}\n\t}
 	return maximum
 }
 
