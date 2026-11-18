@@ -10,23 +10,21 @@ import (
 	"time"
 )
 
-// An expedition is one dungeon: four to six generated floors in one theme, each ending in a guardian, with a
+// An expedition is one dungeon: exactly four generated floors in one theme, each ending in a guardian, with a
 // camp between floors and the dungeon's boss at the bottom. Floors below the first carry level-wide modifiers.
 
 const (
 	// ExpeditionGenerator is the Run.Generator value of expedition runs.
 	ExpeditionGenerator = 2
-	// MinimumExpeditionDepth and MaximumExpeditionDepth bound the number of floors in a dungeon.
+	// ExpeditionFloorCount is the fixed number of floors in every ordinary dungeon.
 	MinimumExpeditionDepth = 4
-	MaximumExpeditionDepth = 6
+	MaximumExpeditionDepth = 4
 	// RandomDungeonThemeID asks StartMultiLevelRunForTheme to choose a playable theme from the run seed.
 	RandomDungeonThemeID = "random"
 )
 
-// expeditionDepth is the number of floors in the dungeon a seed describes.
-func expeditionDepth(seed uint64) int {
-	return MinimumExpeditionDepth + int(mixSeed(seed, 0, 0xdee9)%uint64(MaximumExpeditionDepth-MinimumExpeditionDepth+1))
-}
+// expeditionDepth is fixed so dungeon duration is predictable; the seed still controls room generation.
+func expeditionDepth(_ uint64) int { return ExpeditionFloorCount }
 
 func runSeed(runID string) uint64 {
 	hash := fnv.New64a()
