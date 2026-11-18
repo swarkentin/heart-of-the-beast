@@ -14,15 +14,38 @@ func TestGenerateBalanceReportCoversClassesAndPartySizesDeterministically(t *tes
 	if len(first.Scenarios) != len(balanceEncounterIDs)*(len(ClassCatalog())+2) {
 		t.Fatalf("got %d scenarios", len(first.Scenarios))
 	}
-	if first.FirstSeed != 41 || first.LastSeed != 41 || first.SeedCount != 1 {
-		t.Fatalf("unexpected seed metadata: %+v", first)
+	if first.Version != BalanceReportVersion || first.FirstSeed != 41 || first.LastSeed != 41 || first.SeedCount != 1 {
+		t.Fatalf("unexpected report metadata: %+v", first)
 	}
 	for i := range first.Scenarios {
-		if first.Scenarios[i].ID != second.Scenarios[i].ID || first.Scenarios[i].Summary != second.Scenarios[i].Summary {
-			t.Fatalf("same fixed seed produced different scenario %q", first.Scenarios[i].ID)
+		got, again := first.Scenarios[i], second.Scenarios[i]
+		if got.ID != again.ID || got.Summary != again.Summary {
+			t.Fatalf("same fixed seed produced different scenario %q", got.ID)
 		}
-		if first.Scenarios[i].PartySize != 1 && first.Scenarios[i].PartySize != 2 && first.Scenarios[i].PartySize != 4 {
-			t.Fatalf("unexpected party size: %+v", first.Scenarios[i])
+		if got.PartySize != 1 && got.PartySize != 2 && got.PartySize != 4 {
+			t.Fatalf("unexpected party size: %+v", got)
+		}
+		if len(got.Snapshot.Players) != got.PartySize {
+			t.Errorf("scenario %q snapshot has %d players, want %d", got.ID, len(got.Snapshot.Players), got.PartySize)
+		}
+		if len(got.Snapshot.Enemies) == 0 {
+			t.Errorf("scenario %q snapshot has no enemies", got.ID)
+		}
+		if got.Snapshot.ExperienceReward != EncounterExperienceReward {
+			t.Errorf("scenario %q snapshot lost experience reward: %d", got.ID, got.Snapshot.ExperienceReward)
+		}
+		if len(got.ClassIDs) != got.PartySize {
+			t.Errorf("scenario %q has %d class IDs, want %d", got.ID, len(got.ClassIDs), got.PartySize)
+		}
+		for _, player := range got.Snapshot.Players {
+			if player.ClassBuild == nil || len(player.Skills) == 0 || player.MaxHealth <= 0 {
+				t.Errorf("scenario %q has incomplete effective player input: %+v", got.ID, player)
+			}
+		}
+		for _, enemy := range got.Snapshot.Enemies {
+			if enemy.DefinitionID == "" || enemy.MaxHealth <= 0 {
+				t.Errorf("scenario %q has incomplete effective enemy input: %+v", got.ID, enemy)
+			}
 		}
 	}
 }
