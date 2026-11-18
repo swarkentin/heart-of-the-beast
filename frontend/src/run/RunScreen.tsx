@@ -14,7 +14,6 @@ import { DungeonIntro } from "./DungeonIntro";
 import { interruptTarget } from "./interrupts.ts";
 import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
-import { profileUpdatedAfter, retryUntil } from "./profileRefresh.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
 import "./run.css";
@@ -140,17 +139,16 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const liveProfile = useRef<ApiProfile | null>(null);
   if (!gameOver && profile) liveProfile.current = profile;
   const runClassId = player?.classBuild?.classId;
-  const profileUpdatedAtBeforeRun = liveProfile.current?.updatedAt;
+  const refreshedProgressRun = useRef("");
   useEffect(() => {
-    // No XP means no profile award is expected; do not wait for a timestamp that should not change.
-    if (!gameOver || spectator || !snapshot.runProgress?.xp) return;
-    void retryUntil(
-      onRefreshProfile,
-      value => !profileUpdatedAtBeforeRun || profileUpdatedAfter(value, { updatedAt: profileUpdatedAtBeforeRun }),
-      () => { /* App publishes each profile response; this effect only coordinates retries. */ },
-      { attempts: 10, delayMs: 500 },
-    );
-  }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, profileUpdatedAtBeforeRun, onRefreshProfile]);
+    // The server only exposes a terminal room after its idempotent progression award has committed.
+    // No XP means no profile write is expected, so there is nothing to refresh.
+    if (!gameOver || spectator || !snapshot.runProgress?.xp || refreshedProgressRun.current === run.id) return;
+    refreshedProgressRun.current = run.id;
+    void onRefreshProfile().catch(() => {
+      // The award is durable; a later profile load can recover if this read fails transiently.
+    });
+  }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, onRefreshProfile]);
   const report = useMemo(() => gameOver ? progressReport({
     runId: run.id, progress: snapshot.runProgress, before: liveProfile.current, after: profile, spectator: !selfId,
     classId: runClassId, className: catalog?.classes.find(item => item.id === runClassId)?.name,
