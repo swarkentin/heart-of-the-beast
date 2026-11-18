@@ -38,7 +38,7 @@ mechanics. Capstone castles also remain four floors. The expedition ends only wh
    fights at least at the entry, the guard room and the boss; every floor has at least one discovery. Randomness
    only ever picks among authored options. Validation runs at server start and in tests.
 4. **Floor modifiers** (`floor_modifier_catalog.go`). On top of the dungeon's modifiers, floors below the first
-   carry debuffs by depth — one on floors 2–3, two on floors 4–5, three on floor 6 — and 40% also carry a perk. A
+   carry debuffs by depth — one on floors 2–3 and two on floor 4 — and 40% also carry a perk. A
    modifier is data: signed adjustments to enemy damage and health, Strike, Guard, gold, healing, healing after
    fights, and damage on entering a fight. Opposites never hold together. Telegraphs already include them.
 5. **Dungeon bosses** (`boss_mechanics.go`). The boss of the last floor has 30% more health, enrages at 40%
