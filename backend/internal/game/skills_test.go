@@ -3,6 +3,7 @@ package game
 import (
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -48,6 +49,42 @@ func TestEveryClassHasTenSkillsOnTheMasteryLadderWithRulesText(t *testing.T) {
 	}
 	if !strings.Contains(mustSkill(t, "cleric.resurrection").Rules, "Once per fight") {
 		t.Fatalf("a once-a-fight skill should say so: %q", mustSkill(t, "cleric.resurrection").Rules)
+	}
+}
+
+func TestBulwarkStartingLoadoutIncludesSoloCounterplay(t *testing.T) {
+	loadout := DefaultLoadout(ClassBulwark, 1)
+	if !contains(loadout, "bulwark.shield-bash") {
+		t.Fatalf("Bulwark's starting loadout should include Shield Bash: %v", loadout)
+	}
+	if contains(loadout, "bulwark.challenge") {
+		t.Fatalf("Challenge should unlock at mastery 2, not occupy a solo starting slot: %v", loadout)
+	}
+	if err := ValidateLoadout(ClassBulwark, 1, []string{
+		"bulwark.mace-strike", "bulwark.shield-wall", "bulwark.shield-bash", SkillDefend,
+	}); err != nil {
+		t.Fatalf("Shield Bash should be available at mastery 1: %v", err)
+	}
+	if err := ValidateLoadout(ClassBulwark, 1, []string{
+		"bulwark.mace-strike", "bulwark.shield-wall", "bulwark.challenge", SkillDefend,
+	}); !errors.Is(err, ErrSkillLocked) {
+		t.Fatalf("Challenge should remain locked until mastery 2, got %v", err)
+	}
+	if err := ValidateLoadout(ClassBulwark, 2, []string{
+		"bulwark.mace-strike", "bulwark.shield-wall", "bulwark.challenge", SkillDefend,
+	}); err != nil {
+		t.Fatalf("Challenge should unlock at mastery 2: %v", err)
+	}
+
+	room, _ := newClassCombatTestRoom(t, ClassBulwark)
+	enemy := &room.Run.Rooms["entry"].Encounter.Enemies[0]
+	enemy.Intent = &EnemyIntent{
+		Kind: "heavy", Label: "Crushing blow", Damage: 8,
+		Interruptible: true, TargetPlayerID: "player-1",
+	}
+	command := skillPolicyCommand(room, "player-1", room.Run.CombatRound.Number, rand.New(rand.NewSource(1)))
+	if command.Skill != "bulwark.shield-bash" || command.TargetID != enemy.ID {
+		t.Fatalf("tactical policy should answer a dangerous telegraph with Shield Bash, got %+v", command)
 	}
 }
 
