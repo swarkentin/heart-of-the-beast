@@ -23,20 +23,34 @@ type healthResponse struct {
 }
 
 type Handler struct {
-	rooms store.Repository
-	now   func() time.Time
+	rooms   store.Repository
+	now     func() time.Time
+	discord *DiscordConfig
+}
+
+// Options configures optional handler behavior.
+type Options struct {
+	// Now is the time source; nil uses time.Now.
+	Now func() time.Time
+	// Discord enables "Sign in with Discord" (ADR 0034); nil disables it.
+	Discord *DiscordConfig
 }
 
 func NewHandler(rooms store.Repository) http.Handler {
-	return NewHandlerWithClock(rooms, time.Now)
+	return NewHandlerWithOptions(rooms, Options{})
 }
 
 // NewHandlerWithClock injects the time source so time-dependent API behavior can be tested deterministically.
 func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Handler {
+	return NewHandlerWithOptions(rooms, Options{Now: now})
+}
+
+func NewHandlerWithOptions(rooms store.Repository, options Options) http.Handler {
+	now := options.Now
 	if now == nil {
 		now = time.Now
 	}
-	h := &Handler{rooms: rooms, now: now}
+	h := &Handler{rooms: rooms, now: now, discord: options.Discord}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", health)
 	mux.HandleFunc("POST /rooms", h.createRoom)
@@ -53,6 +67,10 @@ func NewHandlerWithClock(rooms store.Repository, now func() time.Time) http.Hand
 	mux.HandleFunc("POST /profile", h.createOrGetProfile)
 	mux.HandleFunc("GET /profile", h.getProfile)
 	mux.HandleFunc("PATCH /profile", h.updateProfile)
+	mux.HandleFunc("GET /auth/providers", authProviders(h))
+	mux.HandleFunc("POST /auth/discord/start", h.startDiscordSignIn)
+	mux.HandleFunc("POST /auth/discord/complete", h.completeDiscordSignIn)
+	mux.HandleFunc("POST /auth/discord/resolve", h.resolveDiscordSignIn)
 	mux.HandleFunc("GET /themes", playableThemes)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
@@ -83,7 +101,7 @@ func (h *Handler) createOrGetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, http.StatusOK, profile)
+	writeJSON(w, http.StatusOK, h.withAccounts(r.Context(), profile))
 }
 
 func (h *Handler) getProfile(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +125,7 @@ func (h *Handler) getProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, http.StatusOK, profile)
+	writeJSON(w, http.StatusOK, h.withAccounts(r.Context(), profile))
 }
 
 func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +167,7 @@ func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, http.StatusOK, profile)
+	writeJSON(w, http.StatusOK, h.withAccounts(r.Context(), profile))
 }
 
 func health(w http.ResponseWriter, _ *http.Request) {

@@ -37,11 +37,12 @@ export type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeen
 export type ApiRunProgress = { xp: number; encounters: number; floors: number; dungeons: number; completionBonus?: number };
 export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; playerSkins?: Record<string, { tier: number; variant: string }>; playerLoadouts?: Record<string, string[]>; playerMastery?: Record<string, number>; presence?: Record<string, ApiPresence>; run?: ApiRun; runProgress?: ApiRunProgress; version: number };
 export type ApiCommand = { type: string; round?: number; action?: string; skill?: string; targetId?: string; exitId?: string; choiceId?: string; skillIds?: string[] };
-export type ApiProfile = { id: string; displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; createdAt: string; updatedAt: string };
+export type ApiLinkedAccount = { provider: string; username: string; linkedAt: string };
+export type ApiProfile = { id: string; displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; accounts?: ApiLinkedAccount[]; createdAt: string; updatedAt: string };
 export type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 export type SpectatorAccess = { roomId: string; token: string };
 
-const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
+export const PROFILE_CREDENTIAL_KEY = "heart-of-the-beast.profile-credential";
 
 function guestProfileCredential(): string | null {
   if (typeof window === "undefined") return null;

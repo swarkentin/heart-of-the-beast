@@ -53,7 +53,13 @@ func main() {
 	}
 	slog.Info("database migrations are up to date")
 
-	api := httpapi.NewHandler(store.NewPostgres(db))
+	discord := httpapi.DiscordConfigFromEnv()
+	if discord != nil {
+		slog.Info("Discord sign-in is enabled", "redirect_uri", discord.RedirectURI)
+	} else {
+		slog.Info("Discord sign-in is disabled; set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URI to enable it")
+	}
+	api := httpapi.NewHandlerWithOptions(store.NewPostgres(db), httpapi.Options{Discord: discord})
 	server := &http.Server{
 		Addr:              ":" + port,
 		Handler:           withReadiness(db, api),
