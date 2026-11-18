@@ -42,9 +42,13 @@ func main() {
 	var endless *EndlessReport
 	if *endlessPath != "" {
 		data, err := os.ReadFile(*endlessPath)
-		if err != nil {\n\t\t\tfatal(fmt.Errorf("read endless report: %w", err))\n\t\t}
+		if err != nil {
+			fatal(fmt.Errorf("read endless report: %w", err))
+		}
 		var value EndlessReport
-		if err := json.Unmarshal(data, &value); err != nil {\n\t\t\tfatal(fmt.Errorf("decode endless report: %w", err))\n\t\t}
+		if err := json.Unmarshal(data, &value); err != nil {
+			fatal(fmt.Errorf("decode endless report: %w", err))
+		}
 		endless = &value
 	}
 
