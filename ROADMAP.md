@@ -38,7 +38,8 @@ These are the current priorities, not a promise that each item ships in strict i
    - [ ] Include actual playtest feedback alongside simulation results; simulation policies are proxies, not substitutes for human play.
 
 4. **Strengthen persistent progression and character identity.**
-   - [x] Configure and launch production Discord authentication; verify guest-to-account linking, conflict handling, and cross-device profile access (PR #101, ADR 0034).
+   - [x] Configure and launch production Discord authentication (PR #101, ADR 0034).
+   - [ ] Verify the production guest-to-account journey, including conflict handling and cross-device profile access.
    - [ ] Add sign-out for Discord-linked devices, so a shared computer can return to a fresh guest profile.
    - [ ] Move best expedition distance/rank from browser-only storage to the server-side profile and show it in the Profile menu.
    - [ ] Continue tuning Adventurer Rank and class mastery pacing; expand mastery-based unlocks and cosmetics without talent trees, mandatory roles, or power-gated classes.
