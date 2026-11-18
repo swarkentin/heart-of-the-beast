@@ -54,7 +54,7 @@ func newClassPassiveEffectCatalog() ClassPassiveEffectCatalog {
 		{EffectID: "passive.elemental-chain", Trigger: ClassPassiveTriggerElementalCharge, Bonus: ClassPassiveBonusElementalDamage, Amount: 2},
 		{EffectID: "passive.unacted-target", Trigger: ClassPassiveTriggerUnactedTargetAttack, Bonus: ClassPassiveBonusAttackDamage, Amount: 3, MaxTurnsTaken: 1},
 		{EffectID: "passive.encounter-recovery", Trigger: ClassPassiveTriggerEncounterClear, Bonus: ClassPassiveBonusEncounterHeal, Amount: 2},
-		{EffectID: "passive.interrupt", Trigger: ClassPassiveTriggerInterrupt, Bonus: ClassPassiveBonusInterruptDamage, Amount: 2},
+		{EffectID: "passive.interrupt", Trigger: ClassPassiveTriggerInterrupt, Bonus: ClassPassiveBonusInterruptDamage, Amount: 1},
 		{EffectID: "passive.companion", Trigger: ClassPassiveTriggerCompanionInstinct, Bonus: ClassPassiveBonusNone},
 	}
 	catalog := ClassPassiveEffectCatalog{Definitions: definitions, byID: make(map[string]ClassPassiveEffectDefinition, len(definitions))}
