@@ -17,8 +17,9 @@ const (
 	// ExpeditionGenerator is the Run.Generator value of expedition runs.
 	ExpeditionGenerator = 2
 	// ExpeditionFloorCount is the fixed number of floors in every ordinary dungeon.
-	MinimumExpeditionDepth = 4
-	MaximumExpeditionDepth = 4
+	ExpeditionFloorCount = 4
+	MinimumExpeditionDepth = ExpeditionFloorCount
+	MaximumExpeditionDepth = ExpeditionFloorCount
 	// RandomDungeonThemeID asks StartMultiLevelRunForTheme to choose a playable theme from the run seed.
 	RandomDungeonThemeID = "random"
 )
