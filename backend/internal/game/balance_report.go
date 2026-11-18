@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-const BalanceReportVersion = 1
+const BalanceReportVersion = 2
 
 var balanceEncounterIDs = []string{
 	"catacombs-entry",
@@ -23,6 +23,9 @@ type BalanceScenarioReport struct {
 	PartySize                int                         `json:"partySize"`
 	EncounterBudget          int                         `json:"encounterBudget"`
 	ClassIDs                 []string                    `json:"classIds"`
+	// Snapshot records the exact effective player and enemy inputs used by the
+	// simulator, so a report can be inspected and replayed after catalog tuning.
+	Snapshot                 CombatSimulationSnapshot    `json:"snapshot"`
 	Summary                  CombatSimulationBatchReport `json:"summary"`
 	WipeRate                 float64                     `json:"wipeRate"`
 	MedianRemainingHealthPct int                         `json:"medianRemainingHealthPct"`
@@ -177,6 +180,7 @@ func appendBalanceScenario(report *BalanceReport, encounterID string, partySize 
 		PartySize:                partySize,
 		EncounterBudget:          encounter.Budget,
 		ClassIDs:                 classIDs,
+		Snapshot:                 snapshot,
 		Summary:                  summary,
 		WipeRate:                 wipeRate,
 		MedianRemainingHealthPct: median(remaining),
