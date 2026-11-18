@@ -35,3 +35,21 @@ test("profile refresh stops after its retry budget if the award never appears", 
   assert.equal(result, stale);
   assert.equal(calls, 3, "do not poll forever");
 });
+
+
+test("profile freshness follows the server updatedAt marker, not an XP prediction", async () => {
+  const before = { updatedAt: "2026-11-17T18:00:00.000Z" };
+  const stale = { updatedAt: "2026-11-17T18:00:00.000Z", adventurerXp: 120, classMastery: {} };
+  const fresh = { updatedAt: "2026-11-17T18:00:01.000Z", adventurerXp: 120, classMastery: { warrior: { experience: 200, level: 3 } } };
+  const { profileUpdatedAfter } = await import("./profileRefresh.ts");
+
+  assert.equal(profileUpdatedAfter(stale, before), false);
+  assert.equal(profileUpdatedAfter(fresh, before), true, "mastery-only changes are recognized even if adventurer XP is unchanged");
+  assert.equal(profileUpdatedAfter({ updatedAt: "not-a-date" }, before), false);
+});
+
+test("profile freshness does not treat an unchanged timestamp as a completed write", async () => {
+  const { profileUpdatedAfter } = await import("./profileRefresh.ts");
+  const baseline = { updatedAt: "2026-11-17T18:00:00.000Z" };
+  assert.equal(profileUpdatedAfter({ updatedAt: baseline.updatedAt }, baseline), false);
+});
