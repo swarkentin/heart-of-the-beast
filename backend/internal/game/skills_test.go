@@ -419,9 +419,12 @@ func TestEverySkillHasAPixelArtIcon(t *testing.T) {
 func TestTacticianCommandingStrikeMarkExperiment(t *testing.T) {
 	definition, ok := findSkill("tactician.commanding-strike")
 	if !ok { t.Fatal("missing Commanding Strike") }
+	found := false
 	for _, effect := range definition.Effects {
-		if effect.Kind == EffectMark && effect.Amount != 2 {
-			t.Fatalf("Commanding Strike mark = %d, want 2", effect.Amount)
+		if effect.Kind == EffectMark {
+			found = true
+			if effect.Amount != 2 { t.Fatalf("Commanding Strike mark = %d, want 2", effect.Amount) }
 		}
 	}
+	if !found { t.Fatal("Commanding Strike has no mark effect") }
 }
