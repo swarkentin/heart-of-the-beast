@@ -76,15 +76,22 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	heartbeat := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/heartbeat", nil)
 	heartbeat.Header.Set("Authorization", "Bearer "+created.PlayerToken)
 	heartbeatResponse := httptest.NewRecorder()
-	progressionHandler.ServeHTTP(heartbeatResponse, heartbeat)
+	progressionHandler.updatePlayerPresence(heartbeatResponse, heartbeat, false)
 	if heartbeatResponse.Code != http.StatusOK {
 		t.Fatalf("terminal heartbeat: %d %s", heartbeatResponse.Code, heartbeatResponse.Body.String())
+	}
+	updated, err := memory.GetProfile(t.Context(), tokenHash(credential))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 30 || updated.ClassMastery[game.ClassRanger].Experience != 30 {
+		t.Fatalf("heartbeat returned before progression was awarded: %+v", updated)
 	}
 	// Repeating the award remains safe: the run/profile award key makes it idempotent.
 	if err := progressionHandler.awardRunProgress(t.Context(), room); err != nil {
 		t.Fatalf("repeat run progress award: %v", err)
 	}
-	updated, err := memory.GetProfile(t.Context(), tokenHash(credential))
+	updated, err = memory.GetProfile(t.Context(), tokenHash(credential))
 	if err != nil {
 		t.Fatal(err)
 	}
