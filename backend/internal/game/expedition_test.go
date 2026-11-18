@@ -298,10 +298,16 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 				if final {
 					events, bonus := 0, false
 					for _, room := range rooms {
-						if room.Event != nil { events++ }
-						if room.RoomType == string(floorRoomVault) || room.RoomType == string(floorRoomElite) || room.RoomType == string(floorRoomLair) { bonus = true }
+						if room.Event != nil {
+							events++
+						}
+						if room.RoomType == string(floorRoomVault) || room.RoomType == string(floorRoomElite) || room.RoomType == string(floorRoomLair) {
+							bonus = true
+						}
 					}
-					if events > 1 || bonus { finalBonusRooms++ }
+					if events > 1 || bonus {
+						finalBonusRooms++
+					}
 				}
 				if final != (boss.Encounter.DefinitionID == theme.Final.EncounterID) || final != (len(boss.Encounter.Enemies[0].Mechanics) > 0) {
 					t.Fatalf("%s: wrong boss %q or mechanics %v", where, boss.Encounter.DefinitionID, boss.Encounter.Enemies[0].Mechanics)
