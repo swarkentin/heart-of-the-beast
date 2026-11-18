@@ -57,8 +57,7 @@ type Run struct {
 	MaxDepth       int    `json:"maxDepth,omitempty"`
 	MusicIntensity int    `json:"musicIntensity,omitempty"`
 	// Generator is the version of the rules the run was started under. Zero is a run persisted before
-	// expeditions (three floors, a restore-or-perk choice between them); ExpeditionGenerator runs have four to
-	// six generated floors, floor modifiers, gold, and a camp between floors.
+	// expeditions (three floors, a restore-or-perk choice between them); ExpeditionGenerator runs have exactly four generated floors, floor modifiers, gold, and a camp between floors.
 	Generator int `json:"generator,omitempty"`
 	// Dungeon counts the dungeons of the expedition, starting at 1 (0 on a run that has only seen its first).
 	// DungeonsCleared is how many dungeon bosses the party has beaten.
