@@ -12,8 +12,11 @@ discovery room only gave things away. There was nothing to earn on a floor and n
 
 ## Decision
 
-A run is now an **expedition**: an endless chain of dungeons. Each dungeon is **four to six floors** (chosen by
-seed) in one of the **eleven themes**. The expedition ends only when the party falls; how far it got is the result.
+A run is now an **expedition**: an endless chain of dungeons. Each ordinary dungeon is **exactly four floors** in
+one of the **eleven themes**. Floors one through three retain the standard seeded generator; floor four is the
+finale, with an 85% chance of an optional bonus room (vault, champion, lair boss or extra discovery/puzzle) before
+the mandatory dungeon boss. The boss has 30% bonus health (up from 20%) and its existing enrage plus signature
+mechanics. Capstone castles also remain four floors. The expedition ends only when the party falls; how far it got is the result.
 
 1. **The loop.** Clear floors down to the dungeon boss. Beating it opens a camp and then a **crossroads**: two
    other themes are offered, each with its own modifiers that hold on every floor of that dungeon (one perk, plus
@@ -38,7 +41,7 @@ seed) in one of the **eleven themes**. The expedition ends only when the party f
    carry debuffs by depth — one on floors 2–3, two on floors 4–5, three on floor 6 — and 40% also carry a perk. A
    modifier is data: signed adjustments to enemy damage and health, Strike, Guard, gold, healing, healing after
    fights, and damage on entering a fight. Opposites never hold together. Telegraphs already include them.
-5. **Dungeon bosses** (`boss_mechanics.go`). The boss of the last floor has 20% more health, enrages at 40%
+5. **Dungeon bosses** (`boss_mechanics.go`). The boss of the last floor has 30% more health, enrages at 40%
    health, and has one or two signature mechanics: summon a reinforcement at 60% health, raise a barrier every
    third turn that absorbs Strikes (signature abilities and interrupts pierce it), or telegraph an interruptible
    party-wide cataclysm every fourth turn. Mechanics resolve before intents are shown, so they can be answered.
