@@ -427,7 +427,7 @@ func TestFloorModifiersGrowWithDepthAndNeverCancelOut(t *testing.T) {
 	if want := []int{0, 1, 1, 2, 2, 3}; fmt.Sprint(want) != fmt.Sprint([]int{floorDebuffCount(1), floorDebuffCount(2), floorDebuffCount(3), floorDebuffCount(4), floorDebuffCount(5), floorDebuffCount(6)}) {
 		t.Fatal("debuffs per depth changed")
 	}
-	if share := perks * 100 / (400 * 5); share < FloorPerkChance-8 || share > FloorPerkChance+8 {
+	if share := perks * 100 / (400 * (MaximumExpeditionDepth - 1)); share < FloorPerkChance-8 || share > FloorPerkChance+8 {
 		t.Fatalf("perks on %d%% of floors, want about %d%%", share, FloorPerkChance)
 	}
 }
