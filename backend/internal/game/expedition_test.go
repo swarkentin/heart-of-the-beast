@@ -209,6 +209,7 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 		reached := map[string]bool{}
 		kinds := map[string]int{}
 		layouts := map[string]bool{}
+		finalBonusRooms := 0
 		for seed := uint64(1); seed <= 120; seed++ {
 			for depth := 1; depth <= MaximumExpeditionDepth; depth++ {
 				party := 1 + int(seed+uint64(depth))%4
@@ -294,10 +295,21 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 				}
 				boss := rooms[fmt.Sprintf("d%d-boss", depth)]
 				final := depth == MaximumExpeditionDepth
+				if final {
+					events, bonus := 0, false
+					for _, room := range rooms {
+						if room.Event != nil { events++ }
+						if room.RoomType == string(floorRoomVault) || room.RoomType == string(floorRoomElite) || room.RoomType == string(floorRoomLair) { bonus = true }
+					}
+					if events > 1 || bonus { finalBonusRooms++ }
+				}
 				if final != (boss.Encounter.DefinitionID == theme.Final.EncounterID) || final != (len(boss.Encounter.Enemies[0].Mechanics) > 0) {
 					t.Fatalf("%s: wrong boss %q or mechanics %v", where, boss.Encounter.DefinitionID, boss.Encounter.Enemies[0].Mechanics)
 				}
 			}
+		}
+		if finalBonusRooms < 85 {
+			t.Errorf("theme %q generated a finale bonus room on only %d/120 fourth floors; want at least 85", themeID, finalBonusRooms)
 		}
 		for _, id := range theme.encounterIDs() {
 			if !reached[id] {
@@ -333,22 +345,15 @@ func fewestFights(rooms map[string]*DungeonRoom, id string) int {
 	return own + best
 }
 
-func TestExpeditionsHaveFourToSixFloors(t *testing.T) {
-	seen := map[int]int{}
+func TestExpeditionsAlwaysHaveFourFloors(t *testing.T) {
 	for i := 0; i < 300; i++ {
 		room := startExpedition(t, 1, "catacombs", fmt.Sprintf("run-%d", i))
 		run := room.Run
 		if run.Generator != ExpeditionGenerator || run.Depth != 1 || run.CurrentRoomID != "d1-entry" || run.Phase != PhaseCombat || run.CombatRound == nil || len(run.FloorModifiers) != 0 {
 			t.Fatalf("unexpected new expedition: %+v", run)
 		}
-		if run.MaxDepth < MinimumExpeditionDepth || run.MaxDepth > MaximumExpeditionDepth || run.MaxDepth != expeditionDepth(run.Seed) {
-			t.Fatalf("run has %d floors", run.MaxDepth)
-		}
-		seen[run.MaxDepth]++
-	}
-	for depth := MinimumExpeditionDepth; depth <= MaximumExpeditionDepth; depth++ {
-		if seen[depth] < 50 {
-			t.Errorf("%d-floor dungeons came up %d times in 300", depth, seen[depth])
+		if run.MaxDepth != ExpeditionFloorCount || run.MaxDepth != expeditionDepth(run.Seed) {
+			t.Fatalf("run has %d floors, want exactly %d", run.MaxDepth, ExpeditionFloorCount)
 		}
 	}
 }
