@@ -59,6 +59,49 @@ def clear_rate(scenario):
     return scenario.get("completed", 0) / runs * 100 if runs else 0.0
 
 
+
+def depth_reach_summary(scenario):
+    rates = {
+        int(depth): float(rate) * 100
+        for depth, rate in scenario.get("depthReachRates", {}).items()
+    }
+    if not rates:
+        return "No depth data", "—", "—", "—"
+
+    depths = sorted(rates)
+    segments = []
+    start = previous = depths[0]
+    rate = rates[start]
+    for depth in depths[1:]:
+        if depth == previous + 1 and abs(rates[depth] - rate) < 0.01:
+            previous = depth
+            continue
+        span = f"D{start}" if start == previous else f"D{start}–{previous}"
+        segments.append(f"{span}: {rate:.1f}%")
+        start = previous = depth
+        rate = rates[depth]
+    span = f"D{start}" if start == previous else f"D{start}–{previous}"
+    segments.append(f"{span}: {rate:.1f}%")
+
+    at_least_half = [depth for depth, value in rates.items() if value >= 50]
+    half_depth = f"D{max(at_least_half)}" if at_least_half else "Below 50% at D1"
+
+    largest_drop = (0.0, None, None)
+    for depth in depths:
+        next_rate = rates.get(depth + 1, 0.0)
+        drop = rates[depth] - next_rate
+        if drop > largest_drop[0]:
+            largest_drop = (drop, depth, depth + 1)
+    if largest_drop[1] is None:
+        drop_text = "—"
+    else:
+        drop_text = f"D{largest_drop[1]}→D{largest_drop[2]} (−{largest_drop[0]:.1f} pp)"
+
+    furthest = max(depths)
+    reached_count = round(rates[furthest] * scenario.get("runs", 0) / 100)
+    furthest_text = f"D{furthest} ({reached_count}/{scenario.get('runs', 0)} runs)"
+    return " · ".join(segments), half_depth, drop_text, furthest_text
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline-combat", required=True)
@@ -143,6 +186,21 @@ def main():
             f"| {class_id} | {old_c:.1f}% → {new_c:.1f}% ({new_c-old_c:+.1f}) "
             f"| {old_clear:.1f}% → {new_clear:.1f}% ({new_clear-old_clear:+.1f}) "
             f"| {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
+        )
+
+    lines.extend([
+        "",
+        "### Endless depth progression by class",
+        "",
+        "Percent of seeded solo expeditions reaching each depth (tactical policy). Equal consecutive rates are grouped into ranges. The 50% column is the deepest level reached by at least half the runs; the largest drop shows the sharpest one-depth loss.",
+        "",
+        "| Class | Reach rate by depth | At least 50% reach through | Largest one-depth drop | Furthest reached |",
+        "|---|---|---:|---|---:|",
+    ])
+    for class_id in classes:
+        progression, half_depth, largest_drop, furthest = depth_reach_summary(new_endless[class_id])
+        lines.append(
+            f"| {class_id} | {progression} | {half_depth} | {largest_drop} | {furthest} |"
         )
 
     lines.extend([
