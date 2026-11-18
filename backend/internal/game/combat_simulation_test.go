@@ -217,6 +217,22 @@ func TestSkillPolicyInterruptsHealsAndProtects(t *testing.T) {
 	}
 }
 
+func TestSkillPolicyDoesNotSelfHealInsteadOfWoundedAlly(t *testing.T) {
+	rng := rand.New(rand.NewSource(2))
+	bulwark := classPlayer(t, "tank", ClassBulwark, 1)
+	bulwark.Health = 15
+	ally := classPlayer(t, "ally", ClassCleric, 1)
+	ally.Health = 5
+	enemies := []Enemy{{ID: "foe", Name: "Foe", Health: 40, MaxHealth: 40, Behavior: "skeleton"}}
+
+	command := skillPolicyCommand(policyRoom(map[string]*PlayerState{
+		"tank": bulwark, "ally": ally,
+	}, enemies), "tank", 1, rng)
+	if command.Skill == "bulwark.shield-wall" {
+		t.Fatalf("Bulwark should not spend its action healing itself while an ally is more wounded: %+v", command)
+	}
+}
+
 func TestSkillPolicyCommandsAreAlwaysValidForEveryClassAndRank(t *testing.T) {
 	rng := rand.New(rand.NewSource(3))
 	for _, class := range ClassCatalog() {
