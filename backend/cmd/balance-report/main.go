@@ -119,9 +119,9 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 			if !ok { clearValues = append(clearValues, "0"); depthValues = append(depthValues, "0") } else { clearValues = append(clearValues, fmt.Sprintf("%.1f", clear)); depthValues = append(depthValues, fmt.Sprintf("%d", int(endlessDepth[classID]))) }
 		}
 		if len(classes) > 0 {
-			fmt.Fprintf(&b, "### Win/completion rate by class (%%)\\n\\n```mermaid\\nxychart-beta\\n    x-axis [%s]\\n    y-axis \\"Rate (%%)\\" 0 --> 100\\n    bar [%s]\\n    line [%s]\\n```\\n\\n", strings.Join(labels, ", "), strings.Join(combatValues, ", "), strings.Join(clearValues, ", "))
-			b.WriteString("Bars: mean solo combat encounter win rate. Line: solo endless first-dungeon completion rate (tactical policy).\\n\\n")
-			fmt.Fprintf(&b, "### Endless expedition median depth by class (tactical policy)\\n\\n```mermaid\\nxychart-beta\\n    x-axis [%s]\\n    y-axis \\"Median depth\\" 0 --> %d\\n    bar [%s]\\n```\\n\\n", strings.Join(labels, ", "), maxInt(endlessDepth), strings.Join(depthValues, ", "))
+			fmt.Fprintf(&b, "### Win/completion rate by class (%%)\n\n```mermaid\nxychart-beta\n    x-axis [%s]\n    y-axis Rate 0 --> 100\n    bar [%s]\n    line [%s]\n```\n\n", strings.Join(labels, ", "), strings.Join(combatValues, ", "), strings.Join(clearValues, ", "))
+			b.WriteString("Bars: mean solo combat encounter win rate. Line: solo endless first-dungeon completion rate (tactical policy).\n\n")
+			fmt.Fprintf(&b, "### Endless expedition median depth by class (tactical policy)\n\n```mermaid\nxychart-beta\n    x-axis [%s]\n    y-axis MedianDepth 0 --> %d\n    bar [%s]\n```\n\n", strings.Join(labels, ", "), maxInt(endlessDepth), strings.Join(depthValues, ", "))
 		}
 	}
 
