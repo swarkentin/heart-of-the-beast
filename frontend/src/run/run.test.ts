@@ -5,6 +5,7 @@ import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
 import { traitTags } from "./traits.ts";
 import { progressReport } from "./progress.ts";
+import "./profileRefresh.test.ts";
 import { expeditionMap } from "./expeditionRoad.ts";
 import { interruptTarget } from "./interrupts.ts";
 import type { ApiRoom, ApiRun } from "../api";
