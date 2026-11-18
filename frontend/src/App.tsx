@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { AccountContext, adoptCredential, completeDiscordSignIn, resolveDiscordSignIn, SignInConflictDialog, startDiscordSignIn, takeDiscordCallback, type SignInConflict, type SignInResult } from "./account";
 import { apiRequest, PROFILE_CREDENTIAL_KEY, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
@@ -159,16 +159,13 @@ export default function App() {
     return () => { active = false; window.clearInterval(timer); };
   }, [roomId, token, spectator, pollMs]);
 
-  useEffect(() => {
-    if (spectator || (run?.phase !== "completed" && run?.phase !== "failed")) return;
-    let active = true;
+  const refreshProgressProfile = useCallback(async (): Promise<ApiProfile> => {
     const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
-    if (!credential) return;
-    void apiRequest<ApiProfile>("/profile", credential)
-      .then(value => { if (active) setProfile(value); })
-      .catch(() => { /* A later visit can retry loading the profile. */ });
-    return () => { active = false; };
-  }, [run?.id, run?.phase, spectator]);
+    if (!credential) throw new Error("Profile credential is unavailable");
+    const value = await apiRequest<ApiProfile>("/profile", credential);
+    setProfile(value);
+    return value;
+  }, []);
 
   useEffect(() => {
     if (classCatalog) return;
