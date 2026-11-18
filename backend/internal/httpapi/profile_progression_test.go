@@ -75,6 +75,7 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	// It must not return that state until the profile award has committed.
 	heartbeat := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/heartbeat", nil)
 	heartbeat.Header.Set("Authorization", "Bearer "+created.PlayerToken)
+	heartbeat.SetPathValue("id", created.Room.ID)
 	heartbeatResponse := httptest.NewRecorder()
 	progressionHandler.updatePlayerPresence(heartbeatResponse, heartbeat, false)
 	if heartbeatResponse.Code != http.StatusOK {
