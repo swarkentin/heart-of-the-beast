@@ -10,19 +10,36 @@ def read_json(path):
         return json.load(handle)
 
 
-def pct(value):
-    return f"{value * 100:+.1f} pp"
-
-
-def chart(labels, values, title, axis, bounds=None):
+def chart(labels, title, axis, series):
     if not labels:
         return f"### {title}\n\n_No comparable data._\n"
-    maximum = bounds if bounds is not None else max(1, max(values, default=0))
     quoted = ", ".join(json.dumps(label) for label in labels)
-    nums = ", ".join(f"{value:.1f}" for value in values)
-    return (f"### {title}\n\n```mermaid\nxychart-beta\n"
-            f"    x-axis [{quoted}]\n    y-axis {axis} 0 --> {maximum}\n"
-            f"    bar [{nums}]\n```\n")
+    lines = [f"### {title}", "", "```mermaid", "xychart-beta",
+             f"    x-axis [{quoted}]", f"    y-axis {axis} 0 --> 100"]
+    for kind, values in series:
+        lines.append(f"    {kind} [{', '.join(f'{value:.1f}' for value in values)}]")
+    lines.append("```")
+    return "\n".join(lines) + "\n"
+
+
+def solo_endless(report):
+    return {
+        scenario["party"][0]: scenario
+        for scenario in report["scenarios"]
+        if scenario.get("partySize") == 1
+        and len(scenario.get("party", [])) == 1
+        and scenario.get("policy") == "tactical"
+    }
+
+
+def class_combat_rates(report):
+    rates = {}
+    for scenario in report["scenarios"]:
+        if scenario.get("partySize") == 1 and len(scenario.get("classIds", [])) == 1:
+            rates.setdefault(scenario["classIds"][0], []).append(
+                scenario["summary"]["winRate"] * 100
+            )
+    return {class_id: sum(values) / len(values) for class_id, values in rates.items()}
 
 
 def main():
@@ -50,77 +67,82 @@ def main():
         old = previous["summary"]["winRate"]
         new = current["summary"]["winRate"]
         deltas.append((current["id"], old, new, new - old))
-    deltas.sort(key=lambda item: abs(item[3]), reverse=True)
-
-    def solo_endless(report):
-        return {
-            scenario["party"][0]: scenario
-            for scenario in report["scenarios"]
-            if scenario.get("partySize") == 1
-            and len(scenario.get("party", [])) == 1
-            and scenario.get("policy") == "tactical"
-        }
+    changed_encounters = [item for item in deltas if abs(item[3]) >= 0.0001]
+    changed_encounters.sort(key=lambda item: abs(item[3]), reverse=True)
 
     old_endless = solo_endless(before_endless)
     new_endless = solo_endless(after_endless)
-    classes = sorted(set(old_endless) & set(new_endless))
-    depth_deltas = [
-        new_endless[c]["medianDepth"] - old_endless[c]["medianDepth"]
-        for c in classes
+    classes = sorted(set(old_endless) & set(new_endless) & set(class_combat_rates(after)))
+    old_combat = class_combat_rates(before)
+    new_combat = class_combat_rates(after)
+    labels = [class_id.replace("-", " ").title() for class_id in classes]
+    combat_values = [new_combat[class_id] for class_id in classes]
+    completion_values = [
+        new_endless[class_id]["completed"] / new_endless[class_id]["runs"] * 100
+        if new_endless[class_id]["runs"] else 0
+        for class_id in classes
     ]
-    clear_deltas = [
-        (new_endless[c]["completed"] / new_endless[c]["runs"]
-         - old_endless[c]["completed"] / old_endless[c]["runs"]) * 100
-        if new_endless[c]["runs"] and old_endless[c]["runs"] else 0
-        for c in classes
-    ]
+    depth_values = [new_endless[class_id]["medianDepth"] for class_id in classes]
 
     lines = [
         "<!-- balance-regression-dashboard -->",
         "## Combat balance regression dashboard",
         "",
         f"Compared branch point `{args.base_sha[:10]}` with PR head `{args.head_sha[:10]}`.",
-        "Both revisions use the same deterministic seed ranges and simulation settings.",
+        "Both revisions use identical seed ranges and simulation settings.",
         "",
-        "### Largest encounter win-rate changes",
+        chart(labels, "Current solo class performance: combat vs. endless completion",
+              "Rate (%)", [("bar", combat_values), ("line", completion_values)]),
+        "Bars: mean encounter win rate across the solo encounter suite. Line: endless first-dungeon clear rate (tactical policy).",
+        "",
+        chart(labels, "Current solo endless expedition median depth",
+              f"Depth (max {max(depth_values, default=1)})",
+              [("bar", depth_values)]),
+        "### Changes since branch point",
+        "",
+        f"**Encounter win rate:** {len(changed_encounters)} of {len(deltas)} matched scenarios changed.",
         "",
         "| Scenario | Branch point | PR head | Change |",
         "|---|---:|---:|---:|",
     ]
-    if deltas:
-        for name, old, new, delta in deltas[:12]:
-            lines.append(f"| {name} | {old:.0%} | {new:.0%} | {pct(delta)} |")
+    if changed_encounters:
+        for name, old, new, delta in changed_encounters[:12]:
+            lines.append(f"| {name} | {old:.0%} | {new:.0%} | {delta * 100:+.1f} pp |")
     else:
-        lines.append("| _No matching scenarios_ | — | — | — |")
+        lines.append("| _No encounter win-rate changes detected._ | — | — | 0.0 pp |")
 
-    class_labels = [c.replace("-", " ").title() for c in classes]
-    lines.extend(["", chart(class_labels, depth_deltas,
-                            "Change in solo endless median depth by class",
-                            "Depth change", max(1, max([abs(v) for v in depth_deltas], default=1)))])
-    # Mermaid's y-axis starts at zero; render signed deltas as offset values and
-    # disclose the offset so negative changes remain visible.
-    offset = max([abs(v) for v in depth_deltas], default=0)
-    if classes:
-        depth_plot = [v + offset for v in depth_deltas]
-        lines[-1] = chart(class_labels, depth_plot,
-                          "Solo endless median depth change (offset for negative values)",
-                          "Depth delta + offset", max(1, 2 * offset))
-        lines.append(f"_Chart values are offset by {offset}; subtract that amount to read the signed change._")
-        lines.extend(["", "| Class | Branch point median depth | PR head median depth | Change | First-dungeon clear-rate change |",
-                      "|---|---:|---:|---:|---:|"])
-        for c, delta, clear_delta in zip(classes, depth_deltas, clear_deltas):
-            lines.append(f"| {c} | {old_endless[c]['medianDepth']} | {new_endless[c]['medianDepth']} | {delta:+d} | {clear_delta:+.1f} pp |")
+    changed_endless = []
+    for class_id in classes:
+        old = old_endless[class_id]
+        new = new_endless[class_id]
+        old_clear = old["completed"] / old["runs"] if old["runs"] else 0
+        new_clear = new["completed"] / new["runs"] if new["runs"] else 0
+        depth_delta = new["medianDepth"] - old["medianDepth"]
+        clear_delta = (new_clear - old_clear) * 100
+        combat_delta = new_combat[class_id] - old_combat.get(class_id, new_combat[class_id])
+        if depth_delta or abs(clear_delta) >= 0.0001 or abs(combat_delta) >= 0.0001:
+            changed_endless.append((class_id, old, new, depth_delta, clear_delta, combat_delta))
+
+    lines.extend(["", f"**Endless/class metrics:** {len(changed_endless)} of {len(classes)} classes changed.",
+                  ""])
+    if changed_endless:
+        lines.extend(["| Class | Median depth change | Clear-rate change | Combat win-rate change |",
+                      "|---|---:|---:|---:|"])
+        for class_id, _, _, depth_delta, clear_delta, combat_delta in changed_endless:
+            lines.append(f"| {class_id} | {depth_delta:+d} | {clear_delta:+.1f} pp | {combat_delta:+.1f} pp |")
+    else:
+        lines.append("No solo class metrics changed from the branch point.")
 
     lines.extend([
         "",
         "### Interpretation",
         "",
-        "- Encounter changes are paired by scenario and use the same 30 seeds.",
-        "- Endless changes use the same 12 seeds, party composition, random theme policy, and tactical decision policy.",
-        "- These are small deterministic samples, not statistical proof; treat deltas as investigation signals and validate in playtests.",
-        "- Missing or newly introduced scenarios are not silently treated as zero-change.",
+        "- Encounter comparisons pair matching scenarios with the same 30 seeds.",
+        "- Endless comparisons use the same 12 seeds, party compositions, random theme selection, and tactical policy.",
+        "- These are small deterministic samples, not statistical proof; treat changes as investigation signals and validate with playtests.",
+        "- New or missing scenarios are excluded from deltas rather than treated as zero.",
         "",
-        f"_Combat report: {after.get('version', 'unknown')} · seeds {after.get('firstSeed')}–{after.get('lastSeed')} · {len(after.get('scenarios', []))} scenarios._",
+        f"_Combat report v{after.get('version', 'unknown')} · seeds {after.get('firstSeed')}–{after.get('lastSeed')} · {len(after.get('scenarios', []))} scenarios._",
     ])
     Path(args.output).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
