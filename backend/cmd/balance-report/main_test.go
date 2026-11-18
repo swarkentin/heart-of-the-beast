@@ -34,3 +34,43 @@ func TestRenderMarkdownOmitsFindingsAndSuggestedInvestigations(t *testing.T) {
 		t.Fatal("balance report is missing the interpretation guidance")
 	}
 }
+
+func TestRenderMarkdownIncludesCombatAndEndlessClassCharts(t *testing.T) {
+	report := game.BalanceReport{Scenarios: []game.BalanceScenarioReport{
+		{PartySize: 1, ClassIDs: []string{"arcanist"}, Summary: game.CombatSimulationBatchReport{WinRate: 0.8}},
+		{PartySize: 1, ClassIDs: []string{"bulwark"}, Summary: game.CombatSimulationBatchReport{WinRate: 0.6}},
+	}}
+	endless := &EndlessReport{}
+	endless.Scenarios = append(endless.Scenarios,
+		struct {
+			Party []string `json:"party"`
+			PartySize int `json:"partySize"`
+			Policy string `json:"policy"`
+			Runs int `json:"runs"`
+			Completed int `json:"completed"`
+			MedianDepth int `json:"medianDepth"`
+		}{Party: []string{"arcanist"}, PartySize: 1, Policy: "tactical", Runs: 10, Completed: 7, MedianDepth: 6},
+		struct {
+			Party []string `json:"party"`
+			PartySize int `json:"partySize"`
+			Policy string `json:"policy"`
+			Runs int `json:"runs"`
+			Completed int `json:"completed"`
+			MedianDepth int `json:"medianDepth"`
+		}{Party: []string{"bulwark"}, PartySize: 1, Policy: "tactical", Runs: 10, Completed: 4, MedianDepth: 3},
+	)
+
+	markdown := renderMarkdown(report, endless)
+	for _, expected := range []string{
+		"## Class performance: combat vs endless expeditions",
+		"xychart-beta",
+		"bar [80.0, 60.0]",
+		"line [70.0, 40.0]",
+		"Endless expedition median depth by class",
+		"bar [6, 3]",
+	} {
+		if !strings.Contains(markdown, expected) {
+			t.Errorf("chart output missing %q:\\n%s", expected, markdown)
+		}
+	}
+}
