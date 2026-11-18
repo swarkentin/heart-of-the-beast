@@ -415,3 +415,13 @@ func TestEverySkillHasAPixelArtIcon(t *testing.T) {
 		}
 	}
 }
+
+func TestTacticianCommandingStrikeHasTwoRoundCooldown(t *testing.T) {
+	definition, ok := findSkill("tactician.commanding-strike")
+	if !ok {
+		t.Fatal("Commanding Strike should be in the skill catalog")
+	}
+	if definition.Cooldown != 2 {
+		t.Fatalf("Commanding Strike cooldown = %d, want 2", definition.Cooldown)
+	}
+}
