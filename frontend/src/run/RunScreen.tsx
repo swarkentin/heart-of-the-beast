@@ -327,7 +327,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       <h2>{room.event.title}</h2>
       <p className="px-copy">{room.event.description}</p>
       {eventDecision ? <div className="rn-timer" role="timer"><strong>PARTY DECISION · {cast}/{eligible.length} VOTED · TIES RANDOM</strong><TimerBar seconds={Math.min(15, eventDecision.seconds)} total={15} urgent={eventDecision.seconds <= 3} /><b>{eventDecision.seconds}s</b></div> : null}
-      {acting ? <div className="rn-choices">{room.event.choices.map(choice => <button key={choice.id} className={"rn-choice" + (mine === choice.id ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy || Boolean(eventDecision && eventDecision.remainingMs <= 0)}><Icon id="focus" size={2} /><span><strong>{choice.label}</strong><small>{choice.description}</small></span>{eventVote ? <em>{votesFor(eventVote, choice.id)} {mine === choice.id ? "· YOURS" : ""}</em> : null}</button>)}</div> : <p className="px-label">THE PARTY IS DECIDING</p>}
+      {acting ? <div className="rn-choices">{room.event.choices.map(choice => <button key={choice.id} className={"rn-choice" + (mine === choice.id ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy || Boolean(eventDecision && eventDecision.remainingMs <= 0)}><Icon id="focus" size={2} /><span><strong>{choice.label}</strong><small>{choice.description}</small></span><em>{votesFor(eventVote, choice.id)} {mine === choice.id ? "· YOURS" : "VOTES"}</em></button>)}</div> : <p className="px-label">THE PARTY IS DECIDING</p>}
     </div>;
   } else {
     const mine = navigationVote?.votes?.[selfId];
