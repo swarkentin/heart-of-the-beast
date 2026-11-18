@@ -106,7 +106,7 @@ def depth_reach_summary(scenario):
 def depth_progression_chart(classes, scenarios):
     """Render one comparable reach-rate line per solo class."""
     if not classes:
-        return "### Endless depth reached by class\\n\\n_No comparable data._\\n"
+        return "### Endless depth reached by class\n\n_No comparable data._\n"
 
     max_depth = max(
         (int(depth) for class_id in classes
@@ -114,9 +114,8 @@ def depth_progression_chart(classes, scenarios):
         default=0,
     )
     if max_depth == 0:
-        return "### Endless depth reached by class\\n\\n_No depth data._\\n"
+        return "### Endless depth reached by class\n\n_No depth data._\n"
 
-    depth_labels = ", ".join(json.dumps(f"D{depth}") for depth in range(1, max_depth + 1))
     fence = chr(96) * 3
     lines = [
         "### Endless depth reached by class",
@@ -125,7 +124,7 @@ def depth_progression_chart(classes, scenarios):
         "",
         fence + "mermaid",
         "xychart-beta",
-        '    x-axis "Endless depth" [' + depth_labels + "]",
+        f'    x-axis "Endless depth" 1 --> {max_depth}',
         '    y-axis "Runs reaching depth (%)" 0 --> 100',
     ]
     for class_id in classes:
@@ -138,7 +137,7 @@ def depth_progression_chart(classes, scenarios):
         label = class_id.replace("-", " ").title()
         lines.append(f'    line {json.dumps(label)} [{series}]')
     lines.extend([fence, ""])
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 def main():
     parser = argparse.ArgumentParser()
