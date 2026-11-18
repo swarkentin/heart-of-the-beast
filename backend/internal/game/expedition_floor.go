@@ -71,7 +71,7 @@ const (
 	// EliteHealthPercent is the extra health of a champion-room encounter.
 	EliteHealthPercent = 30
 	// FinalBossHealthPercent is the extra health of the dungeon boss.
-	FinalBossHealthPercent = 20
+	FinalBossHealthPercent = 30
 )
 
 type ExpeditionThemeCatalog struct {
@@ -306,14 +306,26 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 	}
 	rng.Shuffle(len(candidates), func(i, j int) { candidates[i], candidates[j] = candidates[j], candidates[i] })
 	specials := []floorRoomKind{floorRoomDiscovery}
-	if rng.Intn(100) < 35+5*depth {
-		specials = append(specials, floorRoomVault)
-	}
-	if rng.Intn(100) < 45 {
-		specials = append(specials, floorRoomElite)
-	}
-	if rng.Intn(100) < 50 {
-		specials = append(specials, floorRoomDiscovery)
+	if final {
+		// The fourth floor usually has one extra detour before its mandatory dungeon boss. It may be
+		// a vault, champion, lair boss, or a second discovery/puzzle; the detour never adds a floor.
+		if rng.Intn(100) < 85 && len(candidates) > 1 {
+			bonusKinds := []floorRoomKind{floorRoomVault, floorRoomElite, floorRoomDiscovery}
+			if theme.Lair.EncounterID != "" {
+				bonusKinds = append(bonusKinds, floorRoomLair)
+			}
+			specials = append(specials, bonusKinds[rng.Intn(len(bonusKinds))])
+		}
+	} else {
+		if rng.Intn(100) < 35+5*depth {
+			specials = append(specials, floorRoomVault)
+		}
+		if rng.Intn(100) < 45 {
+			specials = append(specials, floorRoomElite)
+		}
+		if rng.Intn(100) < 50 {
+			specials = append(specials, floorRoomDiscovery)
+		}
 	}
 	for i, kind := range specials {
 		if i >= len(candidates) {
@@ -324,7 +336,7 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 	// A lair takes a slot the special rooms left free. It is rolled with its own generator so adding lairs did not
 	// reshape every other floor.
 	lairRoll := rand.New(rand.NewSource(int64(mixSeed(seed, uint64(depth), 0x1a12))))
-	if theme.Lair.EncounterID != "" && depth >= 2 && len(candidates) > len(specials) && lairRoll.Intn(100) < LairChance {
+	if !final && theme.Lair.EncounterID != "" && depth >= 2 && len(candidates) > len(specials) && lairRoll.Intn(100) < LairChance {
 		slots[candidates[len(specials)]].kind = floorRoomLair
 	}
 

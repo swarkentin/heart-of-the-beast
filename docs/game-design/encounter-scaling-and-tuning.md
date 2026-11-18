@@ -31,7 +31,7 @@ per extra adventurer. A fight never holds more than six enemies.
 
 - Floor one: at least 85% for most compositions in every theme; never below 75% for the guard-tested parties in
   the Catacombs (`TestTacticalPlayUsuallyClearsTheFirstFloor`).
-- First full dungeon (four to six floors): roughly 10–20% solo, 25–60% for parties. It should feel like an
+- First full dungeon (four floors): roughly 10–20% solo, 25–60% for parties. It should feel like an
   achievement, not a formality.
 - Random play: floor one should be survivable some of the time (it is now about 25–75% depending on the party),
   not a guaranteed wipe.
