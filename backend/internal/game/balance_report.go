@@ -18,11 +18,11 @@ var balanceEncounterIDs = []string{
 }
 
 type BalanceScenarioReport struct {
-	ID                       string                      `json:"id"`
-	EncounterID              string                      `json:"encounterId"`
-	PartySize                int                         `json:"partySize"`
-	EncounterBudget          int                         `json:"encounterBudget"`
-	ClassIDs                 []string                    `json:"classIds"`
+	ID              string   `json:"id"`
+	EncounterID     string   `json:"encounterId"`
+	PartySize       int      `json:"partySize"`
+	EncounterBudget int      `json:"encounterBudget"`
+	ClassIDs        []string `json:"classIds"`
 	// Snapshot records the exact effective player and enemy inputs used by the
 	// simulator, so a report can be inspected and replayed after catalog tuning.
 	Snapshot                 CombatSimulationSnapshot    `json:"snapshot"`
