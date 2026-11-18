@@ -222,8 +222,9 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 				if entry != entryB || string(a) != string(b) {
 					t.Fatalf("%s: generation is not deterministic", where)
 				}
-				if len(rooms) < 7 || len(rooms) > 9 {
-					t.Fatalf("%s: %d rooms, want 7-9", where, len(rooms))
+				final := depth == MaximumExpeditionDepth
+				if final && len(rooms) != 3 || !final && (len(rooms) < 7 || len(rooms) > 9) {
+					t.Fatalf("%s: %d rooms; finale wants exactly 3, regular floors want 7-9", where, len(rooms))
 				}
 				shape := ""
 				names := map[string]bool{}
@@ -272,10 +273,15 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 					}
 				}
 				layouts[shape] = true
-				if discoveries < 1 || fights < 5 {
+				if final {
+					bonus := rooms[fmt.Sprintf("d%d-m11", depth)]
+					if bonus == nil || bonus.RoomType == "encounter" || bonus.RoomType == "boss" || len(rooms[entry].Exits) != 1 || rooms[entry].Exits[0].Destination != bonus.ID || len(bonus.Exits) != 1 || bonus.Exits[0].Destination != fmt.Sprintf("d%d-boss", depth) {
+						t.Fatalf("%s: finale must be entry -> one signature bonus room -> boss; bonus=%+v entry exits=%+v", where, bonus, rooms[entry].Exits)
+					}
+				} else if discoveries < 1 || fights < 5 {
 					t.Fatalf("%s: %d discoveries and %d fights", where, discoveries, fights)
 				}
-				// Every room is reachable, and even the quietest route fights at the entry, the guard room and the boss.
+				// Every room is reachable; the finale has one entry fight, one signature room, and its boss.
 				visited := map[string]bool{entry: true}
 				queue := []string{entry}
 				for len(queue) > 0 {
@@ -290,22 +296,17 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 				if len(visited) != len(rooms) {
 					t.Fatalf("%s: reached %d of %d rooms", where, len(visited), len(rooms))
 				}
-				if least := fewestFights(rooms, entry); least < 3 {
+				minimumFights := 3
+				if final {
+					minimumFights = 2
+				}
+				if least := fewestFights(rooms, entry); least < minimumFights {
 					t.Fatalf("%s: a route reaches the boss after only %d fights", where, least)
 				}
 				boss := rooms[fmt.Sprintf("d%d-boss", depth)]
-				final := depth == MaximumExpeditionDepth
 				if final {
-					events, bonus := 0, false
-					for _, room := range rooms {
-						if room.Event != nil {
-							events++
-						}
-						if room.RoomType == string(floorRoomVault) || room.RoomType == string(floorRoomElite) || room.RoomType == string(floorRoomLair) {
-							bonus = true
-						}
-					}
-					if events > 1 || bonus {
+					signature := rooms[fmt.Sprintf("d%d-m11", depth)]
+					if len(rooms) == 3 && signature != nil && signature.RoomType != "encounter" && signature.RoomType != "boss" {
 						finalBonusRooms++
 					}
 				}
@@ -314,8 +315,8 @@ func TestExpeditionFloorsAreConnectedBoundedDeterministicAndVaried(t *testing.T)
 				}
 			}
 		}
-		if finalBonusRooms < 85 {
-			t.Errorf("theme %q generated a finale bonus room on only %d/120 fourth floors; want at least 85", themeID, finalBonusRooms)
+		if finalBonusRooms != 120 {
+			t.Errorf("theme %q generated the compact finale layout on %d/120 fourth floors; want 120", themeID, finalBonusRooms)
 		}
 		for _, id := range theme.encounterIDs() {
 			if !reached[id] {
