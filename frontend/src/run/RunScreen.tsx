@@ -145,14 +145,12 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     : null;
   useEffect(() => {
     if (!gameOver || spectator || !snapshot.runProgress?.xp) return;
-    let active = true;
     void retryUntil(
       onRefreshProfile,
       value => expectedAdventurerXp === null || value.adventurerXp >= expectedAdventurerXp,
       () => { /* App publishes each profile response; this effect only coordinates retries. */ },
       { attempts: 10, delayMs: 500 },
     );
-    return () => { active = false; };
   }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, expectedAdventurerXp, onRefreshProfile]);
   const report = useMemo(() => gameOver ? progressReport({
     runId: run.id, progress: snapshot.runProgress, before: liveProfile.current, after: profile, spectator: !selfId,
