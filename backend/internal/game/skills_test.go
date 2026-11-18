@@ -418,13 +418,19 @@ func TestEverySkillHasAPixelArtIcon(t *testing.T) {
 
 func TestTacticianCommandingStrikeGuardExperiment(t *testing.T) {
 	definition, ok := findSkill("tactician.commanding-strike")
-	if !ok { t.Fatal("missing Commanding Strike") }
+	if !ok {
+		t.Fatal("missing Commanding Strike")
+	}
 	found := false
 	for _, effect := range definition.Effects {
 		if effect.Kind == EffectGuard && effect.Scope == ScopeSelf {
 			found = true
-			if effect.Amount != 1 { t.Fatalf("Commanding Strike self-guard = %d, want 1", effect.Amount) }
+			if effect.Amount != 1 {
+				t.Fatalf("Commanding Strike self-guard = %d, want 1", effect.Amount)
+			}
 		}
 	}
-	if !found { t.Fatal("Commanding Strike has no self-guard effect") }
+	if !found {
+		t.Fatal("Commanding Strike has no self-guard effect")
+	}
 }
