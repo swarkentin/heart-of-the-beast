@@ -76,7 +76,7 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	heartbeat := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/heartbeat", nil)
 	heartbeat.Header.Set("Authorization", "Bearer "+created.PlayerToken)
 	heartbeatResponse := httptest.NewRecorder()
-	progressionHandler.updatePlayerPresence(heartbeatResponse, heartbeat, false)
+	progressionHandler.ServeHTTP(heartbeatResponse, heartbeat)
 	if heartbeatResponse.Code != http.StatusOK {
 		t.Fatalf("terminal heartbeat: %d %s", heartbeatResponse.Code, heartbeatResponse.Body.String())
 	}
