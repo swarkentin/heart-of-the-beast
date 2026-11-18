@@ -415,3 +415,13 @@ func TestEverySkillHasAPixelArtIcon(t *testing.T) {
 		}
 	}
 }
+
+func TestTacticianCommandingStrikeGuardExperiment(t *testing.T) {
+	definition, ok := findSkill("tactician.commanding-strike")
+	if !ok { t.Fatal("missing Commanding Strike") }
+	for _, effect := range definition.Effects {
+		if effect.Kind == EffectGuard && effect.Scope == ScopeSelf && effect.Amount != 1 {
+			t.Fatalf("Commanding Strike self-guard = %d, want 1", effect.Amount)
+		}
+	}
+}
