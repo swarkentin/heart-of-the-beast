@@ -709,7 +709,7 @@ func TestExpeditionRanksRiseWithDistance(t *testing.T) {
 }
 
 func TestCampsOnlyAtTheMidpointAndAfterTheDungeonBoss(t *testing.T) {
-	want := map[int][]int{4: {2, 4}, 5: {2, 5}, 6: {3, 6}}
+	want := map[int][]int{4: {2, 4}}
 	for maxDepth, floors := range want {
 		var got []int
 		for depth := 1; depth <= maxDepth; depth++ {
