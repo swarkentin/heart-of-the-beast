@@ -97,7 +97,7 @@ var classPassives = []ClassPassiveDefinition{
 	{ID: "passive.arcane-focus", Name: "Arcane Focus", Description: "Each elemental skill in a row adds 2 damage to the next elemental skill, up to +4.", EffectID: "passive.elemental-chain"},
 	{ID: "passive.first-strike", Name: "First Strike", Description: "Damaging skills deal 3 more to enemies that have not acted yet.", EffectID: "passive.unacted-target"},
 	{ID: "passive.recovery", Name: "Recovery", Description: "Recover 2 more health after every fight won.", EffectID: "passive.encounter-recovery"},
-	{ID: "passive.interrupt-training", Name: "Tactical Interruption", Description: "Interrupting an enemy also deals it 2 damage.", EffectID: "passive.interrupt"},
+	{ID: "passive.interrupt-training", Name: "Tactical Interruption", Description: "Interrupting an enemy also deals it 1 damage.", EffectID: "passive.interrupt"},
 	{ID: "passive.companion-instinct", Name: "Companion Instinct", Description: "Each round your companion tends the most wounded adventurer for 1 health.", EffectID: "passive.companion"},
 }
 
