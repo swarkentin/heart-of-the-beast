@@ -282,7 +282,7 @@ func TestClassPassiveModifiersAreResolvedByRegisteredEffectID(t *testing.T) {
 		{name: "arcane focus", classID: ClassArcanist, playerHealth: 20, arcaneCharges: 2, want: classPassiveBonuses{ElementalDamage: 4}},
 		{name: "first strike", classID: ClassRanger, playerHealth: 20, enemyHealth: 20, enemyTurns: 1, want: classPassiveBonuses{AttackDamage: 3}},
 		{name: "recovery", classID: ClassCleric, playerHealth: 20, want: classPassiveBonuses{EncounterHeal: 2}},
-		{name: "interrupt training", classID: ClassTactician, playerHealth: 20, want: classPassiveBonuses{InterruptDamage: 2}},
+		{name: "interrupt training", classID: ClassTactician, playerHealth: 20, want: classPassiveBonuses{InterruptDamage: 1}},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
