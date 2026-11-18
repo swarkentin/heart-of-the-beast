@@ -39,8 +39,8 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 		Room struct {
 			ID            string `json:"id"`
 			OwnerPlayerID string `json:"ownerPlayerId"`
-			PlayerToken   string `json:"playerToken"`
 		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
 	}
 	if err := json.Unmarshal(roomResponse.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	// A heartbeat may be the first client request to observe the terminal room.
 	// It must not return that state until the profile award has committed.
 	heartbeat := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/heartbeat", nil)
-	heartbeat.Header.Set("Authorization", "Bearer "+created.Room.PlayerToken)
+	heartbeat.Header.Set("Authorization", "Bearer "+created.PlayerToken)
 	heartbeatResponse := httptest.NewRecorder()
 	progressionHandler.updatePlayerPresence(heartbeatResponse, heartbeat, false)
 	if heartbeatResponse.Code != http.StatusOK {
