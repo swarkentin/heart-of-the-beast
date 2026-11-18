@@ -250,8 +250,8 @@ func TestBulwarkShieldWallProvidesSustainWhenWounded(t *testing.T) {
 	if err := SubmitCombatAction(room, player.ID, command, run.CombatRound.StartedAt); err != nil {
 		t.Fatalf("submit Shield Wall: %v", err)
 	}
-	if player.Health != before+1 {
-		t.Fatalf("Shield Wall should restore 1 health after the guarded round: before %d, after %d", before, player.Health)
+	if player.Health != before+2 {
+		t.Fatalf("Shield Wall should restore 2 health after the guarded round: before %d, after %d", before, player.Health)
 	}
 }
 
