@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "backend/**"
+      - "scripts/balance-pr-summary.py"
       - ".github/workflows/balance.yml"
   push:
     branches:
       - main
     paths:
       - "backend/**"
+      - "scripts/balance-pr-summary.py"
       - ".github/workflows/balance.yml"
   schedule:
     - cron: "17 9 * * 1"
@@ -17,6 +19,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: write
 
 concurrency:
   group: balance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -27,14 +30,39 @@ jobs:
     name: Seeded balance scenarios
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.mod
+
+      - name: Prepare branch-point worktree
+        if: github.event_name == 'pull_request'
+        id: branch-point
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin "$BASE_SHA" "$HEAD_SHA"
+          base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          git worktree add --detach /tmp/balance-branch-point "$base"
+          echo "sha=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Run branch-point simulations
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          cd /tmp/balance-branch-point/backend
+          go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
+            -json /tmp/branch-point-endless.json -markdown /tmp/branch-point-endless.md
+          go run ./cmd/balance-report -seeds 30 -first-seed 1 \
+            -json /tmp/branch-point-combat.json -markdown /tmp/branch-point-combat.md
 
       - name: Download latest accepted main-branch baseline
         if: github.event_name == 'pull_request'
@@ -67,6 +95,19 @@ jobs:
           fi
           go run ./cmd/balance-report "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Build PR regression dashboard
+        if: github.event_name == 'pull_request'
+        run: |
+          python scripts/balance-pr-summary.py \
+            --baseline-combat /tmp/branch-point-combat.json \
+            --head-combat backend/balance-report.json \
+            --baseline-endless /tmp/branch-point-endless.json \
+            --head-endless backend/endless-balance-report.json \
+            --base-sha "${{ steps.branch-point.outputs.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            --output backend/balance-pr-summary.md
+          cat backend/balance-pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload PR balance reports
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -77,8 +118,40 @@ jobs:
             backend/balance-report.md
             backend/endless-balance-report.json
             backend/endless-balance-report.md
+            backend/balance-pr-summary.md
           if-no-files-found: error
           retention-days: 30
+
+      - name: Update PR balance dashboard comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          SUMMARY_PATH: backend/balance-pr-summary.md
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- balance-regression-dashboard -->';
+            const body = fs.readFileSync(process.env.SUMMARY_PATH, 'utf8');
+            if (!body.includes(marker)) throw new Error('Balance dashboard marker missing');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100
+            });
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body
+              });
+              core.info(`Updated balance dashboard comment ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner, repo, issue_number, body
+              });
+              core.info(`Created balance dashboard comment ${created.data.id}`);
+            }
 
       - name: Record accepted main balance baseline
         if: github.event_name != 'pull_request'
