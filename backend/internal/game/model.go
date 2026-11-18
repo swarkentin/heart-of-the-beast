@@ -144,6 +144,8 @@ type PlayerState struct {
 	Stats          PlayerStats         `json:"stats"`
 	// Skills is the player's combat bar for this run, in slot order.
 	Skills []string `json:"skills,omitempty"`
+	// Consumables is the adventurer carried supply, keyed by stable catalog ID.
+	Consumables map[string]int `json:"consumables,omitempty"`
 	// Gold is earned by clearing encounters and playing camp mini-games, and spent at the camp shop.
 	Gold int `json:"gold,omitempty"`
 	// Items are the IDs of the shop items the player has bought this run, in order.
