@@ -78,6 +78,9 @@ func skillPolicyCommand(room *Room, playerID string, round int, rng *rand.Rand) 
 				continue
 			}
 			targetID := ""
+			if definition.Target == SkillTargetSelf && wounded.ID != playerID {
+				continue
+			}
 			if definition.Target == SkillTargetAlly {
 				targetID = wounded.ID
 			}

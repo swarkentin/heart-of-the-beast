@@ -190,9 +190,9 @@ var skillCatalog = []SkillDefinition{
 
 	// ---- Bulwark: holds the line and protects allies. ----
 	basic(skill(ClassBulwark, "bulwark.mace-strike", "Mace Strike", 1, SkillTargetEnemy, 0, "strike", "strike", "A heavy, dependable blow.", dmg(BasicAttackDamage, statPower))),
-	skill(ClassBulwark, "bulwark.shield-wall", "Shield Wall", 1, SkillTargetSelf, 1, "guard", "guard", "Plant the tower shield and take what comes.", guard(6)),
-	skill(ClassBulwark, "bulwark.challenge", "Challenge", 1, SkillTargetSelf, 2, "threat", "control", "Bang the shield and dare them. Every single-target attack this round turns on you.", taunt(1), guard(2)),
-	skill(ClassBulwark, "bulwark.shield-bash", "Shield Bash", 2, SkillTargetEnemy, 3, "control", "control", "Slam the shield rim into a foe mid-motion.", dmg(3, statPower), interrupt(2)),
+	skill(ClassBulwark, "bulwark.shield-wall", "Shield Wall", 1, SkillTargetSelf, 1, "guard", "guard", "Plant the tower shield and recover behind it.", guard(6), regen(2, 2)),
+	skill(ClassBulwark, "bulwark.challenge", "Challenge", 2, SkillTargetSelf, 2, "threat", "control", "Bang the shield and dare them. Every single-target attack this round turns on you.", taunt(1), guard(2)),
+	skill(ClassBulwark, "bulwark.shield-bash", "Shield Bash", 1, SkillTargetEnemy, 3, "control", "control", "Slam the shield rim into a foe mid-motion.", dmg(3, statPower), interrupt(2)),
 	skill(ClassBulwark, "bulwark.intervene", "Intervene", 3, SkillTargetAlly, 2, "guard", "support", "Step in front of an ally.", guard(8)),
 	skill(ClassBulwark, "bulwark.rallying-banner", "Rallying Banner", 5, SkillTargetParty, 3, "support", "support", "Plant the banner; the whole line braces.", guard(3)),
 	skill(ClassBulwark, "bulwark.spiked-bulwark", "Spiked Bulwark", 8, SkillTargetSelf, 3, "ward", "guard", "Every spike on the shield is a promise.", guard(4), thorns(4)),

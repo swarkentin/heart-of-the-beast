@@ -154,6 +154,27 @@ func TestTacticalPlayUsuallyClearsTheFirstFloor(t *testing.T) {
 	}
 }
 
+func TestBulwarkSoloTacticalUsuallyClearsFirstDungeon(t *testing.T) {
+	if testing.Short() {
+		t.Skip("simulates full expeditions")
+	}
+	report, err := SimulateRunBatchWithPolicy(40, 1, RandomDungeonThemeID, []string{ClassBulwark}, 4000, RunPolicyTactical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleared := 0
+	for _, run := range report.Runs {
+		if run.DungeonsCleared >= 1 {
+			cleared++
+		}
+	}
+	rate := float64(cleared) / float64(len(report.Runs))
+	t.Logf("solo Bulwark cleared the first dungeon in %d/%d tactical runs (%.0f%%)", cleared, len(report.Runs), rate*100)
+	if rate < 0.50 {
+		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 50%%", rate*100)
+	}
+}
+
 func TestSimulateRunRejectsUnknownPolicy(t *testing.T) {
 	if _, err := SimulateRunWithPolicy(1, DefaultDungeonThemeID, []string{ClassRanger}, 10, RunPolicy("optimal")); err == nil {
 		t.Fatal("expected an unknown policy to be rejected")
