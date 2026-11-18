@@ -147,7 +147,11 @@ func renderMarkdown(report game.BalanceReport, endless *EndlessReport) string {
 
 func maxInt(values map[string]float64) int {
 	maximum := 1
-	for _, value := range values {\n\t\tif int(value) > maximum {\n\t\t\tmaximum = int(value)\n\t\t}\n\t}
+	for _, value := range values {
+		if int(value) > maximum {
+			maximum = int(value)
+		}
+	}
 	return maximum
 }
 
