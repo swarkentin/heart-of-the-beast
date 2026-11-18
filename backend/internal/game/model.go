@@ -93,10 +93,18 @@ type Run struct {
 	CombatRoundNumber       int                     `json:"combatRoundNumber"`
 	CombatRound             *CombatRound            `json:"combatRound,omitempty"`
 	NavigationVote          *NavigationVote         `json:"navigationVote,omitempty"`
+	EventVote               *RoomEventVote          `json:"eventVote,omitempty"`
 	LastCombatEvents        []CombatEvent           `json:"lastCombatEvents,omitempty"`
 }
 
 type NavigationVote struct {
+	StartedAt time.Time         `json:"startedAt"`
+	Deadline  time.Time         `json:"deadline"`
+	Votes     map[string]string `json:"votes"`
+}
+
+type RoomEventVote struct {
+	EventID   string            `json:"eventId"`
 	StartedAt time.Time         `json:"startedAt"`
 	Deadline  time.Time         `json:"deadline"`
 	Votes     map[string]string `json:"votes"`

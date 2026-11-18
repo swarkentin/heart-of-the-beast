@@ -74,7 +74,7 @@ The Crypt Warden is the run's payoff. Its current implementation retains the Sou
 - The server validates the choice, resolves it once, records the result, and applies its effect to the run/party.
 - Room choices and rewards are part of the persisted run aggregate, so player and spectator snapshots see the same outcome.
 - Solo and co-op use the same choices; no event requires two people to act simultaneously.
-- The initial choice is immediate rather than a timed vote. If playtests show party members need time to discuss, add a shared vote window as a separate increment.
+- Multi-option room decisions open a 15-second party vote. Every living, non-departed player may vote or change their vote; the most-voted option wins, with a server-random tie-break. If nobody votes, the server chooses randomly so the run cannot stall. Solo choices resolve immediately.
 
 ## Playtest goals
 
