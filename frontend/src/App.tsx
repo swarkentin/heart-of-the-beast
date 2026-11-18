@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { AccountContext, adoptCredential, completeDiscordSignIn, resolveDiscordSignIn, SignInConflictDialog, startDiscordSignIn, takeDiscordCallback, type SignInConflict, type SignInResult } from "./account";
 import { apiRequest, PROFILE_CREDENTIAL_KEY, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
@@ -159,16 +159,13 @@ export default function App() {
     return () => { active = false; window.clearInterval(timer); };
   }, [roomId, token, spectator, pollMs]);
 
-  useEffect(() => {
-    if (spectator || (run?.phase !== "completed" && run?.phase !== "failed")) return;
-    let active = true;
+  const refreshProgressProfile = useCallback(async (): Promise<ApiProfile> => {
     const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
-    if (!credential) return;
-    void apiRequest<ApiProfile>("/profile", credential)
-      .then(value => { if (active) setProfile(value); })
-      .catch(() => { /* A later visit can retry loading the profile. */ });
-    return () => { active = false; };
-  }, [run?.id, run?.phase, spectator]);
+    if (!credential) throw new Error("Profile credential is unavailable");
+    const value = await apiRequest<ApiProfile>("/profile", credential);
+    setProfile(value);
+    return value;
+  }, []);
 
   useEffect(() => {
     if (classCatalog) return;
@@ -316,6 +313,6 @@ export default function App() {
     return withSound(<PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />);
   }
 
-  return withSound(<RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName}
+  return withSound(<RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName} onRefreshProfile={refreshProgressProfile}
     onCommand={sendCommand} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />);
 }

@@ -532,6 +532,13 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 				writeStoreError(w, err)
 				return
 			}
+			// A heartbeat can observe the terminal room between its save and the
+			// command handler's progression award. Make terminal snapshots safe
+			// for clients to use as the signal to refresh their profile.
+			if err := h.awardRunProgress(r.Context(), latest); err != nil {
+				writeError(w, http.StatusInternalServerError, "could not save progression")
+				return
+			}
 			writeJSON(w, http.StatusOK, publicRoom(latest, h.now()))
 			return
 		}
@@ -591,7 +598,13 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		if errors.Is(err, store.ErrConflict) {
-			return h.rooms.Get(r.Context(), room.ID)
+			// The winning writer may have completed the run. Award before exposing
+			// that latest snapshot, just as we do on the successful-save path.
+			latest, getErr := h.rooms.Get(r.Context(), room.ID)
+			if getErr != nil {
+				return nil, getErr
+			}
+			return latest, h.awardRunProgress(r.Context(), latest)
 		}
 		return nil, err
 	}

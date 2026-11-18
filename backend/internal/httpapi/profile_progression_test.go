@@ -40,6 +40,7 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 			ID            string `json:"id"`
 			OwnerPlayerID string `json:"ownerPlayerId"`
 		} `json:"room"`
+		PlayerToken string `json:"playerToken"`
 	}
 	if err := json.Unmarshal(roomResponse.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
@@ -70,12 +71,28 @@ func TestRunProgressionAwardsProfileAndClassMasteryOnce(t *testing.T) {
 	}
 
 	progressionHandler := &Handler{rooms: memory, now: func() time.Time { return now }}
-	for i := 0; i < 2; i++ {
-		if err := progressionHandler.awardRunProgress(t.Context(), room); err != nil {
-			t.Fatalf("award run progress attempt %d: %v", i+1, err)
-		}
+	// A heartbeat may be the first client request to observe the terminal room.
+	// It must not return that state until the profile award has committed.
+	heartbeat := httptest.NewRequest(http.MethodPost, "/rooms/"+created.Room.ID+"/heartbeat", nil)
+	heartbeat.Header.Set("Authorization", "Bearer "+created.PlayerToken)
+	heartbeat.SetPathValue("id", created.Room.ID)
+	heartbeatResponse := httptest.NewRecorder()
+	progressionHandler.updatePlayerPresence(heartbeatResponse, heartbeat, false)
+	if heartbeatResponse.Code != http.StatusOK {
+		t.Fatalf("terminal heartbeat: %d %s", heartbeatResponse.Code, heartbeatResponse.Body.String())
 	}
 	updated, err := memory.GetProfile(t.Context(), tokenHash(credential))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 30 || updated.ClassMastery[game.ClassRanger].Experience != 30 {
+		t.Fatalf("heartbeat returned before progression was awarded: %+v", updated)
+	}
+	// Repeating the award remains safe: the run/profile award key makes it idempotent.
+	if err := progressionHandler.awardRunProgress(t.Context(), room); err != nil {
+		t.Fatalf("repeat run progress award: %v", err)
+	}
+	updated, err = memory.GetProfile(t.Context(), tokenHash(credential))
 	if err != nil {
 		t.Fatal(err)
 	}

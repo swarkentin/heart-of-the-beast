@@ -26,7 +26,7 @@ import "./run.css";
 
 type Props = {
   snapshot: ApiRoom; run: ApiRun; room: ApiDungeonRoom; session: PlayerSession | null; spectator: boolean;
-  catalog: LobbyCatalog | null; profile: ApiProfile | null; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>;
+  catalog: LobbyCatalog | null; profile: ApiProfile | null; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>; onRefreshProfile: () => Promise<ApiProfile>;
   onCommand: (command: ApiCommand) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
 };
 /** One button on the skill bar. A skill that targets an ally or a fallen adventurer has no command until one is picked. */
@@ -77,7 +77,7 @@ function LogText({ line, labels }: { line: LogLine; labels: Record<number, strin
   return <li className={"rn-log-line rn-log-" + line.tone}>{line.tone === "auto" ? <Icon id="waiting" size={1} /> : null}<span>{parts.map((part, index) => index % 2 ? <b key={index}>{part}</b> : part)}</span></li>;
 }
 
-export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, busy, error, isHost, audioControls, onSaveName, onCommand, onLeave, onReturnToLobby }: Props) {
+export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, busy, error, isHost, audioControls, onSaveName, onRefreshProfile, onCommand, onLeave, onReturnToLobby }: Props) {
   const selfId = spectator ? "" : session?.playerId ?? "";
   const [view, setView] = useState<"player" | "cast">(spectator ? "cast" : "player");
   const [target, setTarget] = useState("");
@@ -139,6 +139,16 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const liveProfile = useRef<ApiProfile | null>(null);
   if (!gameOver && profile) liveProfile.current = profile;
   const runClassId = player?.classBuild?.classId;
+  const refreshedProgressRun = useRef("");
+  useEffect(() => {
+    // The server only exposes a terminal room after its idempotent progression award has committed.
+    // No XP means no profile write is expected, so there is nothing to refresh.
+    if (!gameOver || spectator || !snapshot.runProgress?.xp || refreshedProgressRun.current === run.id) return;
+    refreshedProgressRun.current = run.id;
+    void onRefreshProfile().catch(() => {
+      // The award is durable; a later profile load can recover if this read fails transiently.
+    });
+  }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, onRefreshProfile]);
   const report = useMemo(() => gameOver ? progressReport({
     runId: run.id, progress: snapshot.runProgress, before: liveProfile.current, after: profile, spectator: !selfId,
     classId: runClassId, className: catalog?.classes.find(item => item.id === runClassId)?.name,
