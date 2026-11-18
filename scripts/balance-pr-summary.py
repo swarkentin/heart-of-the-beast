@@ -15,7 +15,7 @@ def chart(labels, title, axis, series):
         return f"### {title}\n\n_No comparable data._\n"
     quoted = ", ".join(json.dumps(label) for label in labels)
     lines = [f"### {title}", "", "```mermaid", "xychart-beta",
-             f"    x-axis [{quoted}]", f"    y-axis {axis} 0 --> 100"]
+             f"    x-axis [{quoted}]", f"    y-axis {axis} 0 --> {max(1, int(max((max(values, default=0) for _, values in series), default=1) + 0.999))}"]
     for kind, values in series:
         lines.append(f"    {kind} [{', '.join(f'{value:.1f}' for value in values)}]")
     lines.append("```")
