@@ -14,7 +14,7 @@ import { DungeonIntro } from "./DungeonIntro";
 import { interruptTarget } from "./interrupts.ts";
 import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
-import { retryUntil } from "./profileRefresh.ts";
+import { profileUpdatedAfter, retryUntil } from "./profileRefresh.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
 import "./run.css";
@@ -140,18 +140,17 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const liveProfile = useRef<ApiProfile | null>(null);
   if (!gameOver && profile) liveProfile.current = profile;
   const runClassId = player?.classBuild?.classId;
-  const expectedAdventurerXp = liveProfile.current && snapshot.runProgress
-    ? liveProfile.current.adventurerXp + snapshot.runProgress.xp
-    : null;
+  const profileUpdatedAtBeforeRun = liveProfile.current?.updatedAt;
   useEffect(() => {
+    // No XP means no profile award is expected; do not wait for a timestamp that should not change.
     if (!gameOver || spectator || !snapshot.runProgress?.xp) return;
     void retryUntil(
       onRefreshProfile,
-      value => expectedAdventurerXp === null || value.adventurerXp >= expectedAdventurerXp,
+      value => !profileUpdatedAtBeforeRun || profileUpdatedAfter(value, { updatedAt: profileUpdatedAtBeforeRun }),
       () => { /* App publishes each profile response; this effect only coordinates retries. */ },
       { attempts: 10, delayMs: 500 },
     );
-  }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, expectedAdventurerXp, onRefreshProfile]);
+  }, [gameOver, spectator, run.id, snapshot.runProgress?.xp, profileUpdatedAtBeforeRun, onRefreshProfile]);
   const report = useMemo(() => gameOver ? progressReport({
     runId: run.id, progress: snapshot.runProgress, before: liveProfile.current, after: profile, spectator: !selfId,
     classId: runClassId, className: catalog?.classes.find(item => item.id === runClassId)?.name,
