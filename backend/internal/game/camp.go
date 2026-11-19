@@ -89,6 +89,13 @@ func openCamp(room *Room, round int, now time.Time) {
 	run.NavigationVote = nil
 	run.CombatRound = nil
 	between := run.Depth >= run.MaxDepth
+	if between {
+		for _, player := range run.Players {
+			if player != nil {
+				player.Consumables = map[string]int{ConsumableHealingHerb: StartingHealingHerbs}
+			}
+		}
+	}
 	if !between {
 		addCombatEvent(run, round, "floor_cleared", fmt.Sprintf("Floor %d of %d is cleared. Halfway down, the party makes camp.", run.Depth, run.MaxDepth))
 	}
@@ -504,6 +511,7 @@ const (
 	ShopWard      ShopItemKind = "ward"
 	ShopRevive    ShopItemKind = "revive"
 	ShopCleanse   ShopItemKind = "cleanse"
+	ShopConsumable ShopItemKind = "consumable"
 )
 
 // ShopItem is something a camp sells. Items take effect when bought; nothing is carried into combat as an action.
@@ -516,10 +524,12 @@ type ShopItem struct {
 	Price       int          `json:"price"`
 	// Repeatable items can be bought more than once at the same camp.
 	Repeatable bool `json:"repeatable,omitempty"`
+	ConsumableID string `json:"consumableId,omitempty"`
 }
 
 var shopCatalog = []ShopItem{
 	{ID: "healing-draught", Name: "Healing Draught", Kind: ShopHeal, Amount: 12, Price: 12, Repeatable: true, Description: "Recover 12 health now."},
+	{ID: "healing-herb", Name: "Healing Herb", Kind: ShopConsumable, ConsumableID: ConsumableHealingHerb, Amount: 1, Price: 8, Repeatable: true, Description: "Carry one herb. Use it any time to recover up to 30% of your maximum health."},
 	{ID: "camp-feast", Name: "Camp Feast", Kind: ShopFullHeal, Price: 30, Description: "Recover all of your health now."},
 	{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30, Description: "+1 Strike damage for the rest of the run (up to +4 from permanent upgrades)."},
 	{ID: "bracers", Name: "Banded Bracers", Kind: ShopGuard, Amount: 1, Price: 24, Description: "Defend blocks 1 more damage for the rest of the run."},
@@ -637,6 +647,10 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 	label := adventurerLabel(room, buyerID)
 	message := label + " buys " + item.Name + "."
 	switch item.Kind {
+	case ShopConsumable:
+		if buyer.Consumables == nil { buyer.Consumables = make(map[string]int) }
+		if buyer.Consumables[item.ConsumableID] >= MaxHealingHerbs { return ErrItemUnavailable }
+		buyer.Consumables[item.ConsumableID] += item.Amount
 	case ShopHeal, ShopFullHeal:
 		amount := item.Amount
 		if item.Kind == ShopFullHeal {
