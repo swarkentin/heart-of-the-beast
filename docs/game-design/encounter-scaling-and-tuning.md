@@ -15,7 +15,7 @@ Reinforcements are the theme's striker first, then its disruptor (whose party-wi
 party size), then a second striker. Each enemy is only slightly tougher in a party: health +15% and damage +10%
 per extra adventurer. A fight never holds more than six enemies.
 
-## Levers
+## Starting adventurer health\n\nAll nine classes now start with 50% more maximum health than the original profiles (rounded to the nearest whole point): Bulwark 54, Juggernaut 57, Spellguard 51, Assassin 42, Arcanist 41, Ranger 45, Cleric 48, Tactician 47, and Beastcaller 45. This is a broad survivability adjustment; reassess its effect across randomized themes and party sizes before making further combat-tuning changes.\n\n## Levers
 
 | Lever | Where | Value |
 |---|---|---|
