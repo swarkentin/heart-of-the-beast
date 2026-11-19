@@ -246,7 +246,7 @@ def main():
             labels,
             "Solo endless first-dungeon completion",
             f"Share of tactical-policy expeditions clearing dungeon one · "
-            f"{endless_runs} seeded expeditions per class. At 100 runs, each run moves this rate by 1 percentage point.",
+            f"{endless_runs} seeded expeditions per class. Each run moves this rate by {100 / endless_runs:.1f} percentage points.",
             current_clear,
         ),
         depth_progression_chart(classes, new_endless),
