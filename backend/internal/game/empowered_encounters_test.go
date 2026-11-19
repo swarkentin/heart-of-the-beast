@@ -9,7 +9,7 @@ func TestAssignEncounterModifierIsDeterministicAndPersisted(t *testing.T) {
 		for _, char := range "floor-1-room-1" {
 			roll = roll*33 + uint64(char)
 		}
-		if roll%5 == 0 {
+		if roll%8 == 0 {
 			break
 		}
 	}
