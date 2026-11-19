@@ -127,6 +127,8 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   if (layers.pad > 0 && bar % 2 === 0) {
     const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
     for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
+    // A quiet upper fifth adds harmonic sheen without changing the theme's chord progression.
+    events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, chordRoot + 4, 2), plan.barSec * 2.05, 0.2 * layers.pad));
   }
 
   // Bass: onsets from the theme's bass rhythm, notes from its bass lines.
