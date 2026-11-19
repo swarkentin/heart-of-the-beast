@@ -342,7 +342,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     </div>;
   } else {
     const mine = navigationVote?.votes?.[selfId];
-    command = <div className={"rn-context" + (exitsOpen && room.exits.length > 3 ? " rn-context-scroll" : "")}>
+    command = <div className={"rn-context" + (exitsOpen ? " rn-context-scroll" : "")}>
       <p className="px-eyebrow">{room.cleared ? "ROOM CLEARED" : "EXPLORING"}</p>
       <h2>{exitsOpen && room.exits.length > 0 ? "Choose a path" : room.name}</h2>
       {room.event?.resolved ? <p className="px-copy">{room.event.result || "The party moves on."}</p> : null}
