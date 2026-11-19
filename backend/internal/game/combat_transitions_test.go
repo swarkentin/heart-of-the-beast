@@ -149,7 +149,6 @@ func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
 	}
 }
 
-
 func TestSoloEnemyDamageScaling(t *testing.T) {
 	for _, test := range []struct {
 		damage int
