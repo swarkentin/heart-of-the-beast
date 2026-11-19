@@ -19,13 +19,15 @@ per extra adventurer. A fight never holds more than six enemies.
 
 | Lever | Where | Value |
 |---|---|---|
-| Recovery after a won expedition fight | `EncounterRecoveryPercent` (combat.go) | 30% of max health |
+| Healing between encounters | Healing Herb consumable | 30% of max health; 2 carried at start and replenished to 2 after each dungeon |
 | Live enemy health | `LiveEnemyHealthMultiplier` (combat.go) | ×1.2 |
 | Per-floor enemy health | `MonsterCatalog.NewEnemy` | +12% per floor below the first |
 | Solo enemy health | `MonsterCatalog.NewEnemy` | −20% |
 | Party health / damage per extra adventurer | `PartyEnemy*MultiplierStep` (combat.go) | +15% / +10% |
 | Reinforcement minions | `themeReinforcements` | two per theme |
 | Encounter pools | `expedition_content.go` | light ≈ 2, standard ≈ 2–4, heavy ≈ 5–6 budget |
+
+Healing is player-controlled between fights. Camp still restores 20% of max health, and Healing Herbs are reduced by Blighted Herbs (-50%) or general healing modifiers such as Withering Air.
 
 ## Targets (tactical policy)
 
