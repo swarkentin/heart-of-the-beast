@@ -56,7 +56,7 @@ func applyAmbush(room *Room, dungeonRoom *DungeonRoom) {
 		}
 		enemy.ModifierTriggered = true
 		intent := *enemy.Intent
-		enemy.Intent = nil
+		enemy.Intent = &EnemyIntent{Kind: "ambush_recovery", Label: "Recovering from ambush", Interruptible: false}
 		targets := intentTargets(room, intent)
 		if len(targets) == 0 {
 			addCombatEvent(room.Run, room.Run.CombatRoundNumber, "enemy_ambush", enemy.Name+" springs an ambush, but finds no target.")
