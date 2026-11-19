@@ -28,7 +28,7 @@ func snapshotEnemyKills(room *game.Room) map[string]enemyBeforeKill {
             elite := dungeonRoom.RoomType == "boss" || dungeonRoom.RoomType == "miniboss" || dungeonRoom.RoomType == "lair"
             result[roomID+":"+enemy.ID] = enemyBeforeKill{
                 health: enemy.Health, roomID: roomID,
-                kill: store.EnemyKill{EnemyKey: key, Name: enemy.Name, ThemeID: theme, Elite: elite},
+                kill: store.EnemyKill{EnemyKey: key, Name: enemy.Name, ThemeID: theme, SpriteID: enemy.SpriteID, Elite: elite},
             }
         }
     }
