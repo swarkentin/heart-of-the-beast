@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"runtime"
 	"sort"
-	"sync"
 	"strings"
+	"sync"
 	"time"
 )
 
