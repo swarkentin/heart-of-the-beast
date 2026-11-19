@@ -14,7 +14,7 @@ const (
 	LiveEnemyHealthMultiplier      = 1.2
 	PartyEnemyHealthMultiplierStep = 0.15
 	PartyEnemyDamageMultiplierStep = 0.1
-	)
+)
 
 // maxCombatEvents bounds the events a snapshot carries. Skills describe more of a round than three buttons did.
 const maxCombatEvents = 48
