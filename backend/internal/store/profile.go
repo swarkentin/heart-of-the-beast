@@ -76,12 +76,3 @@ func applyProfileRewardUnlocks(profile *Profile) bool {
 	profile.UnlockedCosmetics = append(profile.UnlockedCosmetics, newUnlocks...)
 	return true
 }
-
-
-
-
-
-
-
-
-
