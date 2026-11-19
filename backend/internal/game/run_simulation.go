@@ -3,7 +3,9 @@ package game
 import (
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sort"
+	"sync"
 	"strings"
 	"time"
 )
@@ -521,13 +523,42 @@ func SimulateRunBatchWithPolicy(seedCount int, firstSeed int64, themeID string, 
 		DepthReachRates: make(map[int]float64),
 		Runs:            make([]RunSimulationReport, 0, seedCount),
 	}
+	// Each seeded expedition is independent. Run a bounded number concurrently while
+	// storing results by seed index so output and aggregate reports remain deterministic.
+	workers := runtime.GOMAXPROCS(0)
+	if workers > seedCount {
+		workers = seedCount
+	}
+	jobs := make(chan int)
+	runs := make([]RunSimulationReport, seedCount)
+	errs := make([]error, seedCount)
+	var wait sync.WaitGroup
+	wait.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		go func() {
+			defer wait.Done()
+			for i := range jobs {
+				run, err := SimulateRunWithPolicy(firstSeed+int64(i), themeID, classIDs, maxSteps, policy)
+				if err != nil {
+					errs[i] = err
+					continue
+				}
+				runs[i] = run
+			}
+		}()
+	}
+	for i := 0; i < seedCount; i++ {
+		jobs <- i
+	}
+	close(jobs)
+	wait.Wait()
+
 	depths := make([]int, 0, seedCount)
 	rooms := make([]int, 0, seedCount)
 	rounds := make([]int, 0, seedCount)
-	for i := 0; i < seedCount; i++ {
-		run, err := SimulateRunWithPolicy(firstSeed+int64(i), themeID, classIDs, maxSteps, policy)
-		if err != nil {
-			return RunSimulationBatchReport{}, err
+	for i, run := range runs {
+		if errs[i] != nil {
+			return RunSimulationBatchReport{}, fmt.Errorf("seed %d: %w", firstSeed+int64(i), errs[i])
 		}
 		report.Runs = append(report.Runs, run)
 		depths = append(depths, run.ReachedDepth)
