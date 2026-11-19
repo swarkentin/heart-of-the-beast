@@ -312,7 +312,7 @@ func discoveryEffects() []RunEffectDefinition {
 		return RunEffectOperation{Kind: RunEffectFloorModifier, ModifierID: id}
 	}
 	effects := []RunEffectDefinition{
-		{ID: "herb_cache", Summary: "Each adventurer finds 1 healing herb, up to a carry limit of 4.", Operations: []RunEffectOperation{op(RunEffectPartyConsumable, 1)}, Outcome: "The cache holds a healing herb for every adventurer."},
+		{ID: "herb_cache", Summary: "Each adventurer finds 2 healing herbs, up to a carry limit of 4.", Operations: []RunEffectOperation{op(RunEffectPartyConsumable, 2)}, Outcome: "The cache holds a healing herb for every adventurer."},
 		{ID: "blood_pact", Summary: "Each adventurer loses up to 6 health. +2 Strike for the rest of the run, up to the +4 permanent cap.", Operations: []RunEffectOperation{op(RunEffectPartyDamage, 6), op(RunEffectPartyStrike, 2)},
 			Outcome: "The price is paid in blood. Every adventurer loses up to 6 health and gains up to +2 Strike, subject to the permanent upgrade cap."},
 		{ID: "heavy_plate", Summary: "+2 Guard and -1 Strike for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyGuard, 2), op(RunEffectPartyStrike, -1)},
