@@ -34,3 +34,21 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 	}
 	return Command{}, false
 }
+
+
+// tacticalConsumableCommand uses a carried herb when its full effective healing can be used.
+func tacticalConsumableCommand(room *Room, playerID string) (Command, bool) {
+	if room == nil || room.Run == nil {
+		return Command{}, false
+	}
+	player := room.Run.Players[playerID]
+	if player == nil || player.Health <= 0 || player.Consumables[ConsumableHealingHerb] <= 0 {
+		return Command{}, false
+	}
+	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	amount = floorRulesFor(room.Run).consumableHealing(amount)
+	if player.MaxHealth-player.Health < amount {
+		return Command{}, false
+	}
+	return Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, true
+}
