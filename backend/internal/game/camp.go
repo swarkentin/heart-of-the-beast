@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -156,6 +155,16 @@ func AdvanceCamp(room *Room, now time.Time) bool {
 		return false
 	}
 	expired := camp.Deadline != nil && !now.Before(*camp.Deadline)
+	// Retire Rune Echo from new camps, while safely settling any persisted camp that
+	// was saved before the game was removed.
+	if camp.Stage == CampStageGame && camp.Game != nil && camp.Game.Kind == MinigameEcho {
+		for _, playerID := range eligible {
+			if play := camp.Game.Players[playerID]; play != nil && !play.Done {
+				play.Pot, play.Gold = 0, MinigameConsolationGold
+				settleMinigame(room, playerID, play, "The old rune trial has been retired. The stones offer a small purse.")
+			}
+		}
+	}
 	switch camp.Stage {
 	case CampStageBoon:
 		chosen := true
@@ -326,15 +335,13 @@ func applyCampCommand(room *Room, actorID string, command Command, now time.Time
 const (
 	MinigameDice   = "dice"
 	MinigameChests = "chests"
+	// MinigameEcho is retained only to migrate camps persisted before Rune Echo was retired.
 	MinigameEcho   = "echo"
 
 	MinigameConsolationGold = 3
 	DiceMaxRolls            = 5
 	ChestCount              = 4
 )
-
-// EchoRunes are the symbols of the Rune Echo sequence.
-var EchoRunes = []string{"sun", "moon", "star", "wave"}
 
 // Minigame is one camp's game. Every adventurer plays their own copy.
 type Minigame struct {
@@ -358,7 +365,7 @@ type MinigamePlay struct {
 	Rolls []int `json:"rolls,omitempty"`
 	// Chests holds what each opened chest held: gold, or 0 for the mimic; -1 is a chest still shut (Mimic's Row).
 	Chests []int `json:"chests,omitempty"`
-	// Sequence is the pattern to repeat, and Answer what the player entered (Rune Echo).
+	// Sequence and Answer are retained only to decode old persisted Rune Echo camps.
 	Sequence []string `json:"sequence,omitempty"`
 	Answer   []string `json:"answer,omitempty"`
 	Result   string   `json:"result,omitempty"`
@@ -367,7 +374,6 @@ type MinigamePlay struct {
 var minigameKinds = []Minigame{
 	{Kind: MinigameDice, Name: "Bone Dice", Rules: "Roll to grow the pot: every 2 to 6 adds twice its pips in gold. Roll a 1 and the pot is lost. Bank whenever you like; five rolls at most."},
 	{Kind: MinigameChests, Name: "Mimic's Row", Rules: "Four chests: three hold gold, one is a mimic. Open as many as you dare, then walk away with the pot. Open the mimic and the pot is lost."},
-	{Kind: MinigameEcho, Name: "Rune Echo", Rules: "The stones light up in order. Repeat the pattern from memory: gold for every rune right from the start, and a bonus for the whole pattern."},
 }
 
 func newMinigame(seed uint64, depth int, playerIDs []string) *Minigame {
@@ -379,15 +385,6 @@ func newMinigame(seed uint64, depth int, playerIDs []string) *Minigame {
 		switch game.Kind {
 		case MinigameChests:
 			play.Chests = []int{-1, -1, -1, -1}
-		case MinigameEcho:
-			rng := game.rng(index, 0)
-			length := 4 + depth/2
-			if length > 7 {
-				length = 7
-			}
-			for i := 0; i < length; i++ {
-				play.Sequence = append(play.Sequence, EchoRunes[rng.Intn(len(EchoRunes))])
-			}
 		}
 		game.Players[playerID] = play
 	}
@@ -421,7 +418,7 @@ func (game *Minigame) chestContents(playerIndex int) []int {
 func playMinigame(room *Room, playerID string, play *MinigamePlay, command Command) error {
 	game := room.Run.Camp.Game
 	switch {
-	case command.Action == "bank" && game.Kind != MinigameEcho:
+	case command.Action == "bank":
 		play.Gold = play.Pot
 		settleMinigame(room, playerID, play, "Banked.")
 	case command.Action == "roll" && game.Kind == MinigameDice:
@@ -460,23 +457,6 @@ func playMinigame(room *Room, playerID string, play *MinigamePlay, command Comma
 			play.Gold = play.Pot
 			settleMinigame(room, playerID, play, "Every purse found, and the mimic left hungry.")
 		}
-	case command.Action == "echo" && game.Kind == MinigameEcho:
-		answer := strings.Split(command.ChoiceID, ",")
-		if len(answer) != len(play.Sequence) {
-			return ErrInvalidCampAction
-		}
-		correct := 0
-		for correct < len(answer) && answer[correct] == play.Sequence[correct] {
-			correct++
-		}
-		play.Answer = answer
-		play.Gold = game.stake(3 * correct)
-		result := fmt.Sprintf("%d of %d runes in order.", correct, len(play.Sequence))
-		if correct == len(play.Sequence) {
-			play.Gold += game.stake(8)
-			result = "The whole pattern, perfectly."
-		}
-		settleMinigame(room, playerID, play, result)
 	default:
 		return ErrInvalidCampAction
 	}
