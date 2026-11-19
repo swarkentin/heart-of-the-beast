@@ -11,7 +11,7 @@ import type { BossTreatment, Layers, MelodicEvent, MelodicVoice, MusicCue, Music
 export type { Rng };
 
 /** How much faster or slower each state plays relative to the theme's base tempo. */
-export const STATE_TEMPO: Record<MusicState, number> = { exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
+export const STATE_TEMPO: Record<MusicState, number> = { title: 0.92, party: 0.82, exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
 
 export interface Plan {
   cue: MusicCue;
