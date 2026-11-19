@@ -31,6 +31,7 @@ func (m *Memory) RecordEnemyKill(_ context.Context, profileID, runID, enemyInsta
     if kill.ThemeID != "" {
         entry.ThemeID = kill.ThemeID
     }
+    if kill.SpriteID != "" { entry.SpriteID = kill.SpriteID }
     entry.Kills++
     if kill.Elite {
         entry.EliteKills++
