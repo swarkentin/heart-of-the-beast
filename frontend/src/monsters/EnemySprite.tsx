@@ -172,6 +172,10 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
     <g transform={`translate(${x} 0)`} onClick={onClick} className={(onClick && alive ? "enemy-sprite " : "") + "enemy-stage-actor"} data-enemy={enemy.id} data-anim={pose.anim} data-frame={pose.frame}>
       {selected && alive ? <ellipse cx="0" cy={floorY + 2} rx={Math.max(92, (boxRight - boxLeft) / 2 + 18)} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
       <ellipse cx="0" cy={floorY + 4} rx={Math.max(60, (boxRight - boxLeft) / 2.2)} ry="14" fill="#080a10" opacity=".8" />
+      {enemy.modifier ? <g className={"enemy-empowered enemy-empowered-" + enemy.modifier} pointerEvents="none">
+        <ellipse cx="0" cy={floorY - 88} rx={Math.max(74, (boxRight - boxLeft) / 2 + 18)} ry={Math.max(118, (floorY - headY) * 0.62)} fill="none" strokeWidth="5" strokeDasharray={enemy.modifier === "ambush" ? "10 12" : "5 7"} />
+        <text x="0" y={headY - 38} textAnchor="middle" fontSize="13" fontWeight="bold" letterSpacing="2" stroke="#10121a" strokeWidth="5" paintOrder="stroke">{enemy.modifier === "ambush" ? "AMBUSH" : "UNYIELDING"}</text>
+      </g> : null}
       <g key={shake} className={shake > 0 && !reduced ? "enemy-shake" : undefined}>
         {sprite ? <SpriteFrame sprite={sprite} anim={showDead && pose.anim !== "death" ? "death" : pose.anim} frame={showDead && pose.anim !== "death" ? sprite.creature.animations.death.frames - 1 : pose.frame} scale={scale} floorY={floorY} /> : sprite === null ? <Placeholder floorY={floorY} dead={showDead} /> : null}
       </g>
