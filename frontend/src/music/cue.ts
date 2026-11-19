@@ -111,7 +111,7 @@ export function layersFor(state: MusicState, depth: Depth): Layers {
   const by = (values: readonly [number, number, number]) => values[d];
   switch (state) {
     case "title": return { pad: 1, bass: 0.12, lead: 0.34, perc: 0, fx: 0.3 };
-    case "party": return { pad: 1, bass: 0.34, lead: 0.34, perc: 0.52, fx: 0.25 };
+    case "party": return { pad: 1, bass: 0.34, lead: 0.34, perc: 0.68, fx: 0.25 };
     case "exploration": return { pad: 1, bass: by([0.42, 0.62, 0.85]), lead: by([0.62, 0.7, 0.78]), perc: by([0.12, 0.25, 0.45]), fx: 1 };
     case "event": return { pad: 1, bass: 0, lead: by([0.6, 0.7, 0.8]), perc: 0, fx: 0.7 };
     case "combat": return { pad: 0.7, bass: by([0.8, 0.9, 1]), lead: by([0.7, 0.8, 0.9]), perc: by([0.6, 0.75, 0.9]), fx: 0.4 };
