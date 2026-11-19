@@ -70,7 +70,11 @@ export function makePlan(cue: MusicCue): Plan {
     barSec: stepSec * profile.steps,
     swing: profile.swing,
     wobble: profile.wobble,
-    voices: { pad: profile.voices.pad, bass: profile.voices.bass, lead: boss?.lead ?? profile.voices.lead, accent: profile.voices.accent },
+    voices: cue.state === "title"
+      ? { pad: "organPad", bass: "walkBass", lead: "vibes", accent: "horn" }
+      : cue.state === "party"
+        ? { pad: "synthPad", bass: "pulseBass", lead: "arp", accent: "glass" }
+        : { pad: profile.voices.pad, bass: profile.voices.bass, lead: boss?.lead ?? profile.voices.lead, accent: profile.voices.accent },
     motif: boss?.motif ?? profile.motif,
   };
 }
@@ -120,25 +124,49 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   const scale = scaleForBar(plan, bar);
   const events: ScoreEvent[] = [];
   const chordRoot = profile.chordRoots[Math.floor(bar / 2) % profile.chordRoots.length];
+  // Front-end themes have their own harmonic language, separate from dungeon-theme harmony.
+  // Title is a smoky jazz turnaround; party is a four-chord minor-key synthwave loop.
+  const titleChords = [
+    { root: 2, tones: [0, 3, 7, 10, 14, 17] },  // ii9
+    { root: 7, tones: [0, 4, 7, 10, 14, 17] },  // V13 colour
+    { root: 0, tones: [0, 4, 7, 11, 14, 18] },  // Imaj9/#11
+    { root: 9, tones: [0, 4, 7, 10, 13, 16] },  // vi dominant passing chord
+  ];
+  const partyChords = [
+    { root: 0, tones: [0, 3, 7, 10, 14] },      // i add9
+    { root: 8, tones: [0, 4, 7, 11, 14] },      // VI maj9
+    { root: 3, tones: [0, 4, 7, 11, 14] },      // III maj9
+    { root: 10, tones: [0, 4, 7, 10, 14] },     // VII add9
+  ];
+  const stateChord = cue.state === "title" ? titleChords[bar % 4] : cue.state === "party" ? partyChords[bar % 4] : undefined;
   const cents = () => (plan.wobble ? (rng() - 0.5) * 2 * plan.wobble : 0);
   const melodic = (t: number, voice: MelodicVoice, freq: number, dur: number, vel: number): MelodicEvent => ({ kind: "melodic", t, voice, freq, dur, vel, cents: cents() });
 
-  // Pad: a triad held for two bars. Fuller when the layer is louder.
-  if (layers.pad > 0 && bar % 2 === 0) {
-    const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
-    for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
-    // A quiet upper fifth adds harmonic sheen without changing the theme's chord progression.
-    events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, chordRoot + 4, 2), plan.barSec * 2.05, 0.2 * layers.pad));
+  // Title and party use authored four-bar progressions; dungeon themes retain their two-bar modal chords.
+  if (layers.pad > 0 && (stateChord || bar % 2 === 0)) {
+    if (stateChord) {
+      for (const semitone of stateChord.tones) {
+        const freq = plan.rootHz * 2 ** ((stateChord.root + semitone + 12) / 12);
+        events.push(melodic(0, plan.voices.pad, freq, plan.barSec * 1.04, (cue.state === "title" ? 0.34 : 0.3) * layers.pad));
+      }
+    } else {
+      const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
+      for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
+      // A quiet upper fifth adds harmonic sheen without changing the theme's chord progression.
+      events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, chordRoot + 4, 2), plan.barSec * 2.05, 0.2 * layers.pad));
+    }
   }
 
   // Bass: onsets from the theme's bass rhythm, notes from its bass lines.
   if (layers.bass > 0) {
-    const hits = onsets(profile.patterns.bass, layers.bass);
+    const pattern = cue.state === "title" ? "X...x...X...x..." : cue.state === "party" ? "X.x.X.x.X.x.X.x." : profile.patterns.bass;
+    const hits = onsets(pattern, layers.bass);
     const line = profile.bassLines[bar % profile.bassLines.length];
     hits.forEach((hit, k) => {
       const next = hits[k + 1]?.step ?? plan.stepsPerBar;
-      const degree = line[k % line.length];
-      events.push(melodic(stepTime(plan, hit.step), plan.voices.bass, degreeFreq(plan, scale, degree), Math.max(0.2, (next - hit.step) * plan.stepSec * 0.95), 0.62 * hit.vel * layers.bass));
+      const degree = stateChord ? stateChord.root : line[k % line.length];
+      const freq = stateChord ? plan.rootHz * 2 ** ((degree - 12) / 12) : degreeFreq(plan, scale, degree);
+      events.push(melodic(stepTime(plan, hit.step), plan.voices.bass, freq, Math.max(0.2, (next - hit.step) * plan.stepSec * 0.95), (cue.state === "party" ? 0.72 : 0.62) * hit.vel * layers.bass));
     });
   }
 
