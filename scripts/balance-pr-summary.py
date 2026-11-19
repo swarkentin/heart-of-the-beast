@@ -59,6 +59,21 @@ def clear_rate(scenario):
     return scenario.get("completed", 0) / runs * 100 if runs else 0.0
 
 
+def initial_theme_summary(scenarios):
+    """Group solo tactical first-dungeon outcomes by the actual seeded starting theme."""
+    buckets = {}
+    for scenario in scenarios:
+        if scenario.get("partySize") != 1 or scenario.get("policy") != "tactical":
+            continue
+        for run in scenario.get("results", []):
+            theme = run.get("initialThemeId") or run.get("themeId") or "unknown"
+            bucket = buckets.setdefault(theme, {"runs": 0, "cleared": 0, "wiped": 0})
+            bucket["runs"] += 1
+            bucket["cleared"] += int(run.get("dungeonsCleared", 0) >= 1)
+            bucket["wiped"] += int(bool(run.get("wiped")))
+    return buckets
+
+
 
 def depth_reach_summary(scenario):
     rates = {
@@ -204,7 +219,7 @@ def main():
             labels,
             "Solo endless first-dungeon completion",
             f"Share of tactical-policy expeditions clearing dungeon one · "
-            f"{endless_runs} seeded expeditions per class.",
+            f"{endless_runs} seeded expeditions per class. At 100 runs, each run moves this rate by 1 percentage point.",
             current_clear,
         ),
         depth_progression_chart(classes, new_endless),
@@ -224,6 +239,25 @@ def main():
             f"| {class_id} | {old_c:.1f}% → {new_c:.1f}% ({new_c-old_c:+.1f}) "
             f"| {old_clear:.1f}% → {new_clear:.1f}% ({new_clear-old_clear:+.1f}) "
             f"| {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
+        )
+
+    theme_buckets = initial_theme_summary(after_endless.get("scenarios", []))
+    lines.extend([
+        "",
+        "### First-dungeon outcomes by seeded starting theme",
+        "",
+        "Solo tactical expeditions grouped by the actual first theme selected by the seed. This separates theme difficulty from the aggregate class result; counts are absolute, not percentages alone.",
+        "",
+        "| Starting theme | Expeditions | First dungeon cleared | Wiped |",
+        "|---|---:|---:|---:|",
+    ])
+    for theme, bucket in sorted(theme_buckets.items()):
+        total = bucket["runs"]
+        cleared = bucket["cleared"]
+        wiped = bucket["wiped"]
+        lines.append(
+            f"| {theme} | {total} | {cleared}/{total} ({cleared/total*100:.1f}%) "
+            f"| {wiped}/{total} ({wiped/total*100:.1f}%) |"
         )
 
     lines.extend([
@@ -261,8 +295,8 @@ def main():
         "### Interpretation",
         "",
         "- Combat win rates average each class's solo results across the encounter suite; encounter-level deltas above show scenario-specific movement.",
-        "- Endless results use solo tactical-policy runs, the same 12 seeds, and the same random theme selection.",
-        "- These are small deterministic samples, not statistical proof; use changes as investigation signals and validate with playtests.",
+        "- Endless results use solo tactical-policy runs, 100 paired seeds per class, and randomized seeded themes; the table above breaks first-dungeon outcomes out by starting theme.",
+        "- A 100-run rate is still an estimate, not proof. Do not change class stats from one dashboard movement: look for consistent paired-seed drift across themes and depth/survival metrics, then validate with playtests.",
         "- Newly added or removed scenarios/classes are not silently treated as zero; only matched data appears in paired comparisons.",
         "",
         f"_Combat report v{after.get('version', 'unknown')} · seeds {after.get('firstSeed')}–{after.get('lastSeed')} · {len(after.get('scenarios', []))} scenarios._",
