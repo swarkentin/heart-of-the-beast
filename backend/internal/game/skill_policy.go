@@ -359,7 +359,7 @@ func estimatedDamage(run *Run, player *PlayerState, definition SkillDefinition, 
 	return total
 }
 
-// tacticalLifestealCanReplaceHerb reports whether a ready attack can restore at least 15% of max health
+// tacticalLifestealCanReplaceHerb reports whether a ready attack can restore at least 10% of max health
 // while still dealing damage. That is the absolute sustain value that justified saving an herb before
 // the base herb was raised from 30% to 50%; prefer the attack rather than spend a combat action healing.
 func tacticalLifestealCanReplaceHerb(room *Room, player *PlayerState) bool {
