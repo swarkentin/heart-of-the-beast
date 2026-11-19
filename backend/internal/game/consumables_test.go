@@ -162,16 +162,15 @@ func TestHerbalistBoonIsADeepDungeonPerk(t *testing.T) {
 
 	room := startExpedition(t, 1, "catacombs", "herbalist-boon-healing")
 	player := room.Run.Players["player-1"]
-	player.Health -= player.MaxHealth
+	player.Health = 1
 	if !addFloorModifier(room.Run, "herbalist-boon") {
 		t.Fatal("could not apply Herbalist's Boon")
 	}
-	before := player.Health
 	if err := ApplyCommand(room, player.ID, Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, expeditionNow); err != nil {
 		t.Fatalf("use herb with Herbalist's Boon: %v", err)
 	}
-	if got := player.Health - before; got != player.MaxHealth {
-		t.Fatalf("Herbalist's Boon healed %d, want full maximum health %d", got, player.MaxHealth)
+	if player.Health != player.MaxHealth {
+		t.Fatalf("Herbalist's Boon left health at %d, want full maximum health %d", player.Health, player.MaxHealth)
 	}
 }
 
