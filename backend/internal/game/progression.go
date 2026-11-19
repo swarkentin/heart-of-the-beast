@@ -107,6 +107,8 @@ func grantExperience(player *PlayerState, room *Room, playerID string, round, am
 	player.Experience = transition.Experience
 	player.Level = transition.Level
 	player.MaxHealth = transition.MaxHealth
+	player.StrikeDamage = transition.StrikeDamage
+	player.GuardReduction = transition.GuardReduction
 	player.Stats = transition.Stats
 
 	addCombatEvent(room.Run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(amount)+" XP.")

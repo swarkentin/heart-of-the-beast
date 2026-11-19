@@ -371,13 +371,14 @@ func TestCoopCombatWaitsForPartyAndResolvesThroughHTTP(t *testing.T) {
 	if err := json.Unmarshal(hostAction.Body.Bytes(), &resolved); err != nil {
 		t.Fatal(err)
 	}
-	// Two Strikes land together. The entry guard of a two-player party survives them, so the fight goes on.
-	want := entryEnemy.Health - 2*game.PlayerStrikeDamage
-	if want <= 0 {
-		t.Fatalf("test assumes the entry enemy survives two strikes, health=%d", entryEnemy.Health)
+	// Both Strikes land together. Critical hits may add damage, so assert at least the
+	// base damage from both actions while ensuring the entry guard survives.
+	maxExpectedHealth := entryEnemy.Health - 2*game.PlayerStrikeDamage
+	if maxExpectedHealth <= 0 {
+		t.Fatalf("test assumes the entry enemy survives two base Strikes, health=%d", entryEnemy.Health)
 	}
-	if got := resolved.Run.Rooms["d1-entry"].Encounter.Enemies[0].Health; resolved.Run.Phase != game.PhaseCombat || got != want || resolved.Run.CombatRound.Number != 2 {
-		t.Fatalf("both party actions should resolve together: phase=%s enemy health=%d want %d", resolved.Run.Phase, got, want)
+	if got := resolved.Run.Rooms["d1-entry"].Encounter.Enemies[0].Health; resolved.Run.Phase != game.PhaseCombat || got <= 0 || got > maxExpectedHealth || resolved.Run.CombatRound.Number != 2 {
+		t.Fatalf("both party actions should resolve together: phase=%s enemy health=%d max expected %d", resolved.Run.Phase, got, maxExpectedHealth)
 	}
 }
 

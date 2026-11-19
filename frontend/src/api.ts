@@ -4,7 +4,7 @@ export type ApiEnemyIntent = { kind: string; label: string; damage: number; heal
 export type ApiEnemy = { id: string; name: string; modifier?: "ambush" | "unyielding"; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; markedDamage?: number; stun?: number; bleed?: number; bleedRounds?: number; tauntedBy?: string; intent?: ApiEnemyIntent; mechanics?: string[]; barrier?: number; enraged?: boolean; summoned?: boolean; traits?: ApiMonsterTrait[]; shield?: number; phased?: boolean; fuseIn?: number; split?: boolean; avenged?: boolean; anchor?: boolean; anchored?: boolean; rebirthLabel?: string; reborn?: boolean; devourIn?: number; devoured?: number; damageBonus?: number };
 export type ApiMonsterTrait = { kind: string; amount?: number; every?: number; label?: string };
 /** `actorId` names the acting player on player actions; `auto` marks an action the server chose at the round deadline. */
-export type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number; actorId?: string; auto?: boolean };
+export type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number; critical?: boolean; actorId?: string; auto?: boolean };
 export type ApiExit = { id: string; destination: string; label: string; description?: string };
 export type ApiEventChoice = { id: string; label: string; description: string };
 export type ApiRoomEvent = { id: string; title: string; description: string; choices: ApiEventChoice[]; resolved: boolean; result?: string };

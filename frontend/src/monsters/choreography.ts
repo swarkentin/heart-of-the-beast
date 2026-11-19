@@ -14,7 +14,7 @@ import type { EventLike, StageEnemy } from "./types";
  */
 
 export type Cue =
-  | { type: "hit"; enemyId: string; amount: number; via: string }
+  | { type: "hit"; enemyId: string; amount: number; via: string; critical?: boolean }
   | { type: "act"; enemyId: string; label: string; partyWide: boolean; hits: number; damage: number; blocked: number; miss: boolean; targets: ActTarget[] }
   | { type: "drain"; enemyId: string; amount: number }
   | { type: "freeze"; enemyId: string }
@@ -104,7 +104,7 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
 
   for (const event of events) {
     if (event.effect === "damage" && event.targetType === "enemy" && event.targetId) {
-      hits.push({ type: "hit", enemyId: event.targetId, amount: event.amount ?? 0, via: event.kind });
+      hits.push({ type: "hit", enemyId: event.targetId, amount: event.amount ?? 0, via: event.kind, critical: event.critical });
       continue;
     }
     switch (event.kind) {
