@@ -1627,7 +1627,6 @@ func TestSoloLateEncounterHealthScaling(t *testing.T) {
 	}
 }
 
-
 func TestTargetedCapstoneBossHealthScaling(t *testing.T) {
 	for _, encounterID := range []string{"infernal-boss-chain-duke", "eldritch-boss-choir-of-mouths"} {
 		encounter := &Encounter{Enemies: []Enemy{{Health: 100, MaxHealth: 100}}}
