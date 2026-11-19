@@ -599,8 +599,6 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		if errors.Is(err, store.ErrConflict) {
-			// The winning writer may have completed the run. Award before exposing
-			// that latest snapshot, just as we do on the successful-save path.
 			latest, getErr := h.rooms.Get(r.Context(), room.ID)
 			if getErr != nil {
 				return nil, getErr
@@ -608,13 +606,9 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 			if err := h.awardNewEnemyKills(r.Context(), latest, beforeKills); err != nil {
 				return nil, err
 			}
-				return nil, err
-			}
 			return latest, h.awardRunProgress(r.Context(), latest)
 		}
-	if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil {
 		return nil, err
-	}
 	}
 	if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil {
 		return nil, err
