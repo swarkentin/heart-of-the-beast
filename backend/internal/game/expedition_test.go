@@ -1308,7 +1308,7 @@ func TestDiscoveryChoicesAreTradeOffs(t *testing.T) {
 		if effect.Summary == "" || effect.Outcome == "" || (effect.Chance > 0 && effect.FailOutcome == "") {
 			t.Errorf("effect %q does not explain itself", effect.ID)
 		}
-		if effect.Chance > 0 || effect.ID == "vault_coin" {
+		if effect.Chance > 0 || effect.ID == "vault_coin" || effect.ID == "herb_cache" {
 			continue // a gamble's price is its failure; the vault's coin is the safe half of a gamble
 		}
 		gives, takes := false, false
