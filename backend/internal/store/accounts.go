@@ -42,6 +42,7 @@ type AccountRepository interface {
 
 // HasProgress reports whether a profile has earned anything worth keeping.
 func (p *Profile) HasProgress() bool {
+	if len(p.Bestiary) > 0 { return true }
 	if p.AdventurerXP > 0 {
 		return true
 	}
