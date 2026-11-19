@@ -20,8 +20,8 @@ func snapshotEnemyKills(room *game.Room) map[string]enemyBeforeKill {
     for roomID, dungeonRoom := range room.Run.Rooms {
         if dungeonRoom == nil || dungeonRoom.Encounter == nil { continue }
         for _, enemy := range dungeonRoom.Encounter.Enemies {
-            key := enemy.DefinitionID
-            if key == "" { key = enemy.SpriteID }
+            key := enemy.SpriteID
+            if key == "" { key = enemy.DefinitionID }
             if key == "" { key = strings.ToLower(strings.TrimSpace(enemy.Name)) }
             theme := dungeonRoom.ThemeID
             if theme == "" { theme = room.Run.ThemeID }
