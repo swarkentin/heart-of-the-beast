@@ -560,9 +560,9 @@ func TestExpeditionLoopsThroughDungeonsUntilThePartyFalls(t *testing.T) {
 				}
 				want, _ := json.Marshal(nextFloorModifiers(run, depth+1))
 				if depth != maxDepth/2 {
-					// An ordinary floor: no camp, just the way down.
-					if !hasEvent(run, "floor_restoration") && run.Players["player-1"].Health < run.Players["player-1"].MaxHealth {
-						t.Fatal("clearing a floor should let the party catch its breath")
+					// An ordinary floor: no camp, just the way down and no automatic recovery.
+					if hasEvent(run, "floor_restoration") {
+						t.Fatal("clearing an ordinary floor must not automatically restore health")
 					}
 					if run.Phase != PhaseExploring || run.Camp != nil || len(boss.Exits) != 1 || boss.Exits[0].Destination != DescendDestination {
 						t.Fatalf("floor %d of %d should open the way down: phase=%s camp=%v exits=%v", depth, maxDepth, run.Phase, run.Camp, boss.Exits)
