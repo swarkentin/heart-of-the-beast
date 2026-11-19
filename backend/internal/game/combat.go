@@ -14,6 +14,8 @@ const (
 	LiveEnemyHealthMultiplier      = 1.2
 	PartyEnemyHealthMultiplierStep = 0.15
 	PartyEnemyDamageMultiplierStep = 0.1
+	// SoloEnemyDamageMultiplier gives a lone adventurer room to answer multiple simultaneous threats.
+	SoloEnemyDamageMultiplier = 0.75
 )
 
 // maxCombatEvents bounds the events a snapshot carries. Skills describe more of a round than three buttons did.
@@ -57,6 +59,9 @@ func startCombatRound(room *Room, now time.Time) {
 			continue
 		}
 		intent := traitIntentOverride(enemy, bossIntentOverride(enemy, buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players), len(players)), len(players))
+		if run.Generator >= ExpeditionGenerator && len(room.PlayerIDs) == 1 && intent.Damage > 0 {
+			intent.Damage = soloEnemyDamage(intent.Damage)
+		}
 		if intent.Damage > 0 {
 			// Floor modifiers and enrage are part of the telegraph, so what the party sees is what will land.
 			intent.Damage += rules.EnemyDamage + enemy.DamageBonus
