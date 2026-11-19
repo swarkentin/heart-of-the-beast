@@ -42,10 +42,10 @@ Run these from `/tmp` (the tools write files relative to the working directory).
   /tmp/br -seeds 30 -first-seed 1 -json /tmp/br-new.json -markdown /tmp/br-new.md -baseline /tmp/br-base.json -fail-on-regression
   ```
   A non-zero exit means a regression. Read the REGRESSION and SUGGESTION lines.
-- **Endless expedition matrix** (126 compositions × random/tactical × 12 seeds ≈ 3,000 expeditions, about 25 s):
+- **Endless expedition matrix** (126 compositions × random/tactical × 100 seeds ≈ 25,200 expeditions, about 25 s):
   ```sh
-  /tmp/eb-base -runs 12 -first-seed 1 -theme random -json /tmp/eb-base.json -markdown /tmp/eb-base.md
-  /tmp/eb      -runs 12 -first-seed 1 -theme random -json /tmp/eb-new.json  -markdown /tmp/eb-new.md
+  /tmp/eb-base -runs 100 -first-seed 1 -theme random -json /tmp/eb-base.json -markdown /tmp/eb-base.md
+  /tmp/eb      -runs 100 -first-seed 1 -theme random -json /tmp/eb-new.json  -markdown /tmp/eb-new.md
   ```
 - **Per-theme check** for a new or changed theme: run `run-simulation` for the theme and two or three existing
   themes as a reference band, with a spread of parties.
