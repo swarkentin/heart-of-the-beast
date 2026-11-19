@@ -24,6 +24,13 @@ func assignEncounterModifier(run *Run, room *DungeonRoom) {
     }
 }
 
+// enforceUnyielding makes a telegraphed attack immune to interrupt skills.
+func enforceUnyielding(enemy *Enemy) {
+    if enemy != nil && enemy.Modifier == "unyielding" && enemy.Intent != nil {
+        enemy.Intent.Interruptible = false
+    }
+}
+
 // applyAmbush resolves the empowered enemy's opening intent before the party
 // gets its first action. The intent is consumed here, not repeated later.
 func applyAmbush(room *Room, dungeonRoom *DungeonRoom) {
