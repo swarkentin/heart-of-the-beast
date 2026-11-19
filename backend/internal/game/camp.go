@@ -556,21 +556,21 @@ func validateShopCatalog() error {
 // ShopOfferCount is how many items a camp puts on sale, before situational items.
 const ShopOfferCount = 4
 
-// openShop starts the shop stage. The draught is always for sale; the rest of the shelf is seeded. A revival
-// draught appears only while someone is down, and cleansing salt only when the next floor carries a debuff.
+// openShop starts the shop stage. A healing draught and a healing herb are always for sale; the rest of the
+// shelf is seeded. A revival draught appears only while someone is down, and cleansing salt only when the next floor carries a debuff.
 func openShop(room *Room, now time.Time) {
 	run := room.Run
 	camp := run.Camp
 	camp.Stage = CampStageShop
 	rng := rand.New(rand.NewSource(int64(mixSeed(dungeonSeed(run.Seed, dungeonNumber(run)), uint64(run.Depth), 0x5409))))
 	var shelf []ShopItem
-	for _, item := range shopCatalog[1:] {
+	for _, item := range shopCatalog[2:] {
 		if item.Kind != ShopRevive && item.Kind != ShopCleanse {
 			shelf = append(shelf, item)
 		}
 	}
 	rng.Shuffle(len(shelf), func(i, j int) { shelf[i], shelf[j] = shelf[j], shelf[i] })
-	offers := append([]ShopItem{shopCatalog[0]}, shelf[:ShopOfferCount-1]...)
+	offers := append([]ShopItem{shopCatalog[0], shopCatalog[1]}, shelf[:ShopOfferCount-2]...)
 	for _, item := range shopCatalog {
 		if (item.Kind == ShopRevive && fallenAlly(room, "") != "") || (item.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) >= 0) {
 			offers = append(offers, item)
