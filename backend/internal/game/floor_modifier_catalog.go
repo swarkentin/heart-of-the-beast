@@ -98,7 +98,7 @@ func (catalog FloorModifierCatalog) Validate() error {
 		if definition == (FloorModifierDefinition{ID: definition.ID, Name: definition.Name, Description: definition.Description, Kind: definition.Kind, Opposes: definition.Opposes, Rollable: definition.Rollable}) {
 			return fmt.Errorf("floor modifier %q changes nothing", definition.ID)
 		}
-		if definition.EnemyHealthPct <= -100 || definition.GoldPct <= -100 || definition.HealingPct <= -100 || definition.EntryDamage < 0 || definition.EncounterHeal < 0 {
+		if definition.EnemyHealthPct <= -100 || definition.GoldPct <= -100 || definition.HealingPct <= -100 || definition.ConsumableHealingPct <= -100 || definition.EntryDamage < 0 || definition.EncounterHeal < 0 {
 			return fmt.Errorf("floor modifier %q has an out-of-range adjustment", definition.ID)
 		}
 	}
