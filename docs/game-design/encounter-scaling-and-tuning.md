@@ -19,7 +19,7 @@ per extra adventurer. A fight never holds more than six enemies.
 
 | Lever | Where | Value |
 |---|---|---|
-| Healing between encounters | Healing Herb consumable | 30% of max health; 2 carried at start and replenished to 2 after each dungeon |
+| Healing between encounters | Healing Herb consumable | 30% of max health; 4 carried at start and replenished to 4 after each dungeon (5-herb carry cap) |
 | Live enemy health | `LiveEnemyHealthMultiplier` (combat.go) | ×1.2 |
 | Per-floor enemy health | `MonsterCatalog.NewEnemy` | +12% per floor below the first |
 | Solo enemy health | `MonsterCatalog.NewEnemy` | −20% |
