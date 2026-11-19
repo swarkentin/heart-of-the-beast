@@ -7,7 +7,7 @@ export const NO_FX: CardFx = { hurt: 0, heal: 0, pops: [] };
 const ACCENTS: Record<string, string> = { bulwark: "#8fe6c4", juggernaut: "#ff9a4d", spellguard: "#8fd6ff", assassin: "#ff8fc0", arcanist: "#c9a4ff", ranger: "#b6e87a", cleric: "#ffe08a", tactician: "#8ee0dc", beastcaller: "#a6e88f" };
 
 /** One party member on the border of the screen: portrait, health, statuses, incoming threats and round state. */
-export function PartyCard({ member, fx, order, aid, onAid, onHerbs, kit, displayName }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean; fallen?: boolean }; onAid?: (id: string) => void; onHerbs?: () => void; kit?: { name: string; description: string }[]; displayName?: string }) {
+export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: { member: PartyMember; fx: CardFx; order: number; aid?: { label: string; disabled: boolean; fallen?: boolean }; onAid?: (id: string) => void; kit?: { name: string; description: string }[]; displayName?: string }) {
   const ratio = Math.max(0, Math.min(1, member.health / member.maxHealth));
   // An ally skill picks a living portrait; a revive picks a fallen one.
   const canAid = Boolean(aid && (aid.fallen ? !member.alive && !member.isSelf : member.alive));
@@ -17,9 +17,9 @@ export function PartyCard({ member, fx, order, aid, onAid, onHerbs, kit, display
     <span className="rn-portrait">
       <span className="rn-portrait-bg" aria-hidden="true" />
       {canAid && onAid ? <button type="button" className="rn-aid-target" onClick={() => onAid(member.id)} disabled={aid?.disabled} aria-label={aid?.label + " " + who} /> : null}
-      <button type="button" className={"rn-herb-badge" + (member.healingHerbs > 0 ? "" : " rn-herb-empty")} onClick={onHerbs} aria-label={"View party Healing Herb supplies. " + who + " has " + member.healingHerbs} title={who + ": " + member.healingHerbs + " Healing Herbs"}>
+      <span className={"rn-herb-badge" + (member.healingHerbs > 0 ? "" : " rn-herb-empty")} aria-label={who + " has " + member.healingHerbs + " Healing Herbs"} title={who + ": " + member.healingHerbs + " Healing Herbs"}>
         <Icon id="life" size={1} /><b>{member.healingHerbs}</b>
-      </button>
+      </span>
       <span className="rn-hero-box">
         <HeroSprite classId={member.classId} skin={member.skin} pose={member.pose} hurt={fx.hurt} />
         {member.overlays.map(kind => <StatusFx key={kind} kind={kind} />)}
