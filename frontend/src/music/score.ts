@@ -11,7 +11,7 @@ import type { BossTreatment, Layers, MelodicEvent, MelodicVoice, MusicCue, Music
 export type { Rng };
 
 /** How much faster or slower each state plays relative to the theme's base tempo. */
-export const STATE_TEMPO: Record<MusicState, number> = { title: 0.92, party: 0.82, exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
+export const STATE_TEMPO: Record<MusicState, number> = { title: 0.78, party: 0.95, exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
 
 export interface Plan {
   cue: MusicCue;
@@ -71,9 +71,9 @@ export function makePlan(cue: MusicCue): Plan {
     swing: profile.swing,
     wobble: profile.wobble,
     voices: cue.state === "title"
-      ? { pad: "organPad", bass: "walkBass", lead: "vibes", accent: "horn" }
+      ? { pad: "choirPad", bass: "subBass", lead: "bell", accent: "glass" }
       : cue.state === "party"
-        ? { pad: "synthPad", bass: "pulseBass", lead: "arp", accent: "glass" }
+        ? { pad: "breathPad", bass: "thumpBass", lead: "marimba", accent: "glass" }
         : { pad: profile.voices.pad, bass: profile.voices.bass, lead: boss?.lead ?? profile.voices.lead, accent: profile.voices.accent },
     motif: boss?.motif ?? profile.motif,
   };
@@ -124,42 +124,45 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   const scale = scaleForBar(plan, bar);
   const events: ScoreEvent[] = [];
   const chordRoot = profile.chordRoots[Math.floor(bar / 2) % profile.chordRoots.length];
-  // Front-end themes have their own harmonic language, separate from dungeon-theme harmony.
-  // Title is a smoky jazz turnaround; party is a four-chord minor-key synthwave loop.
+  // Title and party are deliberately pad-led scene scores, not remixes of the dungeon theme.
+  // Each chord holds for two bars so the atmosphere has room to breathe.
   const titleChords = [
-    { root: 2, tones: [0, 3, 7, 10, 14, 17] },  // ii9
-    { root: 7, tones: [0, 4, 7, 10, 14, 17] },  // V13 colour
-    { root: 0, tones: [0, 4, 7, 11, 14, 18] },  // Imaj9/#11
-    { root: 9, tones: [0, 4, 7, 10, 13, 16] },  // vi dominant passing chord
+    { root: 0, tones: [0, 7, 14, 15, 19] },  // Dm(add9), open and unresolved
+    { root: -3, tones: [0, 4, 7, 11, 18] },   // Bbmaj7 with a soft #11 colour
+    { root: 4, tones: [0, 4, 7, 14, 19] },    // Fadd9
+    { root: -2, tones: [0, 2, 7, 9, 14] },   // Csus2(add6), gentle return
   ];
   const partyChords = [
-    { root: 0, tones: [0, 3, 7, 10, 14] },      // i add9
-    { root: 8, tones: [0, 4, 7, 11, 14] },      // VI maj9
-    { root: 3, tones: [0, 4, 7, 11, 14] },      // III maj9
-    { root: 10, tones: [0, 4, 7, 10, 14] },     // VII add9
+    { root: 0, tones: [0, 3, 7, 10, 14] },   // Dm9
+    { root: 5, tones: [0, 5, 7, 10, 14] },   // Gsus / Dorian colour
+    { root: 10, tones: [0, 4, 7, 11, 14] },  // Cmaj9
+    { root: 7, tones: [0, 3, 7, 10, 14] },   // Am9
   ];
-  const stateChord = cue.state === "title" ? titleChords[bar % 4] : cue.state === "party" ? partyChords[bar % 4] : undefined;
+  const stateChord = cue.state === "title"
+    ? titleChords[Math.floor(bar / 2) % titleChords.length]
+    : cue.state === "party"
+      ? partyChords[Math.floor(bar / 2) % partyChords.length]
+      : undefined;
   const cents = () => (plan.wobble ? (rng() - 0.5) * 2 * plan.wobble : 0);
   const melodic = (t: number, voice: MelodicVoice, freq: number, dur: number, vel: number): MelodicEvent => ({ kind: "melodic", t, voice, freq, dur, vel, cents: cents() });
 
-  // Title and party use authored four-bar progressions; dungeon themes retain their two-bar modal chords.
-  if (layers.pad > 0 && (stateChord || bar % 2 === 0)) {
+  // Broad, slow-moving pads are the centre of both menu arrangements.
+  if (layers.pad > 0 && (stateChord ? bar % 2 === 0 : bar % 2 === 0)) {
     if (stateChord) {
       for (const semitone of stateChord.tones) {
         const freq = plan.rootHz * 2 ** ((stateChord.root + semitone + 12) / 12);
-        events.push(melodic(0, plan.voices.pad, freq, plan.barSec * 1.04, (cue.state === "title" ? 0.34 : 0.3) * layers.pad));
+        events.push(melodic(0, plan.voices.pad, freq, plan.barSec * 2.04, (cue.state === "title" ? 0.29 : 0.27) * layers.pad));
       }
     } else {
       const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
       for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
-      // A quiet upper fifth adds harmonic sheen without changing the theme's chord progression.
       events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, chordRoot + 4, 2), plan.barSec * 2.05, 0.2 * layers.pad));
     }
   }
 
   // Bass: onsets from the theme's bass rhythm, notes from its bass lines.
   if (layers.bass > 0) {
-    const pattern = cue.state === "title" ? "X...x...X...x..." : cue.state === "party" ? "X.x.X.x.X.x.X.x." : profile.patterns.bass;
+    const pattern = cue.state === "title" ? "X..............." : cue.state === "party" ? "X.......X......." : profile.patterns.bass;
     const hits = onsets(pattern, layers.bass);
     const line = profile.bassLines[bar % profile.bassLines.length];
     hits.forEach((hit, k) => {
@@ -171,7 +174,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   }
 
   // Lead: the theme's tune, following the chord roots. Sparse and every other bar when quiet.
-  if (layers.lead > 0 && !(layers.lead < 0.7 && bar % 2 === 1)) {
+  if (layers.lead > 0 && !(layers.lead < 0.7 && bar % (cue.state === "title" ? 4 : 2) !== 0)) {
     const sparse = layers.lead < 0.7;
     const hits = onsets(sparse ? profile.patterns.leadSparse : profile.patterns.lead, layers.lead);
     const slot = sparse ? Math.floor(bar / 2) : bar;
@@ -185,11 +188,17 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
 
   // Percussion: kick, backbeat and tick patterns gated by the percussion level, plus a fill at the end of every fourth bar.
   if (layers.perc > 0) {
-    const kit: [string, SoundEvent["voice"], number][] = [
-      [profile.patterns.kick, profile.voices.kick, layers.perc],
-      [profile.patterns.back, profile.voices.back, layers.perc],
-      [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
-    ];
+    const kit: [string, SoundEvent["voice"], number][] = cue.state === "party"
+      ? [
+          ["X.......X.......", "heartbeat", layers.perc * 0.42],
+          ["....X.......X...", "bongo", layers.perc * 0.7],
+          ["x.x.x.x.x.x.x.x.", "shaker", layers.perc * 0.7],
+        ]
+      : [
+          [profile.patterns.kick, profile.voices.kick, layers.perc],
+          [profile.patterns.back, profile.voices.back, layers.perc],
+          [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
+        ];
     for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: hit.vel });
     if (layers.perc >= 0.9 && bar % 4 === 3) {
       const fill = plan.boss?.fill ?? profile.voices.fill;
