@@ -37,6 +37,8 @@ heavy fight (protector plus bruiser) cost more than any other theme's.
   action-economy disadvantage of one adventurer taking every surviving enemy action. Generated solo expeditions
   therefore also scale incoming enemy telegraphs to 75% of their normal damage (minimum 1); the displayed
   telegraph is the scaled value. Co-op damage scaling is unchanged.
+- **Late solo encounters:** from effective depth 8 onward (the final floor of dungeon three and all later floors), enemy health is reduced by a further 15%. This shortens the boss-heavy late-game fights without further reducing incoming damage or changing co-op scaling.
+- **Targeted capstone bosses:** Infernal Chain Duke and Eldritch Choir of Mouths have 10% less health. This is deliberately limited to the two most frequent capstone wipe encounters; their mechanics and all other encounters remain unchanged.
 - **Content ladder:** Sunken Kingdom opens with a striker (new `sunken-skirmish`), Ghost Town's heavy fight is a
   bruiser and a striker (new `ghosttown-showdown`, budget 6), and every theme's hall pool includes its
   single-monster fight, as the Catacombs' already did.

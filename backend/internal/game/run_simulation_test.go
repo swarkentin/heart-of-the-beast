@@ -28,6 +28,9 @@ func TestSimulateRunIsDeterministicAndTraversesDungeon(t *testing.T) {
 	if first.Outcome != "completed" && first.Outcome != "wiped" && first.Outcome != "step_limit" {
 		t.Fatalf("unknown run outcome %q", first.Outcome)
 	}
+	if first.Wiped && first.Outcome != "wiped" {
+		t.Fatalf("a run that wiped after clearing a dungeon must still report a wipe, got %q", first.Outcome)
+	}
 }
 
 func TestSimulateRunSupportsSoloAndFourCharacterParties(t *testing.T) {
@@ -103,6 +106,16 @@ func TestSimulateRunCapturesCombatDiagnostics(t *testing.T) {
 	}
 	if report.EndEnemyHealth > report.EndEnemyMaxHealth {
 		t.Fatalf("end encounter health exceeds maximum: %+v", report)
+	}
+	if report.Wiped && report.EndRoomType != "" {
+		if report.EndRoomName == "" || report.EndEncounterID == "" || len(report.EndEnemies) == 0 {
+			t.Fatalf("wiped encounter is missing terminal diagnostics: %+v", report)
+		}
+		for _, enemy := range report.EndEnemies {
+			if enemy.Name == "" || enemy.DefinitionID == "" || enemy.Health < 0 || enemy.Health > enemy.MaxHealth {
+				t.Fatalf("invalid terminal enemy diagnostics: %+v", enemy)
+			}
+		}
 	}
 }
 
