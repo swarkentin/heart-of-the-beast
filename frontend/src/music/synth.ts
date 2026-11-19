@@ -217,7 +217,11 @@ export interface Bed {
 
 /** The continuous layer of a scene: a noise bed with slow modulation plus the theme's drones. It starts silent and fades in. */
 export function startBed(ctx: BaseAudioContext, dest: AudioNode, plan: Plan, when: number, fadeIn: number): Bed {
-  const spec = plan.profile.bed;
+  const spec = plan.cue.state === "title"
+    ? { ...plan.profile.bed, noise: "brown" as const, filter: "lowpass" as const, f: 360, q: 0.45, gain: 0.018, lfo: { rate: 0.07, depth: 0.55 }, drones: [{ ratio: 1, w: "sine" as const, gain: 0.13, cents: 0 }, { ratio: 1.5, w: "sine" as const, gain: 0.055, cents: -3 }, { ratio: 2, w: "triangle" as const, gain: 0.025, cents: 4 }] }
+    : plan.cue.state === "party"
+      ? { ...plan.profile.bed, noise: "pink" as const, filter: "lowpass" as const, f: 900, q: 0.6, gain: 0.012, lfo: { rate: 0.18, depth: 0.35 }, drones: [{ ratio: 1, w: "sine" as const, gain: 0.1, cents: 0 }, { ratio: 1.5, w: "sine" as const, gain: 0.045, cents: 3 }] }
+      : plan.profile.bed;
   const variant = plan.profile.variants[plan.cue.variant];
   const out = ctx.createGain();
   out.gain.setValueAtTime(0.0001, when);
