@@ -38,14 +38,27 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 	return Command{}, false
 }
 
-// tacticalConsumableCommand uses a carried herb when at least half of its effective healing can be used.
-// Live play allows partial healing, so the simulator should not wait for a full herb's worth of missing health.
+// tacticalConsumableCommand uses a carried herb during combat only when the adventurer is critically wounded.
+// Healing is otherwise deferred to exploration, where it does not consume a combat action.
 func tacticalConsumableCommand(room *Room, playerID string) (Command, bool) {
+	return tacticalConsumableCommandForPhase(room, playerID, true)
+}
+
+// tacticalExplorationConsumableCommand uses a carried herb between encounters when at least half its effective
+// healing can be used. Live play allows partial healing, and exploration has no enemy turn to trade away.
+func tacticalExplorationConsumableCommand(room *Room, playerID string) (Command, bool) {
+	return tacticalConsumableCommandForPhase(room, playerID, false)
+}
+
+func tacticalConsumableCommandForPhase(room *Room, playerID string, inCombat bool) (Command, bool) {
 	if room == nil || room.Run == nil {
 		return Command{}, false
 	}
 	player := room.Run.Players[playerID]
 	if player == nil || player.Health <= 0 || player.Consumables[ConsumableHealingHerb] <= 0 {
+		return Command{}, false
+	}
+	if inCombat && player.Health*3 > player.MaxHealth {
 		return Command{}, false
 	}
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
