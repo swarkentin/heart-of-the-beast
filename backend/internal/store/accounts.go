@@ -45,8 +45,6 @@ func (p *Profile) HasProgress() bool {
 	if len(p.Bestiary) > 0 {
 		return true
 	}
-		return true
-	}
 	if p.AdventurerXP > 0 {
 		return true
 	}
