@@ -104,6 +104,16 @@ func TestSimulateRunCapturesCombatDiagnostics(t *testing.T) {
 	if report.EndEnemyHealth > report.EndEnemyMaxHealth {
 		t.Fatalf("end encounter health exceeds maximum: %+v", report)
 	}
+	if report.Wiped && report.EndRoomType != "" {
+		if report.EndRoomName == "" || report.EndEncounterID == "" || len(report.EndEnemies) == 0 {
+			t.Fatalf("wiped encounter is missing terminal diagnostics: %+v", report)
+		}
+		for _, enemy := range report.EndEnemies {
+			if enemy.Name == "" || enemy.DefinitionID == "" || enemy.Health < 0 || enemy.Health > enemy.MaxHealth {
+				t.Fatalf("invalid terminal enemy diagnostics: %+v", enemy)
+			}
+		}
+	}
 }
 
 func TestSimulateRunRejectsInvalidPartyAndSeedCount(t *testing.T) {
