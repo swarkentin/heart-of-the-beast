@@ -262,6 +262,7 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-card { grid-row: 2; flex: none; gap: 3px; padding: 0; border-width: calc(4px * var(--px)); border-image: var(--ui-inset, url("/art/ui/frame-inset.png")) 4 fill / calc(4px * var(--px)) stretch; filter: none; }
   .rn-card-self { border-image-source: url("/art/ui/frame-selected.png"); }
   .rn-portrait { flex: none; height: 64px; min-height: 0; max-height: none; box-shadow: none; }
+  .rn-herb-badge { top: 22px; right: 2px; }
   .rn-card-threatened .rn-portrait { box-shadow: inset 0 0 0 2px #9a4a4a; }
   /* the window is half a sprite tall: frame the head and shoulders, or the heap on the floor when down */
   .rn-hero-box { margin-top: -26px; } .rn-card-down .rn-hero-box { margin-top: -64px; }
