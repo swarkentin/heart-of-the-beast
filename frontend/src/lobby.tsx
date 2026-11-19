@@ -13,7 +13,7 @@ import { SKILL_ICON_ORDER } from "./skillIcons.gen";
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
-export type LobbyBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; kills: number; eliteKills: number };
+export type LobbyBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; loreStage: number; kills: number; eliteKills: number };
 export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; bestiary?: Record<string, LobbyBestiaryEntry>; accounts?: ApiLinkedAccount[] };
 /** A class look: armour tier (1-6) and colour variant. Both unlock with class mastery; the server validates them. */
 export type HeroSkin = { tier: number; variant: string };
