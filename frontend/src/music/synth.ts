@@ -66,7 +66,7 @@ const clampFreq = (f: number) => Math.min(18000, Math.max(20, f));
 const BED_NOISE_SCALE = 0.22;
 
 /** Fights put the score in front: the ambience bed steps back while the percussion and lead take over. */
-const BED_STATE_LEVEL = { exploration: 1, event: 1, combat: 0.55, miniboss: 0.5, boss: 0.45, victory: 0.8, defeat: 0.8 } as const;
+const BED_STATE_LEVEL = { title: 1, party: 0.9, exploration: 1, event: 1, combat: 0.55, miniboss: 0.5, boss: 0.45, victory: 0.8, defeat: 0.8 } as const;
 
 /** Plays a list of fixed-pitch steps (a drum hit, an ambience event, a UI effect) starting at `when`. */
 export function playSteps(ctx: BaseAudioContext, dest: AudioNode, steps: readonly Step[], when: number, vel = 1): void {
