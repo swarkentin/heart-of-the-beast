@@ -221,6 +221,17 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 	}
 	resolveCombatRound(room, now)
 
+	// Floors without a scheduled camp open the normal descent vote. The cheat
+	// accepts that descent immediately; the floor boss has already paid out.
+	if run.Phase == PhaseExploring {
+		for _, exit := range guardian.Exits {
+			if exit.Destination == DescendDestination {
+				descendExpedition(room, now)
+				return nil
+			}
+		}
+	}
+
 	// Fast-forward every camp stage. This intentionally skips optional camp
 	// activities, but lets the normal camp transition select the next dungeon
 	// deterministically and preserve the expedition's progression state.
