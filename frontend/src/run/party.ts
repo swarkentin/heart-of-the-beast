@@ -7,7 +7,7 @@ export type PartyThreat = { enemyId: string; enemyName: string; label: string; d
 export type RoundState = "none" | "choosing" | "ready" | "down" | "offline";
 export type PartyMember = {
   id: string; position: number; isSelf: boolean; classId?: string; skin?: HeroSkin; className: string; level: number;
-  health: number; maxHealth: number; alive: boolean; online: boolean;
+  health: number; maxHealth: number; alive: boolean; online: boolean; healingHerbs: number;
   power: number; focus: number; agility: number; xpPercent: number; xpLabel: string;
   pose: HeroPose; overlays: StatusFxKind[]; statuses: PartyStatus[]; threats: PartyThreat[];
   round: RoundState; chosen?: { icon: IconId; label: string }; autoDefended: boolean;
@@ -68,7 +68,7 @@ export function buildParty(room: ApiRoom, run: ApiRun, selfId: string, catalog: 
     return {
       id, position: room.playerIds.indexOf(id) + 1, isSelf: id === selfId, classId, skin: room.playerSkins?.[id],
       className: catalog?.classes.find(item => item.id === classId)?.name || archetypeName(player?.archetype || room.playerArchetypes?.[id]),
-      level, health, maxHealth, alive, online,
+      level, health, maxHealth, alive, online, healingHerbs: player?.consumables?.["healing-herb"] ?? 0,
       power: player?.stats.power ?? 0, focus: player?.stats.focus ?? 0, agility: player?.stats.agility ?? 0,
       xpPercent: player && next ? Math.min(100, Math.max(0, (player.experience - floor) / (next - floor) * 100)) : 100,
       xpLabel: player && next ? player.experience + "/" + next + " XP" : "MAX LEVEL",
