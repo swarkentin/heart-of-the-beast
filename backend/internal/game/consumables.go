@@ -6,7 +6,7 @@ const (
 	ConsumableHealingHerb     = "healing-herb"
 	StartingHealingHerbs      = 4
 	MaxHealingHerbs           = 5
-	HealingHerbHealingPercent = 30
+	HealingHerbHealingPercent = 50
 )
 
 var ErrConsumableUnavailable = errors.New("that consumable cannot be used right now")
@@ -21,7 +21,7 @@ type ConsumableDefinition struct {
 }
 
 var consumableCatalog = []ConsumableDefinition{
-	{ID: ConsumableHealingHerb, Name: "Healing Herb", Description: "Recover up to 30% of your maximum health.", HealingPercent: HealingHerbHealingPercent},
+	{ID: ConsumableHealingHerb, Name: "Healing Herb", Description: "Recover up to 50% of your maximum health.", HealingPercent: HealingHerbHealingPercent},
 }
 
 func ConsumableCatalog() []ConsumableDefinition {
