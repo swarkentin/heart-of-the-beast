@@ -372,7 +372,7 @@ func tacticalLifestealCanReplaceHerb(room *Room, player *PlayerState) bool {
 	}
 	herbHealing := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	herbHealing = floorRulesFor(room.Run).consumableHealing(herbHealing)
-	minimumHealing := (player.MaxHealth*15 + 99) / 100
+	minimumHealing := (player.MaxHealth*10 + 99) / 100
 	missing := player.MaxHealth - player.Health
 	if missing < minimumHealing {
 		return false
