@@ -16,6 +16,19 @@ const (
 	PartyEnemyDamageMultiplierStep = 0.1
 )
 
+// expeditionEnemyDamageBonus is the modest depth-based attack growth for endless expeditions.
+// It deliberately does not depend on player level: the two curves can be tuned independently.
+func expeditionEnemyDamageBonus(run *Run) int {
+	if run == nil || run.Generator < ExpeditionGenerator {
+		return 0
+	}
+	depth := run.Depth + dungeonExtraDepth(run)
+	if depth < 1 {
+		return 0
+	}
+	return (depth - 1) / 2
+}
+
 // maxCombatEvents bounds the events a snapshot carries. Skills describe more of a round than three buttons did.
 const maxCombatEvents = 48
 
@@ -59,11 +72,7 @@ func startCombatRound(room *Room, now time.Time) {
 		intent := traitIntentOverride(enemy, bossIntentOverride(enemy, buildEnemyIntent(enemy, enemy.TurnsTaken, enemyIndex, players), len(players)), len(players))
 		if intent.Damage > 0 {
 			// Floor modifiers and enrage are part of the telegraph, so what the party sees is what will land.
-			intent.Damage += rules.EnemyDamage + enemy.DamageBonus
-			if run.Generator >= ExpeditionGenerator {
-				// Enemy threat grows with expedition depth, independently of each adventurer's run level.
-				intent.Damage += (run.Depth + dungeonExtraDepth(run) - 1) / 2
-			}
+			intent.Damage += rules.EnemyDamage + enemy.DamageBonus + expeditionEnemyDamageBonus(run)
 			if intent.Damage < 1 {
 				intent.Damage = 1
 			}
