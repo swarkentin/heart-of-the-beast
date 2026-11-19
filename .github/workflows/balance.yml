@@ -54,6 +54,14 @@ jobs:
           git worktree add --detach /tmp/balance-branch-point "$base"
           echo "sha=$base" >> "$GITHUB_OUTPUT"
 
+      - name: Apply simulation-only parallelism to branch point
+        if: github.event_name == 'pull_request'
+        run: |
+          # Reuse the worker-pool-only change from this PR without applying any gameplay or balance changes.
+          git diff 068435e56e6d27f75798b6912076d36633589e89^ 068435e56e6d27f75798b6912076d36633589e89 -- backend/internal/game/run_simulation.go > /tmp/balance-parallelism.patch
+          git -C /tmp/balance-branch-point apply /tmp/balance-parallelism.patch
+          git -C /tmp/balance-branch-point diff --check
+
       - name: Run branch-point simulations
         if: github.event_name == 'pull_request'
         run: |
