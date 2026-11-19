@@ -193,6 +193,7 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 	if player == nil || player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
 		return ErrInvalidPhase
 	}
+	run.Cheated = true
 	if run.Phase == PhaseIntermission {
 		// Solo camps have no automatic deadline. Give each stage an expired deadline
 		// so the cheat skips the game, settles boon defaults, resolves crossroads,
