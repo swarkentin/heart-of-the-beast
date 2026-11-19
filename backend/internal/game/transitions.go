@@ -186,11 +186,23 @@ func allEnemiesDefeated(encounter *Encounter) bool {
 // the camp so the party enters the next floor (or dungeon) immediately.
 func applyIDKFA(room *Room, actorID string, now time.Time) error {
 	run := room.Run
-	if run == nil || run.Generator < ExpeditionGenerator || run.Phase != PhaseCombat {
+	if run == nil || run.Generator < ExpeditionGenerator {
 		return ErrInvalidPhase
 	}
 	player := run.Players[actorID]
 	if player == nil || player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
+		return ErrInvalidPhase
+	}
+	if run.Phase == PhaseIntermission {
+		for steps := 0; steps < 6 && run.Phase == PhaseIntermission; steps++ {
+			AdvanceCamp(room, now.Add(2*time.Hour))
+		}
+		if run.Phase == PhaseCombat {
+			return nil
+		}
+		return ErrInvalidPhase
+	}
+	if run.Phase != PhaseCombat && run.Phase != PhaseExploring {
 		return ErrInvalidPhase
 	}
 
