@@ -19,7 +19,7 @@ per extra adventurer. A fight never holds more than six enemies.
 
 | Lever | Where | Value |
 |---|---|---|
-| Healing between encounters | Healing Herb consumable | 30% of max health; 4 carried at start and replenished to 4 after each dungeon (5-herb carry cap) |
+| Healing between encounters | Healing Herb consumable | 50% of max health; 4 carried at start and replenished to 4 after each dungeon (5-herb carry cap) |
 | Live enemy health | `LiveEnemyHealthMultiplier` (combat.go) | ×1.2 |
 | Per-floor enemy health | `MonsterCatalog.NewEnemy` | +12% per floor below the first |
 | Solo enemy health | `MonsterCatalog.NewEnemy` | −20% |
@@ -27,7 +27,7 @@ per extra adventurer. A fight never holds more than six enemies.
 | Reinforcement minions | `themeReinforcements` | two per theme |
 | Encounter pools | `expedition_content.go` | light ≈ 2, standard ≈ 2–4, heavy ≈ 5–6 budget |
 
-Healing is player-controlled between fights. Camp still restores 20% of max health, and Healing Herbs are reduced by Blighted Herbs (-50%) or general healing modifiers such as Withering Air.
+Healing is player-controlled between fights. Camp still restores 20% of max health. Healing Herbs restore 50% of max health by default; the rare Herbalist’s Boon dungeon perk doubles them to 100%. Blighted Herbs (-50%) and general healing modifiers such as Withering Air can still reduce healing. A generated discovery room has a 20% chance to offer a nonlethal trade of up to 5 health for one herb; it is never a guaranteed option in every room.
 
 ## Targets (tactical policy)
 
