@@ -19,6 +19,7 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 		switch {
 		case offer.Kind == ShopRevive && fallenAlly(room, playerID) != "",
 			offer.Kind == ShopHeal && missing >= offer.Amount,
+			offer.Kind == ShopConsumable && player.Consumables[offer.ConsumableID] < MaxHealingHerbs && missing >= (player.MaxHealth*HealingHerbHealingPercent+99)/100,
 			offer.Kind == ShopFullHeal && missing*2 >= player.MaxHealth:
 			return Command{Type: "buy", ChoiceID: offer.ID}, true
 		}
