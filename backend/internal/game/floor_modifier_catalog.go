@@ -28,15 +28,15 @@ type FloorModifierDefinition struct {
 	// Rollable modifiers can be rolled onto a floor. The others are only applied by room events.
 	Rollable bool
 
-	EnemyDamage    int // added to the damage of every enemy move that deals damage
-	EnemyHealthPct int // percent change to enemy health, applied when the floor is generated
-	PlayerStrike   int // added to Strike damage
-	PlayerGuard    int // added to the damage Defend blocks
-	GoldPct        int // percent change to gold from encounters
+	EnemyDamage          int // added to the damage of every enemy move that deals damage
+	EnemyHealthPct       int // percent change to enemy health, applied when the floor is generated
+	PlayerStrike         int // added to Strike damage
+	PlayerGuard          int // added to the damage Defend blocks
+	GoldPct              int // percent change to gold from encounters
 	ConsumableHealingPct int // percent change to consumable healing only
-	HealingPct     int // percent change to healing adventurers receive
-	EncounterHeal  int // health every living adventurer recovers when an encounter is cleared
-	EntryDamage    int // damage every living adventurer takes when a fight starts; never lethal
+	HealingPct           int // percent change to healing adventurers receive
+	EncounterHeal        int // health every living adventurer recovers when an encounter is cleared
+	EntryDamage          int // damage every living adventurer takes when a fight starts; never lethal
 }
 
 // ActiveFloorModifier is a modifier in force on a floor, with the text clients show for it.
@@ -172,15 +172,15 @@ func rollFloorModifiers(seed uint64, depth int) []ActiveFloorModifier {
 
 // floorRules is the sum of the modifiers in force on the run's current floor.
 type floorRules struct {
-	EnemyDamage    int
-	EnemyHealthPct int
-	PlayerStrike   int
-	PlayerGuard    int
-	GoldPct        int
-	HealingPct     int
+	EnemyDamage          int
+	EnemyHealthPct       int
+	PlayerStrike         int
+	PlayerGuard          int
+	GoldPct              int
+	HealingPct           int
 	ConsumableHealingPct int
-	EncounterHeal  int
-	EntryDamage    int
+	EncounterHeal        int
+	EntryDamage          int
 }
 
 func sumFloorModifiers(modifiers []ActiveFloorModifier) floorRules {
@@ -224,10 +224,14 @@ func (rules floorRules) healing(amount int) int {
 
 // consumableHealing applies the herb-specific modifier and then the general healing modifier.
 func (rules floorRules) consumableHealing(amount int) int {
-	if amount <= 0 { return amount }
+	if amount <= 0 {
+		return amount
+	}
 	if rules.ConsumableHealingPct != 0 {
 		amount = amount * (100 + rules.ConsumableHealingPct) / 100
-		if amount < 1 { amount = 1 }
+		if amount < 1 {
+			amount = 1
+		}
 	}
 	return rules.healing(amount)
 }
