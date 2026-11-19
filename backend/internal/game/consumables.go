@@ -44,6 +44,7 @@ func useConsumable(room *Room, playerID, itemID string) error {
 	}
 	player := run.Players[playerID]
 	if player == nil || player.Health <= 0 { return ErrInvalidPhase }
+	if player.Consumables == nil { player.Consumables = map[string]int{ConsumableHealingHerb: StartingHealingHerbs} }
 	definition, ok := consumableDefinition(itemID)
 	if !ok || player.Consumables[itemID] <= 0 || player.Health >= player.MaxHealth {
 		return ErrConsumableUnavailable
