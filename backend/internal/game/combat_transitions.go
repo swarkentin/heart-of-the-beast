@@ -154,3 +154,18 @@ func buildEnemyIntent(enemy *Enemy, roundNumber, enemyIndex int, players []strin
 	}
 	return intent
 }
+
+
+// soloEnemyDamage reduces incoming damage for a one-player expedition. Unlike a
+// health discount, this limits the attrition from several enemies acting against
+// the same adventurer in a round. The scaled value is also the visible telegraph.
+func soloEnemyDamage(damage int) int {
+	if damage <= 0 {
+		return damage
+	}
+	scaled := int(float64(damage)*SoloEnemyDamageMultiplier + 0.5)
+	if scaled < 1 {
+		return 1
+	}
+	return scaled
+}
