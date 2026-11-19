@@ -1095,7 +1095,7 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 	for _, offer := range run.Camp.Offers {
 		ids[offer.ID] = offer
 	}
-	if len(run.Camp.Offers) != ShopOfferCount+2 || ids["healing-draught"].Price != 12 || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
+	if len(run.Camp.Offers) != ShopOfferCount+2 || ids["healing-draught"].Price != 12 || ids["healing-herb"].ID == "" || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
 		t.Fatalf("offers: %+v", run.Camp.Offers)
 	}
 	for _, item := range ShopCatalog() {
