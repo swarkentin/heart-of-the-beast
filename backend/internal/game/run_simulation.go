@@ -232,6 +232,24 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					break
 				}
 				choice := current.Event.Choices[rng.Intn(len(current.Event.Choices))]
+				if policy == RunPolicyTactical {
+					needsHerbs := false
+					for _, playerID := range eligible {
+						player := room.Run.Players[playerID]
+						if player != nil && player.Health > 0 && player.Consumables[ConsumableHealingHerb] < StartingHealingHerbs {
+							needsHerbs = true
+							break
+						}
+					}
+					if needsHerbs {
+						for _, option := range current.Event.Choices {
+							if option.ID == "herb_cache" {
+								choice = option
+								break
+							}
+						}
+					}
+				}
 				// Give every eligible adventurer the same simulated preference so the
 				// event vote resolves without injecting random tie-break noise.
 				for _, playerID := range eligible {
