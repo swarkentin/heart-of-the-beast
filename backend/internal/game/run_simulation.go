@@ -189,23 +189,25 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				if err := ApplyCommand(room, playerID, command, now); err != nil {
 					return RunSimulationReport{}, fmt.Errorf("seed %d player %s combat action: %w", seed, playerID, err)
 				}
-				metrics := combatMetrics[playerID]
-				damage := beforeEnemyHealth - currentEncounterHealth(room)
-				if damage > 0 {
-					metrics.DamageDealt += damage
+				if command.Type != "use_consumable" {
+					metrics := combatMetrics[playerID]
+					damage := beforeEnemyHealth - currentEncounterHealth(room)
+					if damage > 0 {
+						metrics.DamageDealt += damage
+					}
+					definition, _ := findSkill(command.Skill)
+					switch {
+					case command.Action == "defend" || command.Skill == SkillDefend:
+						metrics.Defends++
+					case definition.Basic:
+						metrics.Attacks++
+					case SkillInterrupts(definition):
+						metrics.Interrupts++
+					default:
+						metrics.Abilities++
+					}
+					combatMetrics[playerID] = metrics
 				}
-				definition, _ := findSkill(command.Skill)
-				switch {
-				case command.Action == "defend" || command.Skill == SkillDefend:
-					metrics.Defends++
-				case definition.Basic:
-					metrics.Attacks++
-				case SkillInterrupts(definition):
-					metrics.Interrupts++
-				default:
-					metrics.Abilities++
-				}
-				combatMetrics[playerID] = metrics
 			}
 			if loss := roundPartyHealth - totalPartyHealth(room); loss > 0 {
 				netPartyHealthLoss += loss
