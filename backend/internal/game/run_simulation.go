@@ -171,6 +171,9 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				if player == nil || player.Health <= 0 {
 					continue
 				}
+				if _, submitted := room.Run.CombatRound.Actions[playerID]; submitted {
+					continue
+				}
 				var command Command
 				if policy == RunPolicyTactical {
 					if consumable, use := tacticalConsumableCommand(room, playerID); use {
