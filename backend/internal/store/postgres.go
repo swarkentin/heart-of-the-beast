@@ -172,6 +172,7 @@ func (p *Postgres) GetOrCreateProfile(ctx context.Context, id, credentialHash st
 	if profile.UnlockedCosmetics == nil {
 		profile.UnlockedCosmetics = []string{}
 	}
+	if err := p.loadBestiary(ctx, &profile); err != nil { return nil, err }
 	return &profile, nil
 }
 
