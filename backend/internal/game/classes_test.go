@@ -80,7 +80,9 @@ func TestEveryClassReceivesFiftyPercentMoreStartingHealth(t *testing.T) {
 			t.Errorf("%s starting health = %d, want %d", definition.ID, got, want[definition.ID])
 		}
 		build, err := StartingBuildForClass(definition.ID)
-		if err != nil { t.Fatalf("build %s: %v", definition.ID, err) }
+		if err != nil {
+			t.Fatalf("build %s: %v", definition.ID, err)
+		}
 		if build.MaxHealth != want[definition.ID] {
 			t.Errorf("%s max health = %d, want %d", definition.ID, build.MaxHealth, want[definition.ID])
 		}
