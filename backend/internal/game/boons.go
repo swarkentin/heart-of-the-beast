@@ -158,14 +158,6 @@ func openBoonCamp(room *Room, round int, now time.Time) {
 	run.NavigationVote = nil
 	run.CombatRound = nil
 	addCombatEvent(run, round, "floor_cleared", fmt.Sprintf("Floor %d of %d is cleared. The way down is open.", run.Depth, run.MaxDepth))
-	for _, playerID := range eligibleCombatPlayers(room) {
-		player := run.Players[playerID]
-		transition := resolveHealthHealing(player.Health, player.MaxHealth, floorRulesFor(run).healing((player.MaxHealth*FloorClearRestPercent+99)/100))
-		player.Health = transition.Health
-		if transition.Applied > 0 {
-			addCombatImpact(run, round, "floor_restoration", adventurerLabel(room, playerID)+" recovers "+itoa(transition.Applied)+" health catching their breath.", "heal", playerID, "player", transition.Applied)
-		}
-	}
 	next := nextFloorModifiers(run, run.Depth+1)
 	run.FloorModifiers = nil
 	run.Camp = &Camp{
