@@ -454,12 +454,6 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 			if len(shut) == ChestCount || rng.Intn(2) == 0 {
 				return Command{Type: "minigame", Action: "open", ChoiceID: fmt.Sprint(shut[rng.Intn(len(shut))])}, true
 			}
-		case MinigameEcho:
-			answer := make([]string, len(play.Sequence))
-			for i := range answer {
-				answer[i] = EchoRunes[rng.Intn(len(EchoRunes))]
-			}
-			return Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, true
 		}
 		return Command{Type: "minigame", Action: "bank"}, true
 	}
