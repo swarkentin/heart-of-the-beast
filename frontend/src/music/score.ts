@@ -11,7 +11,7 @@ import type { BossTreatment, Layers, MelodicEvent, MelodicVoice, MusicCue, Music
 export type { Rng };
 
 /** How much faster or slower each state plays relative to the theme's base tempo. */
-export const STATE_TEMPO: Record<MusicState, number> = { exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
+export const STATE_TEMPO: Record<MusicState, number> = { title: 0.78, party: 0.95, exploration: 0.72, event: 0.6, combat: 1, miniboss: 1.06, boss: 1.12, victory: 0.7, defeat: 0.55 };
 
 export interface Plan {
   cue: MusicCue;
@@ -70,7 +70,11 @@ export function makePlan(cue: MusicCue): Plan {
     barSec: stepSec * profile.steps,
     swing: profile.swing,
     wobble: profile.wobble,
-    voices: { pad: profile.voices.pad, bass: profile.voices.bass, lead: boss?.lead ?? profile.voices.lead, accent: profile.voices.accent },
+    voices: cue.state === "title"
+      ? { pad: "choirPad", bass: "subBass", lead: "bell", accent: "glass" }
+      : cue.state === "party"
+        ? { pad: "breathPad", bass: "thumpBass", lead: "marimba", accent: "glass" }
+        : { pad: profile.voices.pad, bass: profile.voices.bass, lead: boss?.lead ?? profile.voices.lead, accent: profile.voices.accent },
     motif: boss?.motif ?? profile.motif,
   };
 }
@@ -93,7 +97,7 @@ export function degreeFreq(plan: Plan, scale: readonly number[], degree: number,
 
 /** Seconds from the start of a bar to a step, including swing on the off-beat steps. */
 export function stepTime(plan: Plan, step: number): number {
-  return step * plan.stepSec + (step % 2 === 1 ? plan.swing * plan.stepSec : 0);
+  return step * plan.stepSec + (step % 2 === 1 && step < plan.stepsPerBar - 1 ? plan.swing * plan.stepSec : 0);
 }
 
 /** How a pattern character plays at a given layer level: its velocity, or 0 if the level is too low to include it. */
@@ -120,28 +124,57 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   const scale = scaleForBar(plan, bar);
   const events: ScoreEvent[] = [];
   const chordRoot = profile.chordRoots[Math.floor(bar / 2) % profile.chordRoots.length];
+  // Title and party are deliberately pad-led scene scores, not remixes of the dungeon theme.
+  // Each chord holds for two bars so the atmosphere has room to breathe.
+  const titleChords = [
+    { root: 0, tones: [0, 7, 14, 15, 19] },  // Dm(add9), open and unresolved
+    { root: -3, tones: [0, 4, 7, 11, 18] },   // Bbmaj7 with a soft #11 colour
+    { root: 4, tones: [0, 4, 7, 14, 19] },    // Fadd9
+    { root: -2, tones: [0, 2, 7, 9, 14] },   // Csus2(add6), gentle return
+  ];
+  const partyChords = [
+    { root: 0, tones: [0, 3, 7, 10, 14] },   // Dm9
+    { root: 5, tones: [0, 5, 7, 10, 14] },   // Gsus / Dorian colour
+    { root: 10, tones: [0, 4, 7, 11, 14] },  // Cmaj9
+    { root: 7, tones: [0, 3, 7, 10, 14] },   // Am9
+  ];
+  const stateChord = cue.state === "title"
+    ? titleChords[Math.floor(bar / 2) % titleChords.length]
+    : cue.state === "party"
+      ? partyChords[Math.floor(bar / 2) % partyChords.length]
+      : undefined;
   const cents = () => (plan.wobble ? (rng() - 0.5) * 2 * plan.wobble : 0);
   const melodic = (t: number, voice: MelodicVoice, freq: number, dur: number, vel: number): MelodicEvent => ({ kind: "melodic", t, voice, freq, dur, vel, cents: cents() });
 
-  // Pad: a triad held for two bars. Fuller when the layer is louder.
-  if (layers.pad > 0 && bar % 2 === 0) {
-    const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
-    for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
+  // Broad, slow-moving pads are the centre of both menu arrangements.
+  if (layers.pad > 0 && (stateChord ? bar % 2 === 0 : bar % 2 === 0)) {
+    if (stateChord) {
+      for (const semitone of stateChord.tones) {
+        const freq = plan.rootHz * 2 ** ((stateChord.root + semitone + 12) / 12);
+        events.push(melodic(0, plan.voices.pad, freq, plan.barSec * 2.04, (cue.state === "title" ? 0.29 : 0.27) * layers.pad));
+      }
+    } else {
+      const degrees = layers.pad >= 0.7 ? [chordRoot, chordRoot + 2, chordRoot + 4] : [chordRoot, chordRoot + 4];
+      for (const degree of degrees) events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, degree, 1), plan.barSec * 2.05, 0.5 * layers.pad));
+      events.push(melodic(0, plan.voices.pad, degreeFreq(plan, scale, chordRoot + 4, 2), plan.barSec * 2.05, 0.2 * layers.pad));
+    }
   }
 
   // Bass: onsets from the theme's bass rhythm, notes from its bass lines.
   if (layers.bass > 0) {
-    const hits = onsets(profile.patterns.bass, layers.bass);
+    const pattern = cue.state === "title" ? "X..............." : cue.state === "party" ? "X.......X......." : profile.patterns.bass;
+    const hits = onsets(pattern.slice(0, plan.stepsPerBar), layers.bass);
     const line = profile.bassLines[bar % profile.bassLines.length];
     hits.forEach((hit, k) => {
       const next = hits[k + 1]?.step ?? plan.stepsPerBar;
-      const degree = line[k % line.length];
-      events.push(melodic(stepTime(plan, hit.step), plan.voices.bass, degreeFreq(plan, scale, degree), Math.max(0.2, (next - hit.step) * plan.stepSec * 0.95), 0.62 * hit.vel * layers.bass));
+      const degree = stateChord ? stateChord.root : line[k % line.length];
+      const freq = stateChord ? Math.max(20, plan.rootHz * 2 ** ((degree - 12) / 12)) : degreeFreq(plan, scale, degree);
+      events.push(melodic(stepTime(plan, hit.step), plan.voices.bass, freq, Math.max(0.2, (next - hit.step) * plan.stepSec * 0.95), (cue.state === "party" ? 0.72 : 0.62) * hit.vel * layers.bass));
     });
   }
 
   // Lead: the theme's tune, following the chord roots. Sparse and every other bar when quiet.
-  if (layers.lead > 0 && !(layers.lead < 0.7 && bar % 2 === 1)) {
+  if (layers.lead > 0 && !(layers.lead < 0.7 && bar % (cue.state === "title" ? 4 : 2) !== 0)) {
     const sparse = layers.lead < 0.7;
     const hits = onsets(sparse ? profile.patterns.leadSparse : profile.patterns.lead, layers.lead);
     const slot = sparse ? Math.floor(bar / 2) : bar;
@@ -155,12 +188,21 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
 
   // Percussion: kick, backbeat and tick patterns gated by the percussion level, plus a fill at the end of every fourth bar.
   if (layers.perc > 0) {
-    const kit: [string, SoundEvent["voice"], number][] = [
-      [profile.patterns.kick, profile.voices.kick, layers.perc],
-      [profile.patterns.back, profile.voices.back, layers.perc],
-      [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
-    ];
-    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: hit.vel });
+    const kit: [string, SoundEvent["voice"], number][] = cue.state === "party"
+      ? [
+          ["X.......X.......", "heartbeat", layers.perc],
+          ["....X..X....X..X.", "bongo", layers.perc],
+          ["x.x.x.x.x.x.x.x.", "shaker", layers.perc],
+        ]
+      : [
+          [profile.patterns.kick, profile.voices.kick, layers.perc],
+          [profile.patterns.back, profile.voices.back, layers.perc],
+          [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
+        ];
+    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern.slice(0, plan.stepsPerBar), level)) {
+      const partyLevel = voice === "heartbeat" ? 0.2 : voice === "bongo" ? 0.32 : 0.17;
+      events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: cue.state === "party" ? hit.vel * partyLevel : hit.vel });
+    }
     if (layers.perc >= 0.9 && bar % 4 === 3) {
       const fill = plan.boss?.fill ?? profile.voices.fill;
       for (let step = plan.stepsPerBar - 4; step < plan.stepsPerBar; step += 1) events.push({ kind: "drum", t: stepTime(plan, step), voice: fill, vel: 0.5 + 0.1 * (step - (plan.stepsPerBar - 4)) });
