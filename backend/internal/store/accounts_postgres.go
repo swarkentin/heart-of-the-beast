@@ -119,7 +119,9 @@ func (p *Postgres) GetProfileByID(ctx context.Context, profileID string) (*Profi
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
 		return nil, err
 	}
-	if err := p.loadBestiary(ctx, &profile); err != nil { return nil, err }
+	if err := p.loadBestiary(ctx, &profile); err != nil {
+		return nil, err
+	}
 	return cloneProfile(&profile)
 }
 
