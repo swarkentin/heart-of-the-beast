@@ -28,6 +28,9 @@ func TestSimulateRunIsDeterministicAndTraversesDungeon(t *testing.T) {
 	if first.Outcome != "completed" && first.Outcome != "wiped" && first.Outcome != "step_limit" {
 		t.Fatalf("unknown run outcome %q", first.Outcome)
 	}
+	if first.Wiped && first.Outcome != "wiped" {
+		t.Fatalf("a run that wiped after clearing a dungeon must still report a wipe, got %q", first.Outcome)
+	}
 }
 
 func TestSimulateRunSupportsSoloAndFourCharacterParties(t *testing.T) {
