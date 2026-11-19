@@ -87,10 +87,6 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 // DescendDestination is the destination of the exit a cleared floor guardian leaves behind: the way down.
 const DescendDestination = "@descend"
 
-// FloorClearRestPercent is the share of maximum health a living adventurer recovers on clearing a floor that has
-// no camp. The camp's own rest is CampRestPercent.
-const FloorClearRestPercent = 15
-
 // DungeonExtraDepthStep is how many floors harder each later dungeon of an expedition is.
 const DungeonExtraDepthStep = 2
 
