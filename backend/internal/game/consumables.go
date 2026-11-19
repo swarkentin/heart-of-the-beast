@@ -4,7 +4,7 @@ import "errors"
 
 const (
 	ConsumableHealingHerb     = "healing-herb"
-	StartingHealingHerbs      = 2
+	StartingHealingHerbs      = 3
 	MaxHealingHerbs           = 4
 	HealingHerbHealingPercent = 30
 )
