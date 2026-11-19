@@ -324,10 +324,10 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
             const lore = entry.kills >= 30 ? 4 : entry.kills >= 15 ? 3 : entry.kills >= 5 ? 2 : 1;
             const theme = (entry.themeId || "forgotten catacombs").replace(/[-_]/g, " ");
             const notes = [
-              "First sighting recorded. The creature is now identified in your field notes.",
-              "Repeated encounters reveal its habits and the territory it favours.",
-              "Veteran observations have exposed more of its behaviour and fighting style.",
-              "Your experience with this creature is exceptional. Its place in the dungeon's ecosystem is no longer a mystery."
+              "First sighting: " + entry.name + " has been recorded among the denizens of the " + theme + ". Its place in this dungeon remains unclear.",
+              "Repeated sightings suggest " + entry.name + " is adapted to the " + theme + " rather than a stray intruder. Your notes are beginning to reveal its habits and territory.",
+              "Veteran observations have established how " + entry.name + " fits into the " + theme + " ecosystem, and what makes it dangerous to adventurers.",
+              "Your field notes now contain a veteran's account of " + entry.name + " — its habits, threat patterns, and place in the " + theme + " are well understood."
             ];
             return <article className="px-bestiary-card" key={entry.enemyKey}>
               <BestiarySprite spriteId={entry.sprite} name={entry.name} />
