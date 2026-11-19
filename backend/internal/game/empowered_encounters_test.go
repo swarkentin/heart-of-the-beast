@@ -63,8 +63,8 @@ func TestAmbushActsBeforePartyAndConsumesOpeningIntent(t *testing.T) {
 	if player.Health != 25 {
 		t.Fatalf("ambush damage = %d, want 5", 30-player.Health)
 	}
-	if enemy.Intent != nil || !enemy.ModifierTriggered {
-		t.Fatal("ambush intent was not consumed and marked triggered")
+	if enemy.Intent == nil || enemy.Intent.Kind != "ambush_recovery" || !enemy.ModifierTriggered {
+		t.Fatal("ambush should leave a harmless recovery intent and mark the modifier triggered")
 	}
 	if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Kind != "enemy_ambush" {
 		t.Fatalf("missing ambush combat log: %+v", room.Run.LastCombatEvents)
