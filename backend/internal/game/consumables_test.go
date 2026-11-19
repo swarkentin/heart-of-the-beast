@@ -38,7 +38,9 @@ func TestBlightedHerbsHalvesHerbHealing(t *testing.T) {
 	before := player.Health
 	base := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	want := base * 50 / 100
-	if want < 1 { want = 1 }
+	if want < 1 {
+		want = 1
+	}
 	if err := ApplyCommand(room, player.ID, Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, expeditionNow); err != nil {
 		t.Fatalf("use blighted herb: %v", err)
 	}
@@ -85,14 +87,24 @@ func TestHealingHerbIsOfferedInEveryDiscovery(t *testing.T) {
 		for _, discovery := range theme.Discoveries {
 			found := false
 			for _, choice := range discovery.Event.Choices {
-				if choice.ID == "herb_cache" { found = true }
+				if choice.ID == "herb_cache" {
+					found = true
+				}
 			}
-			if !found { t.Errorf("theme %q discovery %q has no herb-cache option", theme.ThemeID, discovery.Event.Title) }
+			if !found {
+				t.Errorf("theme %q discovery %q has no herb-cache option", theme.ThemeID, discovery.Event.Title)
+			}
 		}
 		if discovery := theme.Vault; len(discovery.Event.Choices) > 0 {
 			found := false
-			for _, choice := range discovery.Event.Choices { if choice.ID == "herb_cache" { found = true } }
-			if !found { t.Errorf("theme %q vault has no herb-cache option", theme.ThemeID) }
+			for _, choice := range discovery.Event.Choices {
+				if choice.ID == "herb_cache" {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("theme %q vault has no herb-cache option", theme.ThemeID)
+			}
 		}
 	}
 }
