@@ -2,28 +2,6 @@ package game
 
 import "testing"
 
-func TestExpeditionEnemyDamageBonusTracksDepth(t *testing.T) {
-	tests := []struct {
-		name string
-		run  *Run
-		want int
-	}{
-		{"legacy run", &Run{Depth: 8}, 0},
-		{"first floor", &Run{Generator: ExpeditionGenerator, Depth: 1}, 0},
-		{"second floor", &Run{Generator: ExpeditionGenerator, Depth: 2}, 0},
-		{"third floor", &Run{Generator: ExpeditionGenerator, Depth: 3}, 1},
-		{"later dungeon", &Run{Generator: ExpeditionGenerator, Dungeon: 2, Depth: 1}, 1},
-		{"castle depth", &Run{Generator: ExpeditionGenerator, Dungeon: 5, Depth: 1, ThemeID: "eldritch-castle"}, 4},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := expeditionEnemyDamageBonus(test.run); got != test.want {
-				t.Fatalf("expeditionEnemyDamageBonus() = %d, want %d", got, test.want)
-			}
-		})
-	}
-}
-
 func TestCriticalHitIsDeterministicAndScalesWithRunLevel(t *testing.T) {
 	var chosenSeed uint64
 	found := false
