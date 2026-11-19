@@ -72,7 +72,7 @@ func snapshotEnemyKills(room *game.Room) map[string]enemyBeforeKill {
 			if profileID == "" {
 				continue
 			}
-			if err := bestiary.RecordEnemyKill(ctx, profileID, room.Run.ID, enemyID, previous.kill, h.now().UTC()); err != nil {
+			if err := bestiary.RecordEnemyKill(ctx, profileID, room.Run.ID, key, previous.kill, h.now().UTC()); err != nil {
 				return err
 			}
 		}
