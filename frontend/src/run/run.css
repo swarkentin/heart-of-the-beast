@@ -14,7 +14,7 @@
 .rn-menu-panel a.px-button { display: grid; place-items: center; text-decoration: none; }
 
 /* ---------- board ---------- */
-.rn-board { flex: 1; min-height: 0; display: grid; gap: 8px; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "left view right" "left console right"; }
+.rn-board { position: relative; flex: 1; min-height: 0; display: grid; gap: 8px; grid-template-columns: var(--side) minmax(0, 1fr) var(--side); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "left view right" "left console right"; }
 .rn-party-1 { --side: clamp(240px, 23vw, 316px); }
 .rn-party-1 .rn-board { grid-template-columns: var(--side) minmax(0, 1fr); grid-template-areas: "left view" "left console"; }
 .rn-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
@@ -55,6 +55,28 @@ button.rn-card { cursor: pointer; background: none; }
 .rn-portrait { --hs: 2; container-type: size; position: relative; flex: 1 1 calc(64px * var(--hs)); display: flex; justify-content: center; align-items: safe flex-end; min-height: 76px; max-height: 204px; overflow: hidden; background: var(--pit); box-shadow: inset 0 0 0 3px var(--edge), inset 0 0 0 5px #3d3658; }
 .rn-portrait-bg { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 70%, color-mix(in srgb, var(--accent) 30%, transparent) 0, #0000 66%), var(--ui-wall, url("/art/ui/tile-wall.png")) 50% 100% / calc(32px * var(--hs)) auto; }
 .rn-portrait { isolation: isolate; }
+.rn-aid-target { position: absolute; inset: 0; z-index: 1; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.rn-aid-target:disabled { cursor: default; }
+.rn-hero-box, .rn-pops { z-index: 0; pointer-events: none; }
+.rn-round { z-index: 2; }
+.rn-herb-badge { position: absolute; z-index: 4; top: 7px; right: 7px; display: inline-flex; align-items: center; gap: 2px; min-width: 32px; justify-content: center; padding: 3px 5px; border: 2px solid var(--gold); background: #0a0714ed; box-shadow: 0 0 0 2px var(--edge); color: var(--bone); font: 400 16px/1 var(--display); cursor: pointer; }
+.rn-herb-badge .px-icon { color: #9be84a; }
+.rn-herb-badge b { font: inherit; }
+.rn-herb-badge:hover { filter: brightness(1.25); }
+.rn-herb-empty { border-color: var(--muted); color: var(--muted); }
+.rn-herb-empty .px-icon { color: var(--muted); }
+.rn-herb-panel { position: absolute; z-index: 30; top: 8px; left: 50%; translate: -50% 0; width: min(360px, calc(100% - 16px)); padding: 10px 12px; box-shadow: 0 6px 24px #000b, 0 0 0 3px var(--gold); }
+.rn-herb-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.rn-herb-panel > header > div { display: grid; gap: 2px; }
+.rn-herb-panel > header strong { color: var(--bone); font: 400 11px/1.2 var(--display); letter-spacing: .08em; }
+.rn-herb-panel ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.rn-herb-panel li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 7px; background: #090713; color: var(--ink); }
+.rn-herb-panel li.rn-herb-self { box-shadow: inset 3px 0 0 var(--gold); }
+.rn-herb-panel li > span { display: grid; gap: 2px; min-width: 0; }
+.rn-herb-panel li b { overflow: hidden; color: var(--bone); font: 400 9px/1.2 var(--display); text-overflow: ellipsis; white-space: nowrap; }
+.rn-herb-panel li small { color: var(--muted); font-size: 16px; }
+.rn-herb-panel li > strong { display: flex; align-items: center; gap: 4px; color: #b9e88e; font: 400 10px/1 var(--display); white-space: nowrap; }
+.rn-herb-use { display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 9px; }
 .rn-hero-box { position: relative; flex: none; width: calc(64px * var(--hs)); height: calc(64px * var(--hs)); }
 .rn-hero-box .px-hero, .rn-hero-box .px-statusfx { --hs: inherit; }
 /* A portrait with room for it shows the hero one step larger. */
@@ -111,7 +133,7 @@ button.rn-card { cursor: pointer; background: none; }
 @keyframes rn-line { from { opacity: 0; translate: -6px 0; } }
 
 /* ---------- command dock ---------- */
-.rn-command { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #5d5478 var(--pit); }
+.rn-command { overflow: hidden; }
 .rn-combat, .rn-context { display: flex; flex-direction: column; gap: 6px; min-height: 100%; }
 .rn-context h2 { font-size: 14px; }
 .rn-timer { display: grid; grid-template-columns: minmax(0, auto) minmax(60px, 1fr) auto; align-items: center; gap: 10px; flex: none; }
