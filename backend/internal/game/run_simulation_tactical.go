@@ -35,7 +35,6 @@ func tacticalShopCommand(room *Room, playerID string) (Command, bool) {
 	return Command{}, false
 }
 
-
 // tacticalConsumableCommand uses a carried herb when its full effective healing can be used.
 func tacticalConsumableCommand(room *Room, playerID string) (Command, bool) {
 	if room == nil || room.Run == nil {
