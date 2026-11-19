@@ -56,6 +56,7 @@ export type EventLike = {
   targetId?: string;
   targetType?: string;
   amount?: number;
+  critical?: boolean;
 };
 
 /** An enemy as the stage needs it. `x` is the enemy's position in the scene's 1100-wide coordinate space. */
