@@ -1542,3 +1542,33 @@ func TestGoldScalingTapersOffInLongExpeditions(t *testing.T) {
 		t.Fatalf("depth 9 mini-game multiplier = %d, want 164", got)
 	}
 }
+
+func TestIDKFACompletesCurrentFloorAndDescends(t *testing.T) {
+	room := startExpedition(t, 1, DefaultDungeonThemeID, "idkfa-run")
+	beforeDepth := room.Run.Depth
+	if err := ApplyCommand(room, "player-1", Command{Type: "cheat_idkfa"}, expeditionNow); err != nil {
+		t.Fatalf("IDKFA command failed: %v", err)
+	}
+	if room.Run.Phase != PhaseCombat {
+		t.Fatalf("expected next floor combat, got phase %q", room.Run.Phase)
+	}
+	if room.Run.Depth != beforeDepth+1 {
+		t.Fatalf("expected depth %d after cheat, got %d", beforeDepth+1, room.Run.Depth)
+	}
+	if room.Run.CurrentRoomID == "" || room.Run.Rooms[room.Run.CurrentRoomID] == nil {
+		t.Fatal("cheat should place the party in a generated next-floor room")
+	}
+	if room.Run.FloorsCleared != 1 {
+		t.Fatalf("expected one normally-rewarded floor clear, got %d", room.Run.FloorsCleared)
+	}
+}
+
+func TestIDKFARejectsLegacyRuns(t *testing.T) {
+	room := newPartyRoom(1)
+	if err := StartRun(room, "legacy-idkfa", expeditionNow); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyCommand(room, "player-1", Command{Type: "cheat_idkfa"}, expeditionNow); !errors.Is(err, ErrInvalidPhase) {
+		t.Fatalf("expected legacy run to reject cheat, got %v", err)
+	}
+}
