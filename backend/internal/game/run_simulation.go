@@ -360,10 +360,10 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		NetPartyHealthLoss: netPartyHealthLoss,
 	}
 	switch {
-	case report.Completed:
-		report.Outcome = "completed"
 	case report.Wiped:
 		report.Outcome = "wiped"
+	case report.Completed:
+		report.Outcome = "completed"
 	default:
 		report.Outcome = "step_limit"
 	}
