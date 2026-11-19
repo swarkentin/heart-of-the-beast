@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/game"
 	"github.com/swarkentin/heart-of-the-beast/backend/internal/store"
 )
 
@@ -86,6 +87,10 @@ func profileCredential(w http.ResponseWriter, r *http.Request) (string, bool) {
 
 // withAccounts attaches linked sign-ins to a profile response.
 func (h *Handler) withAccounts(ctx context.Context, profile *store.Profile) *store.Profile {
+	for key, entry := range profile.Bestiary {
+		entry.Lore = game.BestiaryBackstory(entry.SpriteID)
+		profile.Bestiary[key] = entry
+	}
 	if profile.Accounts == nil {
 		profile.Accounts = []store.LinkedAccount{}
 	}
