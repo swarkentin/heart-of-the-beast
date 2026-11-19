@@ -14,7 +14,7 @@ export type PartyMember = {
 };
 export type EnemyLike = { id: string; name: string; hp: number; rawIntent?: { label: string; damage: number; targetPlayerId?: string; targetAll?: boolean } };
 
-export const LEVEL_THRESHOLDS = [0, 50, 100, 200, 325];
+export const LEVEL_THRESHOLDS = [0, 60, 150, 275, 425];
 /** A hero at or below this share of health shows the injured pose. */
 export const INJURED_AT = 0.35;
 
