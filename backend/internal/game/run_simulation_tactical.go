@@ -58,8 +58,10 @@ func tacticalConsumableCommandForPhase(room *Room, playerID string, inCombat boo
 	if player == nil || player.Health <= 0 || player.Consumables[ConsumableHealingHerb] <= 0 {
 		return Command{}, false
 	}
-	if inCombat && player.Health*3 > player.MaxHealth {
-		return Command{}, false
+	if inCombat {
+		if player.Health*3 > player.MaxHealth || tacticalLifestealCanReplaceHerb(room, player) {
+			return Command{}, false
+		}
 	}
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	amount = floorRulesFor(room.Run).consumableHealing(amount)
