@@ -227,3 +227,16 @@ func TestTacticalShopPrioritizesUrgentHealingOverWhetstone(t *testing.T) {
 		t.Fatalf("tactical policy should buy urgent healing before a Whetstone, got %+v, ok=%v", command, ok)
 	}
 }
+
+func TestTacticalShopBuysHerbWhenItCanUseIt(t *testing.T) {
+	room := openTestShop(t, 1, "tactical-herb-shop")
+	player := room.Run.Players["player-1"]
+	player.Gold = 100
+	heal := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	player.Health -= heal
+	room.Run.Camp.Offers = []ShopItem{{ID: "healing-herb", Name: "Healing Herb", Kind: ShopConsumable, ConsumableID: ConsumableHealingHerb, Amount: 1, Price: 8, Repeatable: true}}
+	command, ok := tacticalShopCommand(room, player.ID)
+	if !ok || command.Type != "buy" || command.ChoiceID != "healing-herb" {
+		t.Fatalf("tactical policy should buy a useful herb, got %+v, ok=%v", command, ok)
+	}
+}
