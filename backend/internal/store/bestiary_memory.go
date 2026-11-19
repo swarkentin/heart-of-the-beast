@@ -42,6 +42,4 @@ func (m *Memory) RecordEnemyKill(_ context.Context, profileID, runID, enemyInsta
 	profile.UpdatedAt = now.UTC()
 	m.awards[awardKey] = true
 	return nil
-	m.awards[awardKey] = true
-	return nil
 }
