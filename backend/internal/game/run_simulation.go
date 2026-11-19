@@ -211,6 +211,9 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					}
 					combatMetrics[playerID] = metrics
 				}
+				if room.Run.CombatRound == nil || room.Run.CombatRound.Number != round {
+					break
+				}
 			}
 			if loss := roundPartyHealth - totalPartyHealth(room); loss > 0 {
 				netPartyHealthLoss += loss
