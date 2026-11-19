@@ -153,6 +153,8 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	}
 
 	switch command.Type {
+	case "cheat_idkfa":
+		return applyIDKFA(room, actorID, now)
 	case "use_consumable":
 		return useConsumable(room, actorID, command.ChoiceID)
 	case "combat":
@@ -177,4 +179,54 @@ func allEnemiesDefeated(encounter *Encounter) bool {
 		}
 	}
 	return true
+}
+
+
+// applyIDKFA is the hidden keyboard cheat. It skips the current floor's route and
+// resolves its guardian through the ordinary combat/reward path, then fast-forwards
+// the camp so the party enters the next floor (or dungeon) immediately.
+func applyIDKFA(room *Room, actorID string, now time.Time) error {
+	run := room.Run
+	if run == nil || run.Generator < ExpeditionGenerator || run.Phase != PhaseCombat {
+		return ErrInvalidPhase
+	}
+	player := run.Players[actorID]
+	if player == nil || player.Health <= 0 || room.Presence[actorID].LeftAt != nil {
+		return ErrInvalidPhase
+	}
+
+	var guardian *DungeonRoom
+	for _, candidate := range run.Rooms {
+		if candidate != nil && candidate.RoomType == "boss" && candidate.Encounter != nil && candidate.Encounter.Status != EncounterCleared {
+			if guardian == nil || candidate.ID < guardian.ID {
+				guardian = candidate
+			}
+		}
+	}
+	if guardian == nil {
+		return ErrInvalidPhase
+	}
+
+	// IDKFA takes the party straight to this floor's guardian. The guardian is
+	// defeated by a no-op round, so all normal boss rewards and floor transitions run.
+	run.CurrentRoomID = guardian.ID
+	run.Phase = PhaseCombat
+	startCombatRound(room, now)
+	for i := range guardian.Encounter.Enemies {
+		guardian.Encounter.Enemies[i].Health = 0
+		guardian.Encounter.Enemies[i].Barrier = 0
+		guardian.Encounter.Enemies[i].Intent = nil
+	}
+	for _, id := range eligibleCombatPlayers(room) {
+		run.CombatRound.Actions[id] = Command{Type: "combat", Action: "defend"}
+	}
+	resolveCombatRound(room, now)
+
+	// Fast-forward every camp stage. This intentionally skips optional camp
+	// activities, but lets the normal camp transition select the next dungeon
+	// deterministically and preserve the expedition's progression state.
+	for steps := 0; steps < 6 && run.Phase == PhaseIntermission; steps++ {
+		AdvanceCamp(room, now.Add(2*time.Hour))
+	}
+	return nil
 }
