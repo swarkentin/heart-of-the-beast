@@ -356,7 +356,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   } else if (room.event && !room.event.resolved) {
     const mine = eventVote?.votes?.[selfId];
     const cast = eligible.filter(member => eventVote?.votes?.[member.id]).length;
-    command = <div className="rn-context">
+    // Vault and discovery rooms can offer several choices. Keep the heading and timer fixed while
+    // the choice list owns the available vertical space and scrolls independently.
+    command = <div className="rn-context rn-context-scroll">
       <p className="px-eyebrow">{room.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</p>
       <h2>{room.event.title}</h2>
       <p className="px-copy">{room.event.description}</p>
