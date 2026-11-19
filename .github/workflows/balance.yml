@@ -60,8 +60,13 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           # Keep baseline simulations fast without depending on an ephemeral commit SHA.
-          # This patch changes only worker scheduling; seeded results remain in seed order.
-          git -C /tmp/balance-branch-point apply "$GITHUB_WORKSPACE/scripts/balance-parallelism.patch"
+          # Main may already contain this optimization; apply only when the branch point lacks it.
+          if grep -q 'runtime.GOMAXPROCS(0)' /tmp/balance-branch-point/backend/internal/game/run_simulation.go \
+            && grep -q 'sync.WaitGroup' /tmp/balance-branch-point/backend/internal/game/run_simulation.go; then
+            echo "Branch point already has deterministic worker-pool parallelism."
+          else
+            git -C /tmp/balance-branch-point apply "$GITHUB_WORKSPACE/scripts/balance-parallelism.patch"
+          fi
           git -C /tmp/balance-branch-point diff --check
 
       - name: Run branch-point simulations
