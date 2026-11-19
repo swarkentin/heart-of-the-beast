@@ -190,16 +190,19 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   if (layers.perc > 0) {
     const kit: [string, SoundEvent["voice"], number][] = cue.state === "party"
       ? [
-          ["X.......X.......", "heartbeat", layers.perc * 0.42],
-          ["....X.......X...", "bongo", layers.perc * 0.7],
-          ["x.x.x.x.x.x.x.x.", "shaker", layers.perc * 0.7],
+          ["X.......X.......", "heartbeat", layers.perc],
+          ["....X.......X...", "bongo", layers.perc],
+          ["x.x.x.x.x.x.x.x.", "shaker", layers.perc],
         ]
       : [
           [profile.patterns.kick, profile.voices.kick, layers.perc],
           [profile.patterns.back, profile.voices.back, layers.perc],
           [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
         ];
-    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: hit.vel });
+    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) {
+      const partyLevel = voice === "heartbeat" ? 0.18 : voice === "bongo" ? 0.25 : 0.12;
+      events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: cue.state === "party" ? hit.vel * partyLevel : hit.vel });
+    }
     if (layers.perc >= 0.9 && bar % 4 === 3) {
       const fill = plan.boss?.fill ?? profile.voices.fill;
       for (let step = plan.stepsPerBar - 4; step < plan.stepsPerBar; step += 1) events.push({ kind: "drum", t: stepTime(plan, step), voice: fill, vel: 0.5 + 0.1 * (step - (plan.stepsPerBar - 4)) });
