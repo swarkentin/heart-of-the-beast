@@ -163,7 +163,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   // Bass: onsets from the theme's bass rhythm, notes from its bass lines.
   if (layers.bass > 0) {
     const pattern = cue.state === "title" ? "X..............." : cue.state === "party" ? "X.......X......." : profile.patterns.bass;
-    const hits = onsets(pattern, layers.bass);
+    const hits = onsets(pattern.slice(0, plan.stepsPerBar), layers.bass);
     const line = profile.bassLines[bar % profile.bassLines.length];
     hits.forEach((hit, k) => {
       const next = hits[k + 1]?.step ?? plan.stepsPerBar;
@@ -199,7 +199,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
           [profile.patterns.back, profile.voices.back, layers.perc],
           [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
         ];
-    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) {
+    for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern.slice(0, plan.stepsPerBar), level)) {
       const partyLevel = voice === "heartbeat" ? 0.2 : voice === "bongo" ? 0.32 : 0.17;
       events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: cue.state === "party" ? hit.vel * partyLevel : hit.vel });
     }
