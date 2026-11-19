@@ -64,8 +64,26 @@ func TestSelectClassDerivesArchetypeAndBuildsServerOwnedStartingStats(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if build.MaxHealth != 27 || build.Stats.Focus != 4 || len(build.EquipmentIDs) != 3 {
+	if build.MaxHealth != 41 || build.Stats.Focus != 4 || len(build.EquipmentIDs) != 3 {
 		t.Fatalf("unexpected server starting build: %+v", build)
+	}
+}
+
+func TestEveryClassReceivesFiftyPercentMoreStartingHealth(t *testing.T) {
+	want := map[string]int{
+		ClassBulwark: 54, ClassJuggernaut: 57, ClassSpellguard: 51,
+		ClassAssassin: 42, ClassArcanist: 41, ClassRanger: 45,
+		ClassCleric: 48, ClassTactician: 47, ClassBeastcaller: 45,
+	}
+	for _, definition := range ClassCatalog() {
+		if got := definition.StartingStats.Health; got != want[definition.ID] {
+			t.Errorf("%s starting health = %d, want %d", definition.ID, got, want[definition.ID])
+		}
+		build, err := StartingBuildForClass(definition.ID)
+		if err != nil { t.Fatalf("build %s: %v", definition.ID, err) }
+		if build.MaxHealth != want[definition.ID] {
+			t.Errorf("%s max health = %d, want %d", definition.ID, build.MaxHealth, want[definition.ID])
+		}
 	}
 }
 
@@ -111,7 +129,7 @@ func TestStartRunSnapshotsSelectedClassBuild(t *testing.T) {
 		t.Fatalf("start run: %v", err)
 	}
 	player := room.Run.Players["player-1"]
-	if player.ClassBuild == nil || player.ClassBuild.ClassID != ClassBulwark || player.MaxHealth != 36 || player.ClassBuild.DefinitionVersion != ClassDefinitionVersion {
+	if player.ClassBuild == nil || player.ClassBuild.ClassID != ClassBulwark || player.MaxHealth != 54 || player.ClassBuild.DefinitionVersion != ClassDefinitionVersion {
 		t.Fatalf("class build was not snapshotted: %+v", player)
 	}
 	if player.Archetype != "tank" || player.Stats.Power != 2 {
