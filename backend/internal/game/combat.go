@@ -190,7 +190,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 	// player's own guard independently.
 	for enemyIndex := range current.Encounter.Enemies {
 		enemy := &current.Encounter.Enemies[enemyIndex]
-		if enemy.Health <= 0 || enemy.Intent == nil {
+		if enemy.Health <= 0 {
+			continue
+		}
+		if enemy.Intent != nil && enemy.Intent.Kind == "ambush_recovery" {
+			enemy.Intent = nil
+			continue
+		}
+		if enemy.Intent == nil {
 			continue
 		}
 		intent := *enemy.Intent
