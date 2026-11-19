@@ -45,6 +45,8 @@ type ExpeditionTheme struct {
 	ClearedText string
 }
 
+const DiscoveryHerbChance = 20 // percent chance that a generated discovery room offers the risky herb cache
+
 type DiscoveryTemplate struct {
 	Room  FloorRoomTemplate
 	Event FloorEventTemplate
@@ -368,6 +370,9 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 			discoveries = discoveries[1:]
 			room.Name, room.Description = discovery.Room.Name, discovery.Room.Description
 			room.Event = newRoomEvent(id, discovery.Event)
+			if int(mixSeed(seed, uint64(depth), hashString(id+"/herb-cache"))%100) < DiscoveryHerbChance {
+				room.Event.Choices = append(room.Event.Choices, option("Trade blood for herbs", "herb_cache"))
+			}
 		case floorRoomVault:
 			room.Name, room.Description = theme.Vault.Room.Name, theme.Vault.Room.Description
 			room.Event = newRoomEvent(id, theme.Vault.Event)

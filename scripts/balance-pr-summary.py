@@ -2,6 +2,7 @@
 """Build a PR balance dashboard with absolute results and branch-point deltas."""
 import argparse
 import json
+import math
 from pathlib import Path
 
 
@@ -45,6 +46,21 @@ def solo_endless(report):
     }
 
 
+def class_party_clear_rates(report):
+    """Aggregate first-dungeon clears for each class when present in a tactical party."""
+    buckets = {}
+    for scenario in report.get("scenarios", []):
+        if scenario.get("policy") != "tactical":
+            continue
+        size = scenario.get("partySize", len(scenario.get("party", [])))
+        for class_id in set(scenario.get("party", [])):
+            bucket = buckets.setdefault((class_id, size), {"runs": 0, "cleared": 0})
+            for run in scenario.get("results", []):
+                bucket["runs"] += 1
+                bucket["cleared"] += int(run.get("dungeonsCleared", 0) >= 1)
+    return buckets
+
+
 def class_combat_rates(report):
     rates = {}
     for scenario in report["scenarios"]:
@@ -57,6 +73,32 @@ def class_combat_rates(report):
 def clear_rate(scenario):
     runs = scenario.get("runs", 0)
     return scenario.get("completed", 0) / runs * 100 if runs else 0.0
+
+
+def wilson_interval(successes, total, z=1.96):
+    """95% Wilson score interval for a binomial rate."""
+    if total <= 0:
+        return 0.0, 0.0
+    p = successes / total
+    denominator = 1 + z * z / total
+    center = (p + z * z / (2 * total)) / denominator
+    margin = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
+    return max(0.0, center - margin) * 100, min(1.0, center + margin) * 100
+
+
+def initial_theme_summary(scenarios):
+    """Group solo tactical first-dungeon outcomes by the actual seeded starting theme."""
+    buckets = {}
+    for scenario in scenarios:
+        if scenario.get("partySize") != 1 or scenario.get("policy") != "tactical":
+            continue
+        for run in scenario.get("results", []):
+            theme = run.get("initialThemeId") or run.get("themeId") or "unknown"
+            bucket = buckets.setdefault(theme, {"runs": 0, "cleared": 0, "wiped": 0})
+            bucket["runs"] += 1
+            bucket["cleared"] += int(run.get("dungeonsCleared", 0) >= 1)
+            bucket["wiped"] += int(bool(run.get("wiped")))
+    return buckets
 
 
 
@@ -204,15 +246,15 @@ def main():
             labels,
             "Solo endless first-dungeon completion",
             f"Share of tactical-policy expeditions clearing dungeon one · "
-            f"{endless_runs} seeded expeditions per class.",
+            f"{endless_runs} seeded expeditions per class. At 100 runs, each run moves this rate by 1 percentage point.",
             current_clear,
         ),
         depth_progression_chart(classes, new_endless),
         "### Absolute results and changes by class",
 
         "",
-        "| Class | Combat win rate: base → PR (Δ pp) | Endless clear: base → PR (Δ pp) | Median depth: base → PR (Δ) |",
-        "|---|---:|---:|---:|",
+        "| Class | Combat win rate: base → PR (Δ pp) | Endless clear: base → PR (Δ pp) | PR clear 95% interval | Median depth: base → PR (Δ) |",
+        "|---|---:|---:|---:|---:|",
     ]
 
     for class_id in classes:
@@ -220,10 +262,54 @@ def main():
         old_e, new_e = old_endless[class_id], new_endless[class_id]
         old_clear, new_clear = clear_rate(old_e), clear_rate(new_e)
         old_depth, new_depth = old_e["medianDepth"], new_e["medianDepth"]
+        low, high = wilson_interval(new_e.get("completed", 0), new_e.get("runs", 0))
         lines.append(
             f"| {class_id} | {old_c:.1f}% → {new_c:.1f}% ({new_c-old_c:+.1f}) "
             f"| {old_clear:.1f}% → {new_clear:.1f}% ({new_clear-old_clear:+.1f}) "
-            f"| {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
+            f"| {low:.1f}–{high:.1f}% | {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
+        )
+
+    old_party_rates = class_party_clear_rates(before_endless)
+    new_party_rates = class_party_clear_rates(after_endless)
+    lines.extend([
+        "",
+        "### First-dungeon clears by class and party size",
+        "",
+        "Each cell is branch point → PR clear rate, with the PR sample count. These are party outcomes for compositions containing that class, not a claim that one class alone caused the result. This helps distinguish solo weakness from co-op performance.",
+        "",
+        "| Class | Solo | Duo | Trio | Four-player |",
+        "|---|---:|---:|---:|---:|",
+    ])
+    for class_id in classes:
+        cells = []
+        for size in range(1, 5):
+            old_bucket = old_party_rates.get((class_id, size), {"runs": 0, "cleared": 0})
+            new_bucket = new_party_rates.get((class_id, size), {"runs": 0, "cleared": 0})
+            old_rate = old_bucket["cleared"] / old_bucket["runs"] * 100 if old_bucket["runs"] else 0.0
+            new_rate = new_bucket["cleared"] / new_bucket["runs"] * 100 if new_bucket["runs"] else 0.0
+            if new_bucket["runs"]:
+                cells.append(f"{old_rate:.1f}% → {new_rate:.1f}% ({new_rate-old_rate:+.1f} pp; n={new_bucket['runs']})")
+            else:
+                cells.append("—")
+        lines.append(f"| {class_id} | " + " | ".join(cells) + " |")
+
+    theme_buckets = initial_theme_summary(after_endless.get("scenarios", []))
+    lines.extend([
+        "",
+        "### First-dungeon outcomes by seeded starting theme",
+        "",
+        "Solo tactical expeditions grouped by the actual first theme selected by the seed. This separates theme difficulty from the aggregate class result; counts are absolute, not percentages alone.",
+        "",
+        "| Starting theme | Expeditions | First dungeon cleared | Wiped |",
+        "|---|---:|---:|---:|",
+    ])
+    for theme, bucket in sorted(theme_buckets.items()):
+        total = bucket["runs"]
+        cleared = bucket["cleared"]
+        wiped = bucket["wiped"]
+        lines.append(
+            f"| {theme} | {total} | {cleared}/{total} ({cleared/total*100:.1f}%) "
+            f"| {wiped}/{total} ({wiped/total*100:.1f}%) |"
         )
 
     lines.extend([
@@ -261,8 +347,9 @@ def main():
         "### Interpretation",
         "",
         "- Combat win rates average each class's solo results across the encounter suite; encounter-level deltas above show scenario-specific movement.",
-        "- Endless results use solo tactical-policy runs, the same 12 seeds, and the same random theme selection.",
-        "- These are small deterministic samples, not statistical proof; use changes as investigation signals and validate with playtests.",
+        "- Endless results use solo tactical-policy runs, 100 paired seeds per class, and randomized seeded themes; the table above breaks first-dungeon outcomes out by starting theme.",
+        "- The 95% interval is a Wilson score interval for the PR first-dungeon clear rate. It communicates sampling uncertainty; overlapping intervals are not evidence of a meaningful branch regression.",
+        "- Do not change class stats from one dashboard movement: require a consistent paired-seed drift across themes and depth/survival metrics, then validate with playtests.",
         "- Newly added or removed scenarios/classes are not silently treated as zero; only matched data appears in paired comparisons.",
         "",
         f"_Combat report v{after.get('version', 'unknown')} · seeds {after.get('firstSeed')}–{after.get('lastSeed')} · {len(after.get('scenarios', []))} scenarios._",

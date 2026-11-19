@@ -14,10 +14,6 @@ const (
 	LiveEnemyHealthMultiplier      = 1.2
 	PartyEnemyHealthMultiplierStep = 0.15
 	PartyEnemyDamageMultiplierStep = 0.1
-	// EncounterRecoveryPercent is the share of their maximum health every living adventurer catches back after an
-	// expedition fight is won. A floor is five to seven fights with no other rest, so without it attrition alone
-	// decides a floor; with it each fight is a test of its own and a bad one still carries into the next.
-	EncounterRecoveryPercent = 30
 )
 
 // maxCombatEvents bounds the events a snapshot carries. Skills describe more of a round than three buttons did.
@@ -291,32 +287,22 @@ func resolveCombatRound(room *Room, now time.Time) {
 		grantEncounterExperience(room, roundNumber)
 		run.EncountersCleared++
 		grantEncounterGold(room, current, roundNumber)
-		rules := floorRulesFor(run)
-		healed := make([]string, 0, len(run.Players))
-		for playerID := range run.Players {
-			healed = append(healed, playerID)
-		}
-		sort.Strings(healed)
-		for _, playerID := range healed {
+		// Preserve intentional class-passive recovery; generic fight recovery is now player-controlled.
+		playerIDs := append([]string(nil), room.PlayerIDs...)
+		sort.Strings(playerIDs)
+		for _, playerID := range playerIDs {
 			player := run.Players[playerID]
 			if player == nil || player.Health <= 0 {
 				continue
 			}
-			recovery := 0
-			if run.Generator >= ExpeditionGenerator {
-				recovery = player.MaxHealth * EncounterRecoveryPercent / 100
+			heal := floorRulesFor(run).healing(classPassiveEffects(player, nil, nil).EncounterHeal)
+			if heal <= 0 {
+				continue
 			}
-			if run.Generator >= ExpeditionGenerator {
-				recovery += boonFightRecovery(player)
-			}
-			heal := rules.healing(recovery + classPassiveEffects(player, nil, nil).EncounterHeal + rules.EncounterHeal)
-			if heal > 0 {
-				transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
-				player.Health = transition.Health
-				actualHeal := transition.Applied
-				if actualHeal > 0 {
-					addCombatImpact(run, roundNumber, "encounter_heal", "An encounter reward restores "+itoa(actualHeal)+" health.", "heal", playerID, "player", actualHeal)
-				}
+			transition := resolveHealthHealing(player.Health, player.MaxHealth, heal)
+			player.Health = transition.Health
+			if transition.Applied > 0 {
+				addCombatImpact(run, roundNumber, "encounter_heal", "A class passive restores "+itoa(transition.Applied)+" health.", "heal", playerID, "player", transition.Applied)
 			}
 		}
 		run.CombatRound = nil

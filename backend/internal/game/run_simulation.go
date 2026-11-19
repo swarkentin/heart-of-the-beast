@@ -3,8 +3,10 @@ package game
 import (
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -13,6 +15,7 @@ import (
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
 	Seed               int64                          `json:"seed"`
+	InitialThemeID     string                         `json:"initialThemeId"`
 	ThemeID            string                         `json:"themeId"`
 	Floors             int                            `json:"floors"`
 	GoldEarned         int                            `json:"goldEarned"`
@@ -153,6 +156,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		return RunSimulationReport{}, fmt.Errorf("start simulated run: %w", err)
 	}
 
+	initialThemeID := room.Run.ThemeID
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
 	steps, itemsBought, goldSpent := 0, 0, 0
 	combatMetrics := make(map[string]PlayerCombatMetrics, len(classIDs))
@@ -171,9 +175,16 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				if player == nil || player.Health <= 0 {
 					continue
 				}
+				if _, submitted := room.Run.CombatRound.Actions[playerID]; submitted {
+					continue
+				}
 				var command Command
 				if policy == RunPolicyTactical {
-					command = skillPolicyCommand(room, playerID, round, rng)
+					if consumable, use := tacticalConsumableCommand(room, playerID); use {
+						command = consumable
+					} else {
+						command = skillPolicyCommand(room, playerID, round, rng)
+					}
 				} else {
 					candidates := randomSkillCommands(room, playerID, round)
 					if len(candidates) == 0 {
@@ -185,28 +196,44 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				if err := ApplyCommand(room, playerID, command, now); err != nil {
 					return RunSimulationReport{}, fmt.Errorf("seed %d player %s combat action: %w", seed, playerID, err)
 				}
-				metrics := combatMetrics[playerID]
-				damage := beforeEnemyHealth - currentEncounterHealth(room)
-				if damage > 0 {
-					metrics.DamageDealt += damage
+				if command.Type != "use_consumable" {
+					metrics := combatMetrics[playerID]
+					damage := beforeEnemyHealth - currentEncounterHealth(room)
+					if damage > 0 {
+						metrics.DamageDealt += damage
+					}
+					definition, _ := findSkill(command.Skill)
+					switch {
+					case command.Action == "defend" || command.Skill == SkillDefend:
+						metrics.Defends++
+					case definition.Basic:
+						metrics.Attacks++
+					case SkillInterrupts(definition):
+						metrics.Interrupts++
+					default:
+						metrics.Abilities++
+					}
+					combatMetrics[playerID] = metrics
 				}
-				definition, _ := findSkill(command.Skill)
-				switch {
-				case command.Action == "defend" || command.Skill == SkillDefend:
-					metrics.Defends++
-				case definition.Basic:
-					metrics.Attacks++
-				case SkillInterrupts(definition):
-					metrics.Interrupts++
-				default:
-					metrics.Abilities++
+				if room.Run.CombatRound == nil || room.Run.CombatRound.Number != round {
+					break
 				}
-				combatMetrics[playerID] = metrics
 			}
 			if loss := roundPartyHealth - totalPartyHealth(room); loss > 0 {
 				netPartyHealthLoss += loss
 			}
 		case PhaseExploring:
+			if policy == RunPolicyTactical {
+				// Use carried herbs between encounters, where they do not replace an attack or expose the
+				// party to an enemy turn. This keeps the tactical policy from wasting combat tempo on small heals.
+				for _, playerID := range eligibleCombatPlayers(room) {
+					if command, ok := tacticalExplorationConsumableCommand(room, playerID); ok {
+						if err := ApplyCommand(room, playerID, command, now); err != nil {
+							return RunSimulationReport{}, fmt.Errorf("seed %d player %s exploration herb: %w", seed, playerID, err)
+						}
+					}
+				}
+			}
 			current := room.Run.Rooms[room.Run.CurrentRoomID]
 			if current == nil {
 				return RunSimulationReport{}, fmt.Errorf("seed %d reached missing room %q", seed, room.Run.CurrentRoomID)
@@ -220,6 +247,24 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					break
 				}
 				choice := current.Event.Choices[rng.Intn(len(current.Event.Choices))]
+				if policy == RunPolicyTactical {
+					needsHerbs := false
+					for _, playerID := range eligible {
+						player := room.Run.Players[playerID]
+						if player != nil && player.Health > 0 && player.Consumables[ConsumableHealingHerb] < MaxHealingHerbs {
+							needsHerbs = true
+							break
+						}
+					}
+					if needsHerbs {
+						for _, option := range current.Event.Choices {
+							if option.ID == "herb_cache" {
+								choice = option
+								break
+							}
+						}
+					}
+				}
 				// Give every eligible adventurer the same simulated preference so the
 				// event vote resolves without injecting random tie-break noise.
 				for _, playerID := range eligible {
@@ -288,7 +333,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	}
 
 	report := RunSimulationReport{
-		Seed: seed, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
+		Seed: seed, InitialThemeID: initialThemeID, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
 		PartyClasses: append([]string(nil), classIDs...), PartySize: len(classIDs),
 		// An expedition never ends in victory. "Completed" means the first dungeon's boss was beaten, and the
 		// depth reached counts floors across every dungeon of the expedition.
@@ -438,6 +483,7 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 	var affordable []ShopItem
 	for _, offer := range camp.Offers {
 		useless := (offer.Kind == ShopHeal || offer.Kind == ShopFullHeal) && player.Health >= player.MaxHealth ||
+			offer.Kind == ShopConsumable && player.Consumables[offer.ConsumableID] >= MaxHealingHerbs ||
 			offer.Kind == ShopWard && player.ClassCombat.Ward >= offer.Amount ||
 			offer.Kind == ShopStrike && player.StrikeDamage >= PlayerStrikeDamage+MaxPermanentStrikeBonus ||
 			offer.Kind == ShopRevive && fallenAlly(room, playerID) == "" ||
@@ -477,13 +523,42 @@ func SimulateRunBatchWithPolicy(seedCount int, firstSeed int64, themeID string, 
 		DepthReachRates: make(map[int]float64),
 		Runs:            make([]RunSimulationReport, 0, seedCount),
 	}
+	// Each seeded expedition is independent. Run a bounded number concurrently while
+	// storing results by seed index so output and aggregate reports remain deterministic.
+	workers := runtime.GOMAXPROCS(0)
+	if workers > seedCount {
+		workers = seedCount
+	}
+	jobs := make(chan int)
+	runs := make([]RunSimulationReport, seedCount)
+	errs := make([]error, seedCount)
+	var wait sync.WaitGroup
+	wait.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		go func() {
+			defer wait.Done()
+			for i := range jobs {
+				run, err := SimulateRunWithPolicy(firstSeed+int64(i), themeID, classIDs, maxSteps, policy)
+				if err != nil {
+					errs[i] = err
+					continue
+				}
+				runs[i] = run
+			}
+		}()
+	}
+	for i := 0; i < seedCount; i++ {
+		jobs <- i
+	}
+	close(jobs)
+	wait.Wait()
+
 	depths := make([]int, 0, seedCount)
 	rooms := make([]int, 0, seedCount)
 	rounds := make([]int, 0, seedCount)
-	for i := 0; i < seedCount; i++ {
-		run, err := SimulateRunWithPolicy(firstSeed+int64(i), themeID, classIDs, maxSteps, policy)
-		if err != nil {
-			return RunSimulationBatchReport{}, err
+	for i, run := range runs {
+		if errs[i] != nil {
+			return RunSimulationBatchReport{}, fmt.Errorf("seed %d: %w", firstSeed+int64(i), errs[i])
 		}
 		report.Runs = append(report.Runs, run)
 		depths = append(depths, run.ReachedDepth)

@@ -31,9 +31,7 @@ heavy fight (protector plus bruiser) cost more than any other theme's.
   1 + 0.1 (was 0.65).
 - **Gold follows the authored budget.** Reinforcements do not add to an encounter's budget, so a larger party is
   not paid more per adventurer for its extra minions.
-- **Recovery after a won fight:** every living adventurer recovers 30% of their maximum health
-  (`EncounterRecoveryPercent`) after an expedition fight. It does not revive the downed. Legacy (pre-expedition)
-  runs are unchanged.
+- **Recovery after a won fight (superseded by the healing-herb design):** the automatic 30% recovery was removed. Adventurers carry two Healing Herbs, each restoring 30% max health; supplies refill to two after each dungeon. Camp still restores 20% max health.
 - **Gentler numbers:** live enemy health multiplier 1.35 → 1.2, per-floor health ramp 18% → 12%, and the solo
   discount 12% → 20%.
 - **Content ladder:** Sunken Kingdom opens with a striker (new `sunken-skirmish`), Ghost Town's heavy fight is a

@@ -54,12 +54,20 @@ jobs:
           git worktree add --detach /tmp/balance-branch-point "$base"
           echo "sha=$base" >> "$GITHUB_OUTPUT"
 
+      - name: Apply simulation-only parallelism to branch point
+        if: github.event_name == 'pull_request'
+        run: |
+          # Reuse the worker-pool-only change from this PR without applying any gameplay or balance changes.
+          git diff 068435e56e6d27f75798b6912076d36633589e89^ 068435e56e6d27f75798b6912076d36633589e89 -- backend/internal/game/run_simulation.go > /tmp/balance-parallelism.patch
+          git -C /tmp/balance-branch-point apply /tmp/balance-parallelism.patch
+          git -C /tmp/balance-branch-point diff --check
+
       - name: Run branch-point simulations
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
           cd /tmp/balance-branch-point/backend
-          go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
+          go run ./cmd/endless-balance -runs 100 -first-seed 1 -theme random \
             -json /tmp/branch-point-endless.json -markdown /tmp/branch-point-endless.md
           go run ./cmd/balance-report -seeds 30 -first-seed 1 \
             -json /tmp/branch-point-combat.json -markdown /tmp/branch-point-combat.md
@@ -81,7 +89,7 @@ jobs:
         working-directory: backend
         run: |
           set -o pipefail
-          go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
+          go run ./cmd/endless-balance -runs 100 -first-seed 1 -theme random \
             -json endless-balance-report.json -markdown endless-balance-report.md \
             | tee -a "$GITHUB_STEP_SUMMARY"
 

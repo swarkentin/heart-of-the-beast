@@ -117,6 +117,7 @@ func newRunPlayers(room *Room) (map[string]*PlayerState, error) {
 		}
 		player.StrikeDamage = PlayerStrikeDamage
 		player.GuardReduction = GuardDamageReduction
+		player.Consumables = map[string]int{ConsumableHealingHerb: StartingHealingHerbs}
 		players[id] = player
 	}
 	return players, nil
@@ -152,6 +153,8 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	}
 
 	switch command.Type {
+	case "use_consumable":
+		return useConsumable(room, actorID, command.ChoiceID)
 	case "combat":
 		return SubmitCombatAction(room, actorID, command, now)
 	case "choose_exit":

@@ -16,6 +16,10 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     <span className="rn-card-head"><b>P{member.position}</b><strong title={member.className}>{displayName || member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
     <span className="rn-portrait">
       <span className="rn-portrait-bg" aria-hidden="true" />
+      {canAid && onAid ? <button type="button" className="rn-aid-target" onClick={() => onAid(member.id)} disabled={aid?.disabled} aria-label={aid?.label + " " + who} /> : null}
+      <span className={"rn-herb-badge" + (member.healingHerbs > 0 ? "" : " rn-herb-empty")} aria-label={who + " has " + member.healingHerbs + " Healing Herbs"} title={who + ": " + member.healingHerbs + " Healing Herbs"}>
+        <Icon id="life" size={1} /><b>{member.healingHerbs}</b>
+      </span>
       <span className="rn-hero-box">
         <HeroSprite classId={member.classId} skin={member.skin} pose={member.pose} hurt={fx.hurt} />
         {member.overlays.map(kind => <StatusFx key={kind} kind={kind} />)}
@@ -33,11 +37,8 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     {member.statuses.length > 0 ? <span className="rn-statuses">{member.statuses.map(status => <span key={status.id} className={"rn-status rn-status-" + status.tone}><Icon id={status.icon} size={1} />{status.label}</span>)}</span> : null}
     {member.threats.length > 0 ? <span className="rn-incoming"><Icon id="threat" size={1} /><span>{member.threats.map(threat => threat.label + " " + threat.damage).join(" · ")}</span></span> : null}
     {kit && kit.length > 0 ? <span className="rn-kit">{kit.map((item, index) => <span key={item.name}><Icon id={index === 0 ? "arcane" : "empower"} size={1} /><span><b>{item.name}</b>{item.description}</span></span>)}</span> : null}
-    {canAid ? <span className="rn-aid">{aid?.label}{member.isSelf ? " SELF" : ""}</span> : null}
   </>;
   const className = "rn-card px-panel" + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
   const style = { "--accent": ACCENTS[member.classId || ""] || "#d6a64d", order } as unknown as CSSProperties;
-  return aid && onAid && canAid
-    ? <button type="button" className={className + " rn-card-aid"} style={style} onClick={() => onAid(member.id)} disabled={aid.disabled} aria-label={aid.label + " " + who}>{body}</button>
-    : <div className={className} style={style} role="group" aria-label={who}>{body}</div>;
+  return <div className={className} style={style} role="group" aria-label={who}>{body}</div>;
 }

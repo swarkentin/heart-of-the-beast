@@ -15,17 +15,19 @@ Reinforcements are the theme's striker first, then its disruptor (whose party-wi
 party size), then a second striker. Each enemy is only slightly tougher in a party: health +15% and damage +10%
 per extra adventurer. A fight never holds more than six enemies.
 
-## Levers
+## Starting adventurer health\n\nAll nine classes now start with 50% more maximum health than the original profiles (rounded to the nearest whole point): Bulwark 54, Juggernaut 57, Spellguard 51, Assassin 42, Arcanist 41, Ranger 45, Cleric 48, Tactician 47, and Beastcaller 45. This is a broad survivability adjustment; reassess its effect across randomized themes and party sizes before making further combat-tuning changes.\n\n## Levers
 
 | Lever | Where | Value |
 |---|---|---|
-| Recovery after a won expedition fight | `EncounterRecoveryPercent` (combat.go) | 30% of max health |
+| Healing between encounters | Healing Herb consumable | 50% of max health; 4 carried at start and replenished to 4 after each dungeon (5-herb carry cap) |
 | Live enemy health | `LiveEnemyHealthMultiplier` (combat.go) | ×1.2 |
 | Per-floor enemy health | `MonsterCatalog.NewEnemy` | +12% per floor below the first |
 | Solo enemy health | `MonsterCatalog.NewEnemy` | −20% |
 | Party health / damage per extra adventurer | `PartyEnemy*MultiplierStep` (combat.go) | +15% / +10% |
 | Reinforcement minions | `themeReinforcements` | two per theme |
 | Encounter pools | `expedition_content.go` | light ≈ 2, standard ≈ 2–4, heavy ≈ 5–6 budget |
+
+Healing is player-controlled between fights. Camp still restores 20% of max health. Healing Herbs restore 50% of max health by default; the rare Herbalist’s Boon dungeon perk doubles them to 100%. Blighted Herbs (-50%) and general healing modifiers such as Withering Air can still reduce healing. A generated discovery room has a 20% chance to offer a nonlethal trade of up to 5 health for one herb; it is never a guaranteed option in every room.
 
 ## Targets (tactical policy)
 

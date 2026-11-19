@@ -295,7 +295,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       </div>
       {acting ? <>
         <div className="rn-target">
-          <span className="px-label">ROUND {round.number} · TARGET</span>
+          <button type="button" className="rn-herb-use" onClick={() => { void onCommand({ type: "use_consumable", choiceId: "healing-herb" }); }} disabled={!acting || spectator || busy || !player || (player.consumables?.["healing-herb"] ?? 0) <= 0 || player.health >= player.maxHealth} aria-label={"Use a Healing Herb. " + (player?.consumables?.["healing-herb"] ?? 0) + " remaining"}><Icon id="life" size={1} /><span>HERB ×{player?.consumables?.["healing-herb"] ?? 0}</span></button>
+          <span className="px-label">TARGET</span>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(-1)} disabled={living.length < 2} aria-label="Previous target">◀</button>
           <strong>{livingTarget?.name ?? "NONE"}</strong>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
@@ -341,7 +342,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     </div>;
   } else {
     const mine = navigationVote?.votes?.[selfId];
-    command = <div className="rn-context">
+    command = <div className={"rn-context" + (exitsOpen ? " rn-context-scroll" : "")}>
       <p className="px-eyebrow">{room.cleared ? "ROOM CLEARED" : "EXPLORING"}</p>
       <h2>{exitsOpen && room.exits.length > 0 ? "Choose a path" : room.name}</h2>
       {room.event?.resolved ? <p className="px-copy">{room.event.result || "The party moves on."}</p> : null}

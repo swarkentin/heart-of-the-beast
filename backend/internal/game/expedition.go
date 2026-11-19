@@ -87,10 +87,6 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 // DescendDestination is the destination of the exit a cleared floor guardian leaves behind: the way down.
 const DescendDestination = "@descend"
 
-// FloorClearRestPercent is the share of maximum health a living adventurer recovers on clearing a floor that has
-// no camp. The camp's own rest is CampRestPercent.
-const FloorClearRestPercent = 15
-
 // DungeonExtraDepthStep is how many floors harder each later dungeon of an expedition is.
 const DungeonExtraDepthStep = 2
 
@@ -167,16 +163,7 @@ func finishExpeditionFloor(room *Room, boss *DungeonRoom, round int, now time.Ti
 		openBoonCamp(room, round, now)
 		return
 	}
-	// No camp on this floor, but beating its guardian is still a breather: without it the stretch between camps
-	// is pure attrition.
-	for _, playerID := range eligibleCombatPlayers(room) {
-		player := run.Players[playerID]
-		transition := resolveHealthHealing(player.Health, player.MaxHealth, floorRulesFor(run).healing((player.MaxHealth*FloorClearRestPercent+99)/100))
-		player.Health = transition.Health
-		if transition.Applied > 0 {
-			addCombatImpact(run, round, "floor_restoration", adventurerLabel(room, playerID)+" recovers "+itoa(transition.Applied)+" health catching their breath.", "heal", playerID, "player", transition.Applied)
-		}
-	}
+	// No automatic recovery occurs between fights; consumables provide player-controlled healing.
 	next := nextFloorModifiers(run, run.Depth+1)
 	hint := "The next floor carries no modifiers."
 	if len(next) > 0 {
@@ -315,7 +302,7 @@ func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []D
 	for _, definition := range defaultFloorModifierCatalog.Definitions {
 		if definition.Rollable && definition.Kind == FloorModifierDebuff {
 			debuffPool = append(debuffPool, definition)
-		} else if definition.Rollable {
+		} else if definition.Rollable || definition.DungeonRollable {
 			perkPool = append(perkPool, definition)
 		}
 	}

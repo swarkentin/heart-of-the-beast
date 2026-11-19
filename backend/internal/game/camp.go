@@ -89,6 +89,13 @@ func openCamp(room *Room, round int, now time.Time) {
 	run.NavigationVote = nil
 	run.CombatRound = nil
 	between := run.Depth >= run.MaxDepth
+	if between {
+		for _, player := range run.Players {
+			if player != nil {
+				player.Consumables = map[string]int{ConsumableHealingHerb: StartingHealingHerbs}
+			}
+		}
+	}
 	if !between {
 		addCombatEvent(run, round, "floor_cleared", fmt.Sprintf("Floor %d of %d is cleared. Halfway down, the party makes camp.", run.Depth, run.MaxDepth))
 	}
@@ -496,14 +503,15 @@ func settleMinigame(room *Room, playerID string, play *MinigamePlay, result stri
 type ShopItemKind string
 
 const (
-	ShopHeal      ShopItemKind = "heal"
-	ShopFullHeal  ShopItemKind = "full_heal"
-	ShopStrike    ShopItemKind = "strike"
-	ShopGuard     ShopItemKind = "guard"
-	ShopMaxHealth ShopItemKind = "max_health"
-	ShopWard      ShopItemKind = "ward"
-	ShopRevive    ShopItemKind = "revive"
-	ShopCleanse   ShopItemKind = "cleanse"
+	ShopHeal       ShopItemKind = "heal"
+	ShopFullHeal   ShopItemKind = "full_heal"
+	ShopStrike     ShopItemKind = "strike"
+	ShopGuard      ShopItemKind = "guard"
+	ShopMaxHealth  ShopItemKind = "max_health"
+	ShopWard       ShopItemKind = "ward"
+	ShopRevive     ShopItemKind = "revive"
+	ShopCleanse    ShopItemKind = "cleanse"
+	ShopConsumable ShopItemKind = "consumable"
 )
 
 // ShopItem is something a camp sells. Items take effect when bought; nothing is carried into combat as an action.
@@ -515,11 +523,13 @@ type ShopItem struct {
 	Amount      int          `json:"amount,omitempty"`
 	Price       int          `json:"price"`
 	// Repeatable items can be bought more than once at the same camp.
-	Repeatable bool `json:"repeatable,omitempty"`
+	Repeatable   bool   `json:"repeatable,omitempty"`
+	ConsumableID string `json:"consumableId,omitempty"`
 }
 
 var shopCatalog = []ShopItem{
 	{ID: "healing-draught", Name: "Healing Draught", Kind: ShopHeal, Amount: 12, Price: 12, Repeatable: true, Description: "Recover 12 health now."},
+	{ID: "healing-herb", Name: "Healing Herb", Kind: ShopConsumable, ConsumableID: ConsumableHealingHerb, Amount: 1, Price: 8, Repeatable: true, Description: "Carry one herb. Use it any time to recover up to 30% of your maximum health."},
 	{ID: "camp-feast", Name: "Camp Feast", Kind: ShopFullHeal, Price: 30, Description: "Recover all of your health now."},
 	{ID: "whetstone", Name: "Whetstone", Kind: ShopStrike, Amount: 1, Price: 30, Description: "+1 Strike damage for the rest of the run (up to +4 from permanent upgrades)."},
 	{ID: "bracers", Name: "Banded Bracers", Kind: ShopGuard, Amount: 1, Price: 24, Description: "Defend blocks 1 more damage for the rest of the run."},
@@ -546,21 +556,21 @@ func validateShopCatalog() error {
 // ShopOfferCount is how many items a camp puts on sale, before situational items.
 const ShopOfferCount = 4
 
-// openShop starts the shop stage. The draught is always for sale; the rest of the shelf is seeded. A revival
-// draught appears only while someone is down, and cleansing salt only when the next floor carries a debuff.
+// openShop starts the shop stage. A healing draught and a healing herb are always for sale; the rest of the
+// shelf is seeded. A revival draught appears only while someone is down, and cleansing salt only when the next floor carries a debuff.
 func openShop(room *Room, now time.Time) {
 	run := room.Run
 	camp := run.Camp
 	camp.Stage = CampStageShop
 	rng := rand.New(rand.NewSource(int64(mixSeed(dungeonSeed(run.Seed, dungeonNumber(run)), uint64(run.Depth), 0x5409))))
 	var shelf []ShopItem
-	for _, item := range shopCatalog[1:] {
+	for _, item := range shopCatalog[2:] {
 		if item.Kind != ShopRevive && item.Kind != ShopCleanse {
 			shelf = append(shelf, item)
 		}
 	}
 	rng.Shuffle(len(shelf), func(i, j int) { shelf[i], shelf[j] = shelf[j], shelf[i] })
-	offers := append([]ShopItem{shopCatalog[0]}, shelf[:ShopOfferCount-1]...)
+	offers := append([]ShopItem{shopCatalog[0], shopCatalog[1]}, shelf[:ShopOfferCount-2]...)
 	for _, item := range shopCatalog {
 		if (item.Kind == ShopRevive && fallenAlly(room, "") != "") || (item.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) >= 0) {
 			offers = append(offers, item)
@@ -637,6 +647,14 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 	label := adventurerLabel(room, buyerID)
 	message := label + " buys " + item.Name + "."
 	switch item.Kind {
+	case ShopConsumable:
+		if buyer.Consumables == nil {
+			buyer.Consumables = make(map[string]int)
+		}
+		if buyer.Consumables[item.ConsumableID] >= MaxHealingHerbs {
+			return ErrItemUnavailable
+		}
+		buyer.Consumables[item.ConsumableID] += item.Amount
 	case ShopHeal, ShopFullHeal:
 		amount := item.Amount
 		if item.Kind == ShopFullHeal {

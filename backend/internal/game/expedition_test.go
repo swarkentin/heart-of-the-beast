@@ -560,9 +560,9 @@ func TestExpeditionLoopsThroughDungeonsUntilThePartyFalls(t *testing.T) {
 				}
 				want, _ := json.Marshal(nextFloorModifiers(run, depth+1))
 				if depth != maxDepth/2 {
-					// An ordinary floor: no camp, just the way down.
-					if !hasEvent(run, "floor_restoration") && run.Players["player-1"].Health < run.Players["player-1"].MaxHealth {
-						t.Fatal("clearing a floor should let the party catch its breath")
+					// An ordinary floor: no camp, just the way down and no automatic recovery.
+					if hasEvent(run, "floor_restoration") {
+						t.Fatal("clearing an ordinary floor must not automatically restore health")
 					}
 					if run.Phase != PhaseExploring || run.Camp != nil || len(boss.Exits) != 1 || boss.Exits[0].Destination != DescendDestination {
 						t.Fatalf("floor %d of %d should open the way down: phase=%s camp=%v exits=%v", depth, maxDepth, run.Phase, run.Camp, boss.Exits)
@@ -794,8 +794,8 @@ func TestCampRestsThePartyAndIsTimeBoxedForGroups(t *testing.T) {
 	run.Players["player-1"].Health = 10
 	run.Players["player-2"].Health = 0
 	clearToCamp(t, room)
-	// The boss fight that ends the floor restores EncounterRecoveryPercent before the camp rest adds its share.
-	if got, maxHealth := run.Players["player-1"].Health, run.Players["player-1"].MaxHealth; got != 10+maxHealth*EncounterRecoveryPercent/100+maxHealth*CampRestPercent/100 {
+	// Camp rest remains; the boss fight itself no longer restores health.
+	if got, maxHealth := run.Players["player-1"].Health, run.Players["player-1"].MaxHealth; got != 10+maxHealth*CampRestPercent/100 {
 		t.Fatalf("camp rest left player-1 at %d", got)
 	}
 	if run.Players["player-2"].Health != 0 {
@@ -1095,7 +1095,7 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 	for _, offer := range run.Camp.Offers {
 		ids[offer.ID] = offer
 	}
-	if len(run.Camp.Offers) != ShopOfferCount+2 || ids["healing-draught"].Price != 12 || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
+	if len(run.Camp.Offers) != ShopOfferCount+2 || ids["healing-draught"].Price != 12 || ids["healing-herb"].ID == "" || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
 		t.Fatalf("offers: %+v", run.Camp.Offers)
 	}
 	for _, item := range ShopCatalog() {
@@ -1308,7 +1308,7 @@ func TestDiscoveryChoicesAreTradeOffs(t *testing.T) {
 		if effect.Summary == "" || effect.Outcome == "" || (effect.Chance > 0 && effect.FailOutcome == "") {
 			t.Errorf("effect %q does not explain itself", effect.ID)
 		}
-		if effect.Chance > 0 || effect.ID == "vault_coin" {
+		if effect.Chance > 0 || effect.ID == "vault_coin" || effect.ID == "herb_cache" {
 			continue // a gamble's price is its failure; the vault's coin is the safe half of a gamble
 		}
 		gives, takes := false, false

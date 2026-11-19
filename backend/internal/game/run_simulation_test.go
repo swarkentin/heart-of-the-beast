@@ -154,7 +154,7 @@ func TestTacticalPlayUsuallyClearsTheFirstFloor(t *testing.T) {
 	}
 }
 
-func TestBulwarkSoloTacticalUsuallyClearsFirstDungeon(t *testing.T) {
+func TestBulwarkSoloTacticalCanClearFirstDungeon(t *testing.T) {
 	if testing.Short() {
 		t.Skip("simulates full expeditions")
 	}
@@ -170,8 +170,10 @@ func TestBulwarkSoloTacticalUsuallyClearsFirstDungeon(t *testing.T) {
 	}
 	rate := float64(cleared) / float64(len(report.Runs))
 	t.Logf("solo Bulwark cleared the first dungeon in %d/%d tactical runs (%.0f%%)", cleared, len(report.Runs), rate*100)
-	if rate < 0.50 {
-		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 50%%", rate*100)
+	// With healing supplied by carried herbs instead of every-fight recovery, solo first-dungeon completion
+	// should remain low but nonzero. This lower bound is a smoke test, not a tuning target.
+	if rate < 0.10 {
+		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 10%%", rate*100)
 	}
 }
 
@@ -225,5 +227,18 @@ func TestTacticalShopPrioritizesUrgentHealingOverWhetstone(t *testing.T) {
 	command, ok := tacticalShopCommand(room, "player-1")
 	if !ok || command.Type != "buy" || command.ChoiceID != "healing-draught" {
 		t.Fatalf("tactical policy should buy urgent healing before a Whetstone, got %+v, ok=%v", command, ok)
+	}
+}
+
+func TestTacticalShopBuysHerbWhenPartialHealingIsUseful(t *testing.T) {
+	room := openTestShop(t, 1, "tactical-herb-shop")
+	player := room.Run.Players["player-1"]
+	player.Gold = 100
+	heal := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	player.Health -= (heal + 1) / 2
+	room.Run.Camp.Offers = []ShopItem{{ID: "healing-herb", Name: "Healing Herb", Kind: ShopConsumable, ConsumableID: ConsumableHealingHerb, Amount: 1, Price: 8, Repeatable: true}}
+	command, ok := tacticalShopCommand(room, player.ID)
+	if !ok || command.Type != "buy" || command.ChoiceID != "healing-herb" {
+		t.Fatalf("tactical policy should buy a useful herb, got %+v, ok=%v", command, ok)
 	}
 }

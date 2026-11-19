@@ -116,17 +116,17 @@ func TestBossSummonsStopAtTheEncounterCap(t *testing.T) {
 	}
 }
 
-func TestWinningAnExpeditionFightRestoresPartOfEachSurvivorsHealth(t *testing.T) {
+func TestWinningAnExpeditionFightDoesNotAutomaticallyHeal(t *testing.T) {
 	room := startExpedition(t, 2, "catacombs", "recovery-run")
 	run := room.Run
 	run.Players["player-1"].Health = 5
 	run.Players["player-2"].Health = 0
 	defeatCurrentEncounter(t, room)
 	player := run.Players["player-1"]
-	if want := 5 + player.MaxHealth*EncounterRecoveryPercent/100; player.Health != want {
-		t.Fatalf("a won fight should restore %d%% of maximum health: health=%d, want %d", EncounterRecoveryPercent, player.Health, want)
+	if player.Health != 5 {
+		t.Fatalf("a won fight must not automatically heal: health=%d, want 5", player.Health)
 	}
 	if run.Players["player-2"].Health != 0 {
-		t.Fatal("recovery does not revive a downed adventurer")
+		t.Fatal("a won fight does not revive a downed adventurer")
 	}
 }

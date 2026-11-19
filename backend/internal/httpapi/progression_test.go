@@ -177,7 +177,7 @@ func TestRunClassCanBeChosenAndIsServerBuiltAtStart(t *testing.T) {
 		t.Fatalf("expected one player, got %#v", player)
 	}
 	for _, state := range player {
-		if state.ClassBuild.ClassID != "arcanist" || state.ClassBuild.MaxHealth != 27 || state.Stats.Focus != 4 {
+		if state.ClassBuild.ClassID != "arcanist" || state.ClassBuild.MaxHealth != 41 || state.Stats.Focus != 4 {
 			t.Fatalf("server did not apply selected class build: %+v", state)
 		}
 	}

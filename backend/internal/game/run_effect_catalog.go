@@ -33,10 +33,12 @@ const (
 
 	// The kinds below are only used in Operations, where amounts may be negative: a discovery can cost
 	// something as well as give something.
-	RunEffectPartyDamage    RunEffectKind = "party_damage"     // living adventurers lose health; never lethal
-	RunEffectPartyMaxHealth RunEffectKind = "party_max_health" // changes maximum health
-	RunEffectPartyGold      RunEffectKind = "party_gold"       // every adventurer gains gold
-	RunEffectFloorModifier  RunEffectKind = "floor_modifier"   // puts a floor modifier in force until the descent
+	RunEffectPartyDamage     RunEffectKind = "party_damage"     // living adventurers lose health; never lethal
+	RunEffectPartyMaxHealth  RunEffectKind = "party_max_health" // changes maximum health
+	RunEffectPartyGold       RunEffectKind = "party_gold"       // every adventurer gains gold
+	RunEffectFloorModifier   RunEffectKind = "floor_modifier"   // puts a floor modifier in force until the descent
+	RunEffectPartyConsumable RunEffectKind = "party_consumable" // grants a carried consumable to every adventurer
+	RunEffectPartyHerbTrade  RunEffectKind = "party_herb_trade" // trades nonlethal health for one herb, only when there is pack space
 )
 
 // RunEffectOperation is one step of a multi-part effect. Strike, guard and maximum-health amounts may be
@@ -126,7 +128,7 @@ func (catalog RunEffectCatalog) Validate() error {
 		}
 		for _, operation := range append(append([]RunEffectOperation(nil), definition.Operations...), definition.FailOperations...) {
 			switch operation.Kind {
-			case RunEffectPartyHeal, RunEffectPartyDamage, RunEffectPartyGold:
+			case RunEffectPartyHeal, RunEffectPartyDamage, RunEffectPartyGold, RunEffectPartyConsumable, RunEffectPartyHerbTrade:
 				if operation.Amount <= 0 {
 					return fmt.Errorf("run effect %q has a non-positive %s operation", definition.ID, operation.Kind)
 				}
@@ -263,6 +265,25 @@ func applyRunEffectOperation(room *Room, operation RunEffectOperation, playerIDs
 			}
 		case RunEffectPartyGold:
 			member.Gold += operation.Amount
+		case RunEffectPartyConsumable:
+			if member.Consumables == nil {
+				member.Consumables = make(map[string]int)
+			}
+			member.Consumables[ConsumableHealingHerb] += operation.Amount
+			if member.Consumables[ConsumableHealingHerb] > MaxHealingHerbs {
+				member.Consumables[ConsumableHealingHerb] = MaxHealingHerbs
+			}
+		case RunEffectPartyHerbTrade:
+			if member.Health <= 0 || member.Consumables[ConsumableHealingHerb] >= MaxHealingHerbs {
+				continue
+			}
+			if paid := damageWithoutKilling(member, operation.Amount); paid > 0 {
+				if member.Consumables == nil {
+					member.Consumables = make(map[string]int)
+				}
+				member.Consumables[ConsumableHealingHerb]++
+				addCombatImpact(run, 0, "event_damage", label+" trades "+itoa(paid)+" health for a Healing Herb.", "damage", playerID, "player", paid)
+			}
 		case RunEffectPartyStrike:
 			applyPermanentStrikeBonus(member, operation.Amount)
 		case RunEffectPartyGuard:
@@ -303,6 +324,7 @@ func discoveryEffects() []RunEffectDefinition {
 		return RunEffectOperation{Kind: RunEffectFloorModifier, ModifierID: id}
 	}
 	effects := []RunEffectDefinition{
+		{ID: "herb_cache", Summary: "Each adventurer with pack space trades up to 5 health for 1 Healing Herb. The trade cannot knock anyone out.", Operations: []RunEffectOperation{{Kind: RunEffectPartyHerbTrade, Amount: 5}}, Outcome: "The party pays in blood. Anyone with room in their pack gains a Healing Herb."},
 		{ID: "blood_pact", Summary: "Each adventurer loses up to 6 health. +2 Strike for the rest of the run, up to the +4 permanent cap.", Operations: []RunEffectOperation{op(RunEffectPartyDamage, 6), op(RunEffectPartyStrike, 2)},
 			Outcome: "The price is paid in blood. Every adventurer loses up to 6 health and gains up to +2 Strike, subject to the permanent upgrade cap."},
 		{ID: "heavy_plate", Summary: "+2 Guard and -1 Strike for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyGuard, 2), op(RunEffectPartyStrike, -1)},
