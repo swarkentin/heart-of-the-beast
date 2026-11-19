@@ -31,3 +31,11 @@
   .enemy-shake, .enemy-ready { animation: none; }
   .dmg-num { animation: none; opacity: 1; }
 }
+
+
+.enemy-empowered-ambush ellipse{stroke:#f2a45c;filter:drop-shadow(0 0 8px #e77d3c);animation:empowered-pulse 1.7s ease-in-out infinite}
+.enemy-empowered-ambush text{fill:#ffc078}
+.enemy-empowered-unyielding ellipse{stroke:#83c9e9;filter:drop-shadow(0 0 9px #4e9dc7)}
+.enemy-empowered-unyielding text{fill:#a9e2ff}
+@keyframes empowered-pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.enemy-empowered-ambush ellipse{animation:none;opacity:.85}}
