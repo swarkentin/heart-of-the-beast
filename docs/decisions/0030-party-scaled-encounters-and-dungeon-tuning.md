@@ -33,7 +33,10 @@ heavy fight (protector plus bruiser) cost more than any other theme's.
   not paid more per adventurer for its extra minions.
 - **Recovery after a won fight (superseded by the healing-herb design):** the automatic 30% recovery was removed. Adventurers carry two Healing Herbs, each restoring 30% max health; supplies refill to two after each dungeon. Camp still restores 20% max health.
 - **Gentler numbers:** live enemy health multiplier 1.35 → 1.2, per-floor health ramp 18% → 12%, and the solo
-  discount 12% → 20%.
+  health discount 12% → 20%. Follow-up endless-run analysis showed that health alone did not address the
+  action-economy disadvantage of one adventurer taking every surviving enemy action. Generated solo expeditions
+  therefore also scale incoming enemy telegraphs to 75% of their normal damage (minimum 1); the displayed
+  telegraph is the scaled value. Co-op damage scaling is unchanged.
 - **Content ladder:** Sunken Kingdom opens with a striker (new `sunken-skirmish`), Ghost Town's heavy fight is a
   bruiser and a striker (new `ghosttown-showdown`, budget 6), and every theme's hall pool includes its
   single-monster fight, as the Catacombs' already did.
