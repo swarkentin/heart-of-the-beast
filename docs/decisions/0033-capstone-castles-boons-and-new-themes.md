@@ -32,8 +32,8 @@ backlog still listed noir and stranger combinations.
   different answers.
 - A castle always has **4 floors** (`CapstoneFloors`), and its enemies fight **1 floor deeper**
   (`CapstoneExtraDepth`), on top of the usual +2 per earlier dungeon.
-- Castle monsters have +2 health. Castle bosses also hit +1 harder. Most castle fights field three monsters
-  where an ordinary theme fields two.
+- Castle monsters have +2 health. Castle bosses also hit +1 harder. Standard castle encounters now field two
+  monsters, matching ordinary themes; heavy encounters retain three.
 - **Every castle boss is armed** (`ExpeditionTheme.ArmedGuardians`). The floor guardians get mechanics too (but
   no enrage), and the castle's master gets three on top of enrage.
 
