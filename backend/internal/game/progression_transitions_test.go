@@ -37,7 +37,7 @@ func TestResolveExperienceGainCanCrossMultipleLevelsInOrder(t *testing.T) {
 }
 
 func TestResolveExperienceGainAtLevelCapAndForNonPositiveRewards(t *testing.T) {
-	player := PlayerState{Experience: 500, Level: 5, MaxHealth: 38, StrikeDamage: PlayerStrikeDamage + 2, GuardReduction: GuardDamageReduction + 2, Stats: PlayerStats{Power: 3, Focus: 3, Agility: 1}}
+	player := PlayerState{Experience: 500, Level: 5, MaxHealth: 38, StrikeDamage: PlayerStrikeDamage+2, GuardReduction: GuardDamageReduction+2, Stats: PlayerStats{Power: 3, Focus: 3, Agility: 1}}
 	for _, amount := range []int{0, -10, 25} {
 		result := resolveExperienceGain(player, amount)
 		wantExperience := player.Experience
