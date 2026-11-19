@@ -37,7 +37,6 @@ export function PartyCard({ member, fx, order, aid, onAid, onHerbs, kit, display
     {member.statuses.length > 0 ? <span className="rn-statuses">{member.statuses.map(status => <span key={status.id} className={"rn-status rn-status-" + status.tone}><Icon id={status.icon} size={1} />{status.label}</span>)}</span> : null}
     {member.threats.length > 0 ? <span className="rn-incoming"><Icon id="threat" size={1} /><span>{member.threats.map(threat => threat.label + " " + threat.damage).join(" · ")}</span></span> : null}
     {kit && kit.length > 0 ? <span className="rn-kit">{kit.map((item, index) => <span key={item.name}><Icon id={index === 0 ? "arcane" : "empower"} size={1} /><span><b>{item.name}</b>{item.description}</span></span>)}</span> : null}
-    {canAid ? <span className="rn-aid">{aid?.label}{member.isSelf ? " SELF" : ""}</span> : null}
   </>;
   const className = "rn-card px-panel" + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
   const style = { "--accent": ACCENTS[member.classId || ""] || "#d6a64d", order } as unknown as CSSProperties;
