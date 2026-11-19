@@ -97,7 +97,7 @@ export function degreeFreq(plan: Plan, scale: readonly number[], degree: number,
 
 /** Seconds from the start of a bar to a step, including swing on the off-beat steps. */
 export function stepTime(plan: Plan, step: number): number {
-  return step * plan.stepSec + (step % 2 === 1 ? plan.swing * plan.stepSec : 0);
+  return step * plan.stepSec + (step % 2 === 1 && step < plan.stepsPerBar - 1 ? plan.swing * plan.stepSec : 0);
 }
 
 /** How a pattern character plays at a given layer level: its velocity, or 0 if the level is too low to include it. */
@@ -191,7 +191,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
     const kit: [string, SoundEvent["voice"], number][] = cue.state === "party"
       ? [
           ["X.......X.......", "heartbeat", layers.perc],
-          ["....X.......X...", "bongo", layers.perc],
+          ["....X..X....X..X.", "bongo", layers.perc],
           ["x.x.x.x.x.x.x.x.", "shaker", layers.perc],
         ]
       : [
@@ -200,7 +200,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
           [profile.patterns.tick, profile.voices.tick, layers.perc * 1.4],
         ];
     for (const [pattern, voice, level] of kit) for (const hit of onsets(pattern, level)) {
-      const partyLevel = voice === "heartbeat" ? 0.18 : voice === "bongo" ? 0.25 : 0.12;
+      const partyLevel = voice === "heartbeat" ? 0.2 : voice === "bongo" ? 0.32 : 0.17;
       events.push({ kind: "drum", t: stepTime(plan, hit.step), voice, vel: cue.state === "party" ? hit.vel * partyLevel : hit.vel });
     }
     if (layers.perc >= 0.9 && bar % 4 === 3) {
