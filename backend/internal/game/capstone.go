@@ -7,7 +7,7 @@ import "fmt"
 // castle is the group's finale:
 //
 //   - it is always CapstoneFloors floors deep, and its enemies fight as if CapstoneExtraDepth floors deeper still;
-//   - its monsters are a step tougher and its fights field three of them (themes_new.go);
+//   - its monsters are a step tougher; standard encounters field two and heavy encounters three (themes_new.go);
 //   - every one of its bosses has mechanics, floor guardians included, and the castles bring four mechanics no
 //     other dungeon has (below);
 //   - beating any of its bosses lets every adventurer choose a boon (boons.go).
