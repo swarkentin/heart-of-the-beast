@@ -203,6 +203,7 @@ func (p *Postgres) GetProfile(ctx context.Context, credentialHash string) (*Prof
 	if profile.UnlockedCosmetics == nil {
 		profile.UnlockedCosmetics = []string{}
 	}
+	if err := p.loadBestiary(ctx, &profile); err != nil { return nil, err }
 	return &profile, nil
 }
 
@@ -229,6 +230,7 @@ func (p *Postgres) UpdateProfileName(ctx context.Context, credentialHash, name s
 	if err := json.Unmarshal(cosmeticsJSON, &profile.UnlockedCosmetics); err != nil {
 		return nil, err
 	}
+	if err := p.loadBestiary(ctx, &profile); err != nil { return nil, err }
 	return &profile, nil
 }
 
@@ -325,5 +327,6 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 	if profile.UnlockedCosmetics == nil {
 		profile.UnlockedCosmetics = []string{}
 	}
+	if err := p.loadBestiary(ctx, &profile); err != nil { return nil, err }
 	return &profile, nil
 }
