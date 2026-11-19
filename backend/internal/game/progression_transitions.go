@@ -17,8 +17,8 @@ type ProgressionTransition struct {
 // It deliberately has no access to rooms, presence, event streams, or clocks.
 func resolveExperienceGain(player PlayerState, amount int) ProgressionTransition {
 	result := ProgressionTransition{
-		Experience: player.Experience,
-		Level:      player.Level,
+		Experience:     player.Experience,
+		Level:          player.Level,
 		MaxHealth:      player.MaxHealth,
 		StrikeDamage:   player.StrikeDamage,
 		GuardReduction: player.GuardReduction,
