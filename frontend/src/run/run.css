@@ -139,6 +139,13 @@ button.rn-card { cursor: pointer; background: none; }
 .rn-herb-use:disabled { opacity: .42; filter: saturate(.35); cursor: default; }
 .rn-herb-use:not(:disabled):hover { filter: brightness(1.2); }
 .rn-herb-use .px-icon { color: #9be84a; }
+.rn-herb-use-hint:not(:disabled) { border-color: #b5e66c; animation: rn-herb-pulse 1.8s ease-in-out infinite; }
+.rn-herb-use-urgent:not(:disabled) { border-color: #ff8a62; background: #3a1715; color: #fff0d8; box-shadow: inset 0 2px 0 #a94c36, 0 0 0 2px var(--edge), 0 0 12px #ff684b99; animation: rn-herb-urgent .85s ease-in-out infinite; }
+.rn-herb-use-urgent:not(:disabled) .px-icon { color: #ffb078; }
+@keyframes rn-herb-pulse { 0%, 100% { box-shadow: inset 0 2px 0 #526c38, 0 0 0 2px var(--edge), 0 0 0 0 #9be84a00; } 50% { box-shadow: inset 0 2px 0 #769d4c, 0 0 0 2px var(--edge), 0 0 10px 3px #9be84a99; } }
+@keyframes rn-herb-urgent { 0%, 100% { scale: 1; filter: brightness(1); } 50% { scale: 1.045; filter: brightness(1.35); } }
+@media (prefers-reduced-motion: reduce) { .rn-herb-use-hint:not(:disabled), .rn-herb-use-urgent:not(:disabled) { animation: none; box-shadow: 0 0 0 2px var(--edge), 0 0 10px #9be84a99; } }
+
 .rn-target strong { color: var(--ember); font: 400 10px/1.6 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-target-step { width: 26px; height: 22px; padding: 0; border: 0; background: #3d3658; box-shadow: inset 0 3px 0 #5d5478, inset 0 -3px 0 #241f3c, 0 0 0 2px var(--edge); color: var(--ink); font-size: 12px; cursor: pointer; }
 .rn-target-step:active:not(:disabled) { translate: 0 2px; box-shadow: inset 0 3px 0 #241f3c, 0 0 0 2px var(--edge); }
