@@ -74,7 +74,8 @@ jobs:
         run: |
           set -euo pipefail
           cd /tmp/balance-branch-point/backend
-          go run ./cmd/endless-balance -runs 100 -first-seed 1 -theme random \
+          # Match the PR head's sample size; main/scheduled reports use the larger matrix.
+          go run ./cmd/endless-balance -runs 12 -first-seed 1 -theme random \
             -json /tmp/branch-point-endless.json -markdown /tmp/branch-point-endless.md
           go run ./cmd/balance-report -seeds 30 -first-seed 1 \
             -json /tmp/branch-point-combat.json -markdown /tmp/branch-point-combat.md
@@ -107,7 +108,11 @@ jobs:
         working-directory: backend
         run: |
           set -o pipefail
-          go run ./cmd/endless-balance -runs 100 -first-seed 1 -theme random \
+          runs=100
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            runs=12
+          fi
+          go run ./cmd/endless-balance -runs "$runs" -first-seed 1 -theme random \
             -json endless-balance-report.json -markdown endless-balance-report.md \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
