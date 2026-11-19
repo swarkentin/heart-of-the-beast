@@ -1543,7 +1543,6 @@ func TestGoldScalingTapersOffInLongExpeditions(t *testing.T) {
 	}
 }
 
-
 func TestIDKFACompletesCurrentFloorAndDescends(t *testing.T) {
 	room := startExpedition(t, 1, DefaultDungeonThemeID, "idkfa-run")
 	beforeDepth := room.Run.Depth
