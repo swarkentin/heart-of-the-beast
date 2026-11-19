@@ -173,7 +173,11 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				}
 				var command Command
 				if policy == RunPolicyTactical {
-					command = skillPolicyCommand(room, playerID, round, rng)
+					if consumable, use := tacticalConsumableCommand(room, playerID); use {
+						command = consumable
+					} else {
+						command = skillPolicyCommand(room, playerID, round, rng)
+					}
 				} else {
 					candidates := randomSkillCommands(room, playerID, round)
 					if len(candidates) == 0 {
