@@ -444,6 +444,7 @@ func randomCampCommand(room *Room, playerID string, rng *rand.Rand) (Command, bo
 	var affordable []ShopItem
 	for _, offer := range camp.Offers {
 		useless := (offer.Kind == ShopHeal || offer.Kind == ShopFullHeal) && player.Health >= player.MaxHealth ||
+			offer.Kind == ShopConsumable && player.Consumables[offer.ConsumableID] >= MaxHealingHerbs ||
 			offer.Kind == ShopWard && player.ClassCombat.Ward >= offer.Amount ||
 			offer.Kind == ShopStrike && player.StrikeDamage >= PlayerStrikeDamage+MaxPermanentStrikeBonus ||
 			offer.Kind == ShopRevive && fallenAlly(room, playerID) == "" ||
