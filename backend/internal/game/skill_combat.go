@@ -345,15 +345,15 @@ func criticalHit(run *Run, player *PlayerState, enemy *Enemy, round int) bool {
 		return false
 	}
 	// A stable per-action roll keeps live play and seeded simulations reproducible.
-	seed := run.Seed ^ uint64(round*7919)
+	seed := run.Seed ^ uint64(round * 7919)
 	for _, value := range []byte(player.ID + ":" + enemy.ID) {
-		seed = seed*1099511628211 ^ uint64(value)
+		seed = seed * 1099511628211 ^ uint64(value)
 	}
-	chance := 6 + player.Level*2
+	chance := 6 + player.Level * 2
 	if chance > 16 {
 		chance = 16
 	}
-	return seed%100 < uint64(chance)
+	return seed % 100 < uint64(chance)
 }
 
 func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *Enemy) {
@@ -416,7 +416,7 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	if cast.definition.Basic {
 		kind = "player_attack"
 	}
-	message := cast.name()+" hits "+enemy.Name+" for "+itoa(transition.Applied)+" damage."
+	message := cast.name() + " hits " + enemy.Name + " for " + itoa(transition.Applied) + " damage."
 	if critical {
 		message = "CRITICAL! " + message
 	}
