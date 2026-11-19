@@ -29,7 +29,7 @@ func (p *Postgres) RecordEnemyKill(ctx context.Context, profileID, runID, enemyI
             sprite_id = CASE WHEN EXCLUDED.sprite_id <> '' THEN EXCLUDED.sprite_id ELSE player_profile_enemy_kills.sprite_id END,
             theme_id = CASE WHEN EXCLUDED.theme_id <> '' THEN EXCLUDED.theme_id ELSE player_profile_enemy_kills.theme_id END,
             kill_count = player_profile_enemy_kills.kill_count + 1,
-            elite_kill_count = player_profile_enemy_kills.elite_kill_count + CASE WHEN $5 THEN 1 ELSE 0 END,
+            elite_kill_count = player_profile_enemy_kills.elite_kill_count + CASE WHEN $6 THEN 1 ELSE 0 END,
             last_killed_at = EXCLUDED.last_killed_at
     `, profileID, kill.EnemyKey, kill.Name, kill.ThemeID, kill.SpriteID, kill.Elite, now.UTC())
     if err != nil { return err }
