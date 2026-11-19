@@ -302,7 +302,7 @@ func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []D
 	for _, definition := range defaultFloorModifierCatalog.Definitions {
 		if definition.Rollable && definition.Kind == FloorModifierDebuff {
 			debuffPool = append(debuffPool, definition)
-		} else if definition.Rollable {
+		} else if definition.Rollable || definition.DungeonRollable {
 			perkPool = append(perkPool, definition)
 		}
 	}
