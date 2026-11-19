@@ -6,7 +6,7 @@ func TestDefaultRunEffectCatalogValidates(t *testing.T) {
 	if err := defaultRunEffectCatalog.Validate(); err != nil {
 		t.Fatalf("default run effect catalog is invalid: %v", err)
 	}
-	for _, id := range []string{"study_weakness", "rescue_archivist", "ember_charm", "stone_charm", "shrine_ward", "leave"} {
+	for _, id := range []string{"study_weakness", "rescue_archivist", "ember_charm", "stone_charm", "shrine_ward", "leave", "herb_cache"} {
 		if _, ok := defaultRunEffectCatalog.Effect(id); !ok {
 			t.Errorf("missing run effect definition %q", id)
 		}
