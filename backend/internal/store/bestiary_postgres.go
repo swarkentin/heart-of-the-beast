@@ -2,8 +2,6 @@ package store
 
 import (
     "context"
-    "database/sql"
-    "errors"
     "time"
 )
 
@@ -54,5 +52,3 @@ func (p *Postgres) loadBestiary(ctx context.Context, profile *Profile) error {
     return rows.Err()
 }
 
-var _ = sql.ErrNoRows
-var _ = errors.Is
