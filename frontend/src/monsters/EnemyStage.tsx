@@ -18,7 +18,7 @@ const PARTY_POINT: Record<StageView, { x: number; y: number }> = { player: { x: 
 const FLOOR_Y: Record<StageView, number> = { player: 452, cast: 254 };
 const FX_UNIT: Record<StageView, number> = { player: 6, cast: 4 };
 
-type Popup = { id: string; x: number; y: number; text: string; color: string; born: number };
+type Popup = { id: string; x: number; y: number; text: string; color: string; critical?: boolean; born: number };
 
 export type EnemyStageProps = {
   view: StageView;
@@ -84,8 +84,8 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     setEffects((list) => [...list.filter((item) => performance.now() - item.born < item.dur + 1200), fx]);
   }, []);
 
-  const popup = useCallback((x: number, y: number, text: string, color: string) => {
-    const item: Popup = { id: nextId("pop"), x, y, text, color, born: performance.now() };
+  const popup = useCallback((x: number, y: number, text: string, color: string, critical = false) => {
+    const item: Popup = { id: nextId("pop"), x, y, text, color, critical, born: performance.now() };
     setPopups((list) => [...list.filter((entry) => performance.now() - entry.born < 1400), item]);
     timers.current.push(window.setTimeout(() => setPopups((list) => list.filter((entry) => entry.id !== item.id)), 1300));
   }, []);
@@ -117,7 +117,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
         else if (el === "physical") spawn("slash", "physical", c.x, c.y);
         else if (el === "shock") spawn("zap", el, party.x, party.y - 60, c.x, c.y);
         else spawn("bolt", el, party.x, party.y - 60, c.x, c.y);
-        if (cue.amount > 0) popup(c.x + c.side * 0.6, c.top + 50, String(cue.amount), "#ffffff");
+        if (cue.amount > 0) popup(c.x + c.side * 0.6, c.top + 50, cue.critical ? "CRIT! " + cue.amount : String(cue.amount), cue.critical ? "#ffd166" : "#ffffff", Boolean(cue.critical));
         break;
       }
       case "act": {
@@ -240,7 +240,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
       <FxLayer effects={effects} reduced={reduced} />
       <g className="dmg-layer" pointerEvents="none" aria-hidden="true">
         {popups.map((item) => (
-          <text key={item.id} className="dmg-num" x={item.x} y={item.y} textAnchor="middle" fill={item.color} stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize={view === "player" ? 40 : 28} fontWeight="bold">{item.text}</text>
+          <text key={item.id} className={"dmg-num" + (item.critical ? " dmg-num-critical" : "")} x={item.x} y={item.y} textAnchor="middle" fill={item.color} stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize={item.critical ? (view === "player" ? 56 : 40) : (view === "player" ? 40 : 28)} fontWeight="bold">{item.text}</text>
         ))}
       </g>
     </g>
