@@ -148,7 +148,7 @@ def depth_reach_summary(scenario):
 def depth_progression_chart(classes, scenarios):
     """Render one comparable reach-rate line per solo class."""
     if not classes:
-        return "### Endless depth reached by class\n\n_No comparable data._\n"
+        return "### Endless floors reached by class\n\n_No comparable data._\n"
 
     max_depth = max(
         (int(depth) for class_id in classes
@@ -156,11 +156,11 @@ def depth_progression_chart(classes, scenarios):
         default=0,
     )
     if max_depth == 0:
-        return "### Endless depth reached by class\n\n_No depth data._\n"
+        return "### Endless floors reached by class\n\n_No depth data._\n"
 
     fence = chr(96) * 3
     lines = [
-        "### Endless depth reached by class",
+        "### Endless floors reached by class",
         "",
         "Share of solo tactical-policy runs reaching each floor (not dungeon number). Each line is a class; a steeper drop means more runs are ending at that point.",
         "",
@@ -318,7 +318,7 @@ def main():
         "",
         "Percent of seeded solo expeditions reaching each floor (tactical policy). These are floors across the whole expedition, not dungeon numbers. Equal consecutive rates are grouped into ranges.",
         "",
-        "| Class | Reach rate by depth | At least 50% reach through | Largest one-depth drop | Furthest reached |",
+        "| Class | Reach rate by floor | At least 50% reach through | Largest one-depth drop | Furthest reached |",
         "|---|---|---:|---|---:|",
     ])
     for class_id in classes:
