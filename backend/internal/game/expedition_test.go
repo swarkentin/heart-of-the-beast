@@ -1559,6 +1559,7 @@ func TestIDKFASkipsSoloCampMinigameAndDescends(t *testing.T) {
 	clearToCamp(t, room)
 	run := room.Run
 	beforeDepth := run.Depth
+	beforeXP := run.Players["player-1"].Experience
 	if run.Camp.Stage != CampStageGame || run.Camp.Deadline != nil {
 		t.Fatalf("expected a solo camp minigame without a deadline: %+v", run.Camp)
 	}
@@ -1578,6 +1579,17 @@ func TestIDKFASkipsSoloCampMinigameAndDescends(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("the dungeon should react to the cheat without scolding: %+v", run.LastCombatEvents)
+	}
+	if !run.Cheated || run.Players["player-1"].Experience != beforeXP {
+		t.Fatalf("IDKFA should mark the run cheated without granting character XP: cheated=%v xp=%d before=%d", run.Cheated, run.Players["player-1"].Experience, beforeXP)
+	}
+	grantExperience(run.Players["player-1"], room, "player-1", 0, EncounterExperienceReward)
+	if run.Players["player-1"].Experience != beforeXP {
+		t.Fatalf("a cheated run must not grant further character XP: got %d, want %d", run.Players["player-1"].Experience, beforeXP)
+	}
+	run.Phase = PhaseFailed
+	if got := RunProgressXP(run); got != 0 {
+		t.Fatalf("a cheated run must not grant persistent profile/mastery XP: got %d", got)
 	}
 }
 
