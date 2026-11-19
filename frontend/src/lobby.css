@@ -502,3 +502,81 @@
 .px-bestiary-progress i{display:block;height:100%;background:#d6a64d}
 .px-bestiary-empty{padding:30px 12px;text-align:center;color:#aaa2ad}
 @media(max-width:680px){.px-bestiary-grid{grid-template-columns:1fr}.px-bestiary-sprite{width:76px;height:90px;flex-basis:76px}.px-bestiary-stats strong{font-size:20px}.px-bestiary-stats span{font-size:8px}}
+
+
+/* Make profile destinations feel like primary navigation, not understated text links. */
+.px-profile-tabs{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:20px 0 18px;
+  padding:6px;
+  border:1px solid #514957;
+  border-radius:8px;
+  background:#11131c;
+}
+.px-profile-tabs button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  min-height:48px;
+  padding:12px 16px;
+  border:1px solid transparent;
+  border-radius:5px;
+  background:#24212d;
+  color:#d0c7d3;
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-shadow:0 1px 1px #000;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+.px-profile-tabs button:hover{background:#35303d;color:#fff0d4}
+.px-profile-tabs button.active{
+  color:#ffe3ad;
+  background:linear-gradient(180deg,#55432f,#382e2c);
+  border-color:#c99b52;
+  box-shadow:inset 0 0 0 1px #80603c,0 0 12px #d6a64d22;
+}
+.px-profile-tabs button span{
+  display:inline-grid;
+  place-items:center;
+  min-width:25px;
+  min-height:22px;
+  margin:0;
+  padding:2px 7px;
+  border-radius:12px;
+  background:#17131a;
+  border:1px solid #8b683c;
+  color:#f4cb83;
+  font-size:11px;
+  letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+.px-bestiary-stats span,.px-bestiary-card small{
+  font-size:11px;
+  line-height:1.4;
+  letter-spacing:.08em;
+}
+.px-bestiary-stats>div{padding:14px}
+.px-bestiary-title{flex-wrap:wrap;row-gap:4px}
+.px-bestiary-title strong{font-size:15px}
+.px-bestiary-title span{font-size:11px}
+.px-bestiary-copy>small{font-size:11px}
+.px-bestiary-copy p{
+  margin:10px 0;
+  color:#e0d8e2;
+  font-size:14px;
+  line-height:1.6;
+}
+.px-bestiary-progress{height:6px}
+@media(max-width:560px){
+  .px-profile-tabs{gap:6px;padding:5px}
+  .px-profile-tabs button{min-height:46px;padding:10px 8px;font-size:12px;letter-spacing:.08em}
+  .px-bestiary-copy p{font-size:13px;line-height:1.55}
+  .px-bestiary-title strong{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  .px-profile-tabs button{transition:none}
+}
