@@ -115,9 +115,9 @@ func TestTacticalPolicyUsesHerbForPartialHealing(t *testing.T) {
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	missing := (amount + 1) / 2
 	player.Health -= missing
-	command, ok := tacticalConsumableCommand(room, player.ID)
+	command, ok := tacticalExplorationConsumableCommand(room, player.ID)
 	if !ok || command.Type != "use_consumable" || command.ChoiceID != ConsumableHealingHerb {
-		t.Fatalf("tactical policy should use an effective herb, got %+v, ok=%v", command, ok)
+		t.Fatalf("tactical policy should use a partially effective herb between encounters, got %+v, ok=%v", command, ok)
 	}
 	if err := ApplyCommand(room, player.ID, command, expeditionNow); err != nil {
 		t.Fatalf("tactical herb use: %v", err)
@@ -132,7 +132,22 @@ func TestTacticalPolicyDoesNotWasteHerbForTinyHeal(t *testing.T) {
 	player := room.Run.Players["player-1"]
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	player.Health -= (amount+1)/2 - 1
-	if command, ok := tacticalConsumableCommand(room, player.ID); ok {
+	if command, ok := tacticalExplorationConsumableCommand(room, player.ID); ok {
 		t.Fatalf("tactical policy should save the herb when less than half its healing is useful, got %+v", command)
+	}
+}
+
+func TestTacticalCombatPolicyUsesHerbOnlyWhenCriticallyWounded(t *testing.T) {
+	room := startExpedition(t, 1, "catacombs", "tactical-herb-combat-threshold")
+	player := room.Run.Players["player-1"]
+	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	player.Health -= (amount + 1) / 2
+	if command, ok := tacticalConsumableCommand(room, player.ID); ok {
+		t.Fatalf("combat policy should save a herb rather than spend an action on a modest heal, got %+v", command)
+	}
+
+	player.Health = player.MaxHealth / 3
+	if command, ok := tacticalConsumableCommand(room, player.ID); !ok || command.Type != "use_consumable" {
+		t.Fatalf("combat policy should use a herb when critically wounded, got %+v, ok=%v", command, ok)
 	}
 }
