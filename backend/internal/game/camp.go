@@ -336,7 +336,7 @@ const (
 	MinigameDice   = "dice"
 	MinigameChests = "chests"
 	// MinigameEcho is retained only to migrate camps persisted before Rune Echo was retired.
-	MinigameEcho   = "echo"
+	MinigameEcho = "echo"
 
 	MinigameConsolationGold = 3
 	DiceMaxRolls            = 5
