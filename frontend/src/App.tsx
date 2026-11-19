@@ -128,7 +128,8 @@ export default function App() {
   const playerId = session?.playerId || snapshot?.ownerPlayerId || snapshot?.playerIds[0];
   const playerHp = (playerId ? run?.players[playerId]?.health : undefined) ?? 30;
   const isHost = Boolean(session && snapshot && session.playerId === snapshot.ownerPlayerId);
-  const audio = useGameAudio(deriveMusicCue(run), run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
+  const musicCue = run ? deriveMusicCue(run) : { ...deriveMusicCue(undefined), state: roomId ? "party" as const : "title" as const };
+  const audio = useGameAudio(musicCue, run?.phase ?? "lobby", playerHp, (serverRoom?.encounter?.enemies ?? []).map(enemy => ({ id: enemy.id, hp: enemy.health })), run?.lastCombatEvents ?? [], snapshot?.version ?? 0);
   const audioControls = <AudioControls settings={audio.settings} running={audio.running} onEnable={() => { void audio.enable(); }} onChange={audio.updateSettings} title={audio.title} />;
   const sound = { settings: audio.settings, running: audio.running, toggle: audio.toggle };
   const accountState = { discordEnabled, canSignIn: !session && !spectator, startDiscord: startDiscordSignIn };
