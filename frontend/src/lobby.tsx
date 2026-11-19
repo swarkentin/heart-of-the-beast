@@ -321,22 +321,16 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
         return <>
           <div className="px-bestiary-stats"><div><strong>{total}</strong><span>MONSTERS SLAIN</span></div><div><strong>{elite}</strong><span>ELITE KILLS</span></div><div><strong>{entries.length}</strong><span>SPECIES FOUND</span></div></div>
           {entries.length ? <div className="px-bestiary-grid">{entries.map(entry => {
-            const lore = entry.kills >= 30 ? 4 : entry.kills >= 15 ? 3 : entry.kills >= 5 ? 2 : 1;
-            const theme = (entry.themeId || "forgotten catacombs").replace(/[-_]/g, " ");
-            const notes = [
-              "First sighting: " + entry.name + " has been recorded among the denizens of the " + theme + ". Its place in this dungeon remains unclear.",
-              "Repeated sightings suggest " + entry.name + " is adapted to the " + theme + " rather than a stray intruder. Your notes are beginning to reveal its habits and territory.",
-              "Veteran observations have established how " + entry.name + " fits into the " + theme + " ecosystem, and what makes it dangerous to adventurers.",
-              "Your field notes now contain a veteran's account of " + entry.name + " — its habits, threat patterns, and place in the " + theme + " are well understood."
-            ];
+            const lore = entry.loreStage || 0;
+            const theme = (entry.themeId || "catacombs").replace(/[-_]/g, " ");
             return <article className="px-bestiary-card" key={entry.enemyKey}>
               <BestiarySprite spriteId={entry.sprite} name={entry.name} />
               <div className="px-bestiary-copy">
                 <div className="px-bestiary-title"><strong>{entry.name}</strong><span>{entry.kills} KILLS{entry.eliteKills ? " · " + entry.eliteKills + " ELITE" : ""}</span></div>
                 <small>{theme.toUpperCase()}</small>
-                <p>{notes[lore - 1]}</p>
+                <p>{entry.lore || "No surviving field account has been recovered for this creature."}</p>
                 <div className="px-bestiary-progress" aria-label={"Lore discovery " + lore + " of 4"}><i style={{ width: (lore * 25) + "%" }} /></div>
-                <small>FIELD NOTES {lore}/4 · NEXT REVELATION {lore === 1 ? "5" : lore === 2 ? "15" : lore === 3 ? "30" : "COMPLETE"} KILLS</small>
+                <small>FIELD NOTES {lore}/4 · {lore === 0 ? "BACKSTORY UNRECOVERED" : "FIELD RECORD " + (lore === 4 ? "COMPLETE" : "IN PROGRESS")}</small>
               </div>
             </article>;
           })}</div> : <p className="px-bestiary-empty">No creatures recorded yet. Every enemy you defeat will be added to your bestiary.</p>}
