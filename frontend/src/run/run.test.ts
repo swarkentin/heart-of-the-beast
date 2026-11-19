@@ -33,7 +33,7 @@ test("party members get a pose, statuses, threats and round state from the snaps
   assert.equal(self.healingHerbs, 4, "the portrait gets the adventurer’s current herb count");
   assert.equal(ally.pose, "injured", "a third of health or less is injured");
   assert.equal(ally.round, "ready");
-  assert.equal(ally.healingHerbs, 2, "teammate supplies are available to the party inventory panel");
+  assert.equal(ally.healingHerbs, 2, "teammate supplies remain available on their portrait");
   assert.equal(ally.chosen?.label, "SKILL");
   assert.ok(ally.statuses.some(status => status.id === "ward") && ally.statuses.some(status => status.id === "wounded"));
   assert.equal(fallen.pose, "down");
