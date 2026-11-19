@@ -87,7 +87,6 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   // A skill waiting for its target portrait, and whether the between-dungeons skill picker is open.
   const [armed, setArmed] = useState("");
   const [loadoutOpen, setLoadoutOpen] = useState(false);
-  const [herbsOpen, setHerbsOpen] = useState(false);
   const [introOpen, setIntroOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const popId = useRef(0);
@@ -296,7 +295,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       </div>
       {acting ? <>
         <div className="rn-target">
-          <span className="px-label">ROUND {round.number} · TARGET</span>
+          <button type="button" className="rn-herb-use" onClick={() => { void onCommand({ type: "use_consumable", choiceId: "healing-herb" }); }} disabled={!acting || spectator || busy || !player || (player.consumables?.["healing-herb"] ?? 0) <= 0 || player.health >= player.maxHealth} aria-label={"Use a Healing Herb. " + (player?.consumables?.["healing-herb"] ?? 0) + " remaining"}><Icon id="life" size={1} /><span>HERB ×{player?.consumables?.["healing-herb"] ?? 0}</span></button>
+          <span className="px-label">TARGET</span>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(-1)} disabled={living.length < 2} aria-label="Previous target">◀</button>
           <strong>{livingTarget?.name ?? "NONE"}</strong>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
@@ -357,7 +357,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     return [catalog?.classPassives.find(item => item.id === definition.passiveId)].filter(item => item !== undefined).map(item => ({ name: item.name, description: item.description }));
   };
   // A card that has a whole border to itself also explains the class kit.
-  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, onHerbs: () => setHerbsOpen(open => !open), aid: armedAction && canAct ? { label: armedAction.label.toUpperCase(), disabled: false, fallen: armedAction.pick === "fallen" } : undefined, onAid: aid });
+  const cardProps = (member: (typeof party)[number], order: number) => ({ member, order, displayName: member.isSelf ? profile?.displayName : undefined, kit: party.length <= 2 ? kitFor(member.classId) : undefined, fx: fx[member.id] ?? NO_FX, aid: armedAction && canAct ? { label: armedAction.label.toUpperCase(), disabled: false, fallen: armedAction.pick === "fallen" } : undefined, onAid: aid });
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))} style={themeVars(room.themeId || run.themeId)}
@@ -377,16 +377,6 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} />
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
-      {herbsOpen ? <section className="rn-herb-panel px-panel" aria-label="Party Healing Herb supplies">
-        <header><div><span className="px-label">PARTY SUPPLIES</span><strong>HEALING HERBS</strong></div><button type="button" className="px-button px-button-small" onClick={() => setHerbsOpen(false)} aria-label="Close herb supplies">CLOSE</button></header>
-        <ul>{party.map(member => <li key={member.id} className={member.isSelf ? "rn-herb-self" : ""}>
-          <span><b>{member.isSelf ? "YOU" : "P" + member.position + " · " + member.className}</b><small>{member.health}/{member.maxHealth} HP</small></span>
-          <strong><Icon id="life" size={1} /> ×{member.healingHerbs}</strong>
-        </li>)}</ul>
-        {acting && self?.alive && !spectator ? <button type="button" className="px-button px-button-primary rn-herb-use" onClick={() => { void onCommand({ type: "use_consumable", choiceId: "healing-herb" }).then(ok => { if (ok) setHerbsOpen(false); }); }} disabled={busy || !player || (player.consumables?.["healing-herb"] ?? 0) <= 0 || player.health >= player.maxHealth}>
-          <Icon id="life" size={1} /> USE A HERB ON YOURSELF · {player?.consumables?.["healing-herb"] ?? 0} LEFT
-        </button> : null}
-      </section> : null}
       <div className="rn-console">
         <section className="px-panel rn-log" aria-label="Combat log"><h2 className="px-label">LOG</h2><ol ref={logRef} role="log" aria-live="polite" tabIndex={0}>{log.length === 0 ? <li className="rn-log-line rn-log-system"><span>Nothing has happened yet.</span></li> : log.map(line => <LogText key={line.key} line={line} labels={labels} />)}</ol></section>
         <section className="px-panel rn-command" aria-label="Your options">
