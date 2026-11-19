@@ -108,3 +108,20 @@ func TestHealingHerbIsOfferedInEveryDiscovery(t *testing.T) {
 		}
 	}
 }
+
+func TestTacticalPolicyUsesHerbWhenItCanHealFully(t *testing.T) {
+	room := startExpedition(t, 1, "catacombs", "tactical-herb")
+	player := room.Run.Players["player-1"]
+	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	player.Health -= amount
+	command, ok := tacticalConsumableCommand(room, player.ID)
+	if !ok || command.Type != "use_consumable" || command.ChoiceID != ConsumableHealingHerb {
+		t.Fatalf("tactical policy should use an effective herb, got %+v, ok=%v", command, ok)
+	}
+	if err := ApplyCommand(room, player.ID, command, expeditionNow); err != nil {
+		t.Fatalf("tactical herb use: %v", err)
+	}
+	if player.Health != player.MaxHealth || player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs-1 {
+		t.Fatalf("tactical herb result: health=%d herbs=%d", player.Health, player.Consumables[ConsumableHealingHerb])
+	}
+}
