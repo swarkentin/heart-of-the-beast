@@ -253,12 +253,34 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const cycleTarget = (step: number) => { if (living.length < 2) return; const index = Math.max(0, living.findIndex(enemy => enemy.id === livingTarget?.id)); setTarget(living[(index + step + living.length) % living.length].id); };
 
   // Number keys choose an action; arrow keys change the target.
-  const keys = useRef({ act, cycleTarget, actions, enabled: false });
-  keys.current = { act, cycleTarget, actions, enabled: acting && combat && !introOpen };
+  const keys = useRef({ act, cycleTarget, actions, enabled: false, cheatEnabled: false, cheat: () => {} });
+  keys.current = {
+    act, cycleTarget, actions,
+    enabled: acting && combat && !introOpen,
+    cheatEnabled: acting && combat && !introOpen && !busy,
+    cheat: () => { void onCommand({ type: "cheat_idkfa" }); },
+  };
+  const cheatSequence = useRef("");
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const state = keys.current, el = event.target as HTMLElement | null;
-      if (!state.enabled || event.metaKey || event.ctrlKey || event.altKey || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey ||
+          (el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable))) {
+        cheatSequence.current = "";
+        return;
+      }
+      if (state.cheatEnabled && /^[a-z]$/i.test(event.key)) {
+        cheatSequence.current = (cheatSequence.current + event.key.toUpperCase()).slice(-5);
+        if (cheatSequence.current === "IDKFA") {
+          event.preventDefault();
+          cheatSequence.current = "";
+          state.cheat();
+          return;
+        }
+      } else if (!/^(Shift|CapsLock)$/.test(event.key)) {
+        cheatSequence.current = "";
+      }
+      if (!state.enabled) return;
       if (event.key === "Escape") setArmed("");
       else if (/^[1-9]$/.test(event.key)) { const action = state.actions[Number(event.key) - 1]; if (action) { event.preventDefault(); state.act(action); } }
       else if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); state.cycleTarget(event.key === "ArrowLeft" ? -1 : 1); }
