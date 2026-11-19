@@ -238,6 +238,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       <SoundButton large />
       <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={paradeLooks[id]} />)}</div></div>
     </section>
+    {profile ? <div className="px-title-account"><AccountPanel accounts={profile.accounts} /></div> : null}
     <section className="px-panel px-title-actions" aria-label="Start playing">
       <div className="px-title-create">
         <h2>Gather your party</h2>

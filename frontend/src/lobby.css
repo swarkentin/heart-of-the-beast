@@ -450,3 +450,30 @@
   .px-title-screen .px-parade { padding-bottom: 6px; }
   .px-title-screen .px-parade .px-hero { --hs: .85; margin-inline: -13px; }
 }
+
+/* Make optional account linking visible on the title screen, not just buried in Profile. */
+.px-title-screen .px-title-account {
+  width: min(760px, 100%);
+  margin: 10px auto 0;
+}
+.px-title-screen .px-title-account .px-account {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 10px 14px;
+  border-color: #8a7045;
+  background: #100d1bf2;
+  box-shadow: 0 0 0 2px #090812, 0 0 22px #05030a99;
+}
+.px-title-screen .px-title-account .px-label { grid-column: 1 / -1; color: var(--gold); }
+.px-title-screen .px-title-account .px-account p { font-size: 18px; }
+.px-title-screen .px-title-account .px-account-discord {
+  grid-column: 2;
+  grid-row: 2;
+  white-space: nowrap;
+}
+.px-title-screen .px-title-account .px-account small { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .px-title-screen .px-title-account .px-account { grid-template-columns: 1fr; }
+  .px-title-screen .px-title-account .px-account-discord { grid-column: 1; grid-row: auto; }
+}
