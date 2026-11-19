@@ -131,7 +131,7 @@ func TestTacticalPolicyDoesNotWasteHerbForTinyHeal(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "tactical-herb-tiny-heal")
 	player := room.Run.Players["player-1"]
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
-	player.Health -= (amount + 1) / 2 - 1
+	player.Health -= (amount+1)/2 - 1
 	if command, ok := tacticalConsumableCommand(room, player.ID); ok {
 		t.Fatalf("tactical policy should save the herb when less than half its healing is useful, got %+v", command)
 	}
