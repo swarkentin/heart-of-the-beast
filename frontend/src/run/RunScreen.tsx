@@ -380,6 +380,11 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
         <section className="px-panel rn-log" aria-label="Combat log"><h2 className="px-label">LOG</h2><ol ref={logRef} role="log" aria-live="polite" tabIndex={0}>{log.length === 0 ? <li className="rn-log-line rn-log-system"><span>Nothing has happened yet.</span></li> : log.map(line => <LogText key={line.key} line={line} labels={labels} />)}</ol></section>
         <section className="px-panel rn-command" aria-label="Your options">
           {!gameOver && (player?.gold !== undefined || (run.floorModifiers?.length ?? 0) > 0) ? <FloorStatus gold={spectator ? undefined : player?.gold ?? 0} modifiers={camp ? [] : run.floorModifiers ?? []} /> : null}
+          {!gameOver && acting && self?.alive && !spectator && (player?.consumables?.["healing-herb"] ?? 0) > 0 ? <div className="rn-choices">
+            <button type="button" className="rn-choice" onClick={() => void onCommand({ type: "use_consumable", choiceId: "healing-herb" })} disabled={busy || !player || player.health >= player.maxHealth}>
+              <Icon id="life" size={2} /><span><strong>Healing Herb ×{player?.consumables?.["healing-herb"] ?? 0}</strong><small>{player && player.health >= player.maxHealth ? "At full health" : "Recover up to 30% of your maximum health"}</small></span><em>USE</em>
+            </button>
+          </div> : null}
           {command}{error ? <p className="px-error" role="alert">{error}</p> : null}</section>
       </div>
     </div>
