@@ -14,24 +14,30 @@ func TestAssignEncounterModifierIsDeterministicAndPersisted(t *testing.T) {
 		}
 	}
 	run := &Run{Seed: seed}
-	room := &DungeonRoom{ID: "floor-1-room-1", RoomType: "encounter", Encounter: &Encounter{Enemies: []Enemy{{ID: "a", Health: 10}, {ID: "b", Health: 10}}}}
+	room := &DungeonRoom{
+		ID: "floor-1-room-1", RoomType: "encounter",
+		Encounter: &Encounter{Enemies: []Enemy{{ID: "a", Health: 10}, {ID: "b", Health: 10}}},
+	}
 	assignEncounterModifier(run, room)
-	if room.Encounter.Enemies[0].Modifier != "ambush" && room.Encounter.Enemies[0].Modifier != "unyielding" {
+	chosen := room.Encounter.Enemies[0].Modifier
+	if chosen != "ambush" && chosen != "unyielding" {
 		t.Fatalf("expected an empowered enemy, got %+v", room.Encounter.Enemies)
 	}
-	chosen := room.Encounter.Enemies[0].Modifier
 	run.Seed++
 	assignEncounterModifier(run, room)
 	if room.Encounter.Enemies[0].Modifier != chosen {
-		t.Fatal("reconnect/re-entry rerolled the encounter modifier")
+		t.Fatal("re-entry rerolled the encounter modifier")
 	}
 	if room.Encounter.Enemies[1].Modifier != "" {
 		t.Fatal("more than one enemy was empowered")
 	}
-	run.Seed++
-	assignEncounterModifier(run, room)
-	if room.Encounter.Enemies[0].Modifier != chosen {
-	room := &DungeonRoom{ID: "boss-room", RoomType: "boss", Encounter: &Encounter{Enemies: []Enemy{{ID: "boss", Health: 20}}}}
+}
+
+func TestBossEncounterDoesNotReceiveRegularEmpowerment(t *testing.T) {
+	room := &DungeonRoom{
+		ID: "boss-room", RoomType: "boss",
+		Encounter: &Encounter{Enemies: []Enemy{{ID: "boss", Health: 20}}},
+	}
 	assignEncounterModifier(&Run{Seed: 1}, room)
 	if !room.Encounter.ModifierAssigned {
 		t.Fatal("encounter assignment should be marked complete")
@@ -39,9 +45,9 @@ func TestAssignEncounterModifierIsDeterministicAndPersisted(t *testing.T) {
 	if room.Encounter.Enemies[0].Modifier != "" {
 		t.Fatal("boss encounters should not receive regular modifiers")
 	}
-	}
 }
 
+func TestAmbushActsBeforePartyAndConsumesOpeningIntent(t *testing.T) {
 	player := &PlayerState{ID: "p1", Health: 30, MaxHealth: 30}
 	room := &Room{
 		PlayerIDs: []string{"p1"},
@@ -55,27 +61,7 @@ func TestAssignEncounterModifierIsDeterministicAndPersisted(t *testing.T) {
 	applyAmbush(room, encounter)
 	enemy := encounter.Encounter.Enemies[0]
 	if player.Health != 25 {
-		t.Fatalf("ambush damage = %d, want 25", 30-player.Health)
-	}
-	if enemy.Intent != nil || !enemy.ModifierTriggered {
-		t.Fatal("ambush intent was not consumed and marked triggered")
-	}
-	if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Kind != "enemy_ambush" {
-		t.Fatalf("missing ambush combat log: %+v", room.Run.LastCombatEvents)
-	}
-		Presence:  map[string]PlayerPresence{"p1": {}},
-		Run:       &Run{CombatRoundNumber: 1, Players: map[string]*PlayerState{"p1": player}},
-	}
-	enemy := &Enemy{Modifier: "unyielding", Intent: &EnemyIntent{Interruptible: true}}
-	enforceUnyielding(enemy)
-	if enemy.Intent.Interruptible {
-		t.Fatal("unyielding intent remained interruptible")
-	}
-	}}}}
-	applyAmbush(room, encounter)
-	enemy := encounter.Encounter.Enemies[0]
-	if player.Health != 25 {
-		t.Fatalf("ambush damage = %d, want 25", 30-player.Health)
+		t.Fatalf("ambush damage = %d, want 5", 30-player.Health)
 	}
 	if enemy.Intent != nil || !enemy.ModifierTriggered {
 		t.Fatal("ambush intent was not consumed and marked triggered")
