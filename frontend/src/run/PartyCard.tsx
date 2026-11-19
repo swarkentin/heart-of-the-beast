@@ -38,7 +38,7 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     {member.threats.length > 0 ? <span className="rn-incoming"><Icon id="threat" size={1} /><span>{member.threats.map(threat => threat.label + " " + threat.damage).join(" · ")}</span></span> : null}
     {kit && kit.length > 0 ? <span className="rn-kit">{kit.map((item, index) => <span key={item.name}><Icon id={index === 0 ? "arcane" : "empower"} size={1} /><span><b>{item.name}</b>{item.description}</span></span>)}</span> : null}
   </>;
-  const className = "rn-card px-panel" + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
+  const className = "rn-card px-panel rn-card-level-" + Math.min(5, member.level) + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
   const style = { "--accent": ACCENTS[member.classId || ""] || "#d6a64d", order } as unknown as CSSProperties;
   return <div className={className} style={style} role="group" aria-label={who}>{body}</div>;
 }
