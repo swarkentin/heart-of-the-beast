@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS player_profile_enemy_kills (
     enemy_key TEXT NOT NULL,
     enemy_name TEXT NOT NULL,
     theme_id TEXT NOT NULL DEFAULT '',
+    sprite_id TEXT NOT NULL DEFAULT '',
     kill_count INTEGER NOT NULL DEFAULT 0 CHECK (kill_count >= 0),
     elite_kill_count INTEGER NOT NULL DEFAULT 0 CHECK (elite_kill_count >= 0),
     first_killed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
