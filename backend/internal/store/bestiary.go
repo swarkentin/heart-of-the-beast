@@ -13,6 +13,7 @@ type BestiaryEntry struct {
 	ThemeID    string `json:"themeId,omitempty"`
 	SpriteID   string `json:"sprite,omitempty"`
 	Lore       string `json:"lore,omitempty"`
+	LoreStage  int    `json:"loreStage"`
 	Kills      int    `json:"kills"`
 	EliteKills int    `json:"eliteKills"`
 }
