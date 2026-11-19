@@ -46,3 +46,9 @@ func TestAmbushActsBeforePartyAndConsumesOpeningIntent(t *testing.T) {
     if enemy.Intent != nil || !enemy.ModifierTriggered { t.Fatal("ambush intent was not consumed and marked triggered") }
     if len(room.Run.LastCombatEvents) == 0 || room.Run.LastCombatEvents[0].Kind != "enemy_ambush" { t.Fatalf("missing ambush combat log: %+v", room.Run.LastCombatEvents) }
 }
+
+func TestUnyieldingModifierCannotBeInterrupted(t *testing.T) {
+    enemy := &Enemy{Modifier: "unyielding", Intent: &EnemyIntent{Interruptible: true}}
+    enforceUnyielding(enemy)
+    if enemy.Intent.Interruptible { t.Fatal("unyielding intent remained interruptible") }
+}
