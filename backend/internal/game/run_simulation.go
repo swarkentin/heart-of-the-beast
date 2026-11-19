@@ -236,7 +236,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 					needsHerbs := false
 					for _, playerID := range eligible {
 						player := room.Run.Players[playerID]
-						if player != nil && player.Health > 0 && player.Consumables[ConsumableHealingHerb] < StartingHealingHerbs {
+						if player != nil && player.Health > 0 && player.Consumables[ConsumableHealingHerb] < MaxHealingHerbs {
 							needsHerbs = true
 							break
 						}
