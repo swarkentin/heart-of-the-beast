@@ -122,6 +122,8 @@ button.rn-card { cursor: pointer; background: none; }
 /* ---------- command dock ---------- */
 .rn-command { overflow: hidden; }
 .rn-combat, .rn-context { display: flex; flex-direction: column; gap: 6px; min-height: 100%; }
+.rn-context-scroll { min-height: 0; flex: 1; overflow: hidden; }
+.rn-context-scroll .rn-choices { min-height: 0; flex: 1; overflow-y: auto; align-content: start; padding: 2px 4px 4px 0; scrollbar-width: thin; scrollbar-color: #5d5478 var(--pit); overscroll-behavior: contain; }
 .rn-context h2 { font-size: 14px; }
 .rn-timer { display: grid; grid-template-columns: minmax(0, auto) minmax(60px, 1fr) auto; align-items: center; gap: 10px; flex: none; }
 .rn-timer strong { font: 400 18px/1 var(--copy); letter-spacing: .1em; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
