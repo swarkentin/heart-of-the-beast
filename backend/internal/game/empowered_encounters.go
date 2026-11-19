@@ -85,6 +85,10 @@ func applyAmbush(room *Room, dungeonRoom *DungeonRoom) {
 			player.ClassCombat.GuardBonus = mitigation.GuardBonus
 			onClassGuardBlocked(player, intent, mitigation.Guarded, mitigation.GuardBlocked)
 			damage := boonIncomingDamage(room, player, mitigation.Damage, room.Run.CombatRoundNumber)
+			// An ambush can hurt a weakened party, but never knocks an adventurer out before they can act.
+			if damage >= player.Health {
+				damage = player.Health - 1
+			}
 			transition := resolveHealthDamage(player.Health, damage)
 			player.Health = transition.Health
 			if transition.Applied > 0 {
