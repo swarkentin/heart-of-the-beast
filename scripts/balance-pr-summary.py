@@ -2,6 +2,7 @@
 """Build a PR balance dashboard with absolute results and branch-point deltas."""
 import argparse
 import json
+import math
 from pathlib import Path
 
 
@@ -57,6 +58,17 @@ def class_combat_rates(report):
 def clear_rate(scenario):
     runs = scenario.get("runs", 0)
     return scenario.get("completed", 0) / runs * 100 if runs else 0.0
+
+
+def wilson_interval(successes, total, z=1.96):
+    """95% Wilson score interval for a binomial rate."""
+    if total <= 0:
+        return 0.0, 0.0
+    p = successes / total
+    denominator = 1 + z * z / total
+    center = (p + z * z / (2 * total)) / denominator
+    margin = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
+    return max(0.0, center - margin) * 100, min(1.0, center + margin) * 100
 
 
 def initial_theme_summary(scenarios):
@@ -226,8 +238,8 @@ def main():
         "### Absolute results and changes by class",
 
         "",
-        "| Class | Combat win rate: base → PR (Δ pp) | Endless clear: base → PR (Δ pp) | Median depth: base → PR (Δ) |",
-        "|---|---:|---:|---:|",
+        "| Class | Combat win rate: base → PR (Δ pp) | Endless clear: base → PR (Δ pp) | PR clear 95% interval | Median depth: base → PR (Δ) |",
+        "|---|---:|---:|---:|---:|",
     ]
 
     for class_id in classes:
@@ -235,10 +247,11 @@ def main():
         old_e, new_e = old_endless[class_id], new_endless[class_id]
         old_clear, new_clear = clear_rate(old_e), clear_rate(new_e)
         old_depth, new_depth = old_e["medianDepth"], new_e["medianDepth"]
+        low, high = wilson_interval(new_e.get("completed", 0), new_e.get("runs", 0))
         lines.append(
             f"| {class_id} | {old_c:.1f}% → {new_c:.1f}% ({new_c-old_c:+.1f}) "
             f"| {old_clear:.1f}% → {new_clear:.1f}% ({new_clear-old_clear:+.1f}) "
-            f"| {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
+            f"| {low:.1f}–{high:.1f}% | {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
         )
 
     theme_buckets = initial_theme_summary(after_endless.get("scenarios", []))
@@ -296,7 +309,8 @@ def main():
         "",
         "- Combat win rates average each class's solo results across the encounter suite; encounter-level deltas above show scenario-specific movement.",
         "- Endless results use solo tactical-policy runs, 100 paired seeds per class, and randomized seeded themes; the table above breaks first-dungeon outcomes out by starting theme.",
-        "- A 100-run rate is still an estimate, not proof. Do not change class stats from one dashboard movement: look for consistent paired-seed drift across themes and depth/survival metrics, then validate with playtests.",
+        "- The 95% interval is a Wilson score interval for the PR first-dungeon clear rate. It communicates sampling uncertainty; overlapping intervals are not evidence of a meaningful branch regression.",
+        "- Do not change class stats from one dashboard movement: require a consistent paired-seed drift across themes and depth/survival metrics, then validate with playtests.",
         "- Newly added or removed scenarios/classes are not silently treated as zero; only matched data appears in paired comparisons.",
         "",
         f"_Combat report v{after.get('version', 'unknown')} · seeds {after.get('firstSeed')}–{after.get('lastSeed')} · {len(after.get('scenarios', []))} scenarios._",
