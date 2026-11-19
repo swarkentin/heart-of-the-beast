@@ -7,6 +7,7 @@ import { traitTags } from "./traits.ts";
 import { progressReport } from "./progress.ts";
 import { expeditionMap } from "./expeditionRoad.ts";
 import { interruptTarget } from "./interrupts.ts";
+import { herbPromptLevel } from "./herbPrompt.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -183,4 +184,13 @@ test("an interrupt goes to the enemy that is telegraphing an interruptible move"
   assert.equal(interruptTarget(foes, "b")?.id, "b", "the selected target when it can be interrupted");
   assert.equal(interruptTarget(foes, "a")?.id, "c", "otherwise the hardest-hitting interruptible enemy");
   assert.equal(interruptTarget(foes.map(foe => ({ ...foe, interruptible: false })), "a"), undefined, "nothing to cancel");
+});
+
+test("healing herb prompt escalates as health drops when herbs remain", () => {
+  assert.equal(herbPromptLevel(36, 54, 2), "none", "above 60% health stays quiet");
+  assert.equal(herbPromptLevel(32, 54, 2), "hint", "below 60% health gets a gentle pulse");
+  assert.equal(herbPromptLevel(16, 54, 1), "urgent", "below 30% health gets an urgent pulse");
+  assert.equal(herbPromptLevel(16, 54, 0), "none", "no herbs means no prompt");
+  assert.equal(herbPromptLevel(0, 54, 2), "none", "a fallen player cannot use a herb");
+  assert.equal(herbPromptLevel(10, 0, 2), "none", "invalid health pools stay quiet");
 });
