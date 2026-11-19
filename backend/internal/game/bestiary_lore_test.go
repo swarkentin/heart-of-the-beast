@@ -1,12 +1,15 @@
 package game
 
-import "testing"
+import (
+	"testing"
 
-func TestEveryMonsterCatalogEntryHasAuthoredBestiaryBackstory(t *testing.T) {
-	for id, monster := range defaultMonsterCatalog.Monsters {
-		spriteID := monster.Sprite.String()
-		if lore := BestiaryBackstory(spriteID); lore == "" {
-			t.Errorf("monster %q (%s) has no authored bestiary backstory", id, spriteID)
+	"github.com/swarkentin/heart-of-the-beast/backend/internal/art"
+)
+
+func TestEveryMonsterSpriteHasAuthoredBestiaryBackstory(t *testing.T) {
+	for _, sprite := range art.Sprites() {
+		if lore := BestiaryBackstory(sprite.ID.String()); lore == "" {
+			t.Errorf("sprite %q (%s) has no authored bestiary backstory", sprite.ID.String(), sprite.Name)
 		}
 	}
 }
