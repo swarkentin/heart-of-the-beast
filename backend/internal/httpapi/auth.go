@@ -89,6 +89,16 @@ func profileCredential(w http.ResponseWriter, r *http.Request) (string, bool) {
 func (h *Handler) withAccounts(ctx context.Context, profile *store.Profile) *store.Profile {
 	for key, entry := range profile.Bestiary {
 		entry.Lore = game.BestiaryBackstory(entry.SpriteID)
+		switch {
+		case entry.Kills >= 30:
+			entry.LoreStage = 4
+		case entry.Kills >= 15:
+			entry.LoreStage = 3
+		case entry.Kills >= 5:
+			entry.LoreStage = 2
+		case entry.Kills >= 1:
+			entry.LoreStage = 1
+		}
 		profile.Bestiary[key] = entry
 	}
 	if profile.Accounts == nil {
