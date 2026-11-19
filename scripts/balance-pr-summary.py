@@ -46,6 +46,21 @@ def solo_endless(report):
     }
 
 
+def class_party_clear_rates(report):
+    """Aggregate first-dungeon clears for each class when present in a tactical party."""
+    buckets = {}
+    for scenario in report.get("scenarios", []):
+        if scenario.get("policy") != "tactical":
+            continue
+        size = scenario.get("partySize", len(scenario.get("party", [])))
+        for class_id in set(scenario.get("party", [])):
+            bucket = buckets.setdefault((class_id, size), {"runs": 0, "cleared": 0})
+            for run in scenario.get("results", []):
+                bucket["runs"] += 1
+                bucket["cleared"] += int(run.get("dungeonsCleared", 0) >= 1)
+    return buckets
+
+
 def class_combat_rates(report):
     rates = {}
     for scenario in report["scenarios"]:
@@ -253,6 +268,30 @@ def main():
             f"| {old_clear:.1f}% → {new_clear:.1f}% ({new_clear-old_clear:+.1f}) "
             f"| {low:.1f}–{high:.1f}% | {old_depth} → {new_depth} ({new_depth-old_depth:+d}) |"
         )
+
+    old_party_rates = class_party_clear_rates(before_endless)
+    new_party_rates = class_party_clear_rates(after_endless)
+    lines.extend([
+        "",
+        "### First-dungeon clears by class and party size",
+        "",
+        "Each cell is branch point → PR clear rate, with the PR sample count. These are party outcomes for compositions containing that class, not a claim that one class alone caused the result. This helps distinguish solo weakness from co-op performance.",
+        "",
+        "| Class | Solo | Duo | Trio | Four-player |",
+        "|---|---:|---:|---:|---:|",
+    ])
+    for class_id in classes:
+        cells = []
+        for size in range(1, 5):
+            old_bucket = old_party_rates.get((class_id, size), {"runs": 0, "cleared": 0})
+            new_bucket = new_party_rates.get((class_id, size), {"runs": 0, "cleared": 0})
+            old_rate = old_bucket["cleared"] / old_bucket["runs"] * 100 if old_bucket["runs"] else 0.0
+            new_rate = new_bucket["cleared"] / new_bucket["runs"] * 100 if new_bucket["runs"] else 0.0
+            if new_bucket["runs"]:
+                cells.append(f"{old_rate:.1f}% → {new_rate:.1f}% ({new_rate-old_rate:+.1f} pp; n={new_bucket['runs']})")
+            else:
+                cells.append("—")
+        lines.append(f"| {class_id} | " + " | ".join(cells) + " |")
 
     theme_buckets = initial_theme_summary(after_endless.get("scenarios", []))
     lines.extend([
