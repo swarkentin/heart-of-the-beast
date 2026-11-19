@@ -60,6 +60,10 @@ func startCombatRound(room *Room, now time.Time) {
 		if intent.Damage > 0 {
 			// Floor modifiers and enrage are part of the telegraph, so what the party sees is what will land.
 			intent.Damage += rules.EnemyDamage + enemy.DamageBonus
+			if run.Generator >= ExpeditionGenerator {
+				// Enemy threat grows with expedition depth, independently of each adventurer's run level.
+				intent.Damage += (run.Depth + dungeonExtraDepth(run) - 1) / 2
+			}
 			if intent.Damage < 1 {
 				intent.Damage = 1
 			}
