@@ -148,3 +148,22 @@ func TestBuildEnemyIntentScalesDamageWithPartySize(t *testing.T) {
 		t.Fatalf("four-player guardian heavy intent damage = %d, want 10", got.Damage)
 	}
 }
+
+
+func TestSoloEnemyDamageScaling(t *testing.T) {
+	for _, test := range []struct {
+		damage int
+		want   int
+	}{
+		{damage: 8, want: 6},
+		{damage: 5, want: 4},
+		{damage: 4, want: 3},
+		{damage: 3, want: 2},
+		{damage: 1, want: 1},
+		{damage: 0, want: 0},
+	} {
+		if got := soloEnemyDamage(test.damage); got != test.want {
+			t.Errorf("soloEnemyDamage(%d) = %d, want %d", test.damage, got, test.want)
+		}
+	}
+}
