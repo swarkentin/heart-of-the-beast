@@ -13,6 +13,7 @@ import (
 // live play; it does not reproduce combat or reward rules independently.
 type RunSimulationReport struct {
 	Seed               int64                          `json:"seed"`
+	InitialThemeID     string                         `json:"initialThemeId"`
 	ThemeID            string                         `json:"themeId"`
 	Floors             int                            `json:"floors"`
 	GoldEarned         int                            `json:"goldEarned"`
@@ -153,6 +154,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		return RunSimulationReport{}, fmt.Errorf("start simulated run: %w", err)
 	}
 
+	initialThemeID := room.Run.ThemeID
 	visited := map[string]bool{room.Run.CurrentRoomID: true}
 	steps, itemsBought, goldSpent := 0, 0, 0
 	combatMetrics := make(map[string]PlayerCombatMetrics, len(classIDs))
@@ -329,7 +331,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	}
 
 	report := RunSimulationReport{
-		Seed: seed, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
+		Seed: seed, InitialThemeID: initialThemeID, ThemeID: room.Run.ThemeID, Floors: room.Run.MaxDepth, ItemsBought: itemsBought,
 		PartyClasses: append([]string(nil), classIDs...), PartySize: len(classIDs),
 		// An expedition never ends in victory. "Completed" means the first dungeon's boss was beaten, and the
 		// depth reached counts floors across every dungeon of the expedition.
