@@ -13,9 +13,9 @@ const run = (over: Partial<ApiRun> = {}): ApiRun => ({
   id: "run", phase: "combat", currentRoomId: "a", rooms: {}, lastCombatEvents: [],
   combatRound: { number: 3, startedAt: "", deadline: "", actions: { p2: { type: "combat", action: "skill", skill: "skill.strike", targetId: "e1" } } },
   players: {
-    p1: { id: "p1", health: 30, maxHealth: 36, archetype: "tank", experience: 60, level: 2, stats: { power: 2, focus: 1, agility: 1 }, guarding: true, classCombat: { resolveReady: true } },
-    p2: { id: "p2", health: 9, maxHealth: 27, archetype: "damage", experience: 0, level: 1, stats: { power: 3, focus: 1, agility: 1 }, classCombat: { ward: 4 } },
-    p3: { id: "p3", health: 0, maxHealth: 31, archetype: "support", experience: 0, level: 1, stats: { power: 1, focus: 3, agility: 1 } },
+    p1: { id: "p1", health: 30, maxHealth: 36, archetype: "tank", experience: 60, level: 2, stats: { power: 2, focus: 1, agility: 1 }, guarding: true, classCombat: { resolveReady: true }, consumables: { "healing-herb": 4 } },
+    p2: { id: "p2", health: 9, maxHealth: 27, archetype: "damage", experience: 0, level: 1, stats: { power: 3, focus: 1, agility: 1 }, classCombat: { ward: 4 }, consumables: { "healing-herb": 2 } },
+    p3: { id: "p3", health: 0, maxHealth: 31, archetype: "support", experience: 0, level: 1, stats: { power: 1, focus: 3, agility: 1 }, consumables: { "healing-herb": 0 } },
   },
   ...over,
 });
@@ -30,12 +30,15 @@ test("party members get a pose, statuses, threats and round state from the snaps
   assert.deepEqual(self.overlays, ["guard", "buff"]);
   assert.deepEqual(self.threats.map(threat => threat.label), ["Soul Drain", "Sweep"], "defeated enemies threaten nobody");
   assert.equal(self.round, "choosing");
+  assert.equal(self.healingHerbs, 4, "the portrait gets the adventurer’s current herb count");
   assert.equal(ally.pose, "injured", "a third of health or less is injured");
   assert.equal(ally.round, "ready");
+  assert.equal(ally.healingHerbs, 2, "teammate supplies are available to the party inventory panel");
   assert.equal(ally.chosen?.label, "SKILL");
   assert.ok(ally.statuses.some(status => status.id === "ward") && ally.statuses.some(status => status.id === "wounded"));
   assert.equal(fallen.pose, "down");
   assert.equal(fallen.round, "down");
+  assert.equal(fallen.healingHerbs, 0, "empty inventories remain visible");
   assert.deepEqual(fallen.threats, [], "a fallen hero is not targeted");
   assert.ok(fallen.statuses.some(status => status.id === "offline"));
 });
