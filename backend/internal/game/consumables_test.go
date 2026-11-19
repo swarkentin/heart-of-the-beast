@@ -49,7 +49,7 @@ func TestBlightedHerbsHalvesHerbHealing(t *testing.T) {
 	}
 }
 
-func TestHealingHerbShopAndDiscoveryAcquisition(t *testing.T) {
+func TestHealingHerbShopAndDiscoveryTrade(t *testing.T) {
 	room := openTestShop(t, 1, "herb-shop")
 	player := room.Run.Players["player-1"]
 	player.Gold = 100
@@ -59,16 +59,26 @@ func TestHealingHerbShopAndDiscoveryAcquisition(t *testing.T) {
 	if player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs+1 {
 		t.Fatalf("shop inventory = %d", player.Consumables[ConsumableHealingHerb])
 	}
+
+	player.Consumables[ConsumableHealingHerb] = MaxHealingHerbs - 1
+	player.Health -= 12
+	before := player.Health
 	if ok, _ := applyRoomEventEffect(room, "herb_cache"); !ok {
 		t.Fatal("herb cache effect did not resolve")
 	}
-	if player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs {
-		t.Fatalf("discovery inventory = %d, want carry cap %d", player.Consumables[ConsumableHealingHerb], MaxHealingHerbs)
+	if player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs || player.Health != before-5 {
+		t.Fatalf("herb trade: inventory=%d health=%d, want inventory=%d health=%d", player.Consumables[ConsumableHealingHerb], player.Health, MaxHealingHerbs, before-5)
 	}
-	if err := ApplyCommand(room, player.ID, Command{Type: "buy", ChoiceID: "healing-herb"}, expeditionNow); !errors.Is(err, ErrItemUnavailable) {
-		t.Fatalf("buying above the carry cap: %v", err)
+
+	player.Health = before
+	if ok, _ := applyRoomEventEffect(room, "herb_cache"); !ok {
+		t.Fatal("herb cache effect did not resolve at carry cap")
+	}
+	if player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs || player.Health != before {
+		t.Fatal("a full pack must not pay health for an herb it cannot carry")
 	}
 }
+
 
 func TestHealingHerbsRefillAtDungeonEnd(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "herb-refill")
@@ -82,32 +92,90 @@ func TestHealingHerbsRefillAtDungeonEnd(t *testing.T) {
 	}
 }
 
-func TestHealingHerbIsOfferedInEveryDiscovery(t *testing.T) {
+func TestHerbCacheIsAnOccasionalSeededDiscoveryChoice(t *testing.T) {
 	for _, theme := range defaultExpeditionThemeCatalog.Themes {
 		for _, discovery := range theme.Discoveries {
-			found := false
 			for _, choice := range discovery.Event.Choices {
 				if choice.ID == "herb_cache" {
-					found = true
+					t.Errorf("theme %q discovery %q should not always offer herbs", theme.ThemeID, discovery.Event.Title)
 				}
-			}
-			if !found {
-				t.Errorf("theme %q discovery %q has no herb-cache option", theme.ThemeID, discovery.Event.Title)
 			}
 		}
-		if discovery := theme.Vault; len(discovery.Event.Choices) > 0 {
-			found := false
-			for _, choice := range discovery.Event.Choices {
-				if choice.ID == "herb_cache" {
-					found = true
-				}
-			}
-			if !found {
-				t.Errorf("theme %q vault has no herb-cache option", theme.ThemeID)
+		for _, choice := range theme.Vault.Event.Choices {
+			if choice.ID == "herb_cache" {
+				t.Errorf("theme %q vault should not offer the discovery-only herb trade", theme.ThemeID)
 			}
 		}
 	}
+
+	discoveries, offers := 0, 0
+	for seed := uint64(1); seed <= 300; seed++ {
+		_, rooms := generateExpeditionFloor("catacombs", seed, 1, 4, 1, nil)
+		for _, room := range rooms {
+			if room.RoomType == string(floorRoomDiscovery) && room.Event != nil {
+				discoveries++
+				for _, choice := range room.Event.Choices {
+					if choice.ID == "herb_cache" {
+						offers++
+					}
+				}
+			}
+			if room.RoomType == string(floorRoomVault) && room.Event != nil {
+				for _, choice := range room.Event.Choices {
+					if choice.ID == "herb_cache" {
+						t.Fatalf("vault %q unexpectedly offered the herb cache", room.Name)
+					}
+				}
+			}
+		}
+	}
+	rate := float64(offers) / float64(discoveries)
+	if rate < 0.15 || rate > 0.25 {
+		t.Fatalf("herb cache appeared in %.1f%% of discovery rooms (%d/%d), want approximately %d%%", rate*100, offers, discoveries, DiscoveryHerbChance)
+	}
 }
+
+func TestHerbalistBoonIsADeepDungeonPerk(t *testing.T) {
+	definition, ok := defaultFloorModifierCatalog.Modifier("herbalist-boon")
+	if !ok || !definition.DungeonRollable || definition.Rollable || definition.ConsumableHealingPct != 100 {
+		t.Fatalf("Herbalist's Boon definition is incorrect: %+v", definition)
+	}
+	found := false
+	for seed := uint64(1); seed <= 1000 && !found; seed++ {
+		for _, choice := range rollDungeonChoices(seed, "catacombs", 2) {
+			for _, modifier := range choice.Modifiers {
+				if modifier.ID == "herbalist-boon" {
+					found = true
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("Herbalist's Boon never appeared in random dungeon perks")
+	}
+	for seed := uint64(1); seed <= 100; seed++ {
+		for _, modifier := range rollFloorModifiers(seed, 4) {
+			if modifier.ID == "herbalist-boon" {
+				t.Fatal("dungeon-only Herbalist's Boon appeared as a floor perk")
+			}
+		}
+	}
+
+	room := startExpedition(t, 1, "catacombs", "herbalist-boon-healing")
+	player := room.Run.Players["player-1"]
+	player.Health -= player.MaxHealth
+	if !addFloorModifier(room.Run, "herbalist-boon") {
+		t.Fatal("could not apply Herbalist's Boon")
+	}
+	before := player.Health
+	if err := ApplyCommand(room, player.ID, Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, expeditionNow); err != nil {
+		t.Fatalf("use herb with Herbalist's Boon: %v", err)
+	}
+	if got := player.Health - before; got != player.MaxHealth {
+		t.Fatalf("Herbalist's Boon healed %d, want full maximum health %d", got, player.MaxHealth)
+	}
+}
+
 
 func TestTacticalPolicyUsesHerbForPartialHealing(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "tactical-herb")
