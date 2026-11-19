@@ -162,11 +162,11 @@ def depth_progression_chart(classes, scenarios):
     lines = [
         "### Endless depth reached by class",
         "",
-        "Share of solo tactical-policy runs that reach each depth. Each line is a class; a steeper drop means more runs are ending at that point.",
+        "Share of solo tactical-policy runs reaching each floor (not dungeon number). Each line is a class; a steeper drop means more runs are ending at that point.",
         "",
         fence + "mermaid",
         "xychart-beta",
-        f'    x-axis "Endless depth" 1 --> {max_depth}',
+        f'    x-axis "Floor depth" 1 --> {max_depth}',
         '    y-axis "Runs reaching depth (%)" 0 --> 100',
     ]
     for class_id in classes:
@@ -314,9 +314,9 @@ def main():
 
     lines.extend([
         "",
-        "### Endless depth progression by class",
+        "### Endless floor progression by class",
         "",
-        "Percent of seeded solo expeditions reaching each depth (tactical policy). Equal consecutive rates are grouped into ranges. The 50% column is the deepest level reached by at least half the runs; the largest drop shows the sharpest one-depth loss.",
+        "Percent of seeded solo expeditions reaching each floor (tactical policy). These are floors across the whole expedition, not dungeon numbers. Equal consecutive rates are grouped into ranges.",
         "",
         "| Class | Reach rate by depth | At least 50% reach through | Largest one-depth drop | Furthest reached |",
         "|---|---|---:|---|---:|",
@@ -326,6 +326,51 @@ def main():
         lines.append(
             f"| {class_id} | {progression} | {half_depth} | {largest_drop} | {furthest} |"
         )
+
+
+    # Capstone access and terminal wipe locations are the key diagnostics for solo progression.
+    lines.extend([
+        "",
+        "### Solo capstone access",
+        "",
+        "A run reaches the capstone after clearing four dungeons; it clears the capstone after clearing five.",
+        "",
+        "| Class | Reached capstone | Cleared capstone |",
+        "|---|---:|---:|",
+    ])
+    for class_id in classes:
+        runs = new_endless[class_id].get("results", [])
+        reached = sum(run.get("dungeonsCleared", 0) >= 4 for run in runs)
+        cleared = sum(run.get("dungeonsCleared", 0) >= 5 for run in runs)
+        lines.append(f"| {class_id} | {reached}/{len(runs)} ({reached/len(runs)*100:.1f}%) | {cleared}/{len(runs)} ({cleared/len(runs)*100:.1f}%) |")
+
+    from collections import Counter
+    capstone_wipes = Counter()
+    for class_id in classes:
+        for run in new_endless[class_id].get("results", []):
+            if run.get("wiped") and run.get("endDungeon") == 5:
+                key = (
+                    run.get("endThemeId", "unknown"),
+                    run.get("endDepth", 0),
+                    run.get("endRoomType", "unknown"),
+                    run.get("endRoomName", "unknown"),
+                    run.get("endEncounterId", "unknown"),
+                )
+                capstone_wipes[key] += 1
+    lines.extend([
+        "",
+        "### Where solo capstone runs wipe",
+        "",
+        "Grouped by capstone theme, floor, room type, room name, and encounter definition. Enemy names and remaining health are retained in the JSON report for deeper inspection.",
+        "",
+        "| Theme | Floor | Room type | Room | Encounter | Wipes |",
+        "|---|---:|---|---|---|---:|",
+    ])
+    if capstone_wipes:
+        for (theme, floor, room_type, room_name, encounter), count in capstone_wipes.most_common(15):
+            lines.append(f"| {theme} | {floor} | {room_type} | {room_name} | {encounter} | {count} |")
+    else:
+        lines.append("| _No capstone wipes in this sample._ | — | — | — | — | 0 |")
 
     lines.extend([
         "",
@@ -347,7 +392,7 @@ def main():
         "### Interpretation",
         "",
         "- Combat win rates average each class's solo results across the encounter suite; encounter-level deltas above show scenario-specific movement.",
-        "- Endless results use solo tactical-policy runs, 100 paired seeds per class, and randomized seeded themes; the table above breaks first-dungeon outcomes out by starting theme.",
+        f"- Endless results use solo tactical-policy runs, {endless_runs} seeds per class, and randomized seeded themes; the depth axis counts floors across the full expedition.",
         "- The 95% interval is a Wilson score interval for the PR first-dungeon clear rate. It communicates sampling uncertainty; overlapping intervals are not evidence of a meaningful branch regression.",
         "- Do not change class stats from one dashboard movement: require a consistent paired-seed drift across themes and depth/survival metrics, then validate with playtests.",
         "- Newly added or removed scenarios/classes are not silently treated as zero; only matched data appears in paired comparisons.",
