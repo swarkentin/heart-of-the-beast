@@ -84,8 +84,8 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     setEffects((list) => [...list.filter((item) => performance.now() - item.born < item.dur + 1200), fx]);
   }, []);
 
-  const popup = useCallback((x: number, y: number, text: string, color: string) => {
-    const item: Popup = { id: nextId("pop"), x, y, text, color, born: performance.now() };
+  const popup = useCallback((x: number, y: number, text: string, color: string, critical = false) => {
+    const item: Popup = { id: nextId("pop"), x, y, text, color, critical, born: performance.now() };
     setPopups((list) => [...list.filter((entry) => performance.now() - entry.born < 1400), item]);
     timers.current.push(window.setTimeout(() => setPopups((list) => list.filter((entry) => entry.id !== item.id)), 1300));
   }, []);
