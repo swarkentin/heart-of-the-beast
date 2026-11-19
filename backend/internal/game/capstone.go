@@ -61,6 +61,30 @@ func dungeonFloors(seed uint64, dungeon int, themeID string) int {
 	return expeditionDepth(dungeonSeed(seed, dungeon))
 }
 
+// The Choir's two anchors create a long damage lockout, while the Chain Duke's frequent
+// reinforcements make a solo fight spend too many turns clearing adds. These small, boss-specific
+// adjustments preserve the mechanics while reducing their action-economy pressure.
+func capstoneAnchorCountForBoss(boss *Enemy) int {
+	if boss != nil && boss.DefinitionID == "choir-of-mouths" {
+		return 1
+	}
+	return BossAnchorCount
+}
+
+func capstoneLegionEveryTurnsForBoss(boss *Enemy) int {
+	if boss != nil && boss.DefinitionID == "chain-duke" {
+		return BossLegionEveryTurns + 1
+	}
+	return BossLegionEveryTurns
+}
+
+func capstoneLegionEveryTurnsForTemplate(final FinalBossTemplate) int {
+	if final.EncounterID == "infernal-boss-chain-duke" {
+		return BossLegionEveryTurns + 1
+	}
+	return BossLegionEveryTurns
+}
+
 func armCapstoneMechanics(enemy *Enemy, final FinalBossTemplate) {
 	if enemy.hasMechanic(BossMechanicAnchor) {
 		enemy.AnchorMonsterID = final.AnchorMonsterID
@@ -88,7 +112,7 @@ func applyCapstoneMechanics(room *Room, encounter *Encounter, index, round int) 
 		devourServants(run, encounter, index, round)
 		boss = &encounter.Enemies[index]
 	}
-	if boss.hasMechanic(BossMechanicLegion) && turn%BossLegionEveryTurns == 0 && livingServants(encounter, index) < BossLegionMax {
+	if boss.hasMechanic(BossMechanicLegion) && turn%capstoneLegionEveryTurnsForBoss(boss) == 0 && livingServants(encounter, index) < BossLegionMax {
 		if name, ok := callServant(run, encounter, index, boss.LegionMonsterID, "legion", 100); ok {
 			addCombatEvent(run, round, "boss_legion", encounter.Enemies[index].Name+" calls its legion. "+name+" answers!")
 		}
@@ -97,7 +121,7 @@ func applyCapstoneMechanics(room *Room, encounter *Encounter, index, round int) 
 	if boss.hasMechanic(BossMechanicAnchor) && boss.AnchorWavesLeft > 0 && (turn == 1 || turn%BossAnchorEveryTurns == 1) && livingAnchors(encounter, index) == 0 {
 		boss.AnchorWavesLeft--
 		raised := 0
-		for i := 0; i < BossAnchorCount; i++ {
+		for i := 0; i < capstoneAnchorCountForBoss(boss); i++ {
 			if _, ok := callServant(run, encounter, index, boss.AnchorMonsterID, "anchor", BossAnchorHealthPercent); ok {
 				raised++
 			}
@@ -247,7 +271,7 @@ func capstoneAdvice(mechanic string, final FinalBossTemplate) string {
 	case BossMechanicRebirth:
 		return fmt.Sprintf("The first time it falls it rises again at %d%% health (%s). Keep a cooldown in hand.", BossRebirthHealthPercent, final.RebirthLabel)
 	case BossMechanicLegion:
-		return fmt.Sprintf("Every %d turns it calls a %s to its side.", BossLegionEveryTurns, name(final.LegionMonsterID))
+		return fmt.Sprintf("Every %d turns it calls a %s to its side.", capstoneLegionEveryTurnsForTemplate(final), name(final.LegionMonsterID))
 	case BossMechanicDevour:
 		return fmt.Sprintf("Every %d turns it devours every servant still standing, healing and growing stronger for each. Kill them before it feeds.", BossDevourEveryTurns)
 	}

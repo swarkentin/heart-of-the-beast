@@ -278,7 +278,9 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 
 	encounter := func(roomID, encounterID string, extraHealthPct int) *Encounter {
 		instance := newCatalogEncounter(encounterID, roomID+"-", scaling)
+		scaleSoloLateEncounterHealth(instance, partySize, scaling.Depth)
 		scaleEncounterHealth(instance, healthPct+extraHealthPct)
+		scaleTargetedCapstoneBossHealth(instance, encounterID)
 		return instance
 	}
 	pick := func(ids []string) string { return ids[rng.Intn(len(ids))] }
@@ -485,6 +487,33 @@ func roomLeadsTo(room *DungeonRoom, destination string) bool {
 
 func newRoomEvent(roomID string, event FloorEventTemplate) *RoomEvent {
 	return &RoomEvent{ID: roomID + "-event", Title: event.Title, Description: event.Description, Choices: append([]EventChoice(nil), event.Choices...)}
+}
+
+// Solo late encounters are a distinct action-economy bottleneck: one adventurer must answer every
+// surviving enemy action. From the final floor of dungeon three onward, shorten fights by reducing
+// enemy health rather than stacking another global incoming-damage reduction.
+const (
+	soloLateEncounterHealthDepthReduction = 15
+	soloLateEncounterHealthStartDepth     = 8
+)
+
+func scaleSoloLateEncounterHealth(encounter *Encounter, partySize, effectiveDepth int) {
+	if partySize != 1 || effectiveDepth < soloLateEncounterHealthStartDepth {
+		return
+	}
+	scaleEncounterHealth(encounter, -soloLateEncounterHealthDepthReduction)
+}
+
+// The Chain Duke and Choir of Mouths were the two most frequent capstone wipe encounters in the
+// 60-seed solo report. A small, encounter-specific health reduction gives parties more room to recover
+// without changing their mechanics or weakening the rest of either castle.
+const targetedCapstoneBossHealthReduction = -10
+
+func scaleTargetedCapstoneBossHealth(encounter *Encounter, encounterID string) {
+	switch encounterID {
+	case "infernal-boss-chain-duke", "eldritch-boss-choir-of-mouths":
+		scaleEncounterHealth(encounter, targetedCapstoneBossHealthReduction)
+	}
 }
 
 // scaleEncounterHealth changes the health of every enemy in an encounter by a percentage.

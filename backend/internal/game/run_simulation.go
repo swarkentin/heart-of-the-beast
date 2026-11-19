@@ -43,11 +43,28 @@ type RunSimulationReport struct {
 	Levels             map[string]int                 `json:"levels"`
 	Steps              int                            `json:"steps"`
 	// EndRoomType and EndDepth say where the run ended: the room type (encounter, miniboss, boss) a wipe happened in.
-	EndRoomType string `json:"endRoomType,omitempty"`
-	EndDepth    int    `json:"endDepth,omitempty"`
+	EndRoomType    string                     `json:"endRoomType,omitempty"`
+	EndRoomName    string                     `json:"endRoomName,omitempty"`
+	EndEncounterID string                     `json:"endEncounterId,omitempty"`
+	EndEnemies     []RunSimulationEnemyReport `json:"endEnemies,omitempty"`
+	EndDepth       int                        `json:"endDepth,omitempty"`
 	// EndDungeon and EndThemeID name the dungeon of the expedition the party fell in.
 	EndDungeon int    `json:"endDungeon,omitempty"`
 	EndThemeID string `json:"endThemeId,omitempty"`
+}
+
+// RunSimulationEnemyReport identifies an enemy present when an expedition ended, including its remaining health.
+type RunSimulationEnemyReport struct {
+	DefinitionID string `json:"definitionId"`
+	Name         string `json:"name"`
+	Health       int    `json:"health"`
+	MaxHealth    int    `json:"maxHealth"`
+	Modifier     string `json:"modifier,omitempty"`
+	Enraged      bool   `json:"enraged,omitempty"`
+	Anchored     bool   `json:"anchored,omitempty"`
+	Reborn       bool   `json:"reborn,omitempty"`
+	IntentLabel  string `json:"intentLabel,omitempty"`
+	IntentDamage int    `json:"intentDamage,omitempty"`
 }
 
 // PlayerCombatMetrics records combat contribution for one simulated adventurer.
@@ -343,10 +360,10 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		NetPartyHealthLoss: netPartyHealthLoss,
 	}
 	switch {
-	case report.Completed:
-		report.Outcome = "completed"
 	case report.Wiped:
 		report.Outcome = "wiped"
+	case report.Completed:
+		report.Outcome = "completed"
 	default:
 		report.Outcome = "step_limit"
 	}
@@ -354,7 +371,17 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		// Where the party fell, for every wipe, so later dungeons (and capstone castles) can be read too.
 		report.EndDungeon, report.EndThemeID = dungeonNumber(room.Run), room.Run.Theme()
 		if current := room.Run.Rooms[room.Run.CurrentRoomID]; current != nil {
-			report.EndRoomType, report.EndDepth = current.RoomType, room.Run.Depth
+			report.EndRoomType, report.EndRoomName, report.EndDepth = current.RoomType, current.Name, room.Run.Depth
+			if current.Encounter != nil {
+				report.EndEncounterID = current.Encounter.DefinitionID
+				for _, enemy := range current.Encounter.Enemies {
+					entry := RunSimulationEnemyReport{DefinitionID: enemy.DefinitionID, Name: enemy.Name, Health: enemy.Health, MaxHealth: enemy.MaxHealth, Modifier: enemy.Modifier, Enraged: enemy.Enraged, Anchored: enemy.Anchored, Reborn: enemy.Reborn}
+					if enemy.Intent != nil {
+						entry.IntentLabel, entry.IntentDamage = enemy.Intent.Label, enemy.Intent.Damage
+					}
+					report.EndEnemies = append(report.EndEnemies, entry)
+				}
+			}
 		}
 	}
 	for _, player := range room.Run.Players {

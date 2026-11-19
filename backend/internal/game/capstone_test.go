@@ -116,6 +116,17 @@ func TestAnchoredBossTakesHalfDamageUntilItsAnchorsFall(t *testing.T) {
 	}
 }
 
+func TestChoirRaisesOneAnchorAtATime(t *testing.T) {
+	_, encounter := capstoneBossRoom(t, "eldritch", 1, 2)
+	boss := &encounter.Enemies[0]
+	if boss.DefinitionID != "choir-of-mouths" {
+		t.Fatalf("floor 2 of the castle should be the Choir of Mouths: %+v", boss)
+	}
+	if got := livingAnchors(encounter, 0); got != 1 {
+		t.Fatalf("the Choir should raise one anchor at a time, got %d", got)
+	}
+}
+
 func TestRebirthBossRisesOnceBeforeTheFightIsWon(t *testing.T) {
 	room, encounter := capstoneBossRoom(t, "eldritch", 1, 1) // the Dreaming Bishop
 	run := room.Run
@@ -143,19 +154,26 @@ func TestLegionBossCallsServantsAndDevoursThem(t *testing.T) {
 	if !boss.hasMechanic(BossMechanicLegion) || !boss.hasMechanic(BossMechanicDevour) || boss.DevourIn != BossDevourEveryTurns-1 {
 		t.Fatalf("floor 2 of the citadel should be the Chain Duke: %+v", boss)
 	}
-	for boss.TurnsTaken < BossLegionEveryTurns {
+	for boss.TurnsTaken < capstoneLegionEveryTurnsForBoss(boss) {
 		bossRound(t, room, Command{Action: "defend"})
 		boss = &encounter.Enemies[0]
 	}
-	if livingServants(encounter, 0) != 1 || !hasEvent(run, "boss_legion") || !hasEvent(run, "boss_hunger") {
-		t.Fatalf("on turn %d the duke calls an imp and warns that it is hungry: %+v", boss.TurnsTaken, encounter.Enemies)
+	if livingServants(encounter, 0) != 1 || !hasEvent(run, "boss_legion") {
+		t.Fatalf("on turn %d the duke should call one imp: %+v", boss.TurnsTaken, encounter.Enemies)
+	}
+	for boss.DevourIn > 1 {
+		bossRound(t, room, Command{Action: "defend"})
+		boss = &encounter.Enemies[0]
+	}
+	if !hasEvent(run, "boss_hunger") {
+		t.Fatalf("on turn %d the duke should warn that it is hungry: %+v", boss.TurnsTaken, encounter.Enemies)
 	}
 	boss.Health = boss.MaxHealth / 2
 	before, bonus := boss.Health, boss.DamageBonus
 	bossRound(t, room, Command{Action: "defend"})
 	boss = &encounter.Enemies[0]
-	if livingServants(encounter, 0) != 0 || boss.Devoured != 1 || boss.DamageBonus != bonus+1 || !hasEvent(run, "boss_devour") {
-		t.Fatalf("on turn %d the duke devours its imp: %+v", boss.TurnsTaken, encounter.Enemies)
+	if livingServants(encounter, 0) != 1 || boss.Devoured != 1 || boss.DamageBonus != bonus+1 || !hasEvent(run, "boss_devour") {
+		t.Fatalf("on turn %d the duke devours its previous imp before calling a fresh one: %+v", boss.TurnsTaken, encounter.Enemies)
 	}
 	if healed := boss.Health - before; healed < BossDevourHeal-2*3 { // its drain may also have healed or the imp's
 		t.Fatalf("devouring healed %d", healed)

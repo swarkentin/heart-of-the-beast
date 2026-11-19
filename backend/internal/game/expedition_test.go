@@ -1602,3 +1602,43 @@ func TestIDKFARejectsLegacyRuns(t *testing.T) {
 		t.Fatalf("expected legacy run to reject cheat, got %v", err)
 	}
 }
+
+func TestSoloLateEncounterHealthScaling(t *testing.T) {
+	newEncounter := func() *Encounter {
+		return &Encounter{Enemies: []Enemy{{Health: 100, MaxHealth: 100}}}
+	}
+
+	lateSolo := newEncounter()
+	scaleSoloLateEncounterHealth(lateSolo, 1, soloLateEncounterHealthStartDepth)
+	if got := lateSolo.Enemies[0].MaxHealth; got != 85 {
+		t.Fatalf("late solo enemy health = %d, want 85", got)
+	}
+
+	earlySolo := newEncounter()
+	scaleSoloLateEncounterHealth(earlySolo, 1, soloLateEncounterHealthStartDepth-1)
+	if got := earlySolo.Enemies[0].MaxHealth; got != 100 {
+		t.Fatalf("early solo enemy health = %d, want 100", got)
+	}
+
+	lateCoop := newEncounter()
+	scaleSoloLateEncounterHealth(lateCoop, 2, soloLateEncounterHealthStartDepth)
+	if got := lateCoop.Enemies[0].MaxHealth; got != 100 {
+		t.Fatalf("late co-op enemy health = %d, want 100", got)
+	}
+}
+
+func TestTargetedCapstoneBossHealthScaling(t *testing.T) {
+	for _, encounterID := range []string{"infernal-boss-chain-duke", "eldritch-boss-choir-of-mouths"} {
+		encounter := &Encounter{Enemies: []Enemy{{Health: 100, MaxHealth: 100}}}
+		scaleTargetedCapstoneBossHealth(encounter, encounterID)
+		if got := encounter.Enemies[0].MaxHealth; got != 90 {
+			t.Errorf("%s boss health = %d, want 90", encounterID, got)
+		}
+	}
+
+	other := &Encounter{Enemies: []Enemy{{Health: 100, MaxHealth: 100}}}
+	scaleTargetedCapstoneBossHealth(other, "eldritch-boss-the-sleeper")
+	if got := other.Enemies[0].MaxHealth; got != 100 {
+		t.Fatalf("unmodified capstone boss health = %d, want 100", got)
+	}
+}

@@ -40,7 +40,7 @@ type Report struct {
 }
 
 func main() {
-	runs := flag.Int("runs", 12, "number of seeds per party and decision policy")
+	runs := flag.Int("runs", 60, "number of seeds per party and decision policy")
 	firstSeed := flag.Int64("first-seed", 1, "first deterministic seed; identical seed ranges are paired across policies")
 	theme := flag.String("theme", game.RandomDungeonThemeID, "dungeon theme, or random for a seeded mix of themes between dungeons")
 	maxSteps := flag.Int("max-steps", 4000, "maximum simulation decisions per expedition")
