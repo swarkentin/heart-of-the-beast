@@ -280,6 +280,7 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		instance := newCatalogEncounter(encounterID, roomID+"-", scaling)
 		scaleSoloLateEncounterHealth(instance, partySize, scaling.Depth)
 		scaleEncounterHealth(instance, healthPct+extraHealthPct)
+		scaleTargetedCapstoneBossHealth(instance, encounterID)
 		return instance
 	}
 	pick := func(ids []string) string { return ids[rng.Intn(len(ids))] }
@@ -501,6 +502,18 @@ func scaleSoloLateEncounterHealth(encounter *Encounter, partySize, effectiveDept
 		return
 	}
 	scaleEncounterHealth(encounter, -soloLateEncounterHealthDepthReduction)
+}
+
+// The Chain Duke and Choir of Mouths were the two most frequent capstone wipe encounters in the
+// 60-seed solo report. A small, encounter-specific health reduction gives parties more room to recover
+// without changing their mechanics or weakening the rest of either castle.
+const targetedCapstoneBossHealthReduction = -10
+
+func scaleTargetedCapstoneBossHealth(encounter *Encounter, encounterID string) {
+	switch encounterID {
+	case "infernal-boss-chain-duke", "eldritch-boss-choir-of-mouths":
+		scaleEncounterHealth(encounter, targetedCapstoneBossHealthReduction)
+	}
 }
 
 // scaleEncounterHealth changes the health of every enemy in an encounter by a percentage.
