@@ -22,7 +22,7 @@ func option(label, effectID string) EventChoice {
 func discovery(roomName, roomDescription, title, prompt string, choices ...EventChoice) DiscoveryTemplate {
 	return DiscoveryTemplate{
 		Room:  hall(roomName, roomDescription),
-		Event: FloorEventTemplate{Title: title, Description: prompt, Choices: append(choices, option("Gather healing herbs", "herb_cache"))},
+		Event: FloorEventTemplate{Title: title, Description: prompt, Choices: choices},
 	}
 }
 
