@@ -79,7 +79,6 @@ func TestHealingHerbShopAndDiscoveryTrade(t *testing.T) {
 	}
 }
 
-
 func TestHealingHerbsRefillAtDungeonEnd(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "herb-refill")
 	run := room.Run
@@ -175,7 +174,6 @@ func TestHerbalistBoonIsADeepDungeonPerk(t *testing.T) {
 		t.Fatalf("Herbalist's Boon healed %d, want full maximum health %d", got, player.MaxHealth)
 	}
 }
-
 
 func TestTacticalPolicyUsesHerbForPartialHealing(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "tactical-herb")
