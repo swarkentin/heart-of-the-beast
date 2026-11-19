@@ -231,14 +231,12 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
   const [paradeLooks] = useState<Record<string, HeroSkin>>(titleParadeLooks);
   const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
   const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
-  return <GameShell status="READY" tools={<SharedMenu profile={profile} classes={classes} rewards={rewards} audioControls={audioControls} onSaveName={onSaveName} />}>
+  return <GameShell status="READY" className="px-title-screen" tools={<SharedMenu profile={profile} classes={classes} rewards={rewards} audioControls={audioControls} onSaveName={onSaveName} />}>
     <section className="px-title">
       <div className="px-title-crest"><Torch /><span className="px-emblem px-emblem-large" aria-hidden="true" /><Torch /></div>
-      <p className="px-eyebrow">THE FORGOTTEN CATACOMBS</p>
-      <h1 className="px-wordmark">HEART <small>OF THE</small> BEAST</h1>
-      <p className="px-lede">A dungeon crawl for one to four. Pick a hero, descend together, and see who makes it back.</p>
+      <h1 className="px-wordmark">Heart of the Beast</h1>
       <SoundButton large />
-      <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={ASCENDANT} />)}</div></div>
+      <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={paradeLooks[id]} />)}</div></div>
     </section>
     <section className="px-panel px-title-actions" aria-label="Start playing">
       <div className="px-title-create">
