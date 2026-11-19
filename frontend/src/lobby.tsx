@@ -40,7 +40,13 @@ const DEPLOY_COMMIT = typeof __APP_COMMIT__ === "string" ? __APP_COMMIT__ : "";
 export const DEFAULT_SKIN: HeroSkin = { tier: 1, variant: "heraldic" };
 const CLASSIC_SKIN: HeroSkin = { tier: 3, variant: "heraldic" };
 /** The look the title screen parades: what every class grows into. */
-const ASCENDANT: HeroSkin = { tier: 6, variant: "heraldic" };
+const TITLE_VARIANTS = ["heraldic", "ember", "frost", "dusk", "voidstar"] as const;
+function titleParadeLooks(): Record<string, HeroSkin> {
+  return Object.fromEntries(PARADE.map(id => [id, {
+    tier: 1 + Math.floor(Math.random() * 6),
+    variant: TITLE_VARIANTS[Math.floor(Math.random() * TITLE_VARIANTS.length)],
+  }]));
+}
 // Swatches for the colour variants. Keep in step with VARIANTS in scripts/pixel-art/heroes.mjs
 // ("heraldic" is each class's own colours, so it shows the class accent).
 const VARIANT_SWATCH: Record<string, [string, string]> = { ember: ["#d07a34", "#8a2f2a"], frost: ["#a9d6ea", "#4d7fa8"], dusk: ["#c08aff", "#3a2f4a"], voidstar: ["#6ffff0", "#1d1638"] };
@@ -222,6 +228,7 @@ export function SharedMenu({ profile, classes = [], rewards = [], audioControls,
 }
 
 export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profile, classes = [], rewards = [], audioControls, onSaveName }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
+  const [paradeLooks] = useState<Record<string, HeroSkin>>(titleParadeLooks);
   const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
   const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
   return <GameShell status="READY" tools={<SharedMenu profile={profile} classes={classes} rewards={rewards} audioControls={audioControls} onSaveName={onSaveName} />}>
