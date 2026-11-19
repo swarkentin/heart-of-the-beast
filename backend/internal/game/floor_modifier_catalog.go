@@ -26,7 +26,8 @@ type FloorModifierDefinition struct {
 	// Opposes names a modifier that cancels this one out; the two are never rolled onto the same floor.
 	Opposes string
 	// Rollable modifiers can be rolled onto a floor. The others are only applied by room events.
-	Rollable bool
+	Rollable        bool
+	DungeonRollable bool // eligible for the one-per-dungeon perk offered at the crossroads
 
 	EnemyDamage          int // added to the damage of every enemy move that deals damage
 	EnemyHealthPct       int // percent change to enemy health, applied when the floor is generated
@@ -61,7 +62,7 @@ func newFloorModifierCatalog() FloorModifierCatalog {
 		{ID: "dull-edges", Name: "Dull Edges", Kind: FloorModifierDebuff, Rollable: true, Opposes: "battle-hymn", PlayerStrike: -1, Description: "Strikes deal 1 less damage on this floor."},
 		{ID: "brittle-guard", Name: "Brittle Guard", Kind: FloorModifierDebuff, Rollable: true, Opposes: "aegis", PlayerGuard: -1, Description: "Defend blocks 1 less damage on this floor."},
 		{ID: "withering", Name: "Withering Air", Kind: FloorModifierDebuff, Rollable: true, Opposes: "mending", HealingPct: -50, Description: "All healing is halved on this floor."},
-		{ID: "blighted-herbs", Name: "Blighted Herbs", Kind: FloorModifierDebuff, Rollable: true, ConsumableHealingPct: -50, Description: "Healing herbs restore 50% less health on this floor."},
+		{ID: "blighted-herbs", Name: "Blighted Herbs", Kind: FloorModifierDebuff, Rollable: true, Opposes: "herbalist-boon", ConsumableHealingPct: -50, Description: "Healing herbs restore 50% less health on this floor."},
 		{ID: "lean-pickings", Name: "Lean Pickings", Kind: FloorModifierDebuff, Rollable: true, Opposes: "fortune", GoldPct: -30, Description: "Encounters on this floor pay 30% less gold."},
 		{ID: "hazard", Name: "Hazardous Ground", Kind: FloorModifierDebuff, Rollable: true, EntryDamage: 2, Description: "Every fight on this floor opens with 2 damage to each adventurer."},
 		{ID: "fortune", Name: "Fortune's Favour", Kind: FloorModifierPerk, Rollable: true, Opposes: "lean-pickings", GoldPct: 50, Description: "Encounters on this floor pay 50% more gold."},
@@ -69,6 +70,7 @@ func newFloorModifierCatalog() FloorModifierCatalog {
 		{ID: "aegis", Name: "Aegis", Kind: FloorModifierPerk, Rollable: true, Opposes: "brittle-guard", PlayerGuard: 1, Description: "Defend blocks 1 more damage on this floor."},
 		{ID: "mending", Name: "Mending Air", Kind: FloorModifierPerk, Rollable: true, Opposes: "withering", HealingPct: 25, Description: "All healing restores 25% more health on this floor."},
 		{ID: "frail-foes", Name: "Frail Foes", Kind: FloorModifierPerk, Rollable: true, Opposes: "ironhide", EnemyHealthPct: -15, Description: "Enemies on this floor have 15% less health."},
+		{ID: "herbalist-boon", Name: "Herbalist’s Boon", Kind: FloorModifierPerk, DungeonRollable: true, Opposes: "blighted-herbs", ConsumableHealingPct: 100, Description: "Healing Herbs restore 100% of your maximum health."},
 		// Applied only by room events, as the price of a choice.
 		{ID: "alerted", Name: "Alerted", Kind: FloorModifierDebuff, EnemyDamage: 1, Description: "The floor knows you are here. Enemies deal 1 more damage until you descend."},
 		{ID: "cursed", Name: "Cursed", Kind: FloorModifierDebuff, EntryDamage: 2, Description: "A curse follows the party. Every fight on this floor opens with 2 damage to each adventurer."},
@@ -95,7 +97,7 @@ func (catalog FloorModifierCatalog) Validate() error {
 		if definition.Kind != FloorModifierDebuff && definition.Kind != FloorModifierPerk {
 			return fmt.Errorf("floor modifier %q has unknown kind %q", definition.ID, definition.Kind)
 		}
-		if definition == (FloorModifierDefinition{ID: definition.ID, Name: definition.Name, Description: definition.Description, Kind: definition.Kind, Opposes: definition.Opposes, Rollable: definition.Rollable}) {
+		if definition == (FloorModifierDefinition{ID: definition.ID, Name: definition.Name, Description: definition.Description, Kind: definition.Kind, Opposes: definition.Opposes, Rollable: definition.Rollable, DungeonRollable: definition.DungeonRollable}) {
 			return fmt.Errorf("floor modifier %q changes nothing", definition.ID)
 		}
 		if definition.EnemyHealthPct <= -100 || definition.GoldPct <= -100 || definition.HealingPct <= -100 || definition.ConsumableHealingPct <= -100 || definition.EntryDamage < 0 || definition.EncounterHeal < 0 {
