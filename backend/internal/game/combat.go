@@ -37,6 +37,7 @@ func startCombatRound(room *Room, now time.Time) {
 	if current == nil || current.Encounter == nil {
 		return
 	}
+	assignEncounterModifier(run, current)
 	players := eligibleCombatPlayers(room)
 	for enemyIndex := range current.Encounter.Enemies {
 		if enemy := &current.Encounter.Enemies[enemyIndex]; enemy.Health > 0 {
@@ -64,7 +65,11 @@ func startCombatRound(room *Room, now time.Time) {
 			}
 		}
 		enemy.Intent = applyEnemyRoundStart(room, enemy, intent, run.CombatRoundNumber)
+		if enemy.Modifier == "unyielding" && enemy.Intent != nil {
+			enemy.Intent.Interruptible = false
+		}
 	}
+	applyAmbush(room, current)
 }
 
 // SubmitCombatAction records one player's choice. In co-op, the round resolves
