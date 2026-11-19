@@ -170,8 +170,8 @@ func TestBulwarkSoloTacticalCanClearFirstDungeon(t *testing.T) {
 	}
 	rate := float64(cleared) / float64(len(report.Runs))
 	t.Logf("solo Bulwark cleared the first dungeon in %d/%d tactical runs (%.0f%%)", cleared, len(report.Runs), rate*100)
-	// With healing now supplied by a small carried herb inventory instead of every-fight recovery,
-	// solo first-dungeon completion is intentionally in the 10–20% range.
+	// With healing supplied by carried herbs instead of every-fight recovery, solo first-dungeon completion
+	// should remain low but nonzero. This lower bound is a smoke test, not a tuning target.
 	if rate < 0.10 {
 		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 10%%", rate*100)
 	}
