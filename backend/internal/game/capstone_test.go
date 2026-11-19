@@ -30,6 +30,32 @@ func capstoneBossRoom(t *testing.T, themeID string, players, depth int) (*Room, 
 	return room, run.Rooms[run.CurrentRoomID].Encounter
 }
 
+func TestStandardCastleEncountersFieldTwoMonsters(t *testing.T) {
+	standard := []string{
+		"eldritch-congregation", "eldritch-library", "eldritch-flooded-hall",
+		"infernal-kennels", "infernal-pyre", "infernal-cells",
+	}
+	for _, id := range standard {
+		definition, err := defaultEncounterCatalog.Encounter(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := definition.SpawnCount(1); got != 2 {
+			t.Errorf("%s has %d enemies for a solo party, want 2", id, got)
+		}
+	}
+	heavy := []string{"eldritch-honour-guard", "eldritch-well", "infernal-barracks", "infernal-pit"}
+	for _, id := range heavy {
+		definition, err := defaultEncounterCatalog.Encounter(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := definition.SpawnCount(1); got != 3 {
+			t.Errorf("%s has %d enemies for a solo party, want 3", id, got)
+		}
+	}
+}
+
 func TestCastlesAreNotOfferedInTheLobbyOrAtOrdinaryCrossroads(t *testing.T) {
 	for _, theme := range PlayableDungeonThemes() {
 		if theme.Capstone {
