@@ -400,3 +400,51 @@
 .px-account-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
 .px-account-compare > div { display: grid; gap: 4px; padding: 8px; border: 1px solid #51466d; background: var(--pit); }
 .px-account-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+
+/* The title is a window into the world, not another stone UI panel. */
+.px-title-screen {
+  background: #090812 url("/art/ui/title-catacombs.png") center 43% / cover no-repeat;
+}
+.px-title-screen::before {
+  background:
+    linear-gradient(180deg, #090812a8 0%, #09081236 26%, #09081226 55%, #090812c9 100%),
+    linear-gradient(90deg, #0908126b 0%, transparent 22%, transparent 78%, #0908126b 100%);
+}
+.px-title-screen .px-title {
+  gap: clamp(4px, 1.2vh, 12px);
+  max-width: 1320px;
+  margin-top: clamp(2px, 1.6vh, 16px);
+}
+.px-title-screen .px-title-crest { opacity: .88; }
+.px-title-screen h1.px-wordmark {
+  padding: 0 .12em .12em;
+  color: #f3e5c8;
+  font: 600 clamp(38px, 6.6vw, 82px)/1.12 "Cinzel", Georgia, serif;
+  letter-spacing: .075em;
+  text-transform: none;
+  text-shadow: 0 2px 0 #241323, 0 5px 0 #100b17, 0 0 24px #e6a64a55;
+}
+.px-title-screen .px-parade {
+  margin-top: 0;
+  padding: 0 0 10px;
+  background: linear-gradient(180deg, transparent 0%, #09081236 36%, #090812b8 100%),
+    url("/art/ui/tile-floor.png") 50% bottom / 64px 32px repeat-x;
+}
+.px-title-screen .px-parade-line { align-items: flex-end; }
+.px-title-screen .px-parade .px-hero {
+  margin-inline: clamp(-15px, -1vw, -7px);
+  filter: drop-shadow(0 5px 5px #05030add);
+}
+.px-title-screen .px-title-actions {
+  margin-top: clamp(8px, 1.8vh, 18px);
+  background: #100d1bdc;
+  backdrop-filter: blur(3px);
+}
+@media (max-width: 760px) {
+  .px-title-screen { background-position: 50% center; }
+  .px-title-screen .px-title { margin-top: 4px; }
+  .px-title-screen h1.px-wordmark { font-size: clamp(32px, 8vw, 52px); letter-spacing: .025em; }
+  .px-title-screen .px-parade { padding-bottom: 6px; }
+  .px-title-screen .px-parade .px-hero { --hs: 1.55; margin-inline: -13px; }
+}
