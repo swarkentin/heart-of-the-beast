@@ -106,9 +106,6 @@ func finishCamp(t *testing.T, room *Room) {
 			break
 		}
 		command := Command{Type: "minigame", Action: "bank"}
-		if run.Camp.Game.Kind == MinigameEcho {
-			command = Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(run.Camp.Game.Players[playerID].Sequence, ",")}
-		}
 		if err := ApplyCommand(room, playerID, command, expeditionNow); err != nil {
 			t.Fatalf("mini-game: %v", err)
 		}
@@ -895,6 +892,35 @@ func TestBoneDiceIsPushYourLuck(t *testing.T) {
 	}
 }
 
+func TestNewMinigamesOnlyUsePushYourLuckGames(t *testing.T) {
+	for seed := uint64(0); seed < 500; seed++ {
+		game := newMinigame(seed, int(seed%12)+1, []string{"player-1"})
+		if game.Kind != MinigameDice && game.Kind != MinigameChests {
+			t.Fatalf("seed %d generated retired or unknown minigame %q", seed, game.Kind)
+		}
+	}
+}
+
+func TestPersistedRuneEchoCampIsRetiredGracefully(t *testing.T) {
+	room := campWithGame(t, MinigameDice, 1)
+	run := room.Run
+	run.Camp.Game.Kind = MinigameEcho
+	run.Camp.Game.Name = "Rune Echo"
+	play := run.Camp.Game.Players["player-1"]
+	play.Sequence = []string{"sun", "moon", "star", "wave"}
+	before := run.Players["player-1"].Gold
+
+	if !AdvanceCamp(room, expeditionNow) {
+		t.Fatal("legacy Rune Echo should be settled and the camp advanced")
+	}
+	if !play.Done || play.Gold != MinigameConsolationGold || run.Players["player-1"].Gold != before+MinigameConsolationGold {
+		t.Fatalf("legacy game should grant only consolation gold: play=%+v gold=%d", play, run.Players["player-1"].Gold)
+	}
+	if run.Camp.Stage != CampStageShop {
+		t.Fatalf("legacy camp should move to shop, got %q", run.Camp.Stage)
+	}
+}
+
 func TestMimicsRowHidesOneMimicAmongThreePurses(t *testing.T) {
 	room := campWithGame(t, MinigameChests, 2)
 	run := room.Run
@@ -957,41 +983,6 @@ func TestMimicsRowHidesOneMimicAmongThreePurses(t *testing.T) {
 	}
 	if run.Camp.Stage != CampStageShop {
 		t.Fatal("the shop opens when everyone has finished")
-	}
-}
-
-func TestRuneEchoPaysForEveryRuneInOrder(t *testing.T) {
-	room := campWithGame(t, MinigameEcho, 2)
-	run := room.Run
-	perfect, partial := run.Camp.Game.Players["player-1"], run.Camp.Game.Players["player-2"]
-	game := run.Camp.Game
-	if want := 4 + game.Depth/2; len(perfect.Sequence) != want || len(partial.Sequence) != want {
-		t.Fatalf("sequences should have %d runes: %v %v", want, perfect.Sequence, partial.Sequence)
-	}
-	purse := run.Players["player-1"].Gold
-	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: "sun,moon"}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
-		t.Fatalf("a short answer: %v", err)
-	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "bank"}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
-		t.Fatalf("banking is not a move in Rune Echo: %v", err)
-	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(perfect.Sequence, ",")}, expeditionNow); err != nil {
-		t.Fatal(err)
-	}
-	if perfect.Gold != game.stake(3*len(perfect.Sequence))+game.stake(8) || run.Players["player-1"].Gold != purse+perfect.Gold {
-		t.Fatalf("a perfect echo paid %d", perfect.Gold)
-	}
-	if err := ApplyCommand(room, "player-1", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(perfect.Sequence, ",")}, expeditionNow); !errors.Is(err, ErrInvalidCampAction) {
-		t.Fatalf("playing twice: %v", err)
-	}
-	answer := append([]string(nil), partial.Sequence...)
-	answer[2] = "wrong"
-	if err := ApplyCommand(room, "player-2", Command{Type: "minigame", Action: "echo", ChoiceID: strings.Join(answer, ",")}, expeditionNow); err != nil {
-		t.Fatal(err)
-	}
-	purse = run.Players["player-2"].Gold - partial.Gold
-	if partial.Gold != game.stake(6) || partial.Gold == 0 {
-		t.Fatalf("two runes in order should pay %d, paid %d", game.stake(6), partial.Gold)
 	}
 }
 
@@ -1560,6 +1551,45 @@ func TestIDKFACompletesCurrentFloorAndDescends(t *testing.T) {
 	}
 	if room.Run.FloorsCleared != 1 {
 		t.Fatalf("expected one normally-rewarded floor clear, got %d", room.Run.FloorsCleared)
+	}
+}
+
+func TestIDKFASkipsSoloCampMinigameAndDescends(t *testing.T) {
+	room := startExpedition(t, 1, DefaultDungeonThemeID, "idkfa-camp")
+	clearToCamp(t, room)
+	run := room.Run
+	beforeDepth := run.Depth
+	beforeXP := run.Players["player-1"].Experience
+	if run.Camp.Stage != CampStageGame || run.Camp.Deadline != nil {
+		t.Fatalf("expected a solo camp minigame without a deadline: %+v", run.Camp)
+	}
+
+	if err := ApplyCommand(room, "player-1", Command{Type: "cheat_idkfa"}, expeditionNow); err != nil {
+		t.Fatalf("IDKFA should skip a solo minigame: %v", err)
+	}
+	if run.Phase != PhaseCombat || run.Depth != beforeDepth+1 || run.Camp != nil {
+		t.Fatalf("IDKFA should descend to the next floor: phase=%s depth=%d camp=%+v", run.Phase, run.Depth, run.Camp)
+	}
+	found := false
+	for _, event := range run.LastCombatEvents {
+		if event.Kind == "cheat_idkfa" && strings.Contains(event.Message, "IDKFA? Really?") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("the dungeon should react to the cheat without scolding: %+v", run.LastCombatEvents)
+	}
+	if !run.Cheated || run.Players["player-1"].Experience != beforeXP {
+		t.Fatalf("IDKFA should mark the run cheated without granting character XP: cheated=%v xp=%d before=%d", run.Cheated, run.Players["player-1"].Experience, beforeXP)
+	}
+	grantExperience(run.Players["player-1"], room, "player-1", 0, EncounterExperienceReward)
+	if run.Players["player-1"].Experience != beforeXP {
+		t.Fatalf("a cheated run must not grant further character XP: got %d, want %d", run.Players["player-1"].Experience, beforeXP)
+	}
+	run.Phase = PhaseFailed
+	if got := RunProgressXP(run); got != 0 {
+		t.Fatalf("a cheated run must not grant persistent profile/mastery XP: got %d", got)
 	}
 }
 

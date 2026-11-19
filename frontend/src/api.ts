@@ -19,8 +19,8 @@ export type ApiRoomEventVote = ApiVote & { eventId: string };
 /** A level-wide rule in force on one floor of an expedition. */
 export type ApiFloorModifier = { id: string; name: string; description: string; kind: "debuff" | "perk" };
 /** One adventurer's copy of the camp mini-game. `chests` holds -1 for a shut chest, 0 for the mimic, else gold. */
-export type ApiMinigamePlay = { index: number; done: boolean; gold: number; pot: number; rolls?: number[]; chests?: number[]; sequence?: string[]; answer?: string[]; result?: string };
-export type ApiMinigame = { kind: "dice" | "chests" | "echo"; name: string; rules: string; depth: number; players: Record<string, ApiMinigamePlay> };
+export type ApiMinigamePlay = { index: number; done: boolean; gold: number; pot: number; rolls?: number[]; chests?: number[]; result?: string };
+export type ApiMinigame = { kind: "dice" | "chests"; name: string; rules: string; depth: number; players: Record<string, ApiMinigamePlay> };
 export type ApiShopItem = { id: string; name: string; description: string; kind: string; amount?: number; price: number; repeatable?: boolean };
 /** The respite at a dungeon's midpoint and between dungeons: a mini-game for gold, a vote for the next dungeon (between dungeons only), then a shop. `deadline` is absent for a party of one. */
 /** One of the two dungeons offered after a dungeon boss; its modifiers hold on every floor of it. */

@@ -16,9 +16,6 @@ export function FloorStatus({ gold, modifiers }: { gold?: number; modifiers: Api
   </div>;
 }
 
-const RUNES = ["sun", "moon", "star", "wave"];
-const RUNE_STEP_MS = 800;
-
 function Dice({ play, acting, busy, send }: { play: ApiMinigamePlay; acting: boolean; busy: boolean; send: Send }) {
   const rolls = play.rolls ?? [];
   return <>
@@ -39,33 +36,6 @@ function Chests({ play, acting, busy, send }: { play: ApiMinigamePlay; acting: b
   </>;
 }
 
-function Echo({ play, acting, busy, send }: { play: ApiMinigamePlay; acting: boolean; busy: boolean; send: Send }) {
-  const sequence = play.sequence ?? [];
-  // The pattern plays once, one rune at a time, then the stones go dark and the player repeats it from memory.
-  const [shown, setShown] = useState(0);
-  const [answer, setAnswer] = useState<string[]>([]);
-  const watching = !play.done && shown <= sequence.length;
-  useEffect(() => {
-    if (!watching) return;
-    const timer = window.setTimeout(() => setShown(value => value + 1), RUNE_STEP_MS);
-    return () => window.clearTimeout(timer);
-  }, [watching, shown]);
-  const lit = watching && shown >= 1 ? sequence[shown - 1] : undefined;
-  const press = (rune: string) => {
-    const next = [...answer, rune];
-    setAnswer(next);
-    if (next.length === sequence.length) void send({ type: "minigame", action: "echo", choiceId: next.join(",") });
-  };
-  if (play.done) {
-    return <div className="rn-game-row" aria-label="The pattern">{sequence.map((rune, index) => <span key={index} className={"rn-tile rn-rune-" + rune + (play.answer?.[index] === rune ? "" : " rn-tile-bad")}>{rune.toUpperCase()}</span>)}</div>;
-  }
-  return <>
-    <p className="px-label" aria-live="polite">{watching ? "WATCH · " + Math.min(shown, sequence.length) + "/" + sequence.length : "REPEAT THE PATTERN · " + answer.length + "/" + sequence.length}</p>
-    <div className="rn-game-row">{RUNES.map(rune => <button key={rune} className={"rn-tile rn-rune-" + rune + (lit === rune ? " rn-tile-lit" : "")} onClick={() => press(rune)} disabled={!acting || busy || watching || answer.length >= sequence.length}>{rune.toUpperCase()}</button>)}</div>
-    {watching ? <span className="px-label" role="status">{lit ? lit.toUpperCase() : "…"}</span> : null}
-  </>;
-}
-
 function Game({ game, selfId, acting, busy, send }: { game: ApiMinigame; selfId: string; acting: boolean; busy: boolean; send: Send }) {
   const play = game.players[selfId];
   const others = Object.values(game.players);
@@ -75,7 +45,7 @@ function Game({ game, selfId, acting, busy, send }: { game: ApiMinigame; selfId:
   const props = { play, acting, busy, send };
   return <>
     <p className="px-copy">{game.rules}</p>
-    {game.kind === "dice" ? <Dice {...props} /> : game.kind === "chests" ? <Chests {...props} /> : <Echo {...props} />}
+    {game.kind === "dice" ? <Dice {...props} /> : <Chests {...props} />}
     {play.done ? <p className="px-copy" role="status"><b className="rn-pot">+{play.gold} GOLD</b> {play.result} {others.some(item => !item.done) ? "Waiting for the rest of the party." : ""}</p> : null}
   </>;
 }

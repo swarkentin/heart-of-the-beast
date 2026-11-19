@@ -425,7 +425,7 @@ func RunProgressXP(run *Run) int64 {
 
 // RunProgressOf breaks RunProgressXP down. It is nil until the run is over, and nil for a run that won no fight.
 func RunProgressOf(run *Run) *RunProgress {
-	if run == nil || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
+	if run == nil || run.Cheated || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
 		return nil
 	}
 	encounters := 0

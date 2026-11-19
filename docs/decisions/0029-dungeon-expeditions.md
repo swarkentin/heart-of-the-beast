@@ -26,8 +26,7 @@ health (up from 20%) and its existing enrage plus signature mechanics. Capstone 
    per dungeon.
 2. **Camps are rare on purpose.** The party camps only **halfway through a dungeon** (after floor 2 of 4 or 5,
    floor 3 of 6) and **between dungeons**. Every other floor ends with a single exit, "Descend", and a 15% rest,
-   so the loop is not interrupted on every floor. A camp is: a 20% rest, one of three **mini-games** for gold (Bone
-   Dice and Mimic's Row are push-your-luck; Rune Echo is memory), the crossroads vote (between dungeons only),
+   so the loop is not interrupted on every floor. A camp is: a 20% rest, one of two **mini-games** for gold (Bone Dice and Mimic's Row are push-your-luck), the crossroads vote (between dungeons only),
    then a **shop** that shows the next floor's modifiers. Gold is earned quietly per cleared encounter
    (`4 + 2 × budget + depth`) and shown on the purse, not in the log. A party of one sets its own pace; a larger
    party has 45 s for the game and 60 s for the shop.

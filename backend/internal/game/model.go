@@ -56,6 +56,8 @@ type Run struct {
 	Depth          int    `json:"depth,omitempty"`
 	MaxDepth       int    `json:"maxDepth,omitempty"`
 	MusicIntensity int    `json:"musicIntensity,omitempty"`
+	// Cheated marks a run whose rewards are forfeited after using IDKFA.
+	Cheated bool `json:"cheated,omitempty"`
 	// Generator is the version of the rules the run was started under. Zero is a run persisted before
 	// expeditions (three floors, a restore-or-perk choice between them); ExpeditionGenerator runs have exactly four generated floors, floor modifiers, gold, and a camp between floors.
 	Generator int `json:"generator,omitempty"`
