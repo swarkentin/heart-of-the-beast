@@ -605,12 +605,16 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 			if getErr != nil {
 				return nil, getErr
 			}
-			if err := h.awardNewEnemyKills(r.Context(), latest, beforeKills); err != nil { return nil, err }
+			if err := h.awardNewEnemyKills(r.Context(), latest, beforeKills); err != nil {
+				return nil, err
+			}
 			return latest, h.awardRunProgress(r.Context(), latest)
 		}
 		return nil, err
 	}
-	if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil { return nil, err }
+	if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil {
+		return nil, err
+	}
 	return room, h.awardRunProgress(r.Context(), room)
 }
 
