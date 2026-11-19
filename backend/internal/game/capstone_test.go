@@ -172,8 +172,8 @@ func TestLegionBossCallsServantsAndDevoursThem(t *testing.T) {
 	before, bonus := boss.Health, boss.DamageBonus
 	bossRound(t, room, Command{Action: "defend"})
 	boss = &encounter.Enemies[0]
-	if livingServants(encounter, 0) != 0 || boss.Devoured != 1 || boss.DamageBonus != bonus+1 || !hasEvent(run, "boss_devour") {
-		t.Fatalf("on turn %d the duke devours its imp: %+v", boss.TurnsTaken, encounter.Enemies)
+	if livingServants(encounter, 0) != 1 || boss.Devoured != 1 || boss.DamageBonus != bonus+1 || !hasEvent(run, "boss_devour") {
+		t.Fatalf("on turn %d the duke devours its previous imp before calling a fresh one: %+v", boss.TurnsTaken, encounter.Enemies)
 	}
 	if healed := boss.Health - before; healed < BossDevourHeal-2*3 { // its drain may also have healed or the imp's
 		t.Fatalf("devouring healed %d", healed)
