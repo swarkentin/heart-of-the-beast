@@ -146,7 +146,7 @@ func skillPolicyCommand(room *Room, playerID string, round int, rng *rand.Rand) 
 	}
 	best, bestValue := "", -1
 	for _, definition := range ready {
-		value := skillValue(definition, player, target, livingEnemies, len(living), incoming)
+		value := skillValue(run, definition, player, target, livingEnemies, len(living), incoming)
 		if spiked, ok := target.trait(TraitSpiked); ok && definition.Basic {
 			value -= spiked.Amount * 2 // spikes cut whoever uses a basic attack on them
 		}
@@ -254,7 +254,7 @@ func bestProtection(ready []SkillDefinition, forAlly bool) (SkillDefinition, boo
 }
 
 // skillValue roughly prices a skill this round, in damage-equivalents.
-func skillValue(definition SkillDefinition, player *PlayerState, target *Enemy, livingEnemies, livingAllies, incoming int) int {
+func skillValue(run *Run, definition SkillDefinition, player *PlayerState, target *Enemy, livingEnemies, livingAllies, incoming int) int {
 	value := 0
 	enemies := 1
 	if definition.Target == SkillTargetAllEnemies {
@@ -268,6 +268,14 @@ func skillValue(definition SkillDefinition, player *PlayerState, target *Enemy, 
 		switch effect.Kind {
 		case EffectDamage:
 			value += amount * enemies
+		case EffectLifesteal:
+			// Lifesteal is both damage and sustain. Without pricing the healing, the tactical
+			// policy ignores Juggernaut's defining recovery skill and burns herbs instead.
+			healing := estimatedDamage(run, player, definition, target) * effect.Amount / 100
+			if missing := player.MaxHealth - player.Health; healing > missing {
+				healing = missing
+			}
+			value += healing
 		case EffectCounter:
 			taken := player.ClassCombat.DamageTakenLastRound
 			if taken > effect.Cap {
@@ -349,6 +357,47 @@ func estimatedDamage(run *Run, player *PlayerState, definition SkillDefinition, 
 		total -= enemy.Barrier
 	}
 	return total
+}
+
+// tacticalLifestealCanReplaceHerb reports whether a ready attack can restore at least half
+// an herb's effective healing while still dealing damage. Prefer that action in combat:
+// it preserves the herb and does not trade away an entire attack for recovery.
+func tacticalLifestealCanReplaceHerb(room *Room, player *PlayerState) bool {
+	if room == nil || room.Run == nil || player == nil || player.Health <= 0 {
+		return false
+	}
+	current := room.Run.Rooms[room.Run.CurrentRoomID]
+	if current == nil || current.Encounter == nil {
+		return false
+	}
+	herbHealing := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	herbHealing = floorRulesFor(room.Run).consumableHealing(herbHealing)
+	minimumHealing := (herbHealing + 1) / 2
+	missing := player.MaxHealth - player.Health
+	if missing < minimumHealing {
+		return false
+	}
+	for _, definition := range readySkills(player) {
+		for _, effect := range definition.Effects {
+			if effect.Kind != EffectLifesteal || effect.Amount <= 0 {
+				continue
+			}
+			for i := range current.Encounter.Enemies {
+				enemy := &current.Encounter.Enemies[i]
+				if enemy.Health <= 0 {
+					continue
+				}
+				healing := estimatedDamage(room.Run, player, definition, enemy) * effect.Amount / 100
+				if healing > missing {
+					healing = missing
+				}
+				if healing >= minimumHealing {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func bestDamageOn(run *Run, player *PlayerState, ready []SkillDefinition, enemy *Enemy) int {
