@@ -47,7 +47,7 @@ func useConsumable(room *Room, playerID, itemID string) error {
 		return ErrInvalidPhase
 	}
 	player := run.Players[playerID]
-	if player == nil || player.Health <= 0 {
+	if player == nil || player.Health <= 0 || room.Presence[playerID].LeftAt != nil {
 		return ErrInvalidPhase
 	}
 	if player.Consumables == nil {
