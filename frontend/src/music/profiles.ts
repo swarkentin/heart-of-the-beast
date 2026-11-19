@@ -105,13 +105,13 @@ const carnival: ThemeProfile = {
 };
 
 const jungle: ThemeProfile = {
-  id: "jungle", name: "Alien Jungle", character: "Syncopated tribal toms and bongos, marimba, breathy pads, humming insects and bird calls",
-  rootHz: 87.31, depthDrift: [0, -2, -5], scale: "pentMinor", bpm: 108, steps: 16, swing: 0.12, wobble: 3, leadOct: 2,
-  voices: { pad: "breathPad", bass: "thumpBass", lead: "marimba", accent: "marimba", kick: "tom", back: "bongo", tick: "shaker", fill: "bongo" },
-  patterns: { kick: "X..x..x...x.x...", back: "....x..x....x...", tick: "x.x.xxx.x.x.xxx.", bass: "X..x....x..x..x.", lead: "x..x..x..x..x.x.", leadSparse: "x.....x....x...." },
-  motif: [0, 2, 1, 3, 2, 4, 3, 1], chordRoots: [0, 2, 3, 1], bassLines: [[0, 0, 2, 0], [0, 2, 3, 2]],
-  bed: { noise: "pink", filter: "bandpass", f: 3200, q: 1.5, gain: 0.04, lfo: { rate: 0.3, depth: 0.5 }, drones: [{ ratio: 1, w: "sine", gain: 0.1, cents: 0 }] },
-  fx: [{ fx: "insect", p: 0.8 }, { fx: "bird", p: 0.3 }, { fx: "drip", p: 0.2 }],
+  id: "jungle", name: "Alien Jungle", character: "Late-night jungle / liquid drum and bass: rolling Amen-style breaks, warm sub, lush phased PS2-era pads and spacious dub echoes",
+  rootHz: 65.41, depthDrift: [0, -2, -5], scale: "dorian", bpm: 170, steps: 16, swing: 0.04, wobble: 1, leadOct: 2,
+  voices: { pad: "synthPad", bass: "subBass", lead: "glass", accent: "glass", kick: "kick", back: "snare", tick: "hat", fill: "snare" },
+  patterns: { kick: "X..x...xX...x..x", back: "....X.......X.x.", tick: "x.x.xx.x.x.x.x.x", bass: "X.....x.X...x...", lead: "x.......x...x...", leadSparse: "X.......x......." },
+  motif: [0, 2, 4, 3, 2, 4, 6, 4], chordRoots: [0, 5, 3, 4], bassLines: [[0, 0, -3, 0], [0, 5, 3, 4]],
+  bed: { noise: "pink", filter: "lowpass", f: 1800, q: 0.8, gain: 0.018, lfo: { rate: 0.08, depth: 0.7 }, drones: [{ ratio: 1, w: "sawtooth", gain: 0.055, cents: -7 }, { ratio: 1.003, w: "sawtooth", gain: 0.05, cents: 7 }, { ratio: 1.5, w: "triangle", gain: 0.035, cents: -4 }] },
+  fx: [{ fx: "swell", p: 0.45 }, { fx: "drip", p: 0.12 }, { fx: "whisper", p: 0.08 }],
   variants: {},
   bosses: {
     heartroot_titan: { tempoMul: 0.85, transpose: -7, fill: "tom", lead: "sub", note: "Ancient grove: a fifth lower, slow earth drums" },
