@@ -340,6 +340,22 @@ func (cast *skillCast) weaken(enemy *Enemy, amount int, message string) {
 }
 
 // strike deals one damage effect to one enemy.
+func criticalHit(run *Run, player *PlayerState, enemy *Enemy, round int) bool {
+	if run == nil || player == nil || enemy == nil {
+		return false
+	}
+	// A stable per-action roll keeps live play and seeded simulations reproducible.
+	seed := run.Seed ^ uint64(round*7919)
+	for _, value := range []byte(player.ID + ":" + enemy.ID) {
+		seed = seed*1099511628211 ^ uint64(value)
+	}
+	chance := 6 + player.Level*2
+	if chance > 16 {
+		chance = 16
+	}
+	return seed%100 < uint64(chance)
+}
+
 func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *Enemy) {
 	player, run := cast.player, cast.run
 	base := effect.Amount + statValue(player, effect.Stat)
@@ -375,7 +391,12 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	enemy.MarkedDamage = attack.RemainingMarkedDamage
 	player.ClassCombat.ResolveReady = attack.ResolveReady
 	cast.struck = true
-	damage := boonDamageMultiplier(player, enemy, attack.Damage)
+	critical := criticalHit(run, player, enemy, cast.round)
+	damage := attack.Damage
+	if critical {
+		damage = (damage*3 + 1) / 2
+	}
+	damage = boonDamageMultiplier(player, enemy, damage)
 	if damage < 1 {
 		damage = 1
 	}
@@ -395,7 +416,12 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	if cast.definition.Basic {
 		kind = "player_attack"
 	}
-	addCombatImpact(run, cast.round, kind, cast.name()+" hits "+enemy.Name+" for "+itoa(transition.Applied)+" damage.", "damage", enemy.ID, "enemy", transition.Applied)
+	message := cast.name()+" hits "+enemy.Name+" for "+itoa(transition.Applied)+" damage."
+	if critical {
+		message = "CRITICAL! " + message
+	}
+	addCombatImpact(run, cast.round, kind, message, "damage", enemy.ID, "enemy", transition.Applied)
+	run.LastCombatEvents[len(run.LastCombatEvents)-1].Critical = critical
 	cast.checkDefeated(enemy)
 }
 
