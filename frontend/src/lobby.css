@@ -477,3 +477,28 @@
   .px-title-screen .px-title-account .px-account { grid-template-columns: 1fr; }
   .px-title-screen .px-title-account .px-account-discord { grid-column: 1; grid-row: auto; }
 }
+
+
+.px-profile-tabs{display:flex;gap:8px;margin:18px 0 14px;border-bottom:1px solid #4b4650}
+.px-profile-tabs button{padding:10px 14px;background:transparent;border:0;border-bottom:2px solid transparent;color:#a9a1aa;font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;cursor:pointer}
+.px-profile-tabs button.active{color:#f0d7a6;border-bottom-color:#d6a64d}
+.px-profile-tabs button span{margin-left:6px;color:#d6a64d}
+.px-bestiary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 18px}
+.px-bestiary-stats>div{display:flex;flex-direction:column;gap:3px;padding:12px;background:#171923;border:1px solid #373541}
+.px-bestiary-stats strong{font-size:25px;color:#f0d7a6}
+.px-bestiary-stats span,.px-bestiary-card small{font-size:9px;letter-spacing:.1em;color:#aaa2ad}
+.px-bestiary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.px-bestiary-card{display:flex;align-items:center;gap:12px;min-width:0;padding:10px;background:#171923;border:1px solid #373541}
+.px-bestiary-sprite{width:92px;height:104px;flex:0 0 92px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse,#343143,#171923 72%)}
+.px-bestiary-sprite svg{width:100%;height:100%;image-rendering:pixelated}
+.px-bestiary-placeholder{color:#8b7d90;font-size:34px}
+.px-bestiary-copy{min-width:0;flex:1}
+.px-bestiary-title{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.px-bestiary-title strong{color:#f0e4d2;font-size:13px}
+.px-bestiary-title span{white-space:nowrap;color:#d6a64d;font-size:9px;font-weight:800}
+.px-bestiary-copy>small{display:block;margin-top:4px}
+.px-bestiary-copy p{margin:8px 0;color:#c1b9c5;font-size:11px;line-height:1.45}
+.px-bestiary-progress{height:4px;margin:8px 0 5px;background:#35313c}
+.px-bestiary-progress i{display:block;height:100%;background:#d6a64d}
+.px-bestiary-empty{padding:30px 12px;text-align:center;color:#aaa2ad}
+@media(max-width:680px){.px-bestiary-grid{grid-template-columns:1fr}.px-bestiary-sprite{width:76px;height:90px;flex-basis:76px}.px-bestiary-stats strong{font-size:20px}.px-bestiary-stats span{font-size:8px}}
