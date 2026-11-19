@@ -78,3 +78,20 @@ func TestUnyieldingModifierCannotBeInterrupted(t *testing.T) {
 		t.Fatal("unyielding intent remained interruptible")
 	}
 }
+
+func TestAmbushCannotKnockOutPlayerBeforeFirstAction(t *testing.T) {
+	player := &PlayerState{ID: "p1", Health: 3, MaxHealth: 30}
+	room := &Room{
+		PlayerIDs: []string{"p1"},
+		Presence:  map[string]PlayerPresence{"p1": {}},
+		Run:       &Run{CombatRoundNumber: 1, Players: map[string]*PlayerState{"p1": player}},
+	}
+	encounter := &DungeonRoom{Encounter: &Encounter{Enemies: []Enemy{{
+		ID: "e1", Name: "Razor Vine", Health: 12, Modifier: "ambush",
+		Intent: &EnemyIntent{Kind: "strike", Label: "Lash", Damage: 12, TargetPlayerID: "p1"},
+	}}}}
+	applyAmbush(room, encounter)
+	if player.Health != 1 {
+		t.Fatalf("ambush should leave the player at 1 HP, got %d", player.Health)
+	}
+}
