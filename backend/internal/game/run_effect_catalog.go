@@ -37,6 +37,7 @@ const (
 	RunEffectPartyMaxHealth RunEffectKind = "party_max_health" // changes maximum health
 	RunEffectPartyGold      RunEffectKind = "party_gold"       // every adventurer gains gold
 	RunEffectFloorModifier  RunEffectKind = "floor_modifier"   // puts a floor modifier in force until the descent
+	RunEffectPartyConsumable RunEffectKind = "party_consumable" // grants a carried consumable to every adventurer
 )
 
 // RunEffectOperation is one step of a multi-part effect. Strike, guard and maximum-health amounts may be
@@ -126,7 +127,7 @@ func (catalog RunEffectCatalog) Validate() error {
 		}
 		for _, operation := range append(append([]RunEffectOperation(nil), definition.Operations...), definition.FailOperations...) {
 			switch operation.Kind {
-			case RunEffectPartyHeal, RunEffectPartyDamage, RunEffectPartyGold:
+			case RunEffectPartyHeal, RunEffectPartyDamage, RunEffectPartyGold, RunEffectPartyConsumable:
 				if operation.Amount <= 0 {
 					return fmt.Errorf("run effect %q has a non-positive %s operation", definition.ID, operation.Kind)
 				}
@@ -263,6 +264,10 @@ func applyRunEffectOperation(room *Room, operation RunEffectOperation, playerIDs
 			}
 		case RunEffectPartyGold:
 			member.Gold += operation.Amount
+		case RunEffectPartyConsumable:
+			if member.Consumables == nil { member.Consumables = make(map[string]int) }
+			member.Consumables[ConsumableHealingHerb] += operation.Amount
+			if member.Consumables[ConsumableHealingHerb] > MaxHealingHerbs { member.Consumables[ConsumableHealingHerb] = MaxHealingHerbs }
 		case RunEffectPartyStrike:
 			applyPermanentStrikeBonus(member, operation.Amount)
 		case RunEffectPartyGuard:
@@ -303,6 +308,7 @@ func discoveryEffects() []RunEffectDefinition {
 		return RunEffectOperation{Kind: RunEffectFloorModifier, ModifierID: id}
 	}
 	effects := []RunEffectDefinition{
+		{ID: "herb_cache", Summary: "Each adventurer finds 1 healing herb, up to a carry limit of 4.", Operations: []RunEffectOperation{op(RunEffectPartyConsumable, 1)}, Outcome: "The cache holds a healing herb for every adventurer."},
 		{ID: "blood_pact", Summary: "Each adventurer loses up to 6 health. +2 Strike for the rest of the run, up to the +4 permanent cap.", Operations: []RunEffectOperation{op(RunEffectPartyDamage, 6), op(RunEffectPartyStrike, 2)},
 			Outcome: "The price is paid in blood. Every adventurer loses up to 6 health and gains up to +2 Strike, subject to the permanent upgrade cap."},
 		{ID: "heavy_plate", Summary: "+2 Guard and -1 Strike for the rest of the run.", Operations: []RunEffectOperation{op(RunEffectPartyGuard, 2), op(RunEffectPartyStrike, -1)},
