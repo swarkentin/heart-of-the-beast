@@ -43,12 +43,12 @@ func snapshotEnemyKills(room *game.Room) map[string]enemyBeforeKill {
 		}
 	}
 	return result
-}
-
-// awardNewEnemyKills runs only after the room transition has been persisted.
-// The profile repository deduplicates each enemy instance, so retries and
-// reconnects cannot inflate lifetime kill counts.
-func (h *Handler) awardNewEnemyKills(ctx context.Context, room *game.Room, before map[string]enemyBeforeKill) error {
+				theme = room.Run.ThemeID
+			}
+			elite := dungeonRoom.RoomType == "boss" || dungeonRoom.RoomType == "miniboss" || dungeonRoom.RoomType == "lair"
+			result[roomID+":"+enemy.ID] = enemyBeforeKill{
+				health: enemy.Health, roomID: roomID,
+				kill: store.EnemyKill{EnemyKey: key, Name: enemy.Name, ThemeID: theme, SpriteID: enemy.SpriteID, Elite: elite},
 	if room == nil || room.Run == nil {
 		return nil
 	}
@@ -58,6 +58,26 @@ func (h *Handler) awardNewEnemyKills(ctx context.Context, room *game.Room, befor
 	}
 	after := snapshotEnemyKills(room)
 	for key, previous := range before {
+		current, exists := after[key]
+		if !exists || previous.health <= 0 || current.health > 0 {
+			continue
+		}
+		roomID := previous.roomID
+		enemyID := strings.TrimPrefix(key, roomID+":")
+		for _, playerID := range room.PlayerIDs {
+			if room.Presence[playerID].LeftAt != nil {
+				continue
+			}
+			profileID := room.PlayerProfileIDs[playerID]
+			if profileID == "" {
+				continue
+			}
+			if err := bestiary.RecordEnemyKill(ctx, profileID, room.Run.ID, enemyID, previous.kill, h.now().UTC()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 		current, exists := after[key]
 		if !exists || previous.health <= 0 || current.health > 0 {
 			continue
