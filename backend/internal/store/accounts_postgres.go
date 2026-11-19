@@ -122,6 +122,8 @@ func (p *Postgres) GetProfileByID(ctx context.Context, profileID string) (*Profi
 	if err := p.loadBestiary(ctx, &profile); err != nil {
 		return nil, err
 	}
+		return nil, err
+	}
 	return cloneProfile(&profile)
 }
 
