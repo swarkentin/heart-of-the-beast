@@ -503,14 +503,14 @@ func settleMinigame(room *Room, playerID string, play *MinigamePlay, result stri
 type ShopItemKind string
 
 const (
-	ShopHeal      ShopItemKind = "heal"
-	ShopFullHeal  ShopItemKind = "full_heal"
-	ShopStrike    ShopItemKind = "strike"
-	ShopGuard     ShopItemKind = "guard"
-	ShopMaxHealth ShopItemKind = "max_health"
-	ShopWard      ShopItemKind = "ward"
-	ShopRevive    ShopItemKind = "revive"
-	ShopCleanse   ShopItemKind = "cleanse"
+	ShopHeal       ShopItemKind = "heal"
+	ShopFullHeal   ShopItemKind = "full_heal"
+	ShopStrike     ShopItemKind = "strike"
+	ShopGuard      ShopItemKind = "guard"
+	ShopMaxHealth  ShopItemKind = "max_health"
+	ShopWard       ShopItemKind = "ward"
+	ShopRevive     ShopItemKind = "revive"
+	ShopCleanse    ShopItemKind = "cleanse"
 	ShopConsumable ShopItemKind = "consumable"
 )
 
@@ -523,7 +523,7 @@ type ShopItem struct {
 	Amount      int          `json:"amount,omitempty"`
 	Price       int          `json:"price"`
 	// Repeatable items can be bought more than once at the same camp.
-	Repeatable bool `json:"repeatable,omitempty"`
+	Repeatable   bool   `json:"repeatable,omitempty"`
 	ConsumableID string `json:"consumableId,omitempty"`
 }
 
@@ -648,8 +648,12 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 	message := label + " buys " + item.Name + "."
 	switch item.Kind {
 	case ShopConsumable:
-		if buyer.Consumables == nil { buyer.Consumables = make(map[string]int) }
-		if buyer.Consumables[item.ConsumableID] >= MaxHealingHerbs { return ErrItemUnavailable }
+		if buyer.Consumables == nil {
+			buyer.Consumables = make(map[string]int)
+		}
+		if buyer.Consumables[item.ConsumableID] >= MaxHealingHerbs {
+			return ErrItemUnavailable
+		}
 		buyer.Consumables[item.ConsumableID] += item.Amount
 	case ShopHeal, ShopFullHeal:
 		amount := item.Amount
