@@ -233,6 +233,31 @@ func TestSkillPolicyDoesNotSelfHealInsteadOfWoundedAlly(t *testing.T) {
 	}
 }
 
+func TestJuggernautTacticalPolicyValuesBloodFrenzySustain(t *testing.T) {
+	rng := rand.New(rand.NewSource(7))
+	juggernaut := classPlayer(t, "hero", ClassJuggernaut, 2)
+	juggernaut.Health = 10
+	enemies := []Enemy{{ID: "foe", Name: "Foe", Health: 100, MaxHealth: 100, Behavior: "skeleton"}}
+	room := policyRoom(map[string]*PlayerState{"hero": juggernaut}, enemies)
+
+	command := skillPolicyCommand(room, "hero", 1, rng)
+	if command.Skill != "juggernaut.blood-frenzy" {
+		t.Fatalf("wounded Juggernaut should favor Blood Frenzy's damage plus healing, chose %+v", command)
+	}
+}
+
+func TestJuggernautTacticalPolicySavesHerbWhenBloodFrenzyCanHeal(t *testing.T) {
+	juggernaut := classPlayer(t, "hero", ClassJuggernaut, 2)
+	juggernaut.Health = 10
+	juggernaut.Consumables = map[string]int{ConsumableHealingHerb: 1}
+	enemies := []Enemy{{ID: "foe", Name: "Foe", Health: 100, MaxHealth: 100, Behavior: "skeleton"}}
+	room := policyRoom(map[string]*PlayerState{"hero": juggernaut}, enemies)
+
+	if command, use := tacticalConsumableCommand(room, "hero"); use {
+		t.Fatalf("Juggernaut should use Blood Frenzy rather than spend an herb in combat, chose %+v", command)
+	}
+}
+
 func TestSkillPolicyCommandsAreAlwaysValidForEveryClassAndRank(t *testing.T) {
 	rng := rand.New(rand.NewSource(3))
 	for _, class := range ClassCatalog() {
