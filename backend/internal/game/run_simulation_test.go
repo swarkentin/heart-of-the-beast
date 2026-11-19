@@ -154,7 +154,7 @@ func TestTacticalPlayUsuallyClearsTheFirstFloor(t *testing.T) {
 	}
 }
 
-func TestBulwarkSoloTacticalUsuallyClearsFirstDungeon(t *testing.T) {
+func TestBulwarkSoloTacticalCanClearFirstDungeon(t *testing.T) {
 	if testing.Short() {
 		t.Skip("simulates full expeditions")
 	}
@@ -170,8 +170,10 @@ func TestBulwarkSoloTacticalUsuallyClearsFirstDungeon(t *testing.T) {
 	}
 	rate := float64(cleared) / float64(len(report.Runs))
 	t.Logf("solo Bulwark cleared the first dungeon in %d/%d tactical runs (%.0f%%)", cleared, len(report.Runs), rate*100)
-	if rate < 0.50 {
-		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 50%%", rate*100)
+	// With healing now supplied by a small carried herb inventory instead of every-fight recovery,
+	// solo first-dungeon completion is intentionally in the 10–20% range.
+	if rate < 0.10 {
+		t.Fatalf("solo Bulwark cleared the first dungeon in %.0f%% of tactical runs, want at least 10%%", rate*100)
 	}
 }
 
