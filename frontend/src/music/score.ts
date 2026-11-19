@@ -168,7 +168,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
     hits.forEach((hit, k) => {
       const next = hits[k + 1]?.step ?? plan.stepsPerBar;
       const degree = stateChord ? stateChord.root : line[k % line.length];
-      const freq = stateChord ? plan.rootHz * 2 ** ((degree - 12) / 12) : degreeFreq(plan, scale, degree);
+      const freq = stateChord ? Math.max(20, plan.rootHz * 2 ** ((degree - 12) / 12)) : degreeFreq(plan, scale, degree);
       events.push(melodic(stepTime(plan, hit.step), plan.voices.bass, freq, Math.max(0.2, (next - hit.step) * plan.stepSec * 0.95), (cue.state === "party" ? 0.72 : 0.62) * hit.vel * layers.bass));
     });
   }
