@@ -8,7 +8,7 @@ func TestResolveExperienceGainPreservesProgressionRules(t *testing.T) {
 	if result.Experience != 72 || result.Level != 2 {
 		t.Fatalf("unexpected first level transition: %+v", result)
 	}
-	if result.MaxHealth != 34 || result.StrikeDamage != 1 || result.GuardReduction != 0 || result.Stats.Power != 2 || len(result.LevelUps) != 1 || result.LevelUps[0] != 2 {
+	if result.MaxHealth != 34 || result.StrikeDamage != PlayerStrikeDamage+1 || result.GuardReduction != GuardDamageReduction || result.Stats.Power != 2 || len(result.LevelUps) != 1 || result.LevelUps[0] != 2 {
 		t.Fatalf("level 2 growth is incorrect: %+v", result)
 	}
 	if player.Experience != 54 || player.Level != 1 || player.MaxHealth != 30 {
