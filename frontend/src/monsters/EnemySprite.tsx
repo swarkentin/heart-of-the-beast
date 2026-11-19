@@ -169,7 +169,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
   const showDead = dead || !alive;
   const telegraphing = alive && Boolean(enemy.rawIntent);
   return (
-    <g transform={`translate(${x} 0)`} onClick={onClick} className={(onClick && alive ? "enemy-sprite " : "") + "enemy-stage-actor"} data-enemy={enemy.id} data-anim={pose.anim} data-frame={pose.frame}>
+    <g transform={`translate(${x} 0)`} onClick={onClick} className={(onClick && alive ? "enemy-sprite " : "") + "enemy-stage-actor" + (enemy.modifier ? " enemy-empowered-actor enemy-empowered-actor-" + enemy.modifier : "")} data-enemy={enemy.id} data-anim={pose.anim} data-frame={pose.frame}>
       {selected && alive ? <ellipse cx="0" cy={floorY + 2} rx={Math.max(92, (boxRight - boxLeft) / 2 + 18)} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
       <ellipse cx="0" cy={floorY + 4} rx={Math.max(60, (boxRight - boxLeft) / 2.2)} ry="14" fill="#080a10" opacity=".8" />
       {enemy.modifier ? <g className={"enemy-empowered enemy-empowered-" + enemy.modifier} pointerEvents="none">
