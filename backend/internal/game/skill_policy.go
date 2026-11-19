@@ -359,9 +359,9 @@ func estimatedDamage(run *Run, player *PlayerState, definition SkillDefinition, 
 	return total
 }
 
-// tacticalLifestealCanReplaceHerb reports whether a ready attack can restore at least half
-// an herb's effective healing while still dealing damage. Prefer that action in combat:
-// it preserves the herb and does not trade away an entire attack for recovery.
+// tacticalLifestealCanReplaceHerb reports whether a ready attack can restore at least 15% of max health
+// while still dealing damage. That is the absolute sustain value that justified saving an herb before
+// the base herb was raised from 30% to 50%; prefer the attack rather than spend a combat action healing.
 func tacticalLifestealCanReplaceHerb(room *Room, player *PlayerState) bool {
 	if room == nil || room.Run == nil || player == nil || player.Health <= 0 {
 		return false
@@ -372,7 +372,7 @@ func tacticalLifestealCanReplaceHerb(room *Room, player *PlayerState) bool {
 	}
 	herbHealing := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
 	herbHealing = floorRulesFor(room.Run).consumableHealing(herbHealing)
-	minimumHealing := (herbHealing + 1) / 2
+	minimumHealing := (player.MaxHealth*15 + 99) / 100
 	missing := player.MaxHealth - player.Health
 	if missing < minimumHealing {
 		return false
