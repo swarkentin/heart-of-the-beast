@@ -7,7 +7,7 @@ export const THEME_IDS = ["catacombs", "scifi", "mobster", "sunken", "clockwork"
 export type ThemeId = (typeof THEME_IDS)[number];
 
 /** What the party is doing. Each state gets its own layer mix, tempo and (for victory and defeat) a stinger. */
-export const MUSIC_STATES = ["exploration", "event", "combat", "miniboss", "boss", "victory", "defeat"] as const;
+export const MUSIC_STATES = ["title", "party", "exploration", "event", "combat", "miniboss", "boss", "victory", "defeat"] as const;
 export type MusicState = (typeof MUSIC_STATES)[number];
 
 export type Depth = 1 | 2 | 3;
