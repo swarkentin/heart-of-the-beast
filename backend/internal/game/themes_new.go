@@ -6,8 +6,8 @@ import "github.com/swarkentin/heart-of-the-beast/backend/internal/art"
 // and the two capstone castles (the Eldritch Castle and the Infernal Citadel, see capstone.go).
 //
 // Monsters follow the role templates of monster_catalog_themes.go and the trait templates of theme_variety.go.
-// Capstone monsters are a step harder: +2 health and +1 damage on every move, and their encounters field three
-// monsters where an ordinary theme fields two.
+// Capstone monsters are a step harder: +2 health and +1 damage on every boss move. Standard castle encounters
+// field two monsters like ordinary themes; heavy encounters keep their three-monster composition.
 
 // capstoneHealthBonus and capstoneDamageBonus are what a capstone castle's monsters add to the role templates.
 const (
@@ -188,19 +188,19 @@ func newThemeEncounters() []EncounterDefinition {
 		enc("arcade-slime-level", "arcade", spawn{"glitch-slime", 2}, spawn{"pixel-knight", 2}),
 		enc("arcade-shield-wall", "arcade", spawn{"shield-block", 3}, spawn{"bit-bat", 2}),
 		boss("arcade", "mecha-drake"), boss("arcade", "high-scorer"), boss("arcade", "the-final-boss"), lair("arcade", "glitch-king"),
-		// The Eldritch Castle: every fight but the opener fields three.
+		// The Eldritch Castle: standard encounters field two; the heavy encounters retain three.
 		enc("eldritch-vestibule", "eldritch", spawn{"grasping-tentacle", 2}, spawn{"robed-cultist", 2}),
-		enc("eldritch-congregation", "eldritch", spawn{"robed-cultist", 2}, spawn{"whispering-eye", 2}, spawn{"grasping-tentacle", 2}),
-		enc("eldritch-library", "eldritch", spawn{"mad-scholar", 2}, spawn{"grasping-tentacle", 2}, spawn{"whispering-eye", 2}),
-		enc("eldritch-flooded-hall", "eldritch", spawn{"writhing-mass", 2}, spawn{"whispering-eye", 2}, spawn{"robed-cultist", 2}),
+		enc("eldritch-congregation", "eldritch", spawn{"whispering-eye", 2}, spawn{"grasping-tentacle", 2}),
+		enc("eldritch-library", "eldritch", spawn{"mad-scholar", 2}, spawn{"whispering-eye", 2}),
+		enc("eldritch-flooded-hall", "eldritch", spawn{"writhing-mass", 2}, spawn{"whispering-eye", 2}),
 		enc("eldritch-honour-guard", "eldritch", spawn{"faceless-knight", 3}, spawn{"grasping-tentacle", 2}, spawn{"whispering-eye", 2}),
 		enc("eldritch-well", "eldritch", spawn{"deep-spawn", 4}, spawn{"robed-cultist", 2}, spawn{"grasping-tentacle", 2}),
 		boss("eldritch", "dreaming-bishop"), boss("eldritch", "choir-of-mouths"), boss("eldritch", "the-sleeper"), lair("eldritch", "unwritten-librarian"),
 		// The Infernal Citadel
 		enc("infernal-gate", "infernal", spawn{"cackling-imp", 2}, spawn{"hellhound", 2}),
-		enc("infernal-kennels", "infernal", spawn{"hellhound", 2}, spawn{"cackling-imp", 2}, spawn{"ash-witch", 2}),
-		enc("infernal-pyre", "infernal", spawn{"cinder-wretch", 2}, spawn{"cackling-imp", 2}, spawn{"ash-witch", 2}),
-		enc("infernal-cells", "infernal", spawn{"soul-jailer", 2}, spawn{"hellhound", 2}, spawn{"cackling-imp", 2}),
+		enc("infernal-kennels", "infernal", spawn{"hellhound", 2}, spawn{"ash-witch", 2}),
+		enc("infernal-pyre", "infernal", spawn{"cinder-wretch", 2}, spawn{"ash-witch", 2}),
+		enc("infernal-cells", "infernal", spawn{"soul-jailer", 2}, spawn{"hellhound", 2}),
 		enc("infernal-barracks", "infernal", spawn{"brimstone-knight", 3}, spawn{"cackling-imp", 2}, spawn{"ash-witch", 2}),
 		enc("infernal-pit", "infernal", spawn{"pit-brute", 4}, spawn{"hellhound", 2}, spawn{"cackling-imp", 2}),
 		boss("infernal", "hellforge-smith"), boss("infernal", "chain-duke"), boss("infernal", "archfiend"), lair("infernal", "gluttonous-maw"),
