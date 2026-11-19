@@ -5,6 +5,7 @@ on:
     paths:
       - "backend/**"
       - "scripts/balance-pr-summary.py"
+      - "scripts/balance-parallelism.patch"
       - ".github/workflows/balance.yml"
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - "backend/**"
       - "scripts/balance-pr-summary.py"
+      - "scripts/balance-parallelism.patch"
       - ".github/workflows/balance.yml"
   schedule:
     - cron: "17 9 * * 1"
@@ -57,9 +59,9 @@ jobs:
       - name: Apply simulation-only parallelism to branch point
         if: github.event_name == 'pull_request'
         run: |
-          # Reuse the worker-pool-only change from this PR without applying any gameplay or balance changes.
-          git diff 068435e56e6d27f75798b6912076d36633589e89^ 068435e56e6d27f75798b6912076d36633589e89 -- backend/internal/game/run_simulation.go > /tmp/balance-parallelism.patch
-          git -C /tmp/balance-branch-point apply /tmp/balance-parallelism.patch
+          # Keep baseline simulations fast without depending on an ephemeral commit SHA.
+          # This patch changes only worker scheduling; seeded results remain in seed order.
+          git -C /tmp/balance-branch-point apply "$GITHUB_WORKSPACE/scripts/balance-parallelism.patch"
           git -C /tmp/balance-branch-point diff --check
 
       - name: Run branch-point simulations
@@ -77,12 +79,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          run_id="$(gh run list --workflow balance.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null || true)"
-          if [ -n "$run_id" ]; then
-            gh run download "$run_id" --name balance-baseline --dir backend/balance-baseline
-            echo "BALANCE_BASELINE=balance-baseline/balance-report.json" >> "$GITHUB_ENV"
-          else
-            echo "No accepted main-branch balance baseline exists yet; this run will establish the first report."
+          set -euo pipefail
+          mkdir -p backend/balance-baseline
+          found=false
+          run_ids="$(gh run list --workflow balance.yml --branch main --status success --limit 20 --json databaseId --jq '.[].databaseId' 2>/dev/null || true)"
+          for run_id in $run_ids; do
+            rm -rf backend/balance-baseline/*
+            if gh run download "$run_id" --name balance-baseline --dir backend/balance-baseline >/dev/null 2>&1 \
+              && test -s backend/balance-baseline/balance-report.json; then
+              echo "Using accepted main-branch balance baseline from workflow run $run_id."
+              echo "BALANCE_BASELINE=balance-baseline/balance-report.json" >> "$GITHUB_ENV"
+              found=true
+              break
+            fi
+          done
+          if [ "$found" != true ]; then
+            echo "No successful main-branch run with a balance-baseline artifact was found; regression gating is skipped for this PR."
+            echo "The branch-point comparison and absolute reports will still run."
           fi
 
       - name: Run endless expedition composition matrix
