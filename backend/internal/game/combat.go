@@ -65,9 +65,7 @@ func startCombatRound(room *Room, now time.Time) {
 			}
 		}
 		enemy.Intent = applyEnemyRoundStart(room, enemy, intent, run.CombatRoundNumber)
-		if enemy.Modifier == "unyielding" && enemy.Intent != nil {
-			enemy.Intent.Interruptible = false
-		}
+		enforceUnyielding(enemy)
 	}
 	applyAmbush(room, current)
 }
