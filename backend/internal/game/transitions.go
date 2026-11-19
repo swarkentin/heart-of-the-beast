@@ -181,7 +181,6 @@ func allEnemiesDefeated(encounter *Encounter) bool {
 	return true
 }
 
-
 // applyIDKFA is the hidden keyboard cheat. It skips the current floor's route and
 // resolves its guardian through the ordinary combat/reward path, then fast-forwards
 // the camp so the party enters the next floor (or dungeon) immediately.
