@@ -12,6 +12,7 @@ import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
 import { interruptTarget } from "./interrupts.ts";
+import { herbPromptLevel } from "./herbPrompt.ts";
 import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
@@ -295,7 +296,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       </div>
       {acting ? <>
         <div className="rn-target">
-          <button type="button" className="rn-herb-use" onClick={() => { void onCommand({ type: "use_consumable", choiceId: "healing-herb" }); }} disabled={!acting || spectator || busy || !player || (player.consumables?.["healing-herb"] ?? 0) <= 0 || player.health >= player.maxHealth} aria-label={"Use a Healing Herb. " + (player?.consumables?.["healing-herb"] ?? 0) + " remaining"}><Icon id="life" size={1} /><span>HERB ×{player?.consumables?.["healing-herb"] ?? 0}</span></button>
+          {(() => { const herbs = player?.consumables?.["healing-herb"] ?? 0; const prompt = player ? herbPromptLevel(player.health, player.maxHealth, herbs) : "none"; return <button type="button" className={"rn-herb-use" + (prompt !== "none" ? " rn-herb-use-" + prompt : "")} onClick={() => { void onCommand({ type: "use_consumable", choiceId: "healing-herb" }); }} disabled={!acting || spectator || busy || !player || herbs <= 0 || player.health >= player.maxHealth} aria-label={"Use a Healing Herb. " + herbs + " remaining"} title={prompt === "urgent" ? "Critical health — use a Healing Herb!" : prompt === "hint" ? "Health is getting low — use a Healing Herb" : "Use a Healing Herb"}><Icon id="life" size={1} /><span>HERB ×{herbs}</span></button>; })()}
           <span className="px-label">TARGET</span>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(-1)} disabled={living.length < 2} aria-label="Previous target">◀</button>
           <strong>{livingTarget?.name ?? "NONE"}</strong>
