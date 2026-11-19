@@ -41,15 +41,16 @@ backlog still listed noir and stranger combinations.
 
 | Mechanic | Rule | Answer |
 |---|---|---|
-| anchor | On turn 1, and every 4 turns while none stand (3 waves at most), the boss raises 2 anchor monsters at 60% health. While any anchor stands, the boss takes half damage. | Cut the anchors with area skills, then burst the boss before they grow back. |
+| anchor | On turn 1, and every 4 turns while none stand (3 waves at most), the boss raises anchor monsters at 60% health. Usually 2; the Choir of Mouths raises 1. While any anchor stands, the boss takes half damage. | Cut the anchors with area skills, then burst the boss before they grow back. |
 | rebirth | The first time the boss falls, it rises again at 50% health. Its bleed, stun and barrier are cleared. | Keep a cooldown back for its second life. |
-| legion | Every 3 turns the boss calls one servant, while fewer than 2 stand. A new servant takes the slot of a fallen one, so a long fight never runs out of room. | Area damage, or focus fire. |
+| legion | Every 3 turns the boss calls one servant, while fewer than 2 stand. The Chain Duke calls every 4 turns. A new servant takes the slot of a fallen one, so a long fight never runs out of room. | Area damage, or focus fire. |
 | devour | Every 4 turns the boss eats every servant still standing. It heals 6 per servant and hits 1 harder for each (+3 at most). The turn before it feeds, the log warns, and its tag reads DEVOURS NEXT TURN. | Kill the servants before it feeds. |
 
 - **The Eldritch Castle:** The Dreaming Bishop has rebirth and a cataclysm. The Choir of Mouths has anchor. The
   Sleeper Beneath has anchor, rebirth and a cataclysm.
 - **The Infernal Citadel:** The Hellforge Smith has a barrier and a cataclysm. The Chain Duke has legion and
   devour. Archfiend Malgareth has legion, devour and a cataclysm.
+- **Targeted encounter tuning:** the Chain Duke has 10% less health and calls a servant every 4 turns rather than every 3. The Choir of Mouths has 10% less health and raises one anchor per wave rather than two. These exceptions preserve both mechanics while reducing the two most frequent capstone wipe encounters; other bosses are unchanged.
 - Capstone mechanics resolve at the start of a round, with the other boss mechanics. A boss that has both
   devour and legion feeds before it calls, so the servant it calls lives to be its next meal. Rebirth resolves
   after the round and before the victory check, so a fight is never won against a boss with a life left.
