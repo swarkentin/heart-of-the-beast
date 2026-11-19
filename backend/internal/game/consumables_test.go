@@ -23,8 +23,12 @@ func TestHealingHerbUseAndFullHealthNoOp(t *testing.T) {
 	if err := ApplyCommand(room, player.ID, Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, expeditionNow); err != nil {
 		t.Fatalf("use herb: %v", err)
 	}
-	if player.Health != before+want || player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs-1 {
-		t.Fatalf("herb use: health=%d inventory=%d, want health=%d inventory=%d", player.Health, player.Consumables[ConsumableHealingHerb], before+want, StartingHealingHerbs-1)
+	applied := want
+	if applied > player.MaxHealth-before {
+		applied = player.MaxHealth - before
+	}
+	if player.Health != before+applied || player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs-1 {
+		t.Fatalf("herb use: health=%d inventory=%d, want health=%d inventory=%d", player.Health, player.Consumables[ConsumableHealingHerb], before+applied, StartingHealingHerbs-1)
 	}
 }
 
