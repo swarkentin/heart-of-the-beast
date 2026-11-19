@@ -194,10 +194,19 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 		return ErrInvalidPhase
 	}
 	if run.Phase == PhaseIntermission {
+		// Solo camps have no automatic deadline. Give each stage an expired deadline
+		// so the cheat skips the game, settles boon defaults, resolves crossroads,
+		// and descends through the same normal camp transitions as a timed-out party.
 		for steps := 0; steps < 6 && run.Phase == PhaseIntermission; steps++ {
-			AdvanceCamp(room, now.Add(2*time.Hour))
+			if run.Camp == nil {
+				break
+			}
+			deadline := now.UTC().Add(-time.Second)
+			run.Camp.Deadline = &deadline
+			AdvanceCamp(room, now)
 		}
 		if run.Phase == PhaseCombat {
+			addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
 			return nil
 		}
 		return ErrInvalidPhase
@@ -239,6 +248,7 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 		for _, exit := range guardian.Exits {
 			if exit.Destination == DescendDestination {
 				descendExpedition(room, now)
+				addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
 				return nil
 			}
 		}
@@ -248,7 +258,13 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 	// activities, but lets the normal camp transition select the next dungeon
 	// deterministically and preserve the expedition's progression state.
 	for steps := 0; steps < 6 && run.Phase == PhaseIntermission; steps++ {
-		AdvanceCamp(room, now.Add(2*time.Hour))
+		if run.Camp == nil {
+			break
+		}
+		deadline := now.UTC().Add(-time.Second)
+		run.Camp.Deadline = &deadline
+		AdvanceCamp(room, now)
 	}
+	addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
 	return nil
 }
