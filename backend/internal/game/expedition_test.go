@@ -1603,7 +1603,6 @@ func TestIDKFARejectsLegacyRuns(t *testing.T) {
 	}
 }
 
-
 func TestSoloLateEncounterHealthScaling(t *testing.T) {
 	newEncounter := func() *Encounter {
 		return &Encounter{Enemies: []Enemy{{Health: 100, MaxHealth: 100}}}
