@@ -44,7 +44,7 @@ func TestBlightedHerbsHalvesHerbHealing(t *testing.T) {
 	if err := ApplyCommand(room, player.ID, Command{Type: "use_consumable", ChoiceID: ConsumableHealingHerb}, expeditionNow); err != nil {
 		t.Fatalf("use blighted herb: %v", err)
 	}
-	if got := player.Health-before; got != want {
+	if got := player.Health - before; got != want {
 		t.Fatalf("blighted herb healed %d, want %d", got, want)
 	}
 }
