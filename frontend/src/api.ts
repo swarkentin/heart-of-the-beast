@@ -1,7 +1,7 @@
 // The room API as the browser sees it: snapshot types and the one request helper.
 
 export type ApiEnemyIntent = { kind: string; label: string; damage: number; heal?: number; targetPlayerId?: string; targetAll?: boolean; interruptible?: boolean };
-export type ApiEnemy = { id: string; name: string; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; markedDamage?: number; stun?: number; bleed?: number; bleedRounds?: number; tauntedBy?: string; intent?: ApiEnemyIntent; mechanics?: string[]; barrier?: number; enraged?: boolean; summoned?: boolean; traits?: ApiMonsterTrait[]; shield?: number; phased?: boolean; fuseIn?: number; split?: boolean; avenged?: boolean; anchor?: boolean; anchored?: boolean; rebirthLabel?: string; reborn?: boolean; devourIn?: number; devoured?: number; damageBonus?: number };
+export type ApiEnemy = { id: string; name: string; modifier?: "ambush" | "unyielding"; behavior?: string; sprite?: string; turnsTaken: number; health: number; maxHealth: number; markedDamage?: number; stun?: number; bleed?: number; bleedRounds?: number; tauntedBy?: string; intent?: ApiEnemyIntent; mechanics?: string[]; barrier?: number; enraged?: boolean; summoned?: boolean; traits?: ApiMonsterTrait[]; shield?: number; phased?: boolean; fuseIn?: number; split?: boolean; avenged?: boolean; anchor?: boolean; anchored?: boolean; rebirthLabel?: string; reborn?: boolean; devourIn?: number; devoured?: number; damageBonus?: number };
 export type ApiMonsterTrait = { kind: string; amount?: number; every?: number; label?: string };
 /** `actorId` names the acting player on player actions; `auto` marks an action the server chose at the round deadline. */
 export type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number; actorId?: string; auto?: boolean };
@@ -39,7 +39,8 @@ export type ApiRunProgress = { xp: number; encounters: number; floors: number; d
 export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; playerSkins?: Record<string, { tier: number; variant: string }>; playerLoadouts?: Record<string, string[]>; playerMastery?: Record<string, number>; presence?: Record<string, ApiPresence>; run?: ApiRun; runProgress?: ApiRunProgress; version: number };
 export type ApiCommand = { type: string; round?: number; action?: string; skill?: string; targetId?: string; exitId?: string; choiceId?: string; skillIds?: string[] };
 export type ApiLinkedAccount = { provider: string; username: string; linkedAt: string };
-export type ApiProfile = { id: string; displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; accounts?: ApiLinkedAccount[]; createdAt: string; updatedAt: string };
+export type ApiBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; loreStage: number; kills: number; eliteKills: number };
+export type ApiProfile = { id: string; displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; bestiary?: Record<string, ApiBestiaryEntry>; accounts?: ApiLinkedAccount[]; createdAt: string; updatedAt: string };
 export type PlayerSession = { roomId: string; playerId: string; playerToken: string; spectatorToken?: string };
 export type SpectatorAccess = { roomId: string; token: string };
 

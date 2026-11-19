@@ -37,6 +37,7 @@ func startCombatRound(room *Room, now time.Time) {
 	if current == nil || current.Encounter == nil {
 		return
 	}
+	assignEncounterModifier(run, current)
 	players := eligibleCombatPlayers(room)
 	for enemyIndex := range current.Encounter.Enemies {
 		if enemy := &current.Encounter.Enemies[enemyIndex]; enemy.Health > 0 {
@@ -64,7 +65,9 @@ func startCombatRound(room *Room, now time.Time) {
 			}
 		}
 		enemy.Intent = applyEnemyRoundStart(room, enemy, intent, run.CombatRoundNumber)
+		enforceUnyielding(enemy)
 	}
+	applyAmbush(room, current)
 }
 
 // SubmitCombatAction records one player's choice. In co-op, the round resolves
@@ -187,7 +190,14 @@ func resolveCombatRound(room *Room, now time.Time) {
 	// player's own guard independently.
 	for enemyIndex := range current.Encounter.Enemies {
 		enemy := &current.Encounter.Enemies[enemyIndex]
-		if enemy.Health <= 0 || enemy.Intent == nil {
+		if enemy.Health <= 0 {
+			continue
+		}
+		if enemy.Intent != nil && enemy.Intent.Kind == "ambush_recovery" {
+			enemy.Intent = nil
+			continue
+		}
+		if enemy.Intent == nil {
 			continue
 		}
 		intent := *enemy.Intent

@@ -18,12 +18,13 @@ type ClassMastery struct {
 // Profile is the persistent identity shared by a player's characters and runs.
 // Credential hashes are kept in the repository and are never serialized.
 type Profile struct {
-	ID                string                  `json:"id"`
-	DisplayName       string                  `json:"displayName"`
-	AdventurerXP      int64                   `json:"adventurerXp"`
-	AdventurerLevel   int                     `json:"adventurerLevel"`
-	ClassMastery      map[string]ClassMastery `json:"classMastery"`
-	UnlockedCosmetics []string                `json:"unlockedCosmetics"`
+	Bestiary          map[string]BestiaryEntry `json:"bestiary"`
+	ID                string                   `json:"id"`
+	DisplayName       string                   `json:"displayName"`
+	AdventurerXP      int64                    `json:"adventurerXp"`
+	AdventurerLevel   int                      `json:"adventurerLevel"`
+	ClassMastery      map[string]ClassMastery  `json:"classMastery"`
+	UnlockedCosmetics []string                 `json:"unlockedCosmetics"`
 	// Accounts is filled in by the HTTP layer; repositories leave it empty.
 	Accounts  []LinkedAccount `json:"accounts"`
 	CreatedAt time.Time       `json:"createdAt"`
@@ -38,6 +39,9 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 	var copy Profile
 	if err := json.Unmarshal(encoded, &copy); err != nil {
 		return nil, err
+	}
+	if copy.Bestiary == nil {
+		copy.Bestiary = map[string]BestiaryEntry{}
 	}
 	if copy.ClassMastery == nil {
 		copy.ClassMastery = map[string]ClassMastery{}

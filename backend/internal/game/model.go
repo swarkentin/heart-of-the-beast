@@ -194,10 +194,11 @@ type Exit struct {
 }
 
 type Encounter struct {
-	DefinitionID string          `json:"definitionId,omitempty"`
-	Budget       int             `json:"budget,omitempty"`
-	Status       EncounterStatus `json:"status"`
-	Enemies      []Enemy         `json:"enemies"`
+	DefinitionID     string          `json:"definitionId,omitempty"`
+	ModifierAssigned bool            `json:"modifierAssigned,omitempty"`
+	Budget           int             `json:"budget,omitempty"`
+	Status           EncounterStatus `json:"status"`
+	Enemies          []Enemy         `json:"enemies"`
 }
 
 type EnemyIntent struct {
@@ -211,10 +212,12 @@ type EnemyIntent struct {
 }
 
 type Enemy struct {
-	ID           string `json:"id"`
-	DefinitionID string `json:"definitionId,omitempty"`
-	Name         string `json:"name"`
-	Behavior     string `json:"behavior,omitempty"`
+	ID                string `json:"id"`
+	Modifier          string `json:"modifier,omitempty"`
+	ModifierTriggered bool   `json:"modifierTriggered,omitempty"`
+	DefinitionID      string `json:"definitionId,omitempty"`
+	Name              string `json:"name"`
+	Behavior          string `json:"behavior,omitempty"`
 	// SpriteID is "<theme>/<creature>" for the pixel-art sheet at /art/monsters/<SpriteID>.png. Runs persisted
 	// before art existed lack it; clients must fall back to a placeholder.
 	SpriteID     string       `json:"sprite,omitempty"`

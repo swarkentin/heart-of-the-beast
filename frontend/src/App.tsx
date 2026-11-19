@@ -168,6 +168,14 @@ export default function App() {
     return value;
   }, []);
 
+  // Refresh lifetime bestiary data as soon as the server reports a defeat, so
+  // the profile's Stats tab is current without waiting for the run to end.
+  const bestiaryRefreshKey = (run?.lastCombatEvents ?? []).filter(event => event.kind === "enemy_defeated").map(event => event.round + ":" + event.message).join("|");
+  useEffect(() => {
+    if (!bestiaryRefreshKey) return;
+    void refreshProgressProfile().catch(() => { /* A later profile open or run refresh can retry. */ });
+  }, [bestiaryRefreshKey, refreshProgressProfile]);
+
   useEffect(() => {
     if (classCatalog) return;
     let active = true;

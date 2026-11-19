@@ -68,6 +68,7 @@ export type StageEnemy = {
   /** "<theme>/<creature>". Absent on runs persisted before art existed; the stage draws a placeholder. */
   sprite?: string;
   rawIntent?: IntentLike;
+  modifier?: "ambush" | "unyielding";
 };
 
 /** The two scene compositions. Both draw into a 1100x620 SVG viewBox. */

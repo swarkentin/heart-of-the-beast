@@ -576,6 +576,7 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room, error) {
+	beforeKills := snapshotEnemyKills(room)
 	now := h.now().UTC()
 	changed := game.AdvanceCombatRound(room, now)
 	if game.AdvanceNavigationVote(room, now) {
@@ -598,14 +599,18 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	room.UpdatedAt = h.now().UTC()
 	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
 		if errors.Is(err, store.ErrConflict) {
-			// The winning writer may have completed the run. Award before exposing
-			// that latest snapshot, just as we do on the successful-save path.
 			latest, getErr := h.rooms.Get(r.Context(), room.ID)
 			if getErr != nil {
 				return nil, getErr
 			}
+			if err := h.awardNewEnemyKills(r.Context(), latest, beforeKills); err != nil {
+				return nil, err
+			}
 			return latest, h.awardRunProgress(r.Context(), latest)
 		}
+		return nil, err
+	}
+	if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil {
 		return nil, err
 	}
 	return room, h.awardRunProgress(r.Context(), room)
@@ -895,6 +900,7 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 	}
 	for attempt := 0; attempt < 4; attempt++ {
 		expected := room.Version
+		beforeKills := snapshotEnemyKills(room)
 		if err := game.ApplyCommand(room, actor, command, h.now().UTC()); err != nil {
 			writeError(w, http.StatusConflict, err.Error())
 			return
@@ -912,6 +918,10 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			writeStoreError(w, err)
+			return
+		}
+		if err := h.awardNewEnemyKills(r.Context(), room, beforeKills); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not save bestiary progress")
 			return
 		}
 		if err := h.awardRunProgress(r.Context(), room); err != nil {

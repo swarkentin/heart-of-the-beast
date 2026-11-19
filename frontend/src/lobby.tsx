@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
 import { AccountPanel } from "./account";
+import { BestiarySprite } from "./monsters/BestiarySprite";
 import type { ApiLinkedAccount } from "./api";
 import { SoundButton } from "./audio";
 import { cooldownLabel, loadoutProblem, MAX_LOADOUT, skillsForClass, usableLoadout, type Skill } from "./combatAbilities";
@@ -12,7 +13,8 @@ import { SKILL_ICON_ORDER } from "./skillIcons.gen";
 export type LobbyClass = { id: string; archetypeId: string; name: string; description: string; startingStats: { health: number; power: number; focus: number; agility: number }; startingEquipment: string[]; passiveId: string };
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
-export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; accounts?: ApiLinkedAccount[] };
+export type LobbyBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; loreStage: number; kills: number; eliteKills: number };
+export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; bestiary?: Record<string, LobbyBestiaryEntry>; accounts?: ApiLinkedAccount[] };
 /** A class look: armour tier (1-6) and colour variant. Both unlock with class mastery; the server validates them. */
 export type HeroSkin = { tier: number; variant: string };
 export type LobbySkinTier = { tier: number; rank: string; name: string; description: string; masteryLevel: number };
@@ -262,6 +264,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
 
 function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[]; rewards: LobbyProfileReward[]; onSaveName?: (name: string) => Promise<void> }) {
   const [name, setName] = useState(profile.displayName || "Adventurer");
+  const [tab, setTab] = useState<"overview" | "bestiary">("overview");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   useEffect(() => setName(profile.displayName || "Adventurer"), [profile.displayName]);
@@ -278,6 +281,11 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
   return <section className="px-profile-summary" aria-label="Adventurer progression">
     <AccountPanel accounts={profile.accounts} />
     <form className="px-profile-name" onSubmit={saveName}><label htmlFor="profile-name">ADVENTURER NAME</label><div><input id="profile-name" value={name} maxLength={18} onChange={event => setName(event.target.value)} disabled={saving} /><button className="px-button px-button-small" type="submit" disabled={saving || !name.trim() || name.trim() === profile.displayName}>{saving ? "SAVING..." : "SAVE"}</button></div>{saveError ? <span role="alert" className="px-error">{saveError}</span> : null}</form>
+    <nav className="px-profile-tabs" aria-label="Profile sections">
+      <button type="button" className={tab === "overview" ? "active" : ""} aria-pressed={tab === "overview"} onClick={() => setTab("overview")}>OVERVIEW</button>
+      <button type="button" className={tab === "bestiary" ? "active" : ""} aria-pressed={tab === "bestiary"} onClick={() => setTab("bestiary")}>BESTIARY <span>{Object.values(profile.bestiary ?? {}).reduce((sum, entry) => sum + entry.kills, 0)}</span></button>
+    </nav>
+    {tab === "overview" ? <>
     <div className="px-profile-head">
       <div><p className="px-eyebrow">YOUR ADVENTURER</p><strong className="px-profile-rank">RANK {profile.adventurerLevel}</strong></div>
       <span className="px-profile-xp">{rankXP}/100 XP TO NEXT RANK</span>
@@ -304,6 +312,31 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
         ? <ul>{unlockedRewards.map(reward => <li key={reward.id}><span className="px-collection-kind">{reward.category.toUpperCase()}</span><strong>{reward.name}</strong><small>{reward.description}</small></li>)}</ul>
         : <p>{rewards.length === 0 ? "Preparing your collection…" : "Your first title arrives at Adventurer Rank 2 or Class Mastery Rank 2."}</p>}
     </div>
+
+    </> : <section className="px-bestiary" aria-label="Monster bestiary">
+      {(() => {
+        const entries = Object.values(profile.bestiary ?? {}).sort((a, b) => b.kills - a.kills || a.name.localeCompare(b.name));
+        const total = entries.reduce((sum, entry) => sum + entry.kills, 0);
+        const elite = entries.reduce((sum, entry) => sum + entry.eliteKills, 0);
+        return <>
+          <div className="px-bestiary-stats"><div><strong>{total}</strong><span>MONSTERS SLAIN</span></div><div><strong>{elite}</strong><span>ELITE KILLS</span></div><div><strong>{entries.length}</strong><span>SPECIES FOUND</span></div></div>
+          {entries.length ? <div className="px-bestiary-grid">{entries.map(entry => {
+            const lore = entry.loreStage || 0;
+            const theme = (entry.themeId || "catacombs").replace(/[-_]/g, " ");
+            return <article className="px-bestiary-card" key={entry.enemyKey}>
+              <BestiarySprite spriteId={entry.sprite} name={entry.name} />
+              <div className="px-bestiary-copy">
+                <div className="px-bestiary-title"><strong>{entry.name}</strong><span>{entry.kills} KILLS{entry.eliteKills ? " · " + entry.eliteKills + " ELITE" : ""}</span></div>
+                <small>{theme.toUpperCase()}</small>
+                <p>{entry.lore || "No surviving field account has been recovered for this creature."}</p>
+                <div className="px-bestiary-progress" aria-label={"Lore discovery " + lore + " of 4"}><i style={{ width: (lore * 25) + "%" }} /></div>
+                <small>FIELD NOTES {lore}/4 · {lore === 0 ? "BACKSTORY UNRECOVERED" : "FIELD RECORD " + (lore === 4 ? "COMPLETE" : "IN PROGRESS")}</small>
+              </div>
+            </article>;
+          })}</div> : <p className="px-bestiary-empty">No creatures recorded yet. Every enemy you defeat will be added to your bestiary.</p>}
+        </>;
+      })()}
+    </section>}
   </section>;
 }
 
