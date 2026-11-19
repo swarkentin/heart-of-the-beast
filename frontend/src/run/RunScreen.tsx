@@ -257,7 +257,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   keys.current = {
     act, cycleTarget, actions,
     enabled: acting && combat && !introOpen,
-    cheatEnabled: acting && combat && !introOpen && !busy,
+    cheatEnabled: acting && !gameOver && !introOpen && !busy,
     cheat: () => { void onCommand({ type: "cheat_idkfa" }); },
   };
   const cheatSequence = useRef("");
