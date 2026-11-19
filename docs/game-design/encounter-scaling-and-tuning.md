@@ -24,6 +24,7 @@ per extra adventurer. A fight never holds more than six enemies.
 | Per-floor enemy health | `MonsterCatalog.NewEnemy` | +12% per floor below the first |
 | Solo enemy health | `MonsterCatalog.NewEnemy` | −20% |
 | Late solo encounter health | `generateExpeditionFloor` | −15% from effective depth 8 onward (dungeon 3 floor 4 and later); solo only |
+| Targeted capstone boss health | `generateExpeditionFloor` | −10% for Infernal Chain Duke and Eldritch Choir of Mouths only |
 | Party health / damage per extra adventurer | `PartyEnemy*MultiplierStep` (combat.go) | +15% / +10% |
 | Reinforcement minions | `themeReinforcements` | two per theme |
 | Encounter pools | `expedition_content.go` | light ≈ 2, standard ≈ 2–4, heavy ≈ 5–6 budget |
