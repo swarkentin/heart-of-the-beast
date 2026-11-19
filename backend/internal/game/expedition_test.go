@@ -463,8 +463,8 @@ func TestFloorModifiersChangeCombatRules(t *testing.T) {
 	entry.Encounter.Enemies[0].TurnsTaken = 0
 	startCombatRound(room, expeditionNow)
 	enemy := &entry.Encounter.Enemies[0]
-	if enemy.Intent.Damage != baseDamage+1 {
-		t.Fatalf("bloodlust telegraph = %d, want %d", enemy.Intent.Damage, baseDamage+1)
+	if want := soloEnemyDamage(baseDamage + 1); enemy.Intent.Damage != want {
+		t.Fatalf("bloodlust telegraph = %d, want %d after solo scaling", enemy.Intent.Damage, want)
 	}
 
 	// Dull Edges: Strike deals one less. Brittle Guard: Defend blocks one less.
@@ -1198,8 +1198,8 @@ func TestDungeonBossEnragesAndSummonsOnce(t *testing.T) {
 		t.Fatalf("the boss should enrage once and not summon again: %+v", boss)
 	}
 	plain := buildEnemyIntent(boss, boss.TurnsTaken, 0, []string{"player-1"}).Damage
-	if boss.Intent.Damage != plain+BossEnrageDamageBonus || boss.TurnsTaken != turn+1 {
-		t.Fatalf("enraged telegraph %d, want %d (calm was %d)", boss.Intent.Damage, plain+BossEnrageDamageBonus, calm)
+	if want := soloEnemyDamage(plain + BossEnrageDamageBonus); boss.Intent.Damage != want || boss.TurnsTaken != turn+1 {
+		t.Fatalf("enraged telegraph %d, want %d after solo scaling (calm was %d)", boss.Intent.Damage, want, calm)
 	}
 	bossRound(t, room, Command{Action: "defend"})
 	if encounter.Enemies[0].DamageBonus != BossEnrageDamageBonus {
