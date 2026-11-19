@@ -219,6 +219,17 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 				netPartyHealthLoss += loss
 			}
 		case PhaseExploring:
+			if policy == RunPolicyTactical {
+				// Use carried herbs between encounters, where they do not replace an attack or expose the
+				// party to an enemy turn. This keeps the tactical policy from wasting combat tempo on small heals.
+				for _, playerID := range eligibleCombatPlayers(room) {
+					if command, ok := tacticalExplorationConsumableCommand(room, playerID); ok {
+						if err := ApplyCommand(room, playerID, command, now); err != nil {
+							return RunSimulationReport{}, fmt.Errorf("seed %d player %s exploration herb: %w", seed, playerID, err)
+						}
+					}
+				}
+			}
 			current := room.Run.Rooms[room.Run.CurrentRoomID]
 			if current == nil {
 				return RunSimulationReport{}, fmt.Errorf("seed %d reached missing room %q", seed, room.Run.CurrentRoomID)
