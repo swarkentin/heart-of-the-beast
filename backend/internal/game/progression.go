@@ -100,6 +100,9 @@ func grantEncounterExperience(room *Room, round int) {
 }
 
 func grantExperience(player *PlayerState, room *Room, playerID string, round, amount int) {
+	if room == nil || room.Run == nil || room.Run.Cheated {
+		return
+	}
 	transition := resolveExperienceGain(*player, amount)
 	player.Experience = transition.Experience
 	player.Level = transition.Level
