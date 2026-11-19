@@ -33,10 +33,10 @@ const (
 
 	// The kinds below are only used in Operations, where amounts may be negative: a discovery can cost
 	// something as well as give something.
-	RunEffectPartyDamage    RunEffectKind = "party_damage"     // living adventurers lose health; never lethal
-	RunEffectPartyMaxHealth RunEffectKind = "party_max_health" // changes maximum health
-	RunEffectPartyGold      RunEffectKind = "party_gold"       // every adventurer gains gold
-	RunEffectFloorModifier  RunEffectKind = "floor_modifier"   // puts a floor modifier in force until the descent
+	RunEffectPartyDamage     RunEffectKind = "party_damage"     // living adventurers lose health; never lethal
+	RunEffectPartyMaxHealth  RunEffectKind = "party_max_health" // changes maximum health
+	RunEffectPartyGold       RunEffectKind = "party_gold"       // every adventurer gains gold
+	RunEffectFloorModifier   RunEffectKind = "floor_modifier"   // puts a floor modifier in force until the descent
 	RunEffectPartyConsumable RunEffectKind = "party_consumable" // grants a carried consumable to every adventurer
 )
 
@@ -265,9 +265,13 @@ func applyRunEffectOperation(room *Room, operation RunEffectOperation, playerIDs
 		case RunEffectPartyGold:
 			member.Gold += operation.Amount
 		case RunEffectPartyConsumable:
-			if member.Consumables == nil { member.Consumables = make(map[string]int) }
+			if member.Consumables == nil {
+				member.Consumables = make(map[string]int)
+			}
 			member.Consumables[ConsumableHealingHerb] += operation.Amount
-			if member.Consumables[ConsumableHealingHerb] > MaxHealingHerbs { member.Consumables[ConsumableHealingHerb] = MaxHealingHerbs }
+			if member.Consumables[ConsumableHealingHerb] > MaxHealingHerbs {
+				member.Consumables[ConsumableHealingHerb] = MaxHealingHerbs
+			}
 		case RunEffectPartyStrike:
 			applyPermanentStrikeBonus(member, operation.Amount)
 		case RunEffectPartyGuard:
