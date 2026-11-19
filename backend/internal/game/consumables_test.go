@@ -62,8 +62,8 @@ func TestHealingHerbShopAndDiscoveryAcquisition(t *testing.T) {
 	if ok, _ := applyRoomEventEffect(room, "herb_cache"); !ok {
 		t.Fatal("herb cache effect did not resolve")
 	}
-	if player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs+2 {
-		t.Fatalf("discovery inventory = %d", player.Consumables[ConsumableHealingHerb])
+	if player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs {
+		t.Fatalf("discovery inventory = %d, want carry cap %d", player.Consumables[ConsumableHealingHerb], MaxHealingHerbs)
 	}
 	if err := ApplyCommand(room, player.ID, Command{Type: "buy", ChoiceID: "healing-herb"}, expeditionNow); !errors.Is(err, ErrItemUnavailable) {
 		t.Fatalf("buying above the carry cap: %v", err)
@@ -109,11 +109,12 @@ func TestHealingHerbIsOfferedInEveryDiscovery(t *testing.T) {
 	}
 }
 
-func TestTacticalPolicyUsesHerbWhenItCanHealFully(t *testing.T) {
+func TestTacticalPolicyUsesHerbForPartialHealing(t *testing.T) {
 	room := startExpedition(t, 1, "catacombs", "tactical-herb")
 	player := room.Run.Players["player-1"]
 	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
-	player.Health -= amount
+	missing := (amount + 1) / 2
+	player.Health -= missing
 	command, ok := tacticalConsumableCommand(room, player.ID)
 	if !ok || command.Type != "use_consumable" || command.ChoiceID != ConsumableHealingHerb {
 		t.Fatalf("tactical policy should use an effective herb, got %+v, ok=%v", command, ok)
@@ -123,5 +124,15 @@ func TestTacticalPolicyUsesHerbWhenItCanHealFully(t *testing.T) {
 	}
 	if player.Health != player.MaxHealth || player.Consumables[ConsumableHealingHerb] != StartingHealingHerbs-1 {
 		t.Fatalf("tactical herb result: health=%d herbs=%d", player.Health, player.Consumables[ConsumableHealingHerb])
+	}
+}
+
+func TestTacticalPolicyDoesNotWasteHerbForTinyHeal(t *testing.T) {
+	room := startExpedition(t, 1, "catacombs", "tactical-herb-tiny-heal")
+	player := room.Run.Players["player-1"]
+	amount := (player.MaxHealth*HealingHerbHealingPercent + 99) / 100
+	player.Health -= (amount + 1) / 2 - 1
+	if command, ok := tacticalConsumableCommand(room, player.ID); ok {
+		t.Fatalf("tactical policy should save the herb when less than half its healing is useful, got %+v", command)
 	}
 }
