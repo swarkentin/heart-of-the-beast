@@ -55,6 +55,10 @@ test("enemy intents never overlay the scene drawing (#138)", () => {
   const css = readFileSync(new URL("./run.css", import.meta.url), "utf8");
   const rule = css.match(/\n\.rn-threats \{([^}]*)\}/)?.[1] ?? "";
   assert.doesNotMatch(rule, /position:\s*absolute/, "the intent strip must stay in the layout flow");
+  // The strip is always there at one fixed height, so the room never resizes as a fight starts or ends.
+  assert.match(rule, /height:\s*var\(--threats-h\)/);
+  assert.match(rule, /flex-wrap:\s*nowrap/);
+  assert.doesNotMatch(scene, /\? <ul className=\{"rn-threats/, "the intent strip must not be conditional");
   // However tall the boss, its name and health bar stay inside the drawing.
   for (const headY of [-400, -40, 0, 30, 80, 300]) for (let count = 1; count <= 6; count++) for (let index = 0; index < count; index++) {
     assert.ok(plateY("player", headY, 452, count, index) >= PLATE_MIN_Y);

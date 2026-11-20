@@ -63,7 +63,10 @@ nothing on screen showed that a character had grown.
 
 - The enemy intents are a strip **above** the scene drawing, in the layout flow, not an overlay inside it. The room
   is drawn in the space left below, so no intent can cover a name or health bar however tall the enemy, however many
-  enemies, however long the move names, in both views. Nameplate placement moved to `plateY` in `layout.ts`;
+  enemies, however long the move names, in both views. The strip is **always present at one fixed height** (one row;
+  name and traits share a line, long text is cut with an ellipsis; on a phone, one line per enemy that scrolls
+  sideways). Out of combat it shows the room's name. A first version sized the strip to its content and only drew it
+  in fights, so the room jumped in size every time combat started or ended. Nameplate placement moved to `plateY` in `layout.ts`;
   `arms.test.ts` guards the structure and the plate clamp.
 
 ## Consequences
@@ -90,4 +93,7 @@ nothing on screen showed that a character had grown.
   tune them through their mechanics (ADR 0033) rather than by shrinking ranks further.
 - One latent test bug surfaced: `TestSimulateRunBatchSummarizesDepthReachProbability` summed Completed and Wiped,
   which double-counts a run that beats the first boss and later wipes. It now counts each run by its single Outcome.
-- The intent strip takes a little height from the scene; on a phone the drawing letterboxes slightly smaller.
+- The intent strip takes a fixed 76px (26px on a phone) from the scene in every phase; the drawing letterboxes
+  slightly smaller but never changes size.
+- Skill points are offered by a glowing ★ RANK UP A SKILL button at the head of the status bar above the player's
+  options (where their eyes are when acting), in every phase, and from the level-up toast.

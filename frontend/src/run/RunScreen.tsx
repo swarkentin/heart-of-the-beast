@@ -430,13 +430,15 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       <section className="rn-view" aria-label="Encounter">
         <Scene view={acting ? "player" : "cast"} roomId={room.id} roomName={room.name} backdrop={backdropRef({ id: room.id, roomType: room.roomType, themeId: room.themeId }, run.themeId)} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
-        {skillPoints > 0 && !gameOver ? <button type="button" className="rn-rank-up" onClick={() => setRanksOpen(true)} disabled={busy} aria-label={"Rank up a skill: " + skillPoints + " skill point" + (skillPoints === 1 ? "" : "s") + " to spend"}>★ RANK UP ×{skillPoints}</button> : null}
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
         <section className="px-panel rn-log" aria-label="Combat log"><h2 className="px-label">LOG</h2><ol ref={logRef} role="log" aria-live="polite" tabIndex={0}>{log.length === 0 ? <li className="rn-log-line rn-log-system"><span>Nothing has happened yet.</span></li> : log.map(line => <LogText key={line.key} line={line} labels={labels} />)}</ol></section>
         <section className="px-panel rn-command" aria-label="Your options">
-          {!gameOver && (player?.gold !== undefined || (run.floorModifiers?.length ?? 0) > 0) ? <FloorStatus gold={spectator ? undefined : player?.gold ?? 0} modifiers={camp ? [] : run.floorModifiers ?? []} /> : null}
+          {!gameOver && (player?.gold !== undefined || (run.floorModifiers?.length ?? 0) > 0 || skillPoints > 0) ? <FloorStatus gold={spectator ? undefined : player?.gold ?? 0} modifiers={camp ? [] : run.floorModifiers ?? []}>
+            {/* Leads the status bar above your options, where your eyes already are when you act. */}
+            {skillPoints > 0 ? <button type="button" className="rn-rank-up" onClick={() => setRanksOpen(true)} disabled={busy} aria-label={"Rank up a skill: " + skillPoints + " skill point" + (skillPoints === 1 ? "" : "s") + " to spend"}>★ RANK UP A SKILL{skillPoints > 1 ? " ×" + skillPoints : ""}</button> : null}
+          </FloorStatus> : null}
           {command}{error ? <p className="px-error" role="alert">{error}</p> : null}</section>
       </div>
     </div>

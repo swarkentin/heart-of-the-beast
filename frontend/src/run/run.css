@@ -28,8 +28,19 @@
 .rn-scene { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; }
 .rn-scene-stage { position: relative; flex: 1 1 auto; min-height: 0; }
 .rn-scene-art { display: block; width: 100%; height: 100%; font-family: var(--copy); }
-.rn-threats { flex: none; position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; margin: 0; padding: calc(3px * var(--px)) calc(6px * var(--px)); list-style: none; background: #05030a; box-shadow: 0 2px 0 #1d1733; }
+/* A fixed height and one row: the strip never grows or shrinks with the number of enemies, their traits, or whether
+   there is a fight at all, so the room below keeps its size. Long names and moves are cut with an ellipsis. */
+.rn-threats { --threats-h: 76px; flex: none; position: relative; z-index: 1; display: flex; flex-wrap: nowrap; justify-content: center; align-items: stretch; gap: 10px; height: var(--threats-h); box-sizing: border-box; margin: 0; padding: 4px calc(6px * var(--px)) 6px; overflow: hidden; list-style: none; background: #05030a; box-shadow: 0 2px 0 #1d1733; }
+.rn-threats > li { display: flex; flex: 0 1 280px; }
+.rn-threats > li > .rn-threat-chip { overflow: hidden; }
+.rn-threat-chip b, .rn-threat-chip i, .rn-threat-chip small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Three lines at most: name and traits share the first, then the move, then its target. */
+.rn-threats .rn-threat-chip > span:not(.px-icon) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 6px; }
+.rn-threats .rn-threat-chip i, .rn-threats .rn-threat-chip small { grid-column: 1 / -1; }
+.rn-threats .rn-traits { grid-column: 2; grid-row: 1; flex-wrap: nowrap; overflow: hidden; margin-top: 0; }
+.rn-threats > li.rn-threats-quiet { display: block; flex: 1 1 auto; align-self: center; color: var(--muted); font: 400 9px/1.4 var(--display); letter-spacing: .08em; text-align: center; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-threats li { min-width: 0; max-width: 100%; }
+.rn-threat-chip { min-height: 100%; }
 .rn-threat-chip { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 3px 8px 4px 5px; border: 0; background: #0a0714e6; box-shadow: inset 3px 0 0 #9a4a4a, 0 0 0 2px var(--edge); color: var(--ink); font: inherit; text-align: left; line-height: 1; cursor: default; }
 button.rn-threat-chip { cursor: pointer; }
 button.rn-threat-chip:hover { background: #1d1733f2; }
@@ -258,7 +269,8 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-console { grid-row: 3; display: flex; flex-direction: column; gap: 5px; height: auto; }
 
   /* enemy moves: one compact line each, in their own strip above the scene */
-  .rn-threats { padding: 2px; gap: 3px 4px; }
+  .rn-threats { --threats-h: 26px; padding: 2px; gap: 4px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .rn-threats > li { flex: none; }
   .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
   .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
   .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
@@ -418,7 +430,8 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-act-icon { position: relative; }
 .rn-act-rank { position: absolute; left: -4px; top: -6px; padding: 0 2px; background: var(--edge); color: var(--gold); font: 400 7px/1.5 var(--display); font-style: normal; box-shadow: 0 0 0 1px var(--gold); }
 .rn-act-rank-4, .rn-act-rank-5 { color: var(--edge); background: var(--gold); box-shadow: 0 0 0 1px var(--edge), 0 0 6px var(--gold); }
-.rn-rank-up { position: absolute; left: calc(8px * var(--px)); bottom: calc(6px * var(--px)); z-index: 2; padding: 4px 8px 3px; border: 0; background: var(--gold); color: var(--edge); font: 400 9px/1.4 var(--display); box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold); cursor: pointer; animation: rn-rank-glow 1.6s steps(4) infinite; }
+.rn-rank-up { flex: none; order: -1; padding: 5px 10px 4px; border: 0; background: var(--gold); color: var(--edge); font: 400 10px/1.4 var(--display); letter-spacing: .04em; box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold); cursor: pointer; animation: rn-rank-glow 1.6s steps(4) infinite; }
+.rn-rank-up:hover:not(:disabled) { background: var(--bone); }
 .rn-rank-up:disabled { opacity: .6; cursor: default; }
 @keyframes rn-rank-glow { 50% { box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold), 0 0 12px var(--gold); } }
 .rn-ranks { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 40px); overflow: auto; }

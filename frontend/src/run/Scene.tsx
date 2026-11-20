@@ -38,12 +38,13 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
   const self = useMemo(() => player ? { id: player.id, skills, palm: ARMS_PALM, onCue: (cue: SelfCue) => armsCue.current?.(cue) } : undefined, [player?.id, skills]);
   const sheet = "/art/first-person/" + (player?.classId ?? "bulwark") + "/t" + (player?.skin?.tier ?? 1) + "-" + (player?.skin?.variant ?? "heraldic") + ".png";
   return <div className={"rn-scene rn-scene-" + view}>
-    {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 3 ? " rn-threats-crowded" : "")} aria-label="Enemy intentions">{living.map(enemy => {
+    {/* Always drawn at the same height, fight or no fight, so the room never jumps in size as combat starts or ends. */}
+    <ul className={"rn-threats" + (living.length >= 3 ? " rn-threats-crowded" : "")} aria-label="Enemy intentions">{living.length === 0 ? <li className="rn-threats-quiet">{roomName}</li> : living.map(enemy => {
       const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small>{enemy.traits.length > 0 ? <em className="rn-traits">{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
       return <li key={enemy.id}>{onTarget
         ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
         : <div className="rn-threat-chip">{body}</div>}</li>;
-    })}</ul> : null}
+    })}</ul>
     <div className="rn-scene-stage">
       <svg ref={art} className="rn-scene-art" viewBox="0 0 1100 620" role="img" aria-label={(view === "player" ? "First-person view of " : "Party view of ") + roomName}>
         <RoomBackdrop {...backdrop} view={view === "player" ? "first" : "cinema"} />
