@@ -36,7 +36,7 @@ export type ApiRun = { id: string; themeId?: string; phase: "lobby" | "combat" |
 export type ApiPresence = { status: "online" | "disconnected" | "left"; lastSeenAt: string; leftAt?: string };
 /** The lasting XP a finished run earned each adventurer who stayed to its end, and where it came from. */
 export type ApiRunProgress = { xp: number; encounters: number; floors: number; dungeons: number; completionBonus?: number };
-export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; playerSkins?: Record<string, { tier: number; variant: string }>; playerLoadouts?: Record<string, string[]>; playerMastery?: Record<string, number>; presence?: Record<string, ApiPresence>; run?: ApiRun; runProgress?: ApiRunProgress; version: number };
+export type ApiRoom = { id: string; code: string; ownerPlayerId: string; playerIds: string[]; playerArchetypes?: Record<string, string>; playerClasses?: Record<string, string>; playerSkins?: Record<string, { tier: number; variant: string }>; playerLoadouts?: Record<string, string[]>; playerMastery?: Record<string, number>; presence?: Record<string, ApiPresence>; run?: ApiRun; runProgress?: ApiRunProgress; version: number; serverTime: string };
 export type ApiCommand = { type: string; round?: number; action?: string; skill?: string; targetId?: string; exitId?: string; choiceId?: string; skillIds?: string[] };
 export type ApiLinkedAccount = { provider: string; username: string; linkedAt: string };
 export type ApiBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; loreStage: number; kills: number; eliteKills: number };

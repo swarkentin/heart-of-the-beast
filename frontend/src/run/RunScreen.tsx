@@ -51,14 +51,17 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
 function firstClause(rules: string) { return rules.split(/[.:;,]/)[0].trim(); }
 
 /** A clock that only ticks while a deadline is running. */
-function useNow(active: boolean, restartKey: string) {
+function useNow(active: boolean, restartKey: string, serverTime?: string) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!active) return;
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 100);
+    // Deadlines are server-created. Comparing them with the device clock shortens timers
+    // whenever the player's clock is ahead, so anchor the countdown to the room snapshot.
+    const offset = serverTime ? new Date(serverTime).getTime() - Date.now() : 0;
+    setNow(Date.now() + offset);
+    const timer = window.setInterval(() => setNow(Date.now() + offset), 100);
     return () => window.clearInterval(timer);
-  }, [active, restartKey]);
+  }, [active, restartKey, serverTime]);
   return now;
 }
 
@@ -117,7 +120,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const eventVote = exploring ? run.eventVote : undefined;
   const descentVote = run.phase === "intermission" ? run.interFloorVote : undefined;
   const camp = run.phase === "intermission" ? run.camp : undefined;
-  const now = useNow(Boolean(round || navigationVote || eventVote || descentVote || camp?.deadline), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (eventVote?.deadline ?? "") + (descentVote?.deadline ?? "") + (camp?.deadline ?? ""));
+  const now = useNow(Boolean(round || navigationVote || eventVote || descentVote || camp?.deadline), (round?.deadline ?? "") + (navigationVote?.deadline ?? "") + (eventVote?.deadline ?? "") + (descentVote?.deadline ?? "") + (camp?.deadline ?? ""), snapshot.serverTime);
   const roundDeadline = round ? new Date(round.deadline).getTime() : 0;
   const roundTotal = round ? Math.max(1, Math.round((roundDeadline - new Date(round.startedAt).getTime()) / 1000)) : 8;
   const remainingMs = round ? Math.max(0, roundDeadline - now) : 0;

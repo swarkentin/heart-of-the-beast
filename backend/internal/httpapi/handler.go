@@ -199,6 +199,7 @@ type roomResponse struct {
 	Version     int64             `json:"version"`
 	CreatedAt   time.Time         `json:"createdAt"`
 	UpdatedAt   time.Time         `json:"updatedAt"`
+	ServerTime  time.Time         `json:"serverTime"`
 }
 
 const presenceTimeout = 30 * time.Second
@@ -220,7 +221,7 @@ func publicRoom(room *game.Room, now time.Time) roomResponse {
 		ID: room.ID, Code: room.Code, OwnerPlayerID: room.OwnerPlayerID,
 		PlayerIDs: room.PlayerIDs, PlayerClasses: room.PlayerClasses, PlayerSkins: room.PlayerSkins, PlayerLoadouts: room.PlayerLoadouts, PlayerMastery: room.PlayerMastery, Presence: presence, Run: room.Run,
 		RunProgress: game.RunProgressOf(room.Run),
-		Version:     room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt,
+		Version:     room.Version, CreatedAt: room.CreatedAt, UpdatedAt: room.UpdatedAt, ServerTime: now,
 	}
 }
 
