@@ -1,7 +1,7 @@
 // Unit tests for the combat scene layout. Run with: npm run test:ui (node --test, no browser needed).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MAX_STAGE_ENEMIES, enemyX, plateOffset, spriteScale } from "./layout.ts";
+import { MAX_STAGE_ENEMIES, PLAYER_INTENT_RESERVED_HEIGHT, enemyX, plateOffset, playerPlateY, spriteScale } from "./layout.ts";
 
 const NAMEPLATE_WIDTH = 148;
 const views = ["player", "cast"] as const;
