@@ -14,7 +14,7 @@ import type { EventLike, StageEnemy } from "./types";
  */
 
 export type Cue =
-  | { type: "hit"; enemyId: string; amount: number; via: string; critical?: boolean }
+  | { type: "hit"; enemyId: string; amount: number; via: string; critical?: boolean; actorId?: string; skill?: string; rank?: number }
   | { type: "act"; enemyId: string; label: string; partyWide: boolean; hits: number; damage: number; blocked: number; miss: boolean; targets: ActTarget[] }
   | { type: "drain"; enemyId: string; amount: number }
   | { type: "freeze"; enemyId: string }
@@ -47,8 +47,9 @@ type ActDraft = Extract<Cue, { type: "act" }>;
  * @param events the new (unseen) events, in server order
  * @param enemies the enemies as they are now (after the round)
  * @param knownDead ids of enemies whose defeat has already been shown
+ * @param lead milliseconds to hold the whole round back, so the first-person arms can wind up before the first hit
  */
-export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | "name" | "hp">[], knownDead: ReadonlySet<string>): TimedCue[] {
+export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | "name" | "hp">[], knownDead: ReadonlySet<string>, lead = 0): TimedCue[] {
   const idsByName = new Map<string, string[]>();
   for (const enemy of enemies) idsByName.set(enemy.name, [...(idsByName.get(enemy.name) ?? []), enemy.id]);
 
@@ -104,7 +105,7 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
 
   for (const event of events) {
     if (event.effect === "damage" && event.targetType === "enemy" && event.targetId) {
-      hits.push({ type: "hit", enemyId: event.targetId, amount: event.amount ?? 0, via: event.kind, critical: event.critical });
+      hits.push({ type: "hit", enemyId: event.targetId, amount: event.amount ?? 0, via: event.kind, critical: event.critical, actorId: event.actorId, skill: event.skill, rank: event.rank });
       continue;
     }
     switch (event.kind) {
@@ -193,5 +194,5 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
     if (enemy.hp > 0 || knownDead.has(enemy.id)) continue;
     timeline.push({ at: (lastHitAt.get(enemy.id) ?? 0) + TIMING.deathDelay, cue: { type: "defeat", enemyId: enemy.id } });
   }
-  return timeline.sort((a, b) => a.at - b.at);
+  return timeline.map((entry) => ({ ...entry, at: entry.at + lead })).sort((a, b) => a.at - b.at);
 }

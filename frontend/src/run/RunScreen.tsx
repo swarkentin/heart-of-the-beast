@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { traitTags } from "./traits.ts";
 import type { ApiCombatEvent, ApiCommand, ApiDungeonRoom, ApiEnemy, ApiProfile, ApiRoom, ApiRun, ApiVote, PlayerSession } from "../api";
-import { cooldownLabel, cooldownLeft, SKILL_DEFEND, skillCommand, type Skill } from "../combatAbilities";
+import { cooldownLabel, cooldownLeft, ROMAN, SKILL_DEFEND, skillCommand, skillRank, type Skill } from "../combatAbilities";
+import { rankedRules, SkillRankPicker } from "./SkillRanks";
 import { GameShell, Icon, SharedMenu, SkillIcon, SkillLoadout, type LobbyCatalog } from "../lobby";
 import type { PartyImpact } from "../monsters/EnemyStage";
 import { enemyX } from "../monsters/layout";
@@ -31,7 +32,7 @@ type Props = {
   onCommand: (command: ApiCommand) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
 };
 /** One button on the skill bar. A skill that targets an ally or a fallen adventurer has no command until one is picked. */
-type ActionDef = { key: string; skill: Skill; label: string; hint: string; details: string; tone: string; disabled: boolean; cooldown: number; ready: boolean; command?: ApiCommand; pick?: "ally" | "fallen" };
+type ActionDef = { key: string; skill: Skill; label: string; hint: string; details: string; tone: string; disabled: boolean; cooldown: number; ready: boolean; rank: number; command?: ApiCommand; pick?: "ally" | "fallen" };
 
 function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: string[], selfId: string): SceneEnemy {
   const intent = enemy.intent;
@@ -104,6 +105,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const events: ApiCombatEvent[] = run.lastCombatEvents ?? [];
   const player = selfId ? run.players[selfId] : undefined;
   const [levelUp, setLevelUp] = useState<{ level: number; changes: string[] } | null>(null);
+  const [ranksOpen, setRanksOpen] = useState(false);
+  const skillPoints = !spectator && player && player.health > 0 ? player.skillPoints ?? 0 : 0;
   const previousLevelState = useRef<{ runId: string; playerId: string; level: number; maxHealth: number; strikeDamage: number; guardReduction: number; power: number; focus: number; agility: number } | null>(null);
   useEffect(() => {
     if (!player || spectator) { previousLevelState.current = null; return; }
@@ -254,7 +257,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           if (fallen.length === 1) command = skillCommand(skill, n, fallen[0].id); else pick = "fallen";
           break;
       }
-      actions.push({ key: id, skill, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: /cooldown|recovers|once/i.test(skill.rules) ? skill.rules : skill.rules + " " + cooldownLabel(skill) + ".", tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && skill.target === "enemy" && Boolean(opening) && left === 0, command, pick });
+      const rank = skillRank(player.skillRanks, id), rules = rankedRules(skill, rank);
+      actions.push({ key: id, skill, rank, label: skill.name, hint: left > 0 ? "Ready in " + left : hint, details: (rank > 1 ? "Rank " + ROMAN[rank] + ". " : "") + (/cooldown|recovers|once/i.test(rules) ? rules : rules + " " + cooldownLabel(skill) + "."), tone: interrupts ? "control" : skill.tone, disabled, cooldown: left, ready: interrupts && skill.target === "enemy" && Boolean(opening) && left === 0, command, pick });
     }
   }
   const send = (key: string, command: ApiCommand) => {
@@ -355,7 +359,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           onClick={() => act(action)} onPointerEnter={() => setFocused(action.key)} onPointerLeave={() => setFocused("")} onFocus={() => setFocused(action.key)} onBlur={() => setFocused("")}
           disabled={!shownKey && (!canAct || action.disabled)} aria-disabled={Boolean(shownKey) || undefined} aria-pressed={shownKey === action.key || armed === action.key} title={action.label + ": " + action.details}>
           <kbd aria-hidden="true">{index + 1}</kbd>
-          <span className="rn-act-icon"><SkillIcon skill={action.skill} size={2} />{action.cooldown > 0 ? <b className="rn-act-cd" aria-label={"ready in " + action.cooldown + " rounds"}>{action.cooldown}</b> : null}</span>
+          <span className="rn-act-icon"><SkillIcon skill={action.skill} size={2} />{action.rank > 1 ? <i className={"rn-act-rank rn-act-rank-" + action.rank} aria-label={"rank " + ROMAN[action.rank]}>{ROMAN[action.rank]}</i> : null}{action.cooldown > 0 ? <b className="rn-act-cd" aria-label={"ready in " + action.cooldown + " rounds"}>{action.cooldown}</b> : null}</span>
           <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : shownKey === action.key ? "AUTOMATIC" : armed === action.key ? (action.pick === "fallen" ? "Pick a fallen ally" : "Pick a portrait") : autoSoon && action.key === SKILL_DEFEND ? "Automatic in " + seconds : action.hint}</small></span>
         </button>)}</div>
         <p className="rn-inspect" aria-live="polite">{focusedAction ? <><b>{focusedAction.label}</b> {focusedAction.details}</> : "Keys 1–" + actions.length + " use a skill · ◀ ▶ change target · one skill per round"}</p>
@@ -425,7 +429,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       <aside className="rn-side rn-side-left" aria-label="Party">{seats.left.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside>
       <section className="rn-view" aria-label="Encounter">
         <Scene view={acting ? "player" : "cast"} roomId={room.id} roomName={room.name} backdrop={backdropRef({ id: room.id, roomType: room.roomType, themeId: room.themeId }, run.themeId)} enemies={enemies} events={events} party={party}
-          target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} />
+          target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
+        {skillPoints > 0 && !gameOver ? <button type="button" className="rn-rank-up" onClick={() => setRanksOpen(true)} disabled={busy} aria-label={"Rank up a skill: " + skillPoints + " skill point" + (skillPoints === 1 ? "" : "s") + " to spend"}>★ RANK UP ×{skillPoints}</button> : null}
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
@@ -440,11 +445,13 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
       onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
     <Celebrations items={report.celebrations} theme={room.themeId || run.themeId} />
-    {levelUp ? <div className="rn-level-up" role="status" aria-live="assertive" onClick={() => setLevelUp(null)}>
+    {ranksOpen && player ? <SkillRankPicker skills={(player.skills ?? []).map(id => skillById.get(id)).filter((skill): skill is Skill => Boolean(skill))} ranks={player.skillRanks} points={skillPoints} busy={busy}
+      onRank={id => { void onCommand({ type: "upgrade_skill", skill: id }).then(ok => { if (ok && skillPoints <= 1) setRanksOpen(false); }); }} onClose={() => setRanksOpen(false)} /> : null}
+    {levelUp ? <div className="rn-level-up" role="status" aria-live="assertive" onClick={() => { setLevelUp(null); if (skillPoints > 0) setRanksOpen(true); }}>
       <div className="rn-level-up-card">
         <p>LEVEL UP!</p><strong>LEVEL {levelUp.level}</strong><h2>YOU GREW STRONGER</h2>
         {levelUp.changes.length > 0 ? <ul>{levelUp.changes.map(change => <li key={change}>+ {change}</li>)}</ul> : <span>No stats changed this level.</span>}
-        <small>TAP TO DISMISS</small>
+        <small>{skillPoints > 0 ? "+1 SKILL POINT · TAP TO RANK UP A SKILL" : "TAP TO DISMISS"}</small>
       </div>
     </div> : null}
     {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}

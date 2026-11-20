@@ -155,6 +155,8 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 	switch command.Type {
 	case "cheat_idkfa":
 		return applyIDKFA(room, actorID, now)
+	case "upgrade_skill":
+		return upgradeSkill(room, actorID, command.Skill)
 	case "use_consumable":
 		return useConsumable(room, actorID, command.ChoiceID)
 	case "combat":

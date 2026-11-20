@@ -98,6 +98,8 @@ func applySkill(room *Room, player *PlayerState, command Command, round int) err
 	if !ok {
 		return ErrInvalidSkill
 	}
+	rank := SkillRank(player, definition.ID)
+	definition = rankedSkill(definition, rank)
 	run := room.Run
 	current := run.Rooms[run.CurrentRoomID]
 	if current == nil || current.Encounter == nil {
@@ -166,6 +168,8 @@ func applySkill(room *Room, player *PlayerState, command Command, round int) err
 	boonAfterSkill(cast)
 	for i := first; i < len(run.LastCombatEvents); i++ {
 		run.LastCombatEvents[i].ActorID = player.ID
+		run.LastCombatEvents[i].Skill = definition.ID
+		run.LastCombatEvents[i].Rank = rank
 	}
 	return nil
 }
@@ -526,6 +530,7 @@ func guardFor(room *Room, player *PlayerState) int {
 func defend(room *Room, player *PlayerState, chosen bool, round int) {
 	run := room.Run
 	player.Guarding = true
+	player.ClassCombat.GuardBonus += defendRankBonus(player)
 	message := adventurerLabel(room, player.ID) + " braces, blocking up to " + itoa(guardFor(room, player)) + " damage from the next hit."
 	if !chosen {
 		message = adventurerLabel(room, player.ID) + " ran out of time and defends automatically, blocking up to " + itoa(guardFor(room, player)) + " damage from the next hit."
@@ -534,6 +539,7 @@ func defend(room *Room, player *PlayerState, chosen bool, round int) {
 	last := &run.LastCombatEvents[len(run.LastCombatEvents)-1]
 	last.ActorID = player.ID
 	last.Auto = !chosen
+	last.Skill, last.Rank = SkillDefend, SkillRank(player, SkillDefend)
 }
 
 // isBossEnemy reports whether an enemy is a boss: bosses are staggered rather than stunned.

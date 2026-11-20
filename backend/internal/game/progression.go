@@ -125,7 +125,9 @@ func grantExperience(player *PlayerState, room *Room, playerID string, round, am
 
 	addCombatEvent(room.Run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(amount)+" XP.")
 	for _, level := range transition.LevelUps {
-		message := adventurerLabel(room, playerID) + " reaches level " + itoa(level) + " and grows stronger!"
+		// Every level-up also earns a skill point to rank up one skill of the bar (skill_ranks.go).
+		player.SkillPoints++
+		message := adventurerLabel(room, playerID) + " reaches level " + itoa(level) + " and grows stronger! +1 skill point."
 		// Every third level from level 6 onward is a small supply milestone.
 		// Respect the normal carried-herb cap; a level-up never overfills inventory.
 		if level >= 6 && level%3 == 0 {

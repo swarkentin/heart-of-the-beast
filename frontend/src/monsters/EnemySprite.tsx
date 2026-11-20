@@ -4,7 +4,7 @@ import { useSprite } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { moveAnim } from "./moves";
 import type { SpriteData } from "./spriteStore";
-import { plateFontSize, plateOffset, spriteScale } from "./layout";
+import { plateFontSize, plateY, spriteScale } from "./layout";
 import type { AnimName, StageEnemy, StageView } from "./types";
 
 export type SeqCue = { seq: number; cue: Cue };
@@ -165,7 +165,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
   const headY = sprite ? floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale : floorY - 200;
   const boxLeft = sprite ? (sprite.bbox.left - sprite.creature.anchor.x) * scale : -50;
   const boxRight = sprite ? (sprite.bbox.right - sprite.creature.anchor.x) * scale : 50;
-  const plateY = view === "player" ? Math.max(40, headY - 40 + plateOffset(view, count, index)) : floorY + 40 + plateOffset(view, count, index);
+  const plateTop = plateY(view, headY, floorY, count, index);
   const showDead = dead || !alive;
   const telegraphing = alive && Boolean(enemy.rawIntent);
   return (
@@ -180,7 +180,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
         {sprite ? <SpriteFrame sprite={sprite} anim={showDead && pose.anim !== "death" ? "death" : pose.anim} frame={showDead && pose.anim !== "death" ? sprite.creature.animations.death.frames - 1 : pose.frame} scale={scale} floorY={floorY} /> : sprite === null ? <Placeholder floorY={floorY} dead={showDead} /> : null}
       </g>
       <rect x={boxLeft} y={headY} width={boxRight - boxLeft} height={floorY - headY} fill="transparent" />
-      <g transform={`translate(0 ${plateY})`} opacity={showDead ? 0.45 : 1}>
+      <g transform={`translate(0 ${plateTop})`} opacity={showDead ? 0.45 : 1}>
         <rect x="-74" y="0" width="148" height="26" rx="3" fill="#11151d" stroke={selected ? "#e7bd7e" : "#756b65"} strokeWidth="2" />
         <rect x="-69" y="5" width={Math.max(0, 138 * enemy.hp / Math.max(1, enemy.maxHp))} height="16" fill="#b45e53" />
         <text x="0" y="-11" textAnchor="middle" fill="#f1e5d5" stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize={plateFontSize(count)}>{enemy.name}</text>

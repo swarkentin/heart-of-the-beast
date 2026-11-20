@@ -57,6 +57,10 @@ export type EventLike = {
   targetType?: string;
   amount?: number;
   critical?: boolean;
+  /** The player whose action this was, and the skill and rank they used (player actions only). */
+  actorId?: string;
+  skill?: string;
+  rank?: number;
 };
 
 /** An enemy as the stage needs it. `x` is the enemy's position in the scene's 1100-wide coordinate space. */

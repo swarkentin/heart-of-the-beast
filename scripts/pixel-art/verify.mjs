@@ -10,10 +10,11 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { encodePNG } from "./engine.mjs";
+import { encodePNG , Img } from "./engine.mjs";
 import { renderCreature, sheetOf, ANIMS } from "./build.mjs";
 import { themes } from "./themes/index.mjs";
 import { goBindings, GO_BINDINGS_PATH } from "./gobindings.mjs";
+import { FP_W, FP_H, FP_ROWS } from "./first-person.mjs";
 import { renderInterface, renderHero, renderFirstPerson, skillIconsModule, SKILL_ICONS_TS_PATH, uiThemesModule, UI_THEMES_TS_PATH } from "./build-interface.mjs";
 import { heroes, TIERS, VARIANTS } from "./heroes.mjs";
 
@@ -105,7 +106,13 @@ for (const [h, tier, variant] of heroSkins) {
 for (const h of heroes) for (const tier of TIERS) {
   const base = renderFirstPerson(h, tier, "heraldic");
   if (opaque(base) === 0) fail(`[first-person] ${h.id} t${tier}: empty sprite`);
-  if (base.w !== 128 || base.h !== 64) fail(`[first-person] ${h.id} t${tier}: expected 128x64 frame`);
+  if (base.w !== FP_W * 2 || base.h !== FP_H * FP_ROWS.length) fail(`[first-person] ${h.id} t${tier}: expected a ${FP_W * 2}x${FP_H * FP_ROWS.length} sheet (two arms, ${FP_ROWS.length} poses)`);
+  // Every pose must actually move the arm that makes it (rows 1-2 the weapon arm, rows 3-4 the off hand).
+  const cell = (img, row, col) => { const o = new Img(FP_W, FP_H); for (let y = 0; y < FP_H; y++) for (let x = 0; x < FP_W; x++) for (let k = 0; k < 4; k++) o.d[(y * o.w + x) * 4 + k] = img.d[((row * FP_H + y) * img.w + x + col * FP_W) * 4 + k]; return o; };
+  for (let row = 1; row < FP_ROWS.length; row++) {
+    const col = row <= 2 ? 1 : 0;
+    if (opaque(cell(base, row, col)) === 0 || !differs(cell(base, 0, col), cell(base, row, col))) fail(`[first-person] ${h.id} t${tier}: pose ${FP_ROWS[row]} does not move its arm`);
+  }
   if (tier > 1 && !differs(renderFirstPerson(h, tier - 1, "heraldic"), base)) fail(`[first-person] ${h.id}: tier ${tier} looks identical to tier ${tier - 1}`);
   for (const v of VARIANTS.slice(1)) if (!differs(base, renderFirstPerson(h, tier, v.id))) fail(`[first-person] ${h.id} t${tier} ${v.id}: dye looks identical to heraldic`);
 }
