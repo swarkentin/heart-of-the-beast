@@ -28,7 +28,7 @@ func resolveExperienceGain(player PlayerState, amount int) ProgressionTransition
 		return result
 	}
 	result.Experience += amount
-	for result.Level < 5 {
+	for {
 		next := experienceForNextLevel(result.Level)
 		if next == 0 || result.Experience < next {
 			break
@@ -51,6 +51,26 @@ func resolveExperienceGain(player PlayerState, amount int) ProgressionTransition
 			result.GuardReduction++
 			result.Stats.Power++
 			result.Stats.Focus++
+		default:
+			// Levels 6+ keep adding modest, alternating offensive, defensive,
+			// and attribute growth rather than ending the run's power curve.
+			switch result.Level % 4 {
+			case 2: // 6, 10, 14...
+				result.MaxHealth += 3
+				result.StrikeDamage++
+				result.Stats.Power++
+			case 3: // 7, 11, 15...
+				result.GuardReduction++
+				result.Stats.Focus++
+			case 0: // 8, 12, 16...
+				result.MaxHealth += 3
+				result.StrikeDamage++
+				result.Stats.Agility++
+			case 1: // 9, 13, 17...
+				result.GuardReduction++
+				result.Stats.Power++
+				result.Stats.Focus++
+			}
 		}
 	}
 	return result
