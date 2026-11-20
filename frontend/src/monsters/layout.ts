@@ -11,7 +11,10 @@ export const SPRITE_SCALE: Record<StageView, { monster: number; boss: number }> 
 
 const CENTER = 550;
 
-/** A fight of five or six is drawn a little smaller so the sprites keep a gap between them. */
+/** The scene-space height reserved for the player's enemy-intent panel and its wrapped rows. */
+export const PLAYER_INTENT_RESERVED_HEIGHT = 190;
+
+/** Fight sizes of five or six are drawn a little smaller so sprites keep a gap between them. */
 export function crowdFactor(count: number): number {
   return count >= 5 ? 0.8 : 1;
 }
@@ -45,6 +48,11 @@ export function enemyX(view: StageView, count: number, index: number): number {
 export function plateOffset(view: StageView, count: number, index: number): number {
   if (count < 3 || index % 2 === 0) return 0;
   return view === "player" ? -64 : 64;
+}
+
+/** Player nameplates must stay below the fixed-height intent panel, even when a sprite's head is near the top. */
+export function playerPlateY(headY: number, count: number, index: number): number {
+  return Math.max(PLAYER_INTENT_RESERVED_HEIGHT, headY - 40 + plateOffset("player", count, index));
 }
 
 /** Nameplate text size: smaller when six names share the row. */
