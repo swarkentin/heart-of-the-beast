@@ -82,3 +82,122 @@ html[data-visual-effect="negative"]::after { content: none; }
   }
   html[data-visual-effect="vhs"] #root { filter: saturate(.88) contrast(1.04); }
 }
+
+
+/* The settings dialog is portalled to body so game filters/transforms cannot trap it
+   inside the game viewport. Keep the actions fixed while only the choices scroll. */
+.px-visual-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10010 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden !important;
+  background: #05030aeb;
+}
+.px-visual-dialog {
+  box-sizing: border-box;
+  width: min(720px, calc(100vw - 24px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px) !important;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden !important;
+  padding: 12px;
+  filter: none;
+}
+.px-visual-head {
+  flex: none;
+  position: relative;
+  z-index: 1;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #51466c;
+}
+.px-visual-head > div { min-width: 0; }
+.px-visual-head h2 { overflow-wrap: anywhere; }
+.px-visual-head .px-button { flex: none; min-height: 40px; padding: 6px 10px; }
+.px-visual-progress {
+  flex: none;
+  min-width: 0;
+  margin: 10px 0;
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+}
+.px-visual-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 2px 4px 4px 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+.px-visual-option {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 54px minmax(0, 1fr) 16px;
+  gap: 8px;
+  padding: 7px;
+}
+.px-visual-preview { height: 42px; min-width: 0; }
+.px-visual-option-copy { min-width: 0; overflow-wrap: anywhere; }
+.px-visual-option-copy strong { font-size: clamp(7px, 1.2vw, 9px); overflow-wrap: anywhere; }
+.px-visual-option-copy small { font-size: 15px; }
+.px-visual-option-copy em { font-size: 7px; overflow-wrap: anywhere; }
+.px-visual-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px solid #51466c;
+  background: #100d20;
+}
+.px-visual-foot .px-button { flex: none; min-height: 42px; padding: 8px 18px; }
+html[data-visual-settings-open="true"] { overflow: hidden; }
+html[data-visual-settings-open="true"]::after { display: none !important; }
+
+@media (max-width: 620px) {
+  .px-visual-backdrop { padding: 8px; }
+  .px-visual-dialog {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px) !important;
+    padding: 9px;
+  }
+  .px-visual-head { gap: 6px; margin-bottom: 8px; }
+  .px-visual-head h2 { font-size: 14px; line-height: 1.35; }
+  .px-visual-head .px-eyebrow { font-size: 14px; }
+  .px-visual-progress { gap: 4px 8px; font-size: 8px; line-height: 1.4; }
+  .px-visual-progress p { font-size: 15px; line-height: 1.1; }
+  .px-visual-grid { grid-template-columns: 1fr; gap: 6px; }
+  .px-visual-option { grid-template-columns: 48px minmax(0, 1fr) 16px; gap: 7px; padding: 6px; }
+  .px-visual-preview { height: 36px; }
+  .px-visual-preview i { inset: 9px 13px; }
+  .px-visual-option-copy { gap: 2px; }
+  .px-visual-option-copy strong { font-size: 8px; line-height: 1.35; }
+  .px-visual-option-copy small { font-size: 14px; }
+  .px-visual-option-copy em { font-size: 6px; line-height: 1.35; }
+  .px-visual-foot { font-size: 14px; line-height: 1.1; }
+  .px-visual-foot .px-button { min-height: 44px; padding: 8px 12px; }
+}
+@media (max-height: 620px) {
+  .px-visual-progress p { display: none; }
+  .px-visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .px-visual-option-copy small { display: none; }
+}

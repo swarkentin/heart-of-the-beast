@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import "./visual-effects.css";
 
 type ProfileProgress = {
@@ -51,38 +52,50 @@ export function VisualEffectsSettings({ profile }: { profile: ProfileProgress })
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.dataset.visualSettingsOpen = "true";
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      delete document.documentElement.dataset.visualSettingsOpen;
+      window.removeEventListener("keydown", close);
+    };
   }, [open]);
+
+  const dialog = open ? <div className="px-backdrop px-visual-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+    <section className="px-panel px-visual-dialog" role="dialog" aria-modal="true" aria-labelledby="px-visual-title">
+      <header className="px-visual-head">
+        <div><p className="px-eyebrow">PERSONALIZE YOUR ADVENTURE</p><h2 id="px-visual-title">Display filters</h2></div>
+        <button type="button" className="px-button px-button-small" onClick={() => setOpen(false)} aria-label="Close display settings">CLOSE ✕</button>
+      </header>
+      <div className="px-visual-progress">
+        <span>ADVENTURER RANK {profile.adventurerLevel}</span>
+        <span>{masteryPoints} MASTERY POINTS</span>
+        <p>Unlock filters as your Adventurer Rank rises or as you master more classes. These are purely visual and never affect gameplay.</p>
+      </div>
+      <div className="px-visual-grid" role="group" aria-label="Available display filters">
+        {EFFECTS.map(effect => {
+          const earned = unlocked(effect);
+          return <button type="button" key={effect.id} disabled={!earned} aria-pressed={selected === effect.id}
+            className={"px-visual-option" + (selected === effect.id ? " selected" : "") + (!earned ? " locked" : "")}
+            onClick={() => setSelected(effect.id)}>
+            <span className={"px-visual-preview px-visual-preview-" + effect.id}><i /></span>
+            <span className="px-visual-option-copy"><strong>{effect.name}</strong><small>{effect.description}</small><em>{earned ? effect.tag + (selected === effect.id ? " · ACTIVE" : "") : "LOCKED · RANK " + effect.rank + " OR " + effect.mastery + " MASTERY POINTS"}</em></span>
+            <span className="px-visual-state" aria-hidden="true">{earned ? (selected === effect.id ? "✓" : "○") : "🔒"}</span>
+          </button>;
+        })}
+      </div>
+      <footer className="px-visual-foot">
+        <span>Your choice saves automatically on this device.</span>
+        <button type="button" className="px-button" onClick={() => setOpen(false)}>DONE</button>
+      </footer>
+    </section>
+  </div> : null;
 
   return <>
     <button type="button" className="px-button px-button-small" onClick={() => setOpen(true)}>VISUAL DISPLAY</button>
-    {open ? <div className="px-backdrop px-visual-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
-      <section className="px-panel px-visual-dialog" role="dialog" aria-modal="true" aria-labelledby="px-visual-title">
-        <header className="px-visual-head">
-          <div><p className="px-eyebrow">PERSONALIZE YOUR ADVENTURE</p><h2 id="px-visual-title">Display filters</h2></div>
-          <button type="button" className="px-button px-button-small" onClick={() => setOpen(false)}>CLOSE</button>
-        </header>
-        <div className="px-visual-progress">
-          <span>ADVENTURER RANK {profile.adventurerLevel}</span>
-          <span>{masteryPoints} MASTERY POINTS</span>
-          <p>Unlock filters as your Adventurer Rank rises or as you master more classes. These are purely visual and never affect gameplay.</p>
-        </div>
-        <div className="px-visual-grid">
-          {EFFECTS.map(effect => {
-            const earned = unlocked(effect);
-            return <button type="button" key={effect.id} disabled={!earned} aria-pressed={selected === effect.id}
-              className={"px-visual-option" + (selected === effect.id ? " selected" : "") + (!earned ? " locked" : "")}
-              onClick={() => setSelected(effect.id)}>
-              <span className={"px-visual-preview px-visual-preview-" + effect.id}><i /></span>
-              <span className="px-visual-option-copy"><strong>{effect.name}</strong><small>{effect.description}</small><em>{earned ? effect.tag + (selected === effect.id ? " · ACTIVE" : "") : "LOCKED · RANK " + effect.rank + " OR " + effect.mastery + " MASTERY POINTS"}</em></span>
-              <span className="px-visual-state">{earned ? (selected === effect.id ? "✓" : "○") : "🔒"}</span>
-            </button>;
-          })}
-        </div>
-        <footer className="px-visual-foot">Your display choice is saved on this device. Effects are optional and can be switched off at any time.</footer>
-      </section>
-    </div> : null}
+    {dialog ? createPortal(<div className="px-portal">{dialog}</div>, document.body) : null}
   </>;
 }
