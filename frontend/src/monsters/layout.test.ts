@@ -40,3 +40,18 @@ test("crowded fights draw sprites smaller, and only fights of three or more stag
   assert.notEqual(plateOffset("player", 3, 1), 0);
   assert.equal(plateOffset("player", 4, 2), 0);
 });
+
+test("player enemy health plates stay below the reserved intent panel", () => {
+  for (let count = 1; count <= MAX_STAGE_ENEMIES; count++) {
+    for (let index = 0; index < count; index++) {
+      // Exercise sprites whose heads would previously put their plates behind the intent chips,
+      // including the upward stagger used in crowded encounters.
+      for (const headY of [0, 40, 120, 240, 360]) {
+        assert.ok(
+          playerPlateY(headY, count, index) >= PLAYER_INTENT_RESERVED_HEIGHT,
+          `count=${count} index=${index} headY=${headY} overlaps the intent panel`,
+        );
+      }
+    }
+  }
+});
