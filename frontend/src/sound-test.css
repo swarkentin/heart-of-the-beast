@@ -1,0 +1,50 @@
+/* The sound test dialog. It reuses the display-settings dialog chrome (visual-effects.css) and adds a deck
+   (now playing + visualiser) above a scrolling body of tracks, mixer and effects. */
+.px-sound-dialog { width: min(860px, calc(100vw - 24px)) !important; }
+.px-sound-warning { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 8px 10px; background: #3a1720; box-shadow: inset 0 0 0 1px #e0533f; color: #f4ead6; font: 17px/1.2 "VT323", monospace; }
+.px-sound-deck { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 10px; margin: 10px 0; padding: 10px; background: #100d20; box-shadow: inset 0 0 0 1px #51466c; }
+.px-sound-now { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.px-sound-now .px-eyebrow { color: #d6a64d; }
+.px-sound-now strong { font: 12px/1.5 "Press Start 2P", monospace; color: #f4ead6; overflow-wrap: anywhere; }
+.px-sound-now small { color: #cfc6dc; font: 16px/1.1 "VT323", monospace; }
+.px-sound-now dl { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 0; }
+.px-sound-now dl div { display: grid; gap: 1px; }
+.px-sound-now dt { color: #8f84aa; font: 7px/1.5 "Press Start 2P", monospace; }
+.px-sound-now dd { margin: 0; color: #f4ead6; font: 17px/1 "VT323", monospace; }
+.px-sound-now .px-sound-voices { color: #7fc58a; }
+.px-sound-screen { display: grid; gap: 6px; align-content: start; }
+.px-sound-visualiser { width: 100%; height: 64px; image-rendering: pixelated; background: #05030a; box-shadow: inset 0 0 0 1px #2b2440; }
+.px-sound-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; display: grid; gap: 14px; padding: 2px 4px 4px 0; align-content: start; }
+.px-sound-heading { margin: 0 0 6px; color: #d6a64d; font: 9px/1.5 "Press Start 2P", monospace; }
+.px-sound-hint { margin: 6px 0; color: #cfc6dc; font: 16px/1.1 "VT323", monospace; }
+.px-sound-tracks { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.px-sound-track { min-width: 0; display: grid; gap: 3px; padding: 7px 8px; border: 2px solid #51466c; background: #171329; color: #f4ead6; text-align: left; cursor: pointer; }
+.px-sound-track strong { font: 9px/1.5 "Press Start 2P", monospace; overflow-wrap: anywhere; }
+.px-sound-track small { color: #cfc6dc; font: 15px/1.05 "VT323", monospace; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.px-sound-track[aria-pressed="true"] { border-color: #d6a64d; background: #29203a; }
+.px-sound-track[aria-pressed="true"] strong::before { content: "♫ "; color: #d6a64d; }
+.px-sound-boss { border-color: #6d3448; }
+.px-sound-themes { display: flex; flex-wrap: wrap; gap: 5px; }
+.px-sound-theme { padding: 6px 8px; border: 2px solid #51466c; background: #171329; color: #cfc6dc; font: 16px/1 "VT323", monospace; cursor: pointer; }
+.px-sound-theme[aria-pressed="true"] { border-color: #d6a64d; color: #f4ead6; background: #29203a; }
+.px-sound-theme:disabled { opacity: .55; cursor: not-allowed; }
+.px-sound-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; }
+.px-sound-controls span { color: #8f84aa; font: 7px/1.5 "Press Start 2P", monospace; margin-left: 4px; }
+.px-sound-controls .px-button[aria-pressed="true"], .px-sound-effects .px-button:active { outline: 2px solid #d6a64d; }
+.px-sound-mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.px-sound-channel { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border: 2px solid #51466c; background: #171329; color: #8f84aa; font: 8px/1.5 "Press Start 2P", monospace; cursor: pointer; text-align: left; }
+.px-sound-channel i { width: 10px; height: 10px; flex: none; background: #3a3150; box-shadow: inset 0 0 0 1px #51466c; }
+.px-sound-channel[aria-pressed="true"] { color: #f4ead6; }
+.px-sound-channel[aria-pressed="true"] i { background: #7fc58a; box-shadow: 0 0 6px #7fc58a; }
+.px-sound-effects { display: flex; flex-wrap: wrap; gap: 6px; }
+/* The standalone ?audio-preview page. */
+.px-sound-page { box-sizing: border-box; min-height: 100vh; max-width: 900px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; color: #f4ead6; background: #0a0714; }
+.px-sound-page .px-sound-body { overflow: visible; }
+
+@media (max-width: 620px) {
+  .px-sound-deck { grid-template-columns: 1fr; }
+  .px-sound-tracks { grid-template-columns: 1fr 1fr; }
+  .px-sound-track strong { font-size: 8px; }
+  .px-sound-page { padding: 10px 16px; }
+}
+@media (max-width: 380px) { .px-sound-tracks { grid-template-columns: 1fr; } }

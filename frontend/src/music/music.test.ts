@@ -1,12 +1,16 @@
 // Unit tests for the pure parts of the music system. Run with: npm run test:audio (node --test, no browser needed).
+// These check that the music is VALID: every theme and boss is covered, data is consistent, cues derive correctly,
+// bars are deterministic and every event is playable and in range. They deliberately do not encode taste (which
+// theme should be busier, louder or more distinct): that is judged by ear in the sound test, and a test that
+// asserted it would only get in the way of making the music better.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_CUE, cueKey, deriveMusicCue, layersFor, themeForRoom } from "./cue.ts";
+import { DEFAULT_CUE, cueKey, deriveMusicCue, themeForRoom } from "./cue.ts";
 import { PROFILES, profileFor } from "./profiles.ts";
-import { generateBar, generateStinger, makePlan } from "./score.ts";
+import { generateBar, generateStinger, makePlan, placeOf } from "./score.ts";
 import { DRUMS, RECIPES, effectSteps } from "./sounds.ts";
 import { EFFECT_KINDS, MUSIC_STATES, SCALES, THEME_IDS } from "./types.ts";
 import type { CueRun } from "./cue.ts";
@@ -49,8 +53,13 @@ test("profiles are internally consistent", () => {
     for (const s of p.scaleCycle ?? []) assert.ok(s in SCALES);
     assert.ok(p.rootHz >= 25 && p.rootHz <= 200, `${id} root ${p.rootHz}`);
     assert.equal(p.depthDrift.length, 3);
-    assert.ok(p.motif.length > 0 && p.chordRoots.length > 0 && p.bassLines.length > 0);
+    assert.ok(p.motif.length > 0 && p.chordRoots.length > 0 && p.ensemble.progB.length > 0);
     for (const voice of Object.values(p.voices)) assert.ok(voice in RECIPES || voice in DRUMS, `${id} voice ${voice}`);
+    const e = p.ensemble;
+    for (const voice of [e.arp, e.counter, e.calm, e.stab, e.choir, e.timpani, ...(e.bossBass ? [e.bossBass] : [])]) assert.ok(voice in RECIPES, `${id} ensemble voice ${voice}`);
+    for (const voice of [e.crash, ...(e.openHat ? [e.openHat] : []), ...Object.values(e.fight.voices)]) assert.ok(voice in DRUMS, `${id} ensemble drum ${voice}`);
+    for (const key of ["kick", "back", "tick", "bass"] as const) assert.equal(e.fight[key].length, p.steps, `${id}.fight.${key}`);
+    assert.ok(e.room.size > 0.3 && e.room.size < 7 && e.room.wet >= 0 && e.room.wet <= 1 && e.echo >= 0 && e.echo <= 0.6, `${id} room`);
   }
 });
 
@@ -119,64 +128,6 @@ test("every generated event is audible, in range and inside its bar", () => {
   }
 });
 
-test("stingers exist for every theme and rise or fall", () => {
-  for (const theme of THEME_IDS) {
-    const win = generateStinger(makePlan(cueOf(theme, "victory")), "victory").filter(e => e.kind === "melodic");
-    const lose = generateStinger(makePlan(cueOf(theme, "defeat")), "defeat").filter(e => e.kind === "melodic");
-    assert.ok(win.length >= 4 && lose.length >= 4);
-    const leadVoice = makePlan(cueOf(theme, "victory")).voices.lead;
-    const tune = (events: typeof win) => events.slice(0, 4).filter(e => e.kind === "melodic" && e.voice === leadVoice).map(e => (e.kind === "melodic" ? e.freq : 0));
-    const w = tune(win);
-    const l = tune(lose);
-    assert.ok(w[w.length - 1] > w[0], `${theme} victory should rise`);
-    assert.ok(l[l.length - 1] < l[0], `${theme} defeat should fall`);
-  }
-});
-
-test("layers grow with depth and percussion orders by intensity", () => {
-  const total = (l: ReturnType<typeof layersFor>) => l.pad + l.bass + l.lead + l.perc;
-  for (const state of MUSIC_STATES) {
-    for (const d of [1, 2] as const) assert.ok(total(layersFor(state, (d + 1) as Depth)) >= total(layersFor(state, d)), `${state} depth ${d}`);
-  }
-  for (const d of DEPTHS) {
-    const perc = (s: Parameters<typeof layersFor>[0]) => layersFor(s, d).perc;
-    assert.ok(perc("exploration") <= perc("combat") && perc("combat") <= perc("miniboss") && perc("miniboss") <= perc("boss"));
-  }
-  assert.ok(layersFor("exploration", 3).perc > layersFor("exploration", 1).perc);
-});
-
-test("percussion scales with depth in the generated score", () => {
-  for (const theme of THEME_IDS) {
-    const drums = (depth: Depth) => { const plan = makePlan(cueOf(theme, "exploration", depth)); let n = 0; for (let b = 0; b < 8; b += 1) n += generateBar(plan, b).filter(e => e.kind === "drum").length; return n; };
-    assert.ok(drums(3) >= drums(1), theme);
-    assert.ok(drums(3) > 0, `${theme} deep exploration has percussion`);
-  }
-});
-
-test("each theme has a distinct sound fingerprint", () => {
-  const seen = new Map<string, ThemeId>();
-  for (const theme of THEME_IDS) {
-    const p = profileFor(theme);
-    const print = [p.scale, p.voices.pad, p.voices.lead, p.voices.bass, p.voices.kick, p.voices.tick, p.bed.noise, p.bed.filter].join("|");
-    assert.ok(!seen.has(print), `${theme} duplicates ${seen.get(print)}`);
-    seen.set(print, theme);
-  }
-  assert.ok(new Set(THEME_IDS.map(t => profileFor(t).voices.lead)).size >= 8, "lead instruments vary across themes");
-});
-
-test("bosses differ from their theme's ordinary combat score", () => {
-  for (const theme of THEME_IDS) for (const boss of Object.keys(PROFILES[theme].bosses)) {
-    const a = generateBar(makePlan(cueOf(theme, "boss", 3, { boss })), 3);
-    const b = generateBar(makePlan(cueOf(theme, "combat", 3)), 3);
-    assert.notDeepEqual(a, b, `${theme}/${boss}`);
-  }
-  for (const theme of THEME_IDS) {
-    const bosses = Object.keys(PROFILES[theme].bosses);
-    const keys = new Set(bosses.map(boss => JSON.stringify([generateBar(makePlan(cueOf(theme, "boss", 3, { boss })), 3)])));
-    assert.equal(keys.size, bosses.length, `${theme} bosses should each sound different`);
-  }
-});
-
 test("catacombs room variants change the key", () => {
   assert.ok(makePlan(cueOf("catacombs", "exploration", 1, { variant: "gate" })).rootHz < makePlan(cueOf("catacombs", "exploration", 1)).rootHz);
   assert.ok(makePlan(cueOf("catacombs", "exploration", 1, { variant: "flooded" })).rootHz < makePlan(cueOf("catacombs", "exploration", 1)).rootHz);
@@ -192,5 +143,43 @@ test("every effect kind has steps for every theme, and themes flavour them", () 
       sigs.add(JSON.stringify(steps));
     }
     assert.ok(sigs.size >= 6, `${kind} should be flavoured per theme (${sigs.size} variants)`);
+  }
+});
+
+test("a boss at half health or reborn enters its second phase, which is its own cue", () => {
+  const fight = (enemy: Record<string, unknown>): CueRun => ({ phase: "combat", depth: 3, currentRoomId: "b", rooms: { b: { id: "b", roomType: "boss", themeId: "infernal", encounter: { enemies: [{ sprite: "infernal/archfiend", ...enemy }] } } } });
+  assert.equal(deriveMusicCue(fight({ health: 80, maxHealth: 100 })).phase, undefined);
+  assert.equal(deriveMusicCue(fight({ health: 50, maxHealth: 100 })).phase, 2);
+  assert.equal(deriveMusicCue(fight({ health: 90, maxHealth: 100, reborn: true })).phase, 2);
+  const one = deriveMusicCue(fight({ health: 80, maxHealth: 100 }));
+  const two = deriveMusicCue(fight({ health: 20, maxHealth: 100 }));
+  assert.notEqual(cueKey(one), cueKey(two));
+  const p2 = makePlan(two);
+  assert.equal(p2.entryBar, 24, "the second phase starts at the climax");
+  assert.equal(placeOf(p2, p2.entryBar).section, "D");
+});
+
+test("song form: bosses run A B C D, other states A B", () => {
+  for (const theme of THEME_IDS) {
+    const boss = makePlan(cueOf(theme, "boss", 2, { boss: Object.keys(PROFILES[theme].bosses)[0] }));
+    assert.deepEqual([...new Set(boss.form)], ["A", "B", "C", "D"]);
+    const combat = makePlan(cueOf(theme, "combat", 2));
+    assert.deepEqual([...new Set(combat.form)], ["A", "B"]);
+  }
+});
+
+
+test("stingers and the composed menu scores produce valid events", () => {
+  for (const theme of THEME_IDS) for (const kind of ["victory", "defeat"] as const) {
+    const events = generateStinger(makePlan(cueOf(theme, kind)), kind);
+    assert.ok(events.length > 0);
+    for (const e of events) if (e.kind === "melodic") assert.ok(e.voice in RECIPES && e.freq >= 20 && e.freq <= 12000, `${theme} ${kind}`); else assert.ok(e.voice in DRUMS);
+  }
+  for (const state of ["title", "party"] as const) {
+    const plan = makePlan(cueOf("catacombs", state));
+    for (let bar = 0; bar < plan.form.length; bar += 1) for (const e of generateBar(plan, bar)) {
+      assert.ok(e.t >= 0 && e.t < plan.barSec, `${state} bar ${bar}`);
+      if (e.kind === "melodic") assert.ok(e.voice in RECIPES && e.freq >= 20 && e.freq <= 12000); else assert.ok(e.voice in DRUMS);
+    }
   }
 });

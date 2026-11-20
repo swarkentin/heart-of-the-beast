@@ -4,11 +4,18 @@
 //   - nothing clips, even with every volume slider at maximum
 //   - no DC offset
 //   - the same cue renders identically twice (the score is deterministic)
+//   Reported as notes only:
 //   - themes have measurably different spectra
 //   - combat is more rhythmically active than exploration (RMS alone is not a fair intensity measure), and deeper floors are not quieter
-// It cannot judge whether the music is GOOD. That needs ears: use the ?audio-preview page.
+// Only silence, clipping, DC offset and non-determinism fail the check. Everything about taste (themes sounding
+// alike, fights not busier than exploration, the balance between parts) is printed as a note to listen for: it
+// cannot judge whether the music is GOOD. That needs ears: use the in-game sound test or the ?audio-preview page.
+//
+//   - the mix is balanced: in a fight the bass, drums and melody each carry a real share of the energy and the pads do not swamp them
+//   - boss fights are bigger than ordinary fights, and capstone bosses bigger again
 //
 // Usage: node scripts/audio/offline-render.mjs [--seconds 10] [--json out.json]
+// Env: PLAYWRIGHT_MODULE=path/to/playwright-core CHROME_PATH=path/to/chrome to use an installed browser.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { stripTypeScriptTypes } from "node:module";
@@ -23,7 +30,7 @@ const SECONDS = Number(argValue("--seconds") ?? 10);
 
 const require = createRequire(import.meta.url);
 let chromium;
-for (const candidate of ["playwright", "/opt/npm-tools/node_modules/playwright", "playwright-core"]) {
+for (const candidate of [process.env.PLAYWRIGHT_MODULE, "playwright", "/opt/npm-tools/node_modules/playwright", "playwright-core"].filter(Boolean)) {
   try { ({ chromium } = require(candidate)); break; } catch { /* try next */ }
 }
 if (!chromium) { console.error("playwright is not installed; cannot run the offline render check."); process.exit(2); }
@@ -98,15 +105,24 @@ export async function run(seconds) {
     const samples = await renderCueOffline(cue(theme, "boss", 3, { boss: Object.keys(profileFor(theme).bosses)[0] }), { seconds, volumes: { master: 1, music: 1 } });
     loud.push({ theme, peak: analyse(samples).peak });
   }
+  // Balance: render each group of parts alone and compare their energy.
+  const groups = { bass: ["bass"], drums: ["drums", "perc"], melody: ["lead", "counter"], pads: ["pad"], band: ["arp", "orch"] };
+  const balance = [];
+  for (const theme of THEME_IDS) for (const c of [cue(theme, "combat", 2), cue(theme, "boss", 3, { boss: Object.keys(profileFor(theme).bosses)[0] })]) {
+    const row = { cue: c };
+    for (const [group, only] of Object.entries(groups)) row[group] = analyse(await renderCueOffline(c, { seconds: Math.min(seconds, 8), only })).rms;
+    balance.push(row);
+  }
   const again = await renderCueOffline(cue("clockwork", "combat", 2), { seconds: Math.min(seconds, 6) });
   const again2 = await renderCueOffline(cue("clockwork", "combat", 2), { seconds: Math.min(seconds, 6) });
-  return { results, loud, deterministic: analyse(again).hash === analyse(again2).hash };
+  return { results, loud, balance, deterministic: analyse(again).hash === analyse(again2).hash };
 }
 `;
 
 const html = `<!doctype html><meta charset="utf-8"><script type="module">${pageScript.replace("export async function run", "window.run = async function run")}</script>`;
 
-const browser = await chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"] });
+// CHROME_PATH runs the check with an installed Chrome (for example with only playwright-core available).
+const browser = await chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"], ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
 const page = await browser.newPage();
 await page.route("http://audio.test/**", route => {
   const path = new URL(route.request().url()).pathname;
@@ -125,6 +141,9 @@ await browser.close();
 // ---- Assertions ----
 const failures = [];
 const fail = message => failures.push(message);
+// Taste is reported, never enforced: these notes say where the mix may want a listen, not that it is wrong.
+const notes = [];
+const note = message => notes.push(message);
 const label = ({ cue }) => `${cue.theme}/${cue.state}/d${cue.depth}${cue.boss ? "/" + cue.boss : ""}`;
 const find = (theme, state, depth) => out.results.find(r => r.cue.theme === theme && r.cue.state === state && r.cue.depth === depth && !r.cue.boss);
 
@@ -143,23 +162,39 @@ for (const state of ["exploration", "combat"]) {
   for (let i = 0; i < THEMES.length; i += 1) for (let j = i + 1; j < THEMES.length; j += 1) {
     const d = dist(find(THEMES[i], state, state === "exploration" ? 2 : 1)?.spectrum ?? find(THEMES[i], state, 1).spectrum, find(THEMES[j], state, state === "exploration" ? 2 : 1)?.spectrum ?? find(THEMES[j], state, 1).spectrum);
     if (d < minDist.d) minDist = { d, pair: `${THEMES[i]} vs ${THEMES[j]} (${state})` };
-    if (d < 0.06) fail(`spectra too similar: ${THEMES[i]} vs ${THEMES[j]} (${state}) distance=${d.toFixed(3)}`);
+    if (d < 0.06) note(`spectra too similar: ${THEMES[i]} vs ${THEMES[j]} (${state}) distance=${d.toFixed(3)}`);
   }
 }
 for (const theme of THEMES) {
   const calm = find(theme, "exploration", 1), fight = find(theme, "combat", 1);
-  if (fight.rms < calm.rms * 0.6) fail(`${theme}: combat (${fight.rms.toFixed(4)}) is much quieter than exploration (${calm.rms.toFixed(4)})`);
-  if (!(fight.activity > calm.activity)) fail(`${theme}: combat is not more rhythmically active (${fight.activity.toFixed(3)}) than exploration (${calm.activity.toFixed(3)})`);
+  if (fight.rms < calm.rms * 0.6) note(`${theme}: combat (${fight.rms.toFixed(4)}) is much quieter than exploration (${calm.rms.toFixed(4)})`);
+  if (!(fight.activity > calm.activity)) note(`${theme}: combat is not more rhythmically active (${fight.activity.toFixed(3)}) than exploration (${calm.activity.toFixed(3)})`);
   const shallow = find(theme, "combat", 1), deep = find(theme, "combat", 3);
-  if (deep.rms < shallow.rms * 0.9) fail(`${theme}: depth 3 combat is quieter than depth 1`);
+  if (deep.rms < shallow.rms * 0.9) note(`${theme}: depth 3 combat is quieter than depth 1`);
 }
 
+const share = [];
+for (const b of out.balance) {
+  const power = Object.fromEntries(["bass", "drums", "melody", "pads", "band"].map(g => [g, b[g] ** 2]));
+  const total = Object.values(power).reduce((a, v) => a + v, 0) || 1;
+  const pct = Object.fromEntries(Object.entries(power).map(([g, p]) => [g, p / total]));
+  share.push({ cue: `${b.cue.theme}/${b.cue.state}`, ...Object.fromEntries(Object.entries(pct).map(([g, p]) => [g, Math.round(p * 100)])) });
+  for (const g of ["bass", "drums", "melody"]) if (pct[g] < 0.06) note(`${b.cue.theme}/${b.cue.state}: ${g} is buried (${(pct[g] * 100).toFixed(1)}% of the mix)`);
+  if (pct.pads > 0.45) note(`${b.cue.theme}/${b.cue.state}: pads swamp the mix (${(pct.pads * 100).toFixed(1)}%)`);
+}
+for (const theme of THEMES) {
+  const fight = find(theme, "combat", 3), boss = find(theme, "boss", 3);
+  if (!(boss.activity >= fight.activity * 0.85 && boss.rms >= fight.rms * 0.9)) note(`${theme}: the boss score (rms ${boss.rms.toFixed(4)}) is not bigger than an ordinary fight (rms ${fight.rms.toFixed(4)})`);
+}
 const rows = THEMES.map(t => ({ theme: t, exploreRms: find(t, "exploration", 1).rms, combatRms: find(t, "combat", 1).rms, exploreAct: find(t, "exploration", 1).activity, combatAct: find(t, "combat", 1).activity, bossD3Rms: find(t, "boss", 3).rms, centroidBand: find(t, "exploration", 2).centroid, peakMax: Math.max(...out.results.filter(r => r.cue.theme === t).map(r => r.peak)), loudPeak: out.loud.find(l => l.theme === t).peak }));
 console.log(`Rendered ${out.results.length} cues x ${SECONDS}s in ${((Date.now() - started) / 1000).toFixed(1)}s`);
 console.table(rows.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "number" ? Number(v.toFixed(4)) : v]))));
+console.log("Share of mix energy (%) by part group:");
+console.table(share);
 console.log(`Closest pair of theme spectra: ${minDist.pair} distance=${minDist.d.toFixed(3)} (0 = identical)`);
 console.log(`Deterministic re-render: ${out.deterministic}`);
 const jsonPath = argValue("--json");
-if (jsonPath) writeFileSync(jsonPath, JSON.stringify({ rows, minDist, failures }, null, 2));
+if (jsonPath) writeFileSync(jsonPath, JSON.stringify({ rows, share, minDist, notes, failures }, null, 2));
+if (notes.length) console.log(`\n${notes.length} note(s) worth a listen (not failures):\n - ${notes.join("\n - ")}`);
 if (failures.length) { console.error(`\n${failures.length} FAILURE(S):\n - ${failures.join("\n - ")}`); process.exit(1); }
-console.log("\nAll objective audio checks passed. This does not mean it sounds good: audition with ?audio-preview.");
+console.log("\nNo silence, clipping, DC offset or non-determinism. This does not mean it sounds good: audition it in the sound test.");

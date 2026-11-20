@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import "./lobby.css";
 import { VisualEffectsSettings } from "./visualEffects";
+import { SoundTestButton } from "./soundTest";
 import { AccountPanel } from "./account";
 import { BestiarySprite } from "./monsters/BestiarySprite";
 import type { ApiLinkedAccount } from "./api";
@@ -212,6 +213,7 @@ export function SharedMenu({ profile, classes = [], rewards = [], audioControls,
     <div className="px-panel px-shared-menu-panel">
       <button type="button" className="px-button px-button-small" disabled={!profile} onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileOpen(true); }}>PROFILE & COLLECTION</button>
       {profile ? <VisualEffectsSettings profile={profile} /> : null}
+      <SoundTestButton profile={profile} />
       <div className="px-menu-audio"><strong className="px-menu-title">SOUND</strong>{audioControls}</div>
       {actions ? <div className="px-menu-context"><span className="px-menu-title">PARTY</span>{actions}</div> : null}
       <div className="px-menu-about">

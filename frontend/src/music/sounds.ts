@@ -7,9 +7,12 @@ const noise = (d: number, f: number, v: number, ft: FilterKind = "lowpass", o: P
 
 // ------------------------------------------------------------------------------------------------ pitched voices
 
+// Levels: a single note at velocity 1 peaks around 0.2-0.3 before the part mix (synth.ts MIX). Bass voices
+// carry an octave harmonic so the line stays audible on phone and laptop speakers that cannot reproduce the
+// fundamental.
 export const RECIPES: Record<MelodicVoice, Recipe> = {
   // Pads: sustained, slow attack, filter tracks the note.
-  dronePad: { layers: [{ w: "triangle", r: 1, v: 0.18 }, { w: "sine", r: 1.5, v: 0.11, cents: -4 }, { w: "sine", r: 2, v: 0.045, cents: 5 }], a: 1.5, r: 2, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 4, q: 0.7 } },
+  dronePad: { layers: [{ w: "triangle", r: 1, v: 0.18 }, { w: "sine", r: 1.5, v: 0.11, cents: -4 }, { w: "sine", r: 2, v: 0.045, cents: 5 }], a: 1.5, r: 2, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 4, q: 0.7 }, unison: { n: 2, cents: 7 } },
   choirPad: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 2, v: 0.1, cents: 7 }, { w: "sine", r: 3, v: 0.05, cents: -6 }], a: 2, r: 2.5, sustain: true, gain: 0.45, filter: { type: "lowpass", fmul: 6 }, vib: { rate: 5, cents: 12 } },
   glassPad: { layers: [{ w: "sine", r: 1, v: 0.12 }, { w: "sine", r: 2, v: 0.12, cents: 3 }, { w: "sine", r: 3, v: 0.06 }, { w: "sine", r: 4.01, v: 0.04 }], a: 2.5, r: 3, sustain: true, gain: 0.4, trem: { rate: 0.3, depth: 0.5 } },
   muffledPad: { layers: [{ w: "triangle", r: 1, v: 0.2 }, { w: "sine", r: 0.5, v: 0.2 }], a: 2, r: 3, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 2.5, q: 1 }, vib: { rate: 0.2, cents: 8 } },
@@ -19,51 +22,108 @@ export const RECIPES: Record<MelodicVoice, Recipe> = {
   ironPad: { layers: [{ w: "sawtooth", r: 1, v: 0.08, cents: -14 }, { w: "sawtooth", r: 1.005, v: 0.08, cents: 14 }, { w: "sawtooth", r: 0.5, v: 0.1 }], a: 0.6, r: 1.2, sustain: true, gain: 0.4, filter: { type: "lowpass", fmul: 3, q: 4 } },
   breathPad: { layers: [{ w: "sine", r: 1, v: 0.14 }, { w: "triangle", r: 2, v: 0.06, cents: 10 }, { w: "sine", r: 1.5, v: 0.08 }], a: 1.8, r: 2, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 5 }, trem: { rate: 0.5, depth: 0.35 } },
   reedPad: { layers: [{ w: "sawtooth", r: 1, v: 0.06, cents: -7 }, { w: "sawtooth", r: 1, v: 0.06, cents: 7 }, { w: "square", r: 2, v: 0.03 }], a: 0.5, r: 0.8, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 6 }, vib: { rate: 5.5, cents: 8 } },
-  organPad: { layers: [{ w: "square", r: 1, v: 0.05 }, { w: "square", r: 2, v: 0.04 }, { w: "sine", r: 3, v: 0.03 }, { w: "sine", r: 4, v: 0.02 }], a: 0.3, r: 0.6, sustain: true, gain: 0.55, filter: { type: "lowpass", fmul: 7 }, vib: { rate: 6, cents: 14 } },
+  organPad: { layers: [{ w: "square", r: 1, v: 0.05 }, { w: "square", r: 2, v: 0.04 }, { w: "sine", r: 3, v: 0.03 }, { w: "sine", r: 4, v: 0.02 }, { w: "sine", r: 0.5, v: 0.05 }], a: 0.3, r: 0.8, sustain: true, gain: 0.55, filter: { type: "lowpass", fmul: 7 }, vib: { rate: 6, cents: 9 } },
+  // Ensemble strings: three detuned saws per partial, darkened, with a slow bow and late vibrato.
+  strings: { layers: [{ w: "sawtooth", r: 1, v: 0.11 }, { w: "sawtooth", r: 2, v: 0.025, cents: 4 }], a: 0.7, r: 1.4, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 3.2, q: 0.6 }, unison: { n: 3, cents: 11 }, vib: { rate: 5.2, cents: 7, delay: 0.5 } },
+  warmPad: { layers: [{ w: "triangle", r: 1, v: 0.16 }, { w: "sawtooth", r: 1, v: 0.05 }, { w: "sine", r: 2, v: 0.04 }], a: 1.1, r: 1.8, sustain: true, gain: 0.5, filter: { type: "lowpass", fmul: 3, q: 0.8 }, unison: { n: 2, cents: 9 }, trem: { rate: 0.25, depth: 0.2 } },
+  choirAah: { layers: [{ w: "sawtooth", r: 1, v: 0.07 }, { w: "triangle", r: 1, v: 0.1 }, { w: "sine", r: 2, v: 0.05 }], a: 0.9, r: 1.6, sustain: true, gain: 0.5, filter: { type: "bandpass", fmul: 3.2, q: 1.4 }, unison: { n: 3, cents: 14 }, vib: { rate: 5.4, cents: 10, delay: 0.3 } },
+  brassPad: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "sawtooth", r: 1, v: 0.07, cents: 6 }], a: 0.35, r: 0.8, sustain: true, gain: 0.45, filter: { type: "lowpass", fmul: 1.6, to: 4, q: 0.9, t: 0.6 }, drive: 1 },
+  junoPad: { layers: [{ w: "sawtooth", r: 1, v: 0.08 }, { w: "square", r: 1, v: 0.04 }, { w: "sine", r: 0.5, v: 0.06 }], a: 0.8, r: 1.6, sustain: true, gain: 0.48, filter: { type: "lowpass", fmul: 3.5, to: 2.2, q: 1.2, t: 2 }, unison: { n: 3, cents: 16 }, trem: { rate: 0.4, depth: 0.15 } },
 
   // Lead and accent voices.
-  bell: { layers: [{ w: "sine", r: 1, v: 0.2, decay: 1 }, { w: "sine", r: 2.76, v: 0.1, decay: 0.6 }, { w: "sine", r: 5.4, v: 0.06, decay: 0.35 }, { w: "sine", r: 8.93, v: 0.03, decay: 0.2 }], a: 0.005, gain: 0.8 },
-  pluck: { layers: [{ w: "triangle", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.06, decay: 0.5 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 8, to: 2 } },
-  arp: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.05, cents: 5 }], a: 0.003, gain: 0.7, filter: { type: "lowpass", fmul: 6, to: 1.5, q: 2 } },
-  musicBox: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 2, v: 0.08, decay: 0.5 }, { w: "sine", r: 4, v: 0.05, decay: 0.3 }, { w: "sine", r: 6, v: 0.02, decay: 0.2 }], a: 0.002, gain: 0.8 },
+  bell: { layers: [{ w: "sine", r: 1, v: 0.2, decay: 1 }, { w: "sine", r: 2.76, v: 0.1, decay: 0.6 }, { w: "sine", r: 5.4, v: 0.06, decay: 0.35 }, { w: "sine", r: 8.93, v: 0.03, decay: 0.2 }], a: 0.005, gain: 0.8, ring: 1.8 },
+  pluck: { layers: [{ w: "triangle", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.06, decay: 0.5 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 8, to: 2, t: 0.25 }, ring: 0.5 },
+  arp: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.05, cents: 5 }], a: 0.003, gain: 0.7, filter: { type: "lowpass", fmul: 6, to: 1.5, q: 2, t: 0.18 }, ring: 0.3 },
+  musicBox: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 2, v: 0.08, decay: 0.5 }, { w: "sine", r: 4, v: 0.05, decay: 0.3 }, { w: "sine", r: 6, v: 0.02, decay: 0.2 }], a: 0.002, gain: 0.8, ring: 1.2 },
   calliope: { layers: [{ w: "sawtooth", r: 1, v: 0.06, cents: -12 }, { w: "sawtooth", r: 1, v: 0.06, cents: 12 }, { w: "square", r: 2, v: 0.03 }], a: 0.03, r: 0.08, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 7 }, vib: { rate: 6, cents: 20 } },
-  marimba: { layers: [{ w: "sine", r: 1, v: 0.25 }, { w: "sine", r: 4, v: 0.1, decay: 0.15 }, { w: "triangle", r: 0.5, v: 0.06 }], a: 0.002, gain: 0.85 },
-  glass: { layers: [{ w: "sine", r: 1, v: 0.14 }, { w: "sine", r: 2, v: 0.1, cents: 2, decay: 0.8 }, { w: "sine", r: 3, v: 0.06, decay: 0.6 }, { w: "sine", r: 5.04, v: 0.03, decay: 0.4 }], a: 0.01, gain: 0.8, echo: { delay: 0.55, gain: 0.45 } },
-  twang: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.03 }], a: 0.003, gain: 0.8, bend: 1.04, filter: { type: "bandpass", fmul: 3, to: 1.2, q: 2 }, echo: { delay: 0.3, gain: 0.3 } },
-  vibes: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 4, v: 0.08, decay: 0.5 }], a: 0.004, gain: 0.85, trem: { rate: 5, depth: 0.35 } },
+  marimba: { layers: [{ w: "sine", r: 1, v: 0.25 }, { w: "sine", r: 4, v: 0.1, decay: 0.15 }, { w: "triangle", r: 0.5, v: 0.06 }], a: 0.002, gain: 0.85, ring: 0.7, hammer: { v: 0.04, f: 1800, d: 0.015, ft: "bandpass", q: 2 } },
+  glass: { layers: [{ w: "sine", r: 1, v: 0.14 }, { w: "sine", r: 2, v: 0.1, cents: 2, decay: 0.8 }, { w: "sine", r: 3, v: 0.06, decay: 0.6 }, { w: "sine", r: 5.04, v: 0.03, decay: 0.4 }], a: 0.01, gain: 0.8, echo: { delay: 0.55, gain: 0.45 }, ring: 1.4 },
+  twang: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.03 }], a: 0.003, gain: 0.8, bend: 1.04, filter: { type: "bandpass", fmul: 3, to: 1.2, q: 2 }, echo: { delay: 0.3, gain: 0.3 }, ring: 0.8 },
+  vibes: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 4, v: 0.08, decay: 0.5 }], a: 0.004, gain: 0.85, trem: { rate: 5, depth: 0.35 }, ring: 1.4 },
   warble: { layers: [{ w: "sine", r: 1, v: 0.16 }, { w: "sine", r: 1.01, v: 0.12, cents: 25 }, { w: "triangle", r: 2, v: 0.05 }], a: 0.08, r: 0.4, sustain: true, gain: 0.7, vib: { rate: 3.1, cents: 45 } },
-  horn: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "sawtooth", r: 1, v: 0.06, cents: 8 }], a: 0.06, r: 0.25, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 3, to: 6 } },
-  sub: { layers: [{ w: "sine", r: 1, v: 0.3 }, { w: "sine", r: 0.5, v: 0.15 }], a: 0.01, r: 0.2, sustain: true, gain: 0.8 },
-  sonarBell: { layers: [{ w: "sine", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.05, decay: 0.5 }], a: 0.006, gain: 0.8, filter: { type: "lowpass", fmul: 3 }, echo: { delay: 0.6, gain: 0.55 } },
+  horn: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "sawtooth", r: 1, v: 0.06, cents: 8 }], a: 0.06, r: 0.25, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 2, to: 5, t: 0.15 }, vib: { rate: 5, cents: 6, delay: 0.3 } },
+  sub: { layers: [{ w: "sine", r: 1, v: 0.3 }, { w: "sine", r: 0.5, v: 0.12 }, { w: "triangle", r: 2, v: 0.06 }], a: 0.01, r: 0.2, sustain: true, gain: 0.8, drive: 1 },
+  sonarBell: { layers: [{ w: "sine", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.05, decay: 0.5 }], a: 0.006, gain: 0.8, filter: { type: "lowpass", fmul: 3 }, echo: { delay: 0.6, gain: 0.55 }, ring: 1.6 },
+  // Felt-hammer piano: a bright strike that mellows as it rings.
+  piano: { layers: [{ w: "triangle", r: 1, v: 0.2 }, { w: "sine", r: 2, v: 0.09, decay: 0.55 }, { w: "sine", r: 3.01, v: 0.04, decay: 0.3 }, { w: "sine", r: 4.03, v: 0.02, decay: 0.2 }], a: 0.003, gain: 0.85, ring: 1.8, filter: { type: "lowpass", fmul: 7, to: 2.2, t: 1.4 }, hammer: { v: 0.035, f: 2600, d: 0.02, ft: "bandpass", q: 1.2 } },
+  // Tine electric piano: FM bell attack that settles into a warm sine, with gentle tremolo.
+  epiano: { layers: [{ w: "sine", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.03, decay: 0.3 }], a: 0.003, gain: 0.85, ring: 1.6, fm: { r: 1, index: 1.8, end: 0.15 }, trem: { rate: 4.5, depth: 0.18 } },
+  harp: { layers: [{ w: "triangle", r: 1, v: 0.22 }, { w: "sine", r: 2, v: 0.08, decay: 0.4 }, { w: "sine", r: 3, v: 0.03, decay: 0.2 }], a: 0.002, gain: 0.85, ring: 1.5, filter: { type: "lowpass", fmul: 9, to: 2.5, t: 0.5 }, hammer: { v: 0.02, f: 3200, d: 0.01, ft: "highpass" } },
+  flute: { layers: [{ w: "sine", r: 1, v: 0.22 }, { w: "triangle", r: 2, v: 0.025 }], a: 0.07, r: 0.18, sustain: true, gain: 0.85, vib: { rate: 5, cents: 13, delay: 0.25 }, hammer: { v: 0.035, f: 2400, d: 0.12, ft: "bandpass", q: 0.8 } },
+  violin: { layers: [{ w: "sawtooth", r: 1, v: 0.13 }, { w: "sawtooth", r: 2, v: 0.02 }], a: 0.08, r: 0.25, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 4.5, q: 1 }, unison: { n: 2, cents: 5 }, vib: { rate: 5.6, cents: 15, delay: 0.2 } },
+  brass: { layers: [{ w: "sawtooth", r: 1, v: 0.12 }, { w: "sawtooth", r: 1, v: 0.08, cents: 7 }], a: 0.04, r: 0.18, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 1.4, to: 5, t: 0.12, q: 1.1 }, fm: { r: 1, index: 0.3, end: 0.1 }, drive: 1.2, vib: { rate: 5.2, cents: 6, delay: 0.35 } },
+  frenchHorn: { layers: [{ w: "triangle", r: 1, v: 0.18 }, { w: "sawtooth", r: 1, v: 0.06 }], a: 0.09, r: 0.3, sustain: true, gain: 0.8, filter: { type: "lowpass", fmul: 2.2, to: 3.5, t: 0.25 }, vib: { rate: 4.6, cents: 5, delay: 0.35 } },
+  celesta: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 4, v: 0.07, decay: 0.3 }, { w: "sine", r: 8.1, v: 0.02, decay: 0.15 }], a: 0.002, gain: 0.8, ring: 1.3, hammer: { v: 0.02, f: 5000, d: 0.008, ft: "highpass" } },
+  sawLead: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 0.5, v: 0.03 }], a: 0.01, r: 0.15, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 4, q: 2 }, unison: { n: 3, cents: 10 }, vib: { rate: 5.5, cents: 9, delay: 0.3 } },
+  squareLead: { layers: [{ w: "square", r: 1, v: 0.1 }], a: 0.004, r: 0.04, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 7 }, vib: { rate: 6, cents: 10, delay: 0.18 } },
+  kalimba: { layers: [{ w: "sine", r: 1, v: 0.24 }, { w: "sine", r: 5.3, v: 0.05, decay: 0.12 }, { w: "sine", r: 2, v: 0.03, decay: 0.4 }], a: 0.002, gain: 0.85, ring: 0.9, hammer: { v: 0.03, f: 1400, d: 0.01, ft: "bandpass", q: 3 } },
+  steelDrum: { layers: [{ w: "sine", r: 1, v: 0.2 }, { w: "sine", r: 2, v: 0.08, decay: 0.6 }, { w: "sine", r: 3.95, v: 0.05, decay: 0.3 }], a: 0.003, gain: 0.85, ring: 0.9, fm: { r: 2, index: 0.6, end: 0.05 } },
+  // Orchestral string ostinato: short bowed notes.
+  staccato: { layers: [{ w: "sawtooth", r: 1, v: 0.12 }], a: 0.008, gain: 0.7, ring: 0.22, filter: { type: "lowpass", fmul: 4, to: 1.8, t: 0.15 }, unison: { n: 3, cents: 10 } },
+  // Orchestral hit: brass and strings together, saturated.
+  stab: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 0.5, v: 0.05 }, { w: "sawtooth", r: 2, v: 0.03 }], a: 0.006, gain: 0.7, ring: 0.6, filter: { type: "lowpass", fmul: 5, to: 1.5, t: 0.4 }, unison: { n: 3, cents: 12 }, drive: 1.6 },
+  choirLead: { layers: [{ w: "sawtooth", r: 1, v: 0.07 }, { w: "triangle", r: 1, v: 0.12 }], a: 0.15, r: 0.4, sustain: true, gain: 0.65, filter: { type: "bandpass", fmul: 3, q: 1.2 }, unison: { n: 3, cents: 12 }, vib: { rate: 5.4, cents: 12, delay: 0.25 } },
+  organLead: { layers: [{ w: "square", r: 1, v: 0.06 }, { w: "square", r: 2, v: 0.04 }, { w: "sine", r: 3, v: 0.04 }, { w: "sine", r: 0.5, v: 0.06 }], a: 0.01, r: 0.15, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 6 }, vib: { rate: 6.4, cents: 8 } },
+  accordion: { layers: [{ w: "sawtooth", r: 1, v: 0.07, cents: -9 }, { w: "sawtooth", r: 1, v: 0.07, cents: 9 }, { w: "square", r: 2, v: 0.03 }], a: 0.04, r: 0.1, sustain: true, gain: 0.7, filter: { type: "lowpass", fmul: 5 }, trem: { rate: 6, depth: 0.15 } },
+  trumpet: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.05 }], a: 0.03, r: 0.12, sustain: true, gain: 0.65, filter: { type: "lowpass", fmul: 2, to: 6, t: 0.08, q: 1.2 }, vib: { rate: 5.6, cents: 10, delay: 0.25 }, drive: 1 },
+  sax: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "square", r: 1, v: 0.04 }], a: 0.05, r: 0.15, sustain: true, gain: 0.65, filter: { type: "lowpass", fmul: 3, q: 3 }, vib: { rate: 5, cents: 16, delay: 0.2 }, drive: 1.5, hammer: { v: 0.02, f: 2000, d: 0.05, ft: "bandpass", q: 1 } },
+  guitar: { layers: [{ w: "sawtooth", r: 1, v: 0.1 }, { w: "triangle", r: 1, v: 0.12 }], a: 0.002, gain: 0.8, ring: 1, bend: 1.01, filter: { type: "lowpass", fmul: 6, to: 1.6, t: 0.35 }, hammer: { v: 0.03, f: 3000, d: 0.01, ft: "highpass" } },
+  theremin: { layers: [{ w: "sine", r: 1, v: 0.24 }, { w: "triangle", r: 2, v: 0.02 }], a: 0.12, r: 0.35, sustain: true, gain: 0.8, vib: { rate: 6, cents: 28, delay: 0.1 } },
+  chime: { layers: [{ w: "sine", r: 1, v: 0.16 }, { w: "sine", r: 2.4, v: 0.08, decay: 0.7 }, { w: "sine", r: 4.6, v: 0.04, decay: 0.4 }], a: 0.003, gain: 0.8, ring: 2.6 },
+  koto: { layers: [{ w: "triangle", r: 1, v: 0.2 }, { w: "sawtooth", r: 1, v: 0.04 }], a: 0.002, gain: 0.85, ring: 1.1, bend: 1.02, filter: { type: "lowpass", fmul: 7, to: 2, t: 0.25 } },
+  timpani: { layers: [{ w: "sine", r: 1, v: 0.32 }, { w: "sine", r: 1.5, v: 0.08, decay: 0.4 }, { w: "sine", r: 2, v: 0.05, decay: 0.3 }], a: 0.003, gain: 0.9, ring: 1.5, bend: 1.05, bendT: 0.1, hammer: { v: 0.08, f: 320, d: 0.06 } },
 
   // Bass voices.
-  subBass: { layers: [{ w: "sine", r: 1, v: 0.35 }, { w: "triangle", r: 1, v: 0.12, decay: 0.7 }], a: 0.01, gain: 0.9, filter: { type: "lowpass", fmul: 3 } },
-  walkBass: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "sine", r: 1, v: 0.2 }], a: 0.006, gain: 0.9, filter: { type: "lowpass", fmul: 3 } },
-  pulseBass: { layers: [{ w: "square", r: 1, v: 0.12 }], a: 0.002, gain: 0.9, filter: { type: "lowpass", fmul: 2.5, to: 1.2, q: 2 } },
+  subBass: { layers: [{ w: "sine", r: 1, v: 0.3 }, { w: "triangle", r: 1, v: 0.1, decay: 0.7 }, { w: "sine", r: 2, v: 0.07 }], a: 0.01, gain: 0.9, filter: { type: "lowpass", fmul: 4 } },
+  walkBass: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "sine", r: 1, v: 0.18 }, { w: "sine", r: 2, v: 0.06 }], a: 0.006, gain: 0.9, filter: { type: "lowpass", fmul: 3 }, hammer: { v: 0.03, f: 700, d: 0.03 } },
+  pulseBass: { layers: [{ w: "square", r: 1, v: 0.12 }], a: 0.002, gain: 0.9, filter: { type: "lowpass", fmul: 2.5, to: 1.2, q: 2, t: 0.2 } },
   tubaBass: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "square", r: 1, v: 0.06 }], a: 0.02, gain: 0.9, filter: { type: "lowpass", fmul: 3 } },
-  ironBass: { layers: [{ w: "sawtooth", r: 1, v: 0.14 }, { w: "sawtooth", r: 1, v: 0.1, cents: 12 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 2.5, q: 5 } },
-  thumpBass: { layers: [{ w: "sine", r: 1, v: 0.4 }], a: 0.002, gain: 0.9, bend: 1.8 },
+  ironBass: { layers: [{ w: "sawtooth", r: 1, v: 0.14 }, { w: "sawtooth", r: 1, v: 0.1, cents: 12 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 2.5, q: 5 }, drive: 1.5 },
+  thumpBass: { layers: [{ w: "sine", r: 1, v: 0.38 }, { w: "sine", r: 2, v: 0.06 }], a: 0.002, gain: 0.9, bend: 1.8 },
+  fmBass: { layers: [{ w: "sine", r: 1, v: 0.3 }, { w: "sine", r: 2, v: 0.05 }], a: 0.003, r: 0.06, sustain: true, gain: 0.9, fm: { r: 1, index: 2.2, end: 0.4 } },
+  upright: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "sine", r: 1, v: 0.18 }, { w: "sine", r: 2, v: 0.06, decay: 0.5 }], a: 0.004, gain: 0.95, ring: 0.6, filter: { type: "lowpass", fmul: 3.5, to: 1.6, t: 0.25 }, hammer: { v: 0.05, f: 600, d: 0.03 } },
+  synthBass: { layers: [{ w: "sawtooth", r: 1, v: 0.13 }, { w: "square", r: 0.5, v: 0.08 }], a: 0.003, r: 0.06, sustain: true, gain: 0.85, filter: { type: "lowpass", fmul: 2.2, to: 1.1, q: 4, t: 0.18 } },
+  cello: { layers: [{ w: "sawtooth", r: 1, v: 0.13 }, { w: "sine", r: 1, v: 0.1 }], a: 0.05, r: 0.2, sustain: true, gain: 0.8, filter: { type: "lowpass", fmul: 3, q: 0.8 }, unison: { n: 2, cents: 6 }, vib: { rate: 5, cents: 8, delay: 0.3 } },
+  reeseBass: { layers: [{ w: "sawtooth", r: 1, v: 0.1, cents: -16 }, { w: "sawtooth", r: 1, v: 0.1, cents: 16 }, { w: "sine", r: 1, v: 0.16 }], a: 0.01, r: 0.1, sustain: true, gain: 0.8, filter: { type: "lowpass", fmul: 2.5, q: 1.2 }, drive: 1.4 },
+  chipBass: { layers: [{ w: "triangle", r: 1, v: 0.36 }], a: 0.002, r: 0.02, sustain: true, gain: 0.9 },
 };
 
 // ------------------------------------------------------------------------------------------------------- drums
 
 export const DRUMS: Record<DrumVoice, readonly Step[]> = {
-  kick: [tone(120, 0.18, "sine", 0.5, { to: 45, a: 0.003 }), noise(0.03, 600, 0.1)],
-  tom: [tone(160, 0.3, "sine", 0.4, { to: 70, a: 0.003 }), noise(0.06, 500, 0.08)],
-  snare: [noise(0.15, 1800, 0.22, "bandpass", { q: 0.8 }), tone(190, 0.08, "triangle", 0.12, { a: 0.002 })],
+  // A punchy kick: a fast pitch drop for the body, a short click for the beater.
+  kick: [tone(155, 0.32, "sine", 0.55, { to: 44, a: 0.002 }), tone(78, 0.26, "sine", 0.18, { to: 42, a: 0.003 }), noise(0.012, 3800, 0.1, "highpass")],
+  tom: [tone(175, 0.4, "sine", 0.42, { to: 78, a: 0.002 }), tone(350, 0.08, "triangle", 0.06, { to: 160, a: 0.002 }), noise(0.05, 900, 0.07)],
+  // Snare: a tuned body under band-passed wires and a high sizzle.
+  snare: [tone(195, 0.12, "triangle", 0.18, { to: 160, a: 0.002 }), tone(330, 0.06, "sine", 0.07, { a: 0.001 }), noise(0.2, 2300, 0.2, "bandpass", { q: 0.7 }), noise(0.13, 6500, 0.07, "highpass")],
   rim: [tone(800, 0.03, "square", 0.06, { a: 0.001 }), noise(0.03, 2500, 0.1, "bandpass", { q: 1.5 })],
   tick: [noise(0.02, 5000, 0.08, "highpass")],
-  hat: [noise(0.04, 7000, 0.07, "highpass")],
+  hat: [{ k: "metal", d: 0.05, v: 0.06, f: 7200 }, noise(0.03, 9000, 0.03, "highpass")],
   shaker: [noise(0.07, 6000, 0.06, "bandpass", { q: 1, a: 0.02 })],
   wood: [tone(520, 0.07, "triangle", 0.16, { a: 0.001 }), tone(780, 0.05, "sine", 0.08, { a: 0.001 })],
   clank: [tone(340, 0.25, "square", 0.05, { a: 0.001 }), tone(530, 0.35, "sine", 0.08, { a: 0.001 }), tone(817, 0.3, "sine", 0.05, { a: 0.001 }), noise(0.05, 3000, 0.08, "bandpass", { q: 2 })],
   gear: [noise(0.03, 2600, 0.1, "bandpass", { q: 3 }), tone(1200, 0.015, "square", 0.04, { a: 0.001 })],
   bongo: [tone(330, 0.12, "sine", 0.3, { to: 260, a: 0.002 })],
-  heartbeat: [tone(70, 0.2, "sine", 0.5, { to: 45, a: 0.004 }), tone(62, 0.15, "sine", 0.3, { to: 42, at: 0.18, a: 0.004 })],
+  heartbeat: [tone(70, 0.22, "sine", 0.5, { to: 45, a: 0.004 }), tone(140, 0.06, "sine", 0.06, { to: 90, a: 0.002 }), tone(62, 0.16, "sine", 0.3, { to: 42, at: 0.18, a: 0.004 })],
   brush: [noise(0.12, 4000, 0.1, "bandpass", { q: 0.4, a: 0.03 })],
   bellTick: [tone(1760, 0.25, "sine", 0.04, { a: 0.001 }), tone(2349, 0.18, "sine", 0.025, { a: 0.001 })],
   anvil: [tone(220, 0.4, "square", 0.07, { a: 0.001 }), tone(440, 0.45, "sine", 0.08, { a: 0.001 }), tone(662, 0.5, "sine", 0.06, { a: 0.001 }), noise(0.1, 2000, 0.15, "bandpass", { q: 1 })],
   crack: [noise(0.1, 3500, 0.2, "highpass"), tone(1200, 0.06, "sine", 0.1, { to: 300, a: 0.001 })],
+  openHat: [{ k: "metal", d: 0.32, v: 0.05, f: 6800 }, noise(0.28, 8500, 0.025, "highpass")],
+  crash: [{ k: "metal", d: 1.9, v: 0.065, f: 4200, base: 58 }, noise(2.1, 5200, 0.06, "highpass", { a: 0.002 })],
+  ride: [{ k: "metal", d: 0.9, v: 0.03, f: 5200, base: 71 }, tone(2640, 0.7, "sine", 0.015, { a: 0.001 })],
+  clap: [0, 0.011, 0.022].map(at => noise(0.012, 1500, 0.16, "bandpass", { q: 1.2, at, a: 0.001 })).concat([noise(0.18, 1400, 0.12, "bandpass", { q: 1, at: 0.03, a: 0.002 })]),
+  taiko: [tone(105, 0.75, "sine", 0.55, { to: 52, a: 0.003 }), tone(210, 0.16, "triangle", 0.08, { to: 105, a: 0.002 }), noise(0.08, 450, 0.22)],
+  gong: [{ k: "metal", d: 3.4, v: 0.045, f: 900, base: 24, a: 0.01 }, tone(98, 3.5, "sine", 0.1, { a: 0.01 }), tone(147.3, 3, "sine", 0.05, { a: 0.02 }), tone(233, 2.4, "sine", 0.03, { a: 0.03 })],
+  tambourine: [{ k: "metal", d: 0.18, v: 0.035, f: 8200, base: 92 }, noise(0.15, 9000, 0.03, "highpass", { a: 0.008 })],
+  conga: [tone(262, 0.22, "sine", 0.3, { to: 232, a: 0.002 }), noise(0.02, 1200, 0.05)],
+  chipKick: [tone(210, 0.12, "triangle", 0.4, { to: 42, a: 0.001 })],
+  chipSnare: [noise(0.12, 5200, 0.17), tone(310, 0.05, "square", 0.05, { to: 150, a: 0.001 })],
+  chipHat: [noise(0.03, 9000, 0.07, "highpass")],
+  snap: [noise(0.04, 2200, 0.18, "bandpass", { q: 2, a: 0.001 }), tone(1800, 0.02, "sine", 0.04, { a: 0.001 })],
+  // Cinematic sub boom for the downbeat of a boss section.
+  boom: [tone(62, 1.3, "sine", 0.5, { to: 30, a: 0.004 }), noise(0.45, 220, 0.28, "lowpass", { a: 0.004 })],
+  cowbell: [tone(540, 0.25, "square", 0.04, { a: 0.001 }), tone(800, 0.25, "square", 0.03, { a: 0.001 })],
 };
 
 // ------------------------------------------------------------------------------------------- ambience events

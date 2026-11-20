@@ -1,6 +1,6 @@
 # ADR 0026: Data-Driven, Theme-Aware Procedural Music
 
-- Status: Accepted
+- Status: Accepted; arrangement, mix and sound test superseded in part by ADR 0035
 - Date: 2026-11-15
 - Extends: ADR 0003 (audio direction)
 
