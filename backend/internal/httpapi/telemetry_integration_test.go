@@ -112,10 +112,8 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 	if err := db.QueryRowContext(t.Context(), "SELECT payload::text FROM run_telemetry_events WHERE run_id = $1 AND room_version = 1", runID).Scan(&payload); err != nil {
 		t.Fatal(err)
 	}
-	if contains := len(payload) > 0 && !containsText(payload, "must-not-be-copied"); contains {
-		// The marker should never be present in the event payload because token hashes
-		// are deliberately excluded from the trigger's JSON projection.
-	} else {
+	// Token hashes are deliberately excluded from the telemetry projection.
+	if containsText(payload, "must-not-be-copied") {
 		t.Fatalf("event payload leaked a player token hash: %s", payload)
 	}
 }
