@@ -391,3 +391,14 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-intro-road { display: grid; gap: 6px; margin-bottom: 12px; padding: 8px 10px; background: var(--pit); box-shadow: inset 0 3px 0 #05030a, inset 0 -3px 0 #2a2440; }
 .rn-intro-road .px-label { display: flex; align-items: center; gap: 6px; }
 .rn-intro-road > small { color: #cfc6dc; font-size: 13px; }
+
+/* ---------- in-run level-up fanfare ---------- */
+.rn-level-up { position: fixed; inset: 0; z-index: 44; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 45%, #d6a64d55, #05030adf 65%); cursor: pointer; animation: rn-cel-fade .25s ease-out; }
+.rn-level-up-card { display: grid; justify-items: center; gap: 8px; width: min(360px, 100%); padding: 20px 24px; border: 3px solid var(--gold); background: var(--edge); box-shadow: 0 0 0 4px #05030a, 0 0 32px #d6a64d88; color: var(--bone); text-align: center; animation: rn-cel-card .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+.rn-level-up-card p { margin: 0; color: var(--gold); font: 400 18px/1.4 var(--display); letter-spacing: .1em; animation: rn-cel-pulse 1s ease-in-out infinite alternate; }
+.rn-level-up-card strong { color: var(--gold); font: 400 54px/1 var(--display); text-shadow: 0 4px 0 var(--pit), 0 0 18px #d6a64d; }
+.rn-level-up-card h2 { margin: 0; font: 400 12px/1.5 var(--display); }
+.rn-level-up-card ul { display: grid; gap: 4px; margin: 4px 0; padding: 0; list-style: none; color: var(--good, #b6e87a); font: 400 11px/1.5 var(--display); }
+.rn-level-up-card > span { color: var(--muted); font-size: 16px; }
+.rn-level-up-card small { margin-top: 6px; color: var(--muted); font: 400 8px/1.5 var(--display); }
+@media (prefers-reduced-motion: reduce) { .rn-level-up, .rn-level-up-card, .rn-level-up-card p { animation: none; } }
