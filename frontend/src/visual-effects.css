@@ -70,3 +70,4 @@ html[data-visual-effect="negative"]::after { content: none; }
 .px-visual-foot { margin-top: 12px; color: #a99fbd; font: 16px/1.2 "VT323", monospace; }
 @media (max-width: 620px) { .px-visual-grid { grid-template-columns: 1fr; } .px-visual-dialog { padding: 10px; } .px-visual-option { grid-template-columns: 64px minmax(0,1fr) 16px; } }
 @media (prefers-reduced-motion: reduce) { html[data-visual-effect="vhs"]::after { animation: none; } }
+\nhtml[data-visual-settings-open="true"]::after { display: none !important; }\n
