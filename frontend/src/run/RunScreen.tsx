@@ -103,6 +103,24 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const acting = !spectator && view === "player";
   const events: ApiCombatEvent[] = run.lastCombatEvents ?? [];
   const player = selfId ? run.players[selfId] : undefined;
+  const [levelUp, setLevelUp] = useState<{ level: number; changes: string[] } | null>(null);
+  const previousLevelState = useRef<{ runId: string; playerId: string; level: number; maxHealth: number; strikeDamage: number; guardReduction: number; power: number; focus: number; agility: number } | null>(null);
+  useEffect(() => {
+    if (!player || spectator) { previousLevelState.current = null; return; }
+    const current = { runId: run.id, playerId: selfId, level: player.level, maxHealth: player.maxHealth, strikeDamage: player.strikeDamage ?? 0, guardReduction: player.guardReduction ?? 0, power: player.stats.power, focus: player.stats.focus, agility: player.stats.agility };
+    const previous = previousLevelState.current;
+    previousLevelState.current = current;
+    if (!previous || previous.runId !== current.runId || previous.playerId !== current.playerId || current.level <= previous.level) return;
+    const changes = [
+      ["Max health", previous.maxHealth, current.maxHealth],
+      ["Strike damage", previous.strikeDamage, current.strikeDamage],
+      ["Guard reduction", previous.guardReduction, current.guardReduction],
+      ["Power", previous.power, current.power],
+      ["Focus", previous.focus, current.focus],
+      ["Agility", previous.agility, current.agility],
+    ].filter(([, before, after]) => before !== after).map(([label, before, after]) => String(label) + " +" + String(Number(after) - Number(before)));
+    setLevelUp({ level: current.level, changes });
+  }, [player?.level, player?.maxHealth, player?.strikeDamage, player?.guardReduction, player?.stats.power, player?.stats.focus, player?.stats.agility, run.id, selfId, spectator]);
 
   const enemies = useMemo(() => (room.encounter?.enemies ?? []).map((enemy, index, all) => sceneEnemy(enemy, index, all.length, snapshot.playerIds, selfId)), [room.encounter?.enemies, snapshot.playerIds, selfId]);
   const living = enemies.filter(enemy => enemy.hp > 0);
@@ -417,6 +435,13 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       title="Change your skills" note="Between dungeons you can swap skills for the next one. Mastery earned on this run unlocks new skills once it ends."
       onSave={ids => { void onCommand({ type: "set_loadout", skillIds: ids }).then(ok => { if (ok) setLoadoutOpen(false); }); }} onClose={() => setLoadoutOpen(false)} /> : null}
     <Celebrations items={report.celebrations} theme={room.themeId || run.themeId} />
+    {levelUp ? <div className="rn-level-up" role="status" aria-live="assertive" onClick={() => setLevelUp(null)}>
+      <div className="rn-level-up-card">
+        <p>LEVEL UP!</p><strong>LEVEL {levelUp.level}</strong><h2>YOU GREW STRONGER</h2>
+        {levelUp.changes.length > 0 ? <ul>{levelUp.changes.map(change => <li key={change}>+ {change}</li>)}</ul> : <span>No stats changed this level.</span>}
+        <small>TAP TO CONTINUE</small>
+      </div>
+    </div> : null}
     {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }
