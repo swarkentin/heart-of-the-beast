@@ -71,3 +71,14 @@ html[data-visual-effect="negative"]::after { content: none; }
 @media (max-width: 620px) { .px-visual-grid { grid-template-columns: 1fr; } .px-visual-dialog { padding: 10px; } .px-visual-option { grid-template-columns: 64px minmax(0,1fr) 16px; } }
 @media (prefers-reduced-motion: reduce) { html[data-visual-effect="vhs"]::after { animation: none; } }
 \nhtml[data-visual-settings-open="true"]::after { display: none !important; }\n
+/* Small screens: keep the game frame and its borders crisp and undistorted. */
+@media (max-width: 700px) {
+  html[data-visual-effect="crt"]::after,
+  html[data-visual-effect="amber"]::after,
+  html[data-visual-effect="green"]::after,
+  html[data-visual-effect="film"]::after {
+    background: repeating-linear-gradient(to bottom, transparent 0 3px, #05030a22 4px 5px);
+    box-shadow: none;
+  }
+  html[data-visual-effect="vhs"] #root { filter: saturate(.88) contrast(1.04); }
+}
