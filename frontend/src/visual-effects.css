@@ -1,0 +1,72 @@
+/* Optional, progression-unlocked display treatments. These never change game state. */
+html[data-visual-effect="mono"] #root { filter: grayscale(1) contrast(1.12); }
+html[data-visual-effect="amber"] #root { filter: sepia(.9) saturate(1.7) hue-rotate(350deg) contrast(1.06); }
+html[data-visual-effect="green"] #root { filter: sepia(1) saturate(2.6) hue-rotate(65deg) contrast(1.12); }
+html[data-visual-effect="gameboy"] #root { filter: sepia(.8) saturate(1.8) hue-rotate(35deg) contrast(1.12); }
+html[data-visual-effect="vhs"] #root { filter: saturate(.82) contrast(1.08) blur(.18px); }
+html[data-visual-effect="arcade"] #root { filter: saturate(1.35) contrast(1.12); }
+html[data-visual-effect="film"] #root { filter: sepia(.28) saturate(.78) contrast(.94); }
+html[data-visual-effect="negative"] #root { filter: invert(1) hue-rotate(180deg); }
+
+html[data-visual-effect="scanlines"]::after,
+html[data-visual-effect="crt"]::after,
+html[data-visual-effect="amber"]::after,
+html[data-visual-effect="green"]::after,
+html[data-visual-effect="gameboy"]::after,
+html[data-visual-effect="vhs"]::after,
+html[data-visual-effect="arcade"]::after,
+html[data-visual-effect="film"]::after {
+  content: ""; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+}
+html[data-visual-effect="scanlines"]::after,
+html[data-visual-effect="crt"]::after,
+html[data-visual-effect="amber"]::after,
+html[data-visual-effect="green"]::after,
+html[data-visual-effect="arcade"]::after {
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, #05030a30 3px 4px);
+}
+html[data-visual-effect="crt"]::after {
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, #05030a35 3px 4px), radial-gradient(ellipse at center, transparent 58%, #05030a88 100%);
+  box-shadow: inset 0 0 38px 12px #05030a55;
+}
+html[data-visual-effect="amber"]::after { background: repeating-linear-gradient(to bottom, transparent 0 2px, #3a1c0038 3px 4px), radial-gradient(ellipse at center, transparent 55%, #6d3a1233 100%); }
+html[data-visual-effect="green"]::after { background: repeating-linear-gradient(to bottom, transparent 0 2px, #001b0838 3px 4px), radial-gradient(ellipse at center, transparent 55%, #002b1238 100%); }
+html[data-visual-effect="gameboy"]::after { background: repeating-linear-gradient(to bottom, transparent 0 3px, #172b1630 4px 5px); }
+html[data-visual-effect="arcade"]::after { background: repeating-linear-gradient(to bottom, transparent 0 2px, #05030a40 3px 4px); box-shadow: inset 0 0 22px 5px #07051b77; }
+html[data-visual-effect="vhs"]::after { background: linear-gradient(180deg, transparent 0 72%, #f4eaff0b 73%, transparent 75%), repeating-linear-gradient(0deg, #fff0 0 5px, #fff1 6px, #fff0 7px); opacity: .7; animation: px-vhs-flicker 5s steps(1) infinite; }
+html[data-visual-effect="film"]::after { background: radial-gradient(ellipse at center, transparent 45%, #24180c35 100%); opacity: .8; }
+html[data-visual-effect="negative"]::after { content: none; }
+@keyframes px-vhs-flicker { 0%, 96%, 100% { opacity: .55; } 97% { opacity: .85; } 98% { opacity: .4; } }
+
+.px-visual-dialog { width: min(760px, 96vw); max-height: min(88vh, 900px); overflow: auto; padding: 16px; }
+.px-visual-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.px-visual-head h2 { margin: 4px 0 0; font: 400 19px/1.4 "Press Start 2P", monospace; color: var(--bone, #f4ead6); }
+.px-visual-progress { padding: 10px 12px; margin-bottom: 12px; background: #100d20; box-shadow: inset 0 0 0 1px #51466c; color: #d6a64d; font: 10px/1.6 "Press Start 2P", monospace; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px 12px; }
+.px-visual-progress p { flex-basis: 100%; margin: 3px 0 0; color: #cfc6dc; font: 17px/1.2 "VT323", monospace; }
+.px-visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.px-visual-option { min-width: 0; display: grid; grid-template-columns: 76px minmax(0, 1fr) 18px; align-items: center; gap: 10px; padding: 8px; border: 2px solid #51466c; background: #171329; color: #f4ead6; text-align: left; cursor: pointer; }
+.px-visual-option.selected { border-color: #d6a64d; background: #29203a; }
+.px-visual-option:disabled { cursor: not-allowed; opacity: .62; }
+.px-visual-option-copy { min-width: 0; display: grid; gap: 4px; }
+.px-visual-option-copy strong { font: 10px/1.5 "Press Start 2P", monospace; }
+.px-visual-option-copy small { color: #cfc6dc; font: 16px/1.1 "VT323", monospace; }
+.px-visual-option-copy em { color: #d6a64d; font: 8px/1.5 "Press Start 2P", monospace; font-style: normal; }
+.px-visual-state { color: #d6a64d; text-align: center; }
+.px-visual-preview { height: 48px; overflow: hidden; position: relative; background: linear-gradient(135deg, #29203c, #090713); border: 1px solid #6e6288; }
+.px-visual-preview::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, transparent 0 3px, #05030a66 4px 5px); }
+.px-visual-preview::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse, transparent 30%, #05030a88 100%); }
+.px-visual-preview i { position: absolute; inset: 12px 18px; background: #d6a64d; box-shadow: 0 0 8px currentColor; }
+.px-visual-preview-mono { filter: grayscale(1); }
+.px-visual-preview-amber { background: #2b1c0c; color: #ffb34e; }
+.px-visual-preview-amber i { background: #ffb34e; }
+.px-visual-preview-green { background: #071d12; color: #76d68a; }
+.px-visual-preview-green i { background: #76d68a; }
+.px-visual-preview-gameboy { background: #8b9b62; }
+.px-visual-preview-gameboy i { background: #344b2e; }
+.px-visual-preview-vhs { background: linear-gradient(90deg, #302050, #1b5670, #602d58); }
+.px-visual-preview-arcade { background: linear-gradient(90deg, #e33b80, #38c4ff, #e5b64d); }
+.px-visual-preview-film { background: #6d5842; filter: sepia(.7); }
+.px-visual-preview-negative { filter: invert(1); }
+.px-visual-foot { margin-top: 12px; color: #a99fbd; font: 16px/1.2 "VT323", monospace; }
+@media (max-width: 620px) { .px-visual-grid { grid-template-columns: 1fr; } .px-visual-dialog { padding: 10px; } .px-visual-option { grid-template-columns: 64px minmax(0,1fr) 16px; } }
+@media (prefers-reduced-motion: reduce) { html[data-visual-effect="vhs"]::after { animation: none; } }
