@@ -118,6 +118,7 @@ These are the current priorities, not a promise that each item ships in strict i
 - [x] Run skill ranks: one skill point per run level-up, spent on a skill of the bar for small stat steps (rank I-V) and a more brilliant animation (ADR 0034).
 - [x] Keep enemy names and health bars clear of the intent chips: the intents get their own strip above the drawing (#138, ADR 0034).
 - [ ] Run-screen follow-ups: self-host or draw the pixel fonts, restyle the sound settings sliders.
+- [ ] Balance pass after skill ranks (ADR 0034): solo Assassin, Spellguard and Juggernaut rarely pass the first castle; strong solo classes and parties that do pass it often run to the simulation depth limit, so add a difficulty curve beyond dungeon 5; add a second simulated skill-point policy (focus one damage skill) to bracket human play.
 - [ ] First-person follow-ups: hand-drawn swing frames for the heaviest weapons, a per-skill signature effect at rank V, a hurt flinch, and a spectator-view equivalent of ranked skill animations. Check the intent strip on very short landscape phones.
 
 ## Phase 2 — Core roguelike loop
