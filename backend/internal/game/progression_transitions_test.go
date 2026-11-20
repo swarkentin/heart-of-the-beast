@@ -61,7 +61,7 @@ func TestRunLevelsContinuePastFiveWithNonlinearXPAndGradualGrowth(t *testing.T) 
 }
 
 func TestResolveExperienceGainAtHighLevelAndForNonPositiveRewards(t *testing.T) {
-	player := PlayerState{Experience: 5000, Level: 12, MaxHealth: 62, StrikeDamage: PlayerStrikeDamage + 8, GuardReduction: GuardDamageReduction + 6, Stats: PlayerStats{Power: 7, Focus: 8, Agility: 5}}
+	player := PlayerState{Experience: experienceForNextLevel(12) - 30, Level: 12, MaxHealth: 62, StrikeDamage: PlayerStrikeDamage + 8, GuardReduction: GuardDamageReduction + 6, Stats: PlayerStats{Power: 7, Focus: 8, Agility: 5}}
 	for _, amount := range []int{0, -10, 25} {
 		result := resolveExperienceGain(player, amount)
 		wantExperience := player.Experience
