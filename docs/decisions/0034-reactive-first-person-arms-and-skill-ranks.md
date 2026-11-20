@@ -59,15 +59,20 @@ nothing on screen showed that a character had grown.
 - The balance simulations spend points deterministically: the basic attack first, then the lowest-ranked skill in bar
   order, Defend last (`spendSkillPointsByPolicy`).
 
-### Intents in their own strip (#138)
+### Intents over the floor (#138)
 
-- The enemy intents are a strip **above** the scene drawing, in the layout flow, not an overlay inside it. The room
-  is drawn in the space left below, so no intent can cover a name or health bar however tall the enemy, however many
-  enemies, however long the move names, in both views. The strip is **always present at one fixed height** (one row;
-  name and traits share a line, long text is cut with an ellipsis; on a phone, one line per enemy that scrolls
-  sideways). Out of combat it shows the room's name. A first version sized the strip to its content and only drew it
-  in fights, so the room jumped in size every time combat started or ended. Nameplate placement moved to `plateY` in `layout.ts`;
-  `arms.test.ts` guards the structure and the plate clamp.
+- The enemy intents are one row of chips **over the bottom edge of the scene**, in the floor below the fight, capped
+  at 24% of the scene's height (`INTENT_BAND` in `layout.ts`, mirrored in `run.css`). Nameplates sit above the
+  enemies' heads, so no intent can cover a name or health bar however tall the enemy, in either view. As an overlay
+  the row never changes the size of the room, fight or no fight. This only works because the arms no longer occupy
+  the bottom of the view; while an arm is raised, the chips dim.
+- Each chip keeps to three lines (name and traits share the first) and cuts long text with an ellipsis. In a short
+  or narrow scene (a container query: under 360px tall or 640px wide) each enemy is one compact line, move names drop
+  once there are two or more, and the row scrolls sideways.
+- Two rejected drafts: intents at the top of the scene cover tall bosses' health bars (the bug); a strip of their own
+  above the drawing either resized the room as fights started and ended or, at a fixed height, took space from the
+  scene on every screen. Nameplate placement moved to `plateY` in `layout.ts`; `arms.test.ts` checks the band
+  against the floor lines and the plate positions.
 
 ## Consequences
 
@@ -93,7 +98,6 @@ nothing on screen showed that a character had grown.
   tune them through their mechanics (ADR 0033) rather than by shrinking ranks further.
 - One latent test bug surfaced: `TestSimulateRunBatchSummarizesDepthReachProbability` summed Completed and Wiped,
   which double-counts a run that beats the first boss and later wipes. It now counts each run by its single Outcome.
-- The intent strip takes a fixed 76px (26px on a phone) from the scene in every phase; the drawing letterboxes
-  slightly smaller but never changes size.
+- The intent chips cover a little of the floor at the bottom of the room during fights; the room keeps its full size.
 - Skill points are offered by a glowing ★ RANK UP A SKILL button at the head of the status bar above the player's
   options (where their eyes are when acting), in every phase, and from the level-up toast.

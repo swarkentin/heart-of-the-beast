@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { selfMoveIn, selfMoveKind, SELF_LEAD_MS } from "./selfMoves.ts";
 import { planRound } from "../monsters/choreography.ts";
-import { PLATE_MIN_Y, plateY } from "../monsters/layout.ts";
+import { CAST_PARTY_FEET_Y, INTENT_BAND, PLATE_MIN_Y, plateY, STAGE_FLOOR_Y } from "../monsters/layout.ts";
 import { skillRank } from "../combatAbilities.ts";
 
 const skill = (id: string, effects: { kind: string; amount?: number; stat?: string }[], elemental = false) => ({ id, effects, elemental });
@@ -47,20 +47,21 @@ test("ranks default to I and stay within I-V", () => {
   assert.equal(skillRank({ a: 9 }, "a"), 5);
 });
 
-test("enemy intents never overlay the scene drawing (#138)", () => {
-  // The intents are a strip of their own before the drawing, never an overlay inside it.
-  const scene = readFileSync(new URL("./Scene.tsx", import.meta.url), "utf8");
-  const strip = scene.indexOf('className={"rn-threats'), drawing = scene.indexOf("<svg ref={art}");
-  assert.ok(strip > 0 && drawing > strip, "the intent strip must come before the scene drawing");
+test("enemy intents stay below the fight and never resize the scene (#138)", () => {
   const css = readFileSync(new URL("./run.css", import.meta.url), "utf8");
   const rule = css.match(/\n\.rn-threats \{([^}]*)\}/)?.[1] ?? "";
-  assert.doesNotMatch(rule, /position:\s*absolute/, "the intent strip must stay in the layout flow");
-  // The strip is always there at one fixed height, so the room never resizes as a fight starts or ends.
-  assert.match(rule, /height:\s*var\(--threats-h\)/);
+  // An overlay anchored to the bottom edge, one row, capped at INTENT_BAND of the scene's height.
+  assert.match(rule, /position:\s*absolute/);
+  assert.match(rule, /bottom:/);
   assert.match(rule, /flex-wrap:\s*nowrap/);
-  assert.doesNotMatch(scene, /\? <ul className=\{"rn-threats/, "the intent strip must not be conditional");
-  // However tall the boss, its name and health bar stay inside the drawing.
+  const cap = Number(rule.match(/height:\s*min\(var\(--threats-h\),\s*(\d+)%\)/)?.[1]);
+  assert.equal(cap / 100, INTENT_BAND, "run.css must cap the intents at INTENT_BAND");
+  // The band fits in the floor below the fight in both views, with room to spare.
+  assert.ok(INTENT_BAND * 620 <= 620 - STAGE_FLOOR_Y.player - 8, "first-person: intents would reach the enemies' feet");
+  assert.ok(INTENT_BAND * 620 <= 620 - CAST_PARTY_FEET_Y - 8, "party view: intents would reach the heroes' feet");
+  // Nameplates sit above the floor line, so nothing in the band can cover a name or a health bar, however tall the boss.
   for (const headY of [-400, -40, 0, 30, 80, 300]) for (let count = 1; count <= 6; count++) for (let index = 0; index < count; index++) {
-    assert.ok(plateY("player", headY, 452, count, index) >= PLATE_MIN_Y);
+    const y = plateY("player", headY, STAGE_FLOOR_Y.player, count, index);
+    assert.ok(y >= PLATE_MIN_Y && y < 620 * (1 - INTENT_BAND));
   }
 });

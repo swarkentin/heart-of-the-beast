@@ -23,14 +23,15 @@
 .rn-console { grid-area: console; display: grid; grid-template-columns: minmax(220px, 1fr) minmax(460px, 1.9fr); gap: 8px; height: clamp(226px, 31vh, 270px); min-height: 0; }
 
 /* ---------- viewport ---------- */
-/* The viewport is a column: the enemy intents get their own strip, and the room is drawn in the space below it, so
-   no intent can ever sit over an enemy's name or health bar (#138). */
-.rn-scene { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; }
-.rn-scene-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+/* The enemy intents ride over the floor at the bottom of the drawing, capped at INTENT_BAND (24%) of the scene so
+   they stay below the fight: nameplates sit above heads, so no intent can cover a name or health bar (#138), and as
+   an overlay they never change the size of the room. The scene is a size container for the compact rules below. */
+.rn-scene { position: absolute; inset: 0; overflow: hidden; container-type: size; }
+.rn-scene-stage { position: absolute; inset: 0; }
 .rn-scene-art { display: block; width: 100%; height: 100%; font-family: var(--copy); }
-/* A fixed height and one row: the strip never grows or shrinks with the number of enemies, their traits, or whether
-   there is a fight at all, so the room below keeps its size. Long names and moves are cut with an ellipsis. */
-.rn-threats { --threats-h: 76px; flex: none; position: relative; z-index: 1; display: flex; flex-wrap: nowrap; justify-content: center; align-items: stretch; gap: 10px; height: var(--threats-h); box-sizing: border-box; margin: 0; padding: 4px calc(6px * var(--px)) 6px; overflow: hidden; list-style: none; background: #05030a; box-shadow: 0 2px 0 #1d1733; }
+/* One row at a fixed height, so it never grows into the fight; long names and moves are cut with an ellipsis. */
+.rn-threats { --threats-h: 70px; position: absolute; left: calc(6px * var(--px)); right: calc(6px * var(--px)); bottom: calc(4px * var(--px)); z-index: 1; display: flex; flex-wrap: nowrap; justify-content: center; align-items: stretch; gap: 10px; height: min(var(--threats-h), 24%); box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; list-style: none; transition: opacity .15s; }
+.rn-threats-dim { opacity: .25; }
 .rn-threats > li { display: flex; flex: 0 1 280px; }
 .rn-threats > li > .rn-threat-chip { overflow: hidden; }
 .rn-threat-chip b, .rn-threat-chip i, .rn-threat-chip small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -38,7 +39,6 @@
 .rn-threats .rn-threat-chip > span:not(.px-icon) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 6px; }
 .rn-threats .rn-threat-chip i, .rn-threats .rn-threat-chip small { grid-column: 1 / -1; }
 .rn-threats .rn-traits { grid-column: 2; grid-row: 1; flex-wrap: nowrap; overflow: hidden; margin-top: 0; }
-.rn-threats > li.rn-threats-quiet { display: block; flex: 1 1 auto; align-self: center; color: var(--muted); font: 400 9px/1.4 var(--display); letter-spacing: .08em; text-align: center; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-threats li { min-width: 0; max-width: 100%; }
 .rn-threat-chip { min-height: 100%; }
 .rn-threat-chip { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 3px 8px 4px 5px; border: 0; background: #0a0714e6; box-shadow: inset 3px 0 0 #9a4a4a, 0 0 0 2px var(--edge); color: var(--ink); font: inherit; text-align: left; line-height: 1; cursor: default; }
@@ -268,14 +268,6 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-view { grid-row: 1; }
   .rn-console { grid-row: 3; display: flex; flex-direction: column; gap: 5px; height: auto; }
 
-  /* enemy moves: one compact line each, in their own strip above the scene */
-  .rn-threats { --threats-h: 26px; padding: 2px; gap: 4px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
-  .rn-threats > li { flex: none; }
-  .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
-  .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
-  .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
-  /* three or more enemies: drop the move name so the chips pack several to a row instead of covering the scene */
-  .rn-threats-crowded .rn-intent-move { display: none; }
 
   /* party strip: portrait with badges over it, health under it */
   .rn-card { grid-row: 2; flex: none; gap: 3px; padding: 0; border-width: calc(4px * var(--px)); border-image: var(--ui-inset, url("/art/ui/frame-inset.png")) 4 fill / calc(4px * var(--px)) stretch; filter: none; }
@@ -417,6 +409,17 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-level-up-card > span { color: var(--muted); font-size: 12px; }
 .rn-level-up-card small { margin-top: 2px; color: var(--muted); font: 400 7px/1.3 var(--display); }
 @media (prefers-reduced-motion: reduce) { .rn-level-up, .rn-level-up-card { animation: none; } }
+
+/* A short or narrow scene (a phone, a small window): one compact line per enemy, scrolling sideways if they do not fit. */
+@container (max-height: 360px) or (max-width: 640px) {
+  .rn-threats { --threats-h: 24px; left: 2px; right: 2px; bottom: 2px; gap: 4px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .rn-threats > li { flex: none; }
+  .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
+  .rn-threats .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
+  .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
+  /* two or more enemies: drop the move name so the damage and target of each fit in the row */
+  .rn-threats-multi .rn-intent-move { display: none; }
+}
 
 /* ---------- first-person arms ----------
    Out of sight until the player acts (FirstPersonArms.tsx). They rise in a few stepped frames, like the sprites. */
