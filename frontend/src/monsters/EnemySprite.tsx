@@ -4,7 +4,7 @@ import { useSprite } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { moveAnim } from "./moves";
 import type { SpriteData } from "./spriteStore";
-import { plateFontSize, playerPlateY, spriteScale } from "./layout";
+import { plateFontSize, plateOffset, playerPlateY, spriteScale } from "./layout";
 import type { AnimName, StageEnemy, StageView } from "./types";
 
 export type SeqCue = { seq: number; cue: Cue };
