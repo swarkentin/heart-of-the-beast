@@ -41,7 +41,7 @@ export function VisualEffectsSettings({ profile }: { profile: ProfileProgress })
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(readSaved);
   const masteryPoints = Object.values(profile.classMastery).reduce((sum, mastery) => sum + Math.max(0, (mastery.level || 1) - 1), 0);
-  const unlocked = (effect: Effect) => profile.adventurerLevel >= effect.rank || masteryPoints >= effect.mastery;
+  const unlocked = (effect: Effect) => profile.adventurerLevel >= effect.rank || (effect.mastery > 0 && masteryPoints >= effect.mastery);
 
   useEffect(() => {
     document.documentElement.dataset.visualEffect = selected;
