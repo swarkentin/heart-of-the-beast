@@ -4,7 +4,7 @@ import { useSprite } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { moveAnim } from "./moves";
 import type { SpriteData } from "./spriteStore";
-import { plateFontSize, plateOffset, spriteScale } from "./layout";
+import { plateFontSize, playerPlateY, spriteScale } from "./layout";
 import type { AnimName, StageEnemy, StageView } from "./types";
 
 export type SeqCue = { seq: number; cue: Cue };
@@ -165,7 +165,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
   const headY = sprite ? floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale : floorY - 200;
   const boxLeft = sprite ? (sprite.bbox.left - sprite.creature.anchor.x) * scale : -50;
   const boxRight = sprite ? (sprite.bbox.right - sprite.creature.anchor.x) * scale : 50;
-  const plateY = view === "player" ? Math.max(40, headY - 40 + plateOffset(view, count, index)) : floorY + 40 + plateOffset(view, count, index);
+  const plateY = view === "player" ? playerPlateY(headY, count, index) : floorY + 40 + plateOffset(view, count, index);
   const showDead = dead || !alive;
   const telegraphing = alive && Boolean(enemy.rawIntent);
   return (
