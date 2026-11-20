@@ -47,6 +47,17 @@ export function plateOffset(view: StageView, count: number, index: number): numb
   return view === "player" ? -64 : 64;
 }
 
+/** Where each composition's ground line is, in scene units (the drawing is 1100x620). */
+export const STAGE_FLOOR_Y: Record<StageView, number> = { player: 452, cast: 254 };
+/** The lowest anything of the fight is drawn in the party view: the heroes' feet. */
+export const CAST_PARTY_FEET_Y = 446;
+/**
+ * The enemy intents sit over the bottom edge of the drawing, in the floor below the fight, and may take at most this
+ * share of its height (run.css caps them at it). Nameplates sit above the enemies' heads, so the intents can never
+ * cover a name or a health bar (#138), and as an overlay they never change the size of the room.
+ */
+export const INTENT_BAND = 0.24;
+
 /** The highest a first-person nameplate may sit (scene units from the top of the drawing), so a tall boss's name and
  * health bar always stay inside the frame. Intents no longer overlay the drawing (#138), so the top is free. */
 export const PLATE_MIN_Y = 40;

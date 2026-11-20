@@ -1,6 +1,6 @@
 import type { ApiCombatEvent } from "../api";
 import type { TraitTag } from "./traits.ts";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Skill } from "../combatAbilities";
 import { EnemyStage, type PartyImpact, type SelfCue } from "../monsters/EnemyStage";
 import { useReducedMotion } from "../monsters/hooks";
@@ -14,9 +14,10 @@ import type { PartyMember } from "./party";
 export type SceneEnemy = StageEnemy & { intentMove: string; intentEffect: string; intentTarget: string; interruptible: boolean; traits: TraitTag[] };
 
 /**
- * The framed viewport: a strip of enemy intents, then the room with its enemies. The intents have their own row
- * above the drawing instead of floating over it, so they can never cover an enemy's name or health bar however
- * tall the enemy is, however many there are, or however long the move names run (issue #138).
+ * The framed viewport: the room with its enemies, and the enemies' intents in a single row over the floor at the
+ * bottom of the drawing. Nameplates sit above the enemies' heads, so the intents can never cover a name or a health
+ * bar however tall the enemy (#138), and as an overlay they never change the size of the room. The first-person arms
+ * are hidden until the player acts; while they are up, the intents dim.
  */
 export function Scene({ view, roomId, roomName, backdrop, enemies, events, party, target, onTarget, onPartyImpact, banner, skills }: {
   view: "player" | "cast"; roomId: string; roomName: string; backdrop: BackdropRef; enemies: SceneEnemy[]; events: ApiCombatEvent[]; party: PartyMember[];
@@ -27,6 +28,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
   const player = party.find(member => member.isSelf);
   const reduced = useReducedMotion();
   const armsCue = useRef<((cue: SelfCue) => void) | null>(null);
+  const [armsActive, setArmsActive] = useState(false);
   const art = useRef<SVGSVGElement>(null);
   // A short, stepped screen shake for crunchy hits and blocks. Animated in place so nothing in the scene remounts.
   const onShake = useCallback((strength: number) => {
@@ -38,12 +40,6 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
   const self = useMemo(() => player ? { id: player.id, skills, palm: ARMS_PALM, onCue: (cue: SelfCue) => armsCue.current?.(cue) } : undefined, [player?.id, skills]);
   const sheet = "/art/first-person/" + (player?.classId ?? "bulwark") + "/t" + (player?.skin?.tier ?? 1) + "-" + (player?.skin?.variant ?? "heraldic") + ".png";
   return <div className={"rn-scene rn-scene-" + view}>
-    {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 3 ? " rn-threats-crowded" : "")} aria-label="Enemy intentions">{living.map(enemy => {
-      const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small>{enemy.traits.length > 0 ? <em className="rn-traits">{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
-      return <li key={enemy.id}>{onTarget
-        ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
-        : <div className="rn-threat-chip">{body}</div>}</li>;
-    })}</ul> : null}
     <div className="rn-scene-stage">
       <svg ref={art} className="rn-scene-art" viewBox="0 0 1100 620" role="img" aria-label={(view === "player" ? "First-person view of " : "Party view of ") + roomName}>
         <RoomBackdrop {...backdrop} view={view === "player" ? "first" : "cinema"} />
@@ -58,8 +54,15 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
           </g>;
         })}</g> : null}
         <EnemyStage key={roomId} view={view} enemies={enemies} events={events} target={onTarget ? target : undefined} onTarget={onTarget} onPartyImpact={onPartyImpact} self={view === "player" ? self : undefined} />
-        {view === "player" && player ? <FirstPersonArms sheet={sheet} classId={player.classId} cueRef={armsCue} onShake={onShake} reduced={reduced} /> : null}
+        {view === "player" && player ? <FirstPersonArms sheet={sheet} classId={player.classId} cueRef={armsCue} onShake={onShake} onActive={setArmsActive} reduced={reduced} /> : null}
       </svg>
+      {/* Over the floor at the bottom of the drawing (see INTENT_BAND): never over a nameplate, never resizing the room. */}
+      {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 2 ? " rn-threats-multi" : "") + (armsActive ? " rn-threats-dim" : "")} aria-label="Enemy intentions">{living.map(enemy => {
+        const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small>{enemy.traits.length > 0 ? <em className="rn-traits">{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
+        return <li key={enemy.id}>{onTarget
+          ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
+          : <div className="rn-threat-chip">{body}</div>}</li>;
+      })}</ul> : null}
       {banner ? <div key={banner.text} className={"rn-banner rn-banner-" + banner.tone} role="status">{banner.text}</div> : null}
     </div>
   </div>;

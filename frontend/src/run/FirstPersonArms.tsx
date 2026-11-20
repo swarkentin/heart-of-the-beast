@@ -36,10 +36,12 @@ const REST: Arm = { row: ROW.rest, up: false };
 
 let fxCounter = 0;
 
-export function FirstPersonArms({ sheet, classId, cueRef, onShake, reduced }: {
+export function FirstPersonArms({ sheet, classId, cueRef, onShake, onActive, reduced }: {
   sheet: string; classId?: string; reduced: boolean;
   cueRef: MutableRefObject<((cue: SelfCue) => void) | null>;
   onShake: (strength: number) => void;
+  /** Whether either arm is raised, so the scene can step the enemy intents out of the way. */
+  onActive?: (active: boolean) => void;
 }) {
   const [left, setLeft] = useState<Arm>(REST);
   const [right, setRight] = useState<Arm>(REST);
@@ -110,6 +112,8 @@ export function FirstPersonArms({ sheet, classId, cueRef, onShake, reduced }: {
     }
   }
 
+  const active = left.up || right.up;
+  useEffect(() => { onActive?.(active); }, [active, onActive]);
   useEffect(() => {
     cueRef.current = reduced ? null : play;
     return () => { cueRef.current = null; };

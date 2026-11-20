@@ -9,8 +9,9 @@ import { ExpeditionMap } from "./ExpeditionMap";
 type Send = (command: ApiCommand) => Promise<unknown> | void;
 
 /** Gold and the floor's modifiers, shown above the command panel. Hover or focus a modifier to read its rule. */
-export function FloorStatus({ gold, modifiers }: { gold?: number; modifiers: ApiFloorModifier[] }) {
+export function FloorStatus({ gold, modifiers, children }: { gold?: number; modifiers: ApiFloorModifier[]; children?: ReactNode }) {
   return <div className="rn-status">
+    {children}
     {gold !== undefined ? <span className="rn-gold" aria-label={gold + " gold"}>{gold} GOLD</span> : null}
     {modifiers.map(modifier => <span key={modifier.id} className={"rn-mod rn-mod-" + modifier.kind} title={modifier.description} tabIndex={0} aria-label={modifier.name + ": " + modifier.description}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name.toUpperCase()}</span>)}
   </div>;
