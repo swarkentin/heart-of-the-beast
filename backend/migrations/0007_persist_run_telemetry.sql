@@ -74,7 +74,7 @@ BEGIN
         run_identifier,
         NEW.id,
         NEW.version,
-        NEW.updated_at,
+        COALESCE(NULLIF(NEW.state->>'updatedAt', '')::timestamptz, NEW.created_at),
         'room_state_snapshot',
         jsonb_build_object(
             'run', run_state,
