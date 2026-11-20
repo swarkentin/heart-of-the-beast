@@ -71,7 +71,9 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 		t.Fatalf("record active snapshot: %v", err)
 	}
 	// A heartbeat-style update without a version increment must not create a telemetry event.
-	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb WHERE id = $1", roomID, started.Add(time.Second)); err != nil {
+	state["updatedAt"] = started.Add(time.Second)
+	encoded, _ = json.Marshal(state)
+	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb WHERE id = $1", roomID, encoded); err != nil {
 		t.Fatal(err)
 	}
 	var events int
@@ -85,6 +87,7 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 	run["phase"] = "completed"
 	run["completedAt"] = ended
 	state["run"] = run
+	state["updatedAt"] = ended
 	encoded, _ = json.Marshal(state)
 	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb, version = 2 WHERE id = $1", roomID, encoded, ended); err != nil {
 		t.Fatalf("record terminal snapshot: %v", err)
