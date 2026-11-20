@@ -47,3 +47,9 @@
 .dmg-num-critical { font-weight: 900; filter: drop-shadow(0 0 8px #ffd166); animation: crit-pop .7s cubic-bezier(.2, 1.7, .4, 1) both; }
 @keyframes crit-pop { 0% { opacity: 0; transform: scale(.35); } 55% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .dmg-num-critical { animation: none; } }
+
+/* A move an interrupt skill can cancel: the ready marker turns into a cyan broken bolt and the plate says so. */
+.enemy-breakable rect:first-of-type { filter: drop-shadow(0 0 6px #7fe6ff); }
+.enemy-breakable-label { animation: enemy-ready-label 900ms steps(2, end) infinite; }
+@keyframes enemy-ready-label { 50% { opacity: .75; } }
+@media (prefers-reduced-motion: reduce) { .enemy-breakable-label { animation: none; } }

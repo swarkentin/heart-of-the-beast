@@ -45,6 +45,12 @@
 button.rn-threat-chip { cursor: pointer; }
 button.rn-threat-chip:hover { background: #1d1733f2; }
 .rn-threat-chip-on { box-shadow: inset 3px 0 0 var(--gold), 0 0 0 2px var(--gold); }
+/* A move an interrupt skill can cancel: cyan edge, a pulsing glow and an INTERRUPT tag, in every chip size. */
+.rn-threat-chip-interrupt { background: #0a1a26f0; box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px #3f9fc4; animation: rn-interrupt 1.2s steps(2, jump-none) infinite; }
+.rn-threat-chip-interrupt.rn-threat-chip-on { box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px var(--gold); }
+@keyframes rn-interrupt { 50% { box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px #7fe6ff, 0 0 10px #7fe6ff; } }
+.rn-traits .rn-trait-interrupt { color: #0a1a26; background: #7fe6ff; box-shadow: none; font-weight: bold; }
+@media (prefers-reduced-motion: reduce) { .rn-threat-chip-interrupt { animation: none; } }
 .rn-threat-chip > span:not(.px-icon) { display: grid; min-width: 0; }
 .rn-threat-chip b { font: 400 18px/1 var(--copy); color: var(--bone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-threat-chip i { font-style: normal; color: var(--ember); font-size: 18px; }
@@ -211,8 +217,12 @@ button.rn-card { cursor: pointer; background: none; }
 .rn-act-armed { outline: 3px dashed var(--good); outline-offset: 2px; filter: brightness(1.15); }
 /* An interrupt with an interruptible move in front of it glows: this is the moment to use it. */
 /* A subtle cue that an interrupt on the bar can cancel a telegraphed move right now. */
-.rn-act-opening { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ember) 60%, transparent); animation: rn-opening 1.6s steps(2, jump-none) infinite; }
-@keyframes rn-opening { 50% { box-shadow: inset 0 0 0 2px var(--ember), 0 0 6px color-mix(in srgb, var(--ember) 45%, transparent); } }
+/* An interrupt skill that can cancel an enemy's move right now: the bar takes on the cyan interrupt colour and the
+   button glows, so the opening is hard to miss. Pressing it targets the interruptible enemy automatically. */
+.rn-actions-interrupt { box-shadow: 0 0 0 2px #3f9fc4, 0 0 12px #7fe6ff55; }
+.rn-act-opening { box-shadow: inset 0 0 0 3px #7fe6ff, 0 0 10px #7fe6ff; animation: rn-opening 1.2s steps(2, jump-none) infinite; }
+.rn-act-opening small { color: #bff4ff; }
+@keyframes rn-opening { 50% { box-shadow: inset 0 0 0 3px #bff4ff, 0 0 18px #7fe6ff, 0 0 4px #ffffff; } }
 .rn-inspect b { color: var(--gold); font-weight: 400; }
 
 /* ---------- dungeon briefing ---------- */
@@ -419,6 +429,8 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
   .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
   /* two or more enemies: drop the move name so the damage and target of each fit in the row */
   .rn-threats-multi .rn-intent-move { display: none; }
+  /* Tags lead the line, so INTERRUPT is never the part that scrolls out of sight. */
+  .rn-threats .rn-traits { order: -1; }
 }
 
 /* ---------- first-person arms ----------

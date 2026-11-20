@@ -17,7 +17,8 @@ export type Cue =
   | { type: "hit"; enemyId: string; amount: number; via: string; critical?: boolean; actorId?: string; skill?: string; rank?: number }
   | { type: "act"; enemyId: string; label: string; partyWide: boolean; hits: number; damage: number; blocked: number; miss: boolean; targets: ActTarget[] }
   | { type: "drain"; enemyId: string; amount: number }
-  | { type: "freeze"; enemyId: string }
+  | { type: "freeze"; enemyId: string; interrupted?: boolean; actorId?: string }
+  | { type: "blunted"; enemyId: string }
   | { type: "defeat"; enemyId: string }
   | { type: "playerHeal"; amount: number; playerId?: string }
   | { type: "playerBlock"; amount: number; playerId?: string };
@@ -56,7 +57,7 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
   const hits: Extract<Cue, { type: "hit" }>[] = [];
   const acts: ActDraft[] = [];
   const drains: Extract<Cue, { type: "drain" }>[] = [];
-  const freezes: Extract<Cue, { type: "freeze" }>[] = [];
+  const freezes: Extract<Cue, { type: "freeze" | "blunted" }>[] = [];
   const playerCues: Cue[] = [];
   const pointer = new Map<string, number>();
   const seenTargets = new Map<string, Set<string>>();
@@ -156,9 +157,13 @@ export function planRound(events: EventLike[], enemies: Pick<StageEnemy, "id" | 
       case "skill_control":
       case "elemental_frost": {
         const target = event.targetId ? enemies.find((enemy) => enemy.id === event.targetId) : enemies.find((enemy) => event.message.includes(" " + enemy.name));
-        if (target) freezes.push({ type: "freeze", enemyId: target.id });
+        if (target) freezes.push({ type: "freeze", enemyId: target.id, interrupted: event.kind === "player_interrupt" || undefined, actorId: event.actorId });
         break;
       }
+      // An interrupt aimed at a move that cannot be interrupted still blunts it.
+      case "skill_weaken":
+        if (event.targetId && /cannot be interrupted/.test(event.message)) freezes.push({ type: "blunted", enemyId: event.targetId });
+        break;
       default:
         if (event.effect === "heal" && event.targetType === "player" && (event.amount ?? 0) > 0) playerCues.push({ type: "playerHeal", amount: event.amount ?? 0, playerId: event.targetId });
     }

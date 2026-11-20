@@ -65,3 +65,14 @@ test("enemy intents stay below the fight and never resize the scene (#138)", () 
     assert.ok(y >= PLATE_MIN_Y && y < 620 * (1 - INTENT_BAND));
   }
 });
+
+test("an interrupt gets its own callout, and a blunted move too", () => {
+  const enemies = [{ id: "e1", name: "Rat", hp: 5 }, { id: "e2", name: "Bat", hp: 5 }];
+  const plan = planRound([
+    { round: 1, kind: "player_interrupt", message: "P1 interrupts Bite from Rat!", targetId: "e1", targetType: "enemy", actorId: "p1" },
+    { round: 1, kind: "skill_weaken", message: "Screech cannot be interrupted, but P1 blunts it by 2.", targetId: "e2", targetType: "enemy" },
+  ], enemies, new Set());
+  const cues = plan.map((entry) => entry.cue);
+  assert.ok(cues.some((cue) => cue.type === "freeze" && cue.enemyId === "e1" && cue.interrupted && cue.actorId === "p1"));
+  assert.ok(cues.some((cue) => cue.type === "blunted" && cue.enemyId === "e2"));
+});

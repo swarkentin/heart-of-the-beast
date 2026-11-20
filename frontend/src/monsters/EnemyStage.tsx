@@ -164,6 +164,17 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
         const c = centerOf(cue.enemyId);
         spawn("shards", "frost", c.x, c.y);
         sfx("magic", cue.enemyId);
+        if (cue.interrupted) {
+          // A cancelled move gets an unmistakable callout: a cross over the enemy and floating text.
+          spawn("cross", "frost", c.x, c.y);
+          popup(c.x, c.top + 20, "INTERRUPTED!", "#7fe6ff", true);
+        }
+        break;
+      }
+      case "blunted": {
+        const c = centerOf(cue.enemyId);
+        spawn("spark", "frost", c.x, c.y);
+        popup(c.x, c.top + 20, "BLUNTED", "#a9c8d6");
         break;
       }
       case "playerHeal":

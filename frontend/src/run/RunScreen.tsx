@@ -228,8 +228,11 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const cooldowns = player?.classCombat?.cooldowns;
   const fallen = party.filter(member => !member.alive && !member.isSelf && member.online);
   const actions: ActionDef[] = [];
+  // The enemy an interrupt would cancel right now: the selected target if it is telegraphing an interruptible move,
+  // otherwise the hardest-hitting enemy that is. An interrupt skill goes there automatically.
+  const opening = interruptTarget(living, livingTarget?.id);
   if (round && player) {
-    const n = round.number, opening = interruptTarget(living, livingTarget?.id);
+    const n = round.number;
     for (const id of player.skills ?? []) {
       const skill = skillById.get(id);
       if (!skill) continue;
@@ -240,7 +243,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       let hint = "", command: ApiCommand | undefined, pick: ActionDef["pick"], disabled = left > 0;
       switch (skill.target) {
         case "enemy":
-          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "Cancels " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
+          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "⚡ Interrupt " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
           disabled ||= !foe;
           command = foe ? skillCommand(skill, n, foe.id) : undefined;
           break;
@@ -270,6 +273,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   };
   const act = (action: ActionDef) => {
     if (!canAct || action.disabled || !round) return;
+    // An interrupt goes to the enemy it can cancel; move the target there too, so what you see matches what you did.
+    if (action.ready && opening) setTarget(opening.id);
     if (action.command) { send(action.key, action.command); return; }
     // Pressing an ally skill again casts it on yourself; otherwise it waits for a portrait.
     if (armed === action.key && action.pick === "ally") { send(action.key, skillCommand(action.skill, round.number, selfId)); return; }
@@ -354,7 +359,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           <strong>{livingTarget?.name ?? "NONE"}</strong>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
         </div>
-        <div className={"rn-actions rn-actions-" + Math.max(1, actions.length)}>{actions.map((action, index) => <button key={action.key} type="button"
+        <div className={"rn-actions rn-actions-" + Math.max(1, actions.length) + (!shownKey && actions.some(action => action.ready) ? " rn-actions-interrupt" : "")}>{actions.map((action, index) => <button key={action.key} type="button"
           className={"rn-act rn-act-" + action.tone + (shownKey === action.key ? " rn-act-chosen" : shownKey ? " rn-act-passed" : autoSoon && action.key === SKILL_DEFEND ? " rn-act-auto" : "") + (armed === action.key ? " rn-act-armed" : "") + (action.cooldown > 0 ? " rn-act-cooling" : "") + (action.ready && !shownKey ? " rn-act-opening" : "")}
           onClick={() => act(action)} onPointerEnter={() => setFocused(action.key)} onPointerLeave={() => setFocused("")} onFocus={() => setFocused(action.key)} onBlur={() => setFocused("")}
           disabled={!shownKey && (!canAct || action.disabled)} aria-disabled={Boolean(shownKey) || undefined} aria-pressed={shownKey === action.key || armed === action.key} title={action.label + ": " + action.details}>
