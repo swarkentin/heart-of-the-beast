@@ -44,11 +44,11 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 		"lastCombatEvents": []any{map[string]any{"kind": "hit", "amount": 7}},
 	}
 	state := map[string]any{
-		"run": run,
-		"playerProfileIds": map[string]string{"player-1": "pseudonymous-profile"},
-		"playerClasses": map[string]string{"player-1": "ranger"},
-		"playerArchetypes": map[string]string{"player-1": "scout"},
-		"playerLoadouts": map[string][]string{"player-1": {"skill.strike"}},
+		"run":               run,
+		"playerProfileIds":  map[string]string{"player-1": "pseudonymous-profile"},
+		"playerClasses":     map[string]string{"player-1": "ranger"},
+		"playerArchetypes":  map[string]string{"player-1": "scout"},
+		"playerLoadouts":    map[string][]string{"player-1": {"skill.strike"}},
 		"playerTokenHashes": map[string]string{"player-1": "must-not-be-copied"},
 	}
 	encoded, err := json.Marshal(state)
