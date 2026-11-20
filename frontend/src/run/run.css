@@ -45,6 +45,12 @@
 button.rn-threat-chip { cursor: pointer; }
 button.rn-threat-chip:hover { background: #1d1733f2; }
 .rn-threat-chip-on { box-shadow: inset 3px 0 0 var(--gold), 0 0 0 2px var(--gold); }
+/* A move an interrupt skill can cancel: cyan edge, a pulsing glow and an INTERRUPT tag, in every chip size. */
+.rn-threat-chip-interrupt { background: #0a1a26f0; box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px #3f9fc4; animation: rn-interrupt 1.2s steps(2, jump-none) infinite; }
+.rn-threat-chip-interrupt.rn-threat-chip-on { box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px var(--gold); }
+@keyframes rn-interrupt { 50% { box-shadow: inset 3px 0 0 #7fe6ff, 0 0 0 2px #7fe6ff, 0 0 10px #7fe6ff; } }
+.rn-traits .rn-trait-interrupt { color: #0a1a26; background: #7fe6ff; box-shadow: none; font-weight: bold; }
+@media (prefers-reduced-motion: reduce) { .rn-threat-chip-interrupt { animation: none; } }
 .rn-threat-chip > span:not(.px-icon) { display: grid; min-width: 0; }
 .rn-threat-chip b { font: 400 18px/1 var(--copy); color: var(--bone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rn-threat-chip i { font-style: normal; color: var(--ember); font-size: 18px; }
@@ -419,6 +425,8 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
   .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
   /* two or more enemies: drop the move name so the damage and target of each fit in the row */
   .rn-threats-multi .rn-intent-move { display: none; }
+  /* Tags lead the line, so INTERRUPT is never the part that scrolls out of sight. */
+  .rn-threats .rn-traits { order: -1; }
 }
 
 /* ---------- first-person arms ----------
