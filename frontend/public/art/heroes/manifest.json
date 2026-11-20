@@ -125,5 +125,19 @@
     ],
     "sheet": "heroes/{id}/t{tier}-{variant}.png",
     "bust": "heroes/{id}/t{tier}-{variant}-bust.png"
+  },
+  "firstPerson": {
+    "frame": {
+      "w": 128,
+      "h": 64
+    },
+    "rows": [
+      "rest",
+      "windup",
+      "strike",
+      "present",
+      "brace"
+    ],
+    "sheet": "first-person/{id}/t{tier}-{variant}.png"
   }
 }

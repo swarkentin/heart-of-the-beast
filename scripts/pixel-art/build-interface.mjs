@@ -6,7 +6,6 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Img, Canvas, encodePNG, hex, mix } from "./engine.mjs";
-import { blade } from "./kit.mjs";
 import { POSE0 } from "./anim.mjs";
 import { renderAnim, touchesEdge } from "./build.mjs";
 import { heroes, heroTheme, applySkin, TIERS, VARIANTS } from "./heroes.mjs";
@@ -67,182 +66,9 @@ export function heroScale(h) {
   return s;
 }
 
-/** First-person arms use the same material ramps, outlines and emissive treatment as the hero sprites. */
-export function renderFirstPerson(h, tier = 3, variant = "heraldic") {
-  const { mats: source } = applySkin(h, tier, variant);
-  const role = (name, fallback) => h.roles[name]?.[0] || fallback;
-  const palette = {
-    fpSleeve: source[role("primary", "leather")] || source.leather,
-    fpSecondary: source[role("secondary", "leather")] || source.leather,
-    fpMetal: source[role("metal", "steel")] || source.steel,
-    fpLeather: source.leather,
-    fpSkin: source.skin,
-    fpTrim: source.gold,
-    fpWood: source.wood,
-    fpBone: source.bone,
-    fpGlow: source.glow,
-    fpRune: source.rune,
-    fpVoid: source.void,
-  };
-  const c = new Canvas(128, 64, palette, { shadow: heroTheme.shadow, light: heroTheme.light });
-  // Keep the forearm fabric subtly translucent so the room shows through it, while
-  // leaving the gloves, cuffs, shield and class implements crisp and fully opaque.
-  const sleeveParts = new Set();
-  const sleevePart = () => { c.part(); sleeveParts.add(c.pid); return c; };
-  const plate = ["bulwark", "spellguard", "cleric"].includes(h.id);
-  const wild = ["juggernaut", "beastcaller"].includes(h.id);
-  // Deliberately asymmetric grips: the off-hand and weapon hand occupy different
-  // heights/angles for each class instead of mirroring two fists across the screen.
-  const handPose = ({
-    bulwark:   { left: [35, 39], right: [59, 43] },
-    juggernaut:{ left: [45, 43], right: [78, 35] },
-    spellguard:{ left: [43, 41], right: [76, 37] },
-    assassin:  { left: [37, 42], right: [89, 35] },
-    arcanist:  { left: [45, 43], right: [80, 33] },
-    ranger:    { left: [39, 36], right: [88, 42] },
-    cleric:    { left: [44, 43], right: [77, 36] },
-    tactician: { left: [43, 39], right: [84, 37] },
-    beastcaller:{ left: [47, 42], right: [78, 36] },
-  })[h.id] || { left: [46, 39], right: [81, 38] };
-  const [lx, ly] = handPose.left, [rx, ry] = handPose.right;
-  // Each sleeve follows its own hand anchor, creating a different silhouette on
-  // either side while keeping both arms rooted naturally at the lower corners.
-  sleevePart().poly([[0, 63], [0, 48], [12, 44], [lx - 18, ly - 7], [lx - 7, ly - 9], [lx + 5, ly + 2], [lx - 5, ly + 11], [35, 63]], "fpSleeve");
-  sleevePart().poly([[128, 63], [128, 48], [116, 44], [rx + 18, ry - 7], [rx + 7, ry - 9], [rx - 5, ry + 2], [rx + 5, ry + 11], [93, 63]], "fpSleeve");
-  sleevePart().poly([[0, 63], [0, 54], [15, 49], [lx - 12, ly - 2], [lx - 3, ly + 2], [lx - 12, ly + 12], [22, 63]], "fpSecondary");
-  sleevePart().poly([[128, 63], [128, 54], [113, 49], [rx + 12, ry - 2], [rx + 3, ry + 2], [rx + 12, ry + 12], [106, 63]], "fpSecondary");
-  // Wrist cuffs differ by silhouette, not merely by dye colour.
-  if (plate) {
-    c.part().poly([[28, 34], [39, 27], [51, 29], [56, 38], [50, 47], [35, 45]], "fpMetal");
-    c.part().poly([[100, 34], [89, 27], [77, 29], [72, 38], [78, 47], [93, 45]], "fpMetal");
-    c.part().poly([[34, 35], [41, 31], [49, 33], [51, 39], [45, 42], [36, 40]], "fpSleeve");
-    c.part().poly([[94, 35], [87, 31], [79, 33], [77, 39], [83, 42], [92, 40]], "fpSleeve");
-  } else if (wild) {
-    c.part().poly([[27, 37], [31, 27], [36, 32], [41, 24], [45, 32], [52, 34], [53, 45], [39, 48], [30, 44]], "fpSecondary");
-    c.part().poly([[101, 37], [97, 27], [92, 32], [87, 24], [83, 32], [76, 34], [75, 45], [89, 48], [98, 44]], "fpSecondary");
-  } else if (h.id === "assassin") {
-    c.part().poly([[28, 35], [38, 29], [51, 34], [49, 45], [35, 48], [27, 42]], "fpLeather");
-    c.part().poly([[100, 35], [90, 29], [77, 34], [79, 45], [93, 48], [101, 42]], "fpLeather");
-    c.part().poly([[28, 36], [22, 31], [25, 26], [34, 32]], "fpMetal");
-    c.part().poly([[100, 36], [106, 31], [103, 26], [94, 32]], "fpMetal");
-  } else if (h.id === "arcanist") {
-    c.part().poly([[26, 36], [36, 27], [50, 31], [54, 43], [42, 48], [29, 43]], "fpSleeve");
-    c.part().poly([[102, 36], [92, 27], [78, 31], [74, 43], [86, 48], [99, 43]], "fpSleeve");
-    c.part().rect(37, 32, 12, 2, "fpTrim"); c.part().rect(79, 32, 12, 2, "fpTrim");
-  } else if (h.id === "ranger") {
-    c.part().poly([[27, 36], [37, 28], [51, 33], [53, 44], [39, 48], [29, 43]], "fpLeather");
-    c.part().poly([[101, 36], [91, 28], [77, 33], [75, 44], [89, 48], [99, 43]], "fpLeather");
-    c.part().poly([[31, 35], [39, 29], [45, 34], [39, 40]], "fpWood");
-    c.part().poly([[97, 35], [89, 29], [83, 34], [89, 40]], "fpWood");
-  } else if (h.id === "tactician") {
-    c.part().poly([[27, 35], [38, 27], [51, 31], [54, 43], [42, 48], [29, 43]], "fpMetal");
-    c.part().poly([[101, 35], [90, 27], [77, 31], [74, 43], [86, 48], [99, 43]], "fpMetal");
-    for (let i = 0; i < 3; i++) { c.part().rect(33 + i * 5, 33 + i, 2, 8, "fpTrim"); c.part().rect(93 - i * 5, 33 + i, 2, 8, "fpTrim"); }
-  } else {
-    c.part().poly([[28, 35], [39, 28], [51, 32], [53, 44], [39, 48], [29, 43]], "fpSecondary");
-    c.part().poly([[100, 35], [89, 28], [77, 32], [75, 44], [89, 48], [99, 43]], "fpSecondary");
-  }
-  // Each class carries a recognizable first-person implement. These are silhouette studies;
-  // the next equipment pass can swap them for the actual equipped weapon sprite.
-  if (h.id === "bulwark") {
-    c.part().poly([[5, 18], [25, 12], [37, 21], [34, 47], [19, 57], [4, 45]], "fpMetal");
-    c.part().poly([[9, 21], [24, 17], [32, 24], [29, 43], [19, 51], [9, 42]], "fpSleeve");
-    c.part().rect(18, 25, 3, 17, "fpTrim"); c.part().rect(12, 32, 15, 3, "fpTrim");
-    c.part().rect(18, 30, 3, 7, "fpGlow");
-  } else if (h.id === "juggernaut") {
-    c.part().line(64, 62, 75, 8, "fpWood", 5);
-    c.part().poly([[63, 14], [66, 2], [86, 2], [91, 9], [87, 23], [69, 25]], "fpMetal");
-    c.part().rect(69, 7, 17, 3, "fpTrim"); c.part().rect(72, 15, 12, 3, "fpGlow");
-  } else if (h.id === "spellguard") {
-    blade(c, 74, 43, -112, 42, 4, "fpMetal", "fpTrim", 1);
-    c.part().rect(68, 38, 13, 3, "fpGlow");
-  } else if (h.id === "assassin") {
-    blade(c, 39, 39, -118, 27, 3, "fpMetal", "fpLeather", 1);
-    blade(c, 89, 39, -62, 27, 3, "fpMetal", "fpLeather", 1);
-  } else if (h.id === "arcanist") {
-    c.part().ell(64, 17, 8, 8, "fpGlow"); c.part().ell(64, 17, 4, 4, "fpRune");
-    c.part().rect(62, 5, 4, 4, "fpTrim"); c.part().rect(62, 26, 4, 4, "fpTrim");
-    c.part().rect(51, 15, 4, 4, "fpTrim"); c.part().rect(73, 15, 4, 4, "fpTrim");
-  } else if (h.id === "ranger") {
-    c.part().line(111, 4, 102, 31, "fpWood", 3); c.part().line(102, 31, 111, 59, "fpWood", 3);
-    c.part().line(111, 4, 111, 59, "fpTrim", 1);
-    c.part().line(47, 19, 91, 19, "fpWood", 2); c.part().poly([[91, 19], [84, 15], [84, 23]], "fpMetal");
-  } else if (h.id === "cleric") {
-    c.part().line(83, 58, 70, 8, "fpWood", 4);
-    c.part().poly([[60, 9], [63, 1], [78, 1], [82, 9], [78, 18], [64, 18]], "fpMetal");
-    c.part().rect(68, 6, 7, 2, "fpTrim"); c.part().rect(70, 3, 3, 9, "fpGlow");
-  } else if (h.id === "tactician") {
-    c.part().poly([[48, 17], [80, 17], [88, 25], [80, 32], [48, 32], [40, 25]], "fpMetal");
-    c.part().rect(50, 20, 28, 3, "fpTrim"); c.part().rect(60, 24, 8, 5, "fpGlow");
-    c.part().line(44, 17, 44, 8, "fpWood", 2); c.part().line(84, 17, 84, 8, "fpWood", 2);
-  } else if (h.id === "beastcaller") {
-    c.part().line(64, 12, 64, 32, "fpWood", 3);
-    c.part().poly([[64, 4], [57, 13], [64, 11], [71, 13]], "fpBone");
-    c.part().ell(64, 22, 5, 5, "fpGlow");
-  }
-  // Separate hand silhouettes and knuckle placement follow the class-specific grips.
-  const fist = (x, y, side) => {
-    const s = side === "left" ? -1 : 1;
-    c.part().poly([[x - 9, y - 5], [x - 3, y - 10], [x + 5, y - 8], [x + 9, y - 1], [x + 6, y + 6], [x - 2, y + 8], [x - 9, y + 3]], "fpSkin");
-    c.part().rect(x - 6, y - 9, 3, 3, "fpSkin");
-    c.part().rect(x - 1, y - 10, 3, 3, "fpSkin");
-    c.part().rect(x + 4, y - 7, 3, 3, "fpSkin");
-    // A small shadow notch on the inward-facing edge keeps the grip readable.
-    c.part().rect(x + s * 5, y + 1, 2, 3, "fpLeather");
-  };
-  fist(lx, ly, "left");
-  fist(rx, ry, "right");
-  if (tier >= 2) {
-    c.part().rect(31, 41, 16, 3, "fpMetal"); c.part().rect(81, 41, 16, 3, "fpMetal");
-    c.part().rect(34, 44, 10, 2, "fpTrim"); c.part().rect(84, 44, 10, 2, "fpTrim");
-  }
-  if (tier >= 3) {
-    c.part().rect(37, 35, 3, 2, "fpTrim"); c.part().rect(88, 35, 3, 2, "fpTrim");
-    c.part().rect(44, 34, 2, 2, "fpGlow"); c.part().rect(82, 34, 2, 2, "fpGlow");
-  }
-  if (tier >= 4) {
-    c.part().poly([[31, 31], [36, 26], [42, 29], [38, 34]], "fpTrim");
-    c.part().poly([[97, 31], [92, 26], [86, 29], [90, 34]], "fpTrim");
-    c.part().rect(38, 39, 3, 2, "fpRune"); c.part().rect(87, 39, 3, 2, "fpRune");
-  }
-  if (tier >= 5) {
-    c.part().rect(33, 29, 2, 2, "fpGlow"); c.part().rect(93, 29, 2, 2, "fpGlow");
-    c.part().rect(29, 39, 2, 3, "fpGlow"); c.part().rect(97, 39, 2, 3, "fpGlow");
-  }
-  if (tier >= 6) {
-    c.part().poly([[36, 25], [40, 19], [44, 25], [40, 29]], "fpRune");
-    c.part().poly([[92, 25], [88, 19], [84, 25], [88, 29]], "fpRune");
-  }
-  // Signature class details: rune cuts, leaves, holy marks, trophies and assassin's wrist blades.
-  if (h.id === "spellguard" || h.id === "arcanist") {
-    c.part().rect(39, 37, 2, 5, "fpRune"); c.part().rect(87, 37, 2, 5, "fpRune");
-  } else if (h.id === "ranger") {
-    c.part().poly([[35, 36], [40, 31], [42, 36], [40, 40]], "fpGlow");
-    c.part().poly([[93, 36], [88, 31], [86, 36], [88, 40]], "fpGlow");
-  } else if (h.id === "cleric") {
-    c.part().rect(41, 34, 6, 2, "fpTrim"); c.part().rect(43, 32, 2, 6, "fpTrim");
-    c.part().rect(81, 34, 6, 2, "fpTrim"); c.part().rect(83, 32, 2, 6, "fpTrim");
-  } else if (h.id === "juggernaut" || h.id === "beastcaller") {
-    c.part().poly([[31, 32], [28, 25], [35, 30]], "fpBone");
-    c.part().poly([[97, 32], [100, 25], [93, 30]], "fpBone");
-  } else if (h.id === "assassin") {
-    c.part().poly([[30, 31], [24, 20], [27, 33]], "fpMetal");
-    c.part().poly([[98, 31], [104, 20], [101, 33]], "fpMetal");
-  }
-  const img = c.render({ glowR: 2 });
-  // Alpha is applied only to the original sleeve polygons. Later-drawn details naturally
-  // overwrite their pixels, so skin, armour, outlines and equipment stay solid.
-  for (let i = 0; i < c.p.length; i++) {
-    if (!sleeveParts.has(c.p[i])) continue;
-    const x = i % 128, y = Math.floor(i / 128);
-    const lowerFade = Math.max(0, Math.min(1, (y - 42) / 21));
-    const outerFade = Math.max(0, Math.min(1, (Math.min(x, 127 - x) - 2) / 13));
-    const alpha = 0.88 - lowerFade * 0.12 - (1 - outerFade) * 0.08;
-    const a = i * 4 + 3;
-    img.d[a] = Math.round(img.d[a] * alpha);
-  }
-  return img;
-}
+// First-person arms live in first-person.mjs; re-exported here for the build, gallery and verify scripts.
+export { renderFirstPerson } from "./first-person.mjs";
+import { renderFirstPerson, FP_W, FP_H, FP_ROWS } from "./first-person.mjs";
 
 export function renderHero(h, tier = 3, variant = "heraldic") {
   const cr = asCreature(h, tier, variant), s = heroScale(h);
@@ -285,7 +111,7 @@ export function renderInterface() {
     manifest.heroes.push({ id: h.id, name: h.name, flourish: h.move, scale: heroScale(h) });
   }
   // First-person sprite variants are generated from the same hero material roles and skin pipeline.
-  manifest.firstPerson = { frame: { w: 128, h: 64 }, sheet: "first-person/{id}/t{tier}-{variant}.png" };
+  manifest.firstPerson = { frame: { w: FP_W, h: FP_H }, rows: FP_ROWS, sheet: "first-person/{id}/t{tier}-{variant}.png" };
   for (const h of heroes) for (const tier of TIERS) for (const { id: variant } of VARIANTS) {
     png(`first-person/${h.id}/t${tier}-${variant}.png`, renderFirstPerson(h, tier, variant));
   }
@@ -338,11 +164,13 @@ export function buildInterface() {
 
 const fill = (img, bg) => { for (let i = 0; i < img.d.length; i += 4) { img.d[i] = bg[0]; img.d[i + 1] = bg[1]; img.d[i + 2] = bg[2]; img.d[i + 3] = 255; } return img; };
 const enlarge = (img, K) => { const o = new Img(img.w * K, img.h * K); for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) for (let k = 0; k < 4; k++) o.d[(y * o.w + x) * 4 + k] = img.d[(((y / K) | 0) * img.w + ((x / K) | 0)) * 4 + k]; return o; };
-/** docs/art/first-person-hands.png: all classes at recruit, veteran and ascendant mastery tiers. */
+/** docs/art/first-person-hands.png: every class (rows): recruit at rest, then the veteran's windup, strike, present and brace poses, then ascendant at rest. */
 export function firstPersonGallery() {
-  const K = 3, cellW = 128 * K, cellH = 64 * K, tiers = [1, 3, 6];
-  const sheet = fill(new Img(tiers.length * cellW, heroes.length * cellH), [22, 17, 38]);
-  heroes.forEach((h, row) => tiers.forEach((tier, col) => sheet.blit(enlarge(renderFirstPerson(h, tier, "heraldic"), K), col * cellW, row * cellH)));
+  const K = 3, cellW = FP_W * K, cellH = FP_H * K, cols = [[1, 0], [3, 1], [3, 2], [3, 3], [3, 4], [6, 0]];
+  const sheet = fill(new Img(cols.length * cellW, heroes.length * cellH), [22, 17, 38]);
+  // A gallery cell lays both arms of one row over each other, the way the client composes them.
+  const row = (img, r) => { const o = new Img(FP_W, FP_H); for (const col of [0, 1]) { const a = new Img(FP_W, FP_H); for (let y = 0; y < FP_H; y++) a.d.set(img.d.subarray(((r * FP_H + y) * img.w + col * FP_W) * 4, ((r * FP_H + y) * img.w + (col + 1) * FP_W) * 4), y * FP_W * 4); o.blit(a); } return o; };
+  heroes.forEach((h, y) => { const sheets = {}; cols.forEach(([tier, r], x) => sheet.blit(enlarge(row(sheets[tier] ??= renderFirstPerson(h, tier, "heraldic"), r), K), x * cellW, y * cellH)); });
   return sheet;
 }
 /** docs/art/hero-tiers.png: every hero (rows) at every mastery tier (columns), resting pose. */

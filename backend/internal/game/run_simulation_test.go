@@ -60,8 +60,14 @@ func TestSimulateRunBatchSummarizesDepthReachProbability(t *testing.T) {
 	if report.SeedCount != 4 || report.FirstSeed != 7 || report.LastSeed != 10 || len(report.Runs) != 4 {
 		t.Fatalf("unexpected batch metadata: %+v", report)
 	}
-	if report.Completed+report.Wiped+report.Stalled != report.SeedCount {
-		t.Fatalf("outcomes do not account for every run: %+v", report)
+	// Completed (first boss beaten) and Wiped can both be true of one expedition, so account for every run by
+	// its single Outcome instead.
+	outcomes := map[string]int{}
+	for _, run := range report.Runs {
+		outcomes[run.Outcome]++
+	}
+	if outcomes["completed"]+outcomes["wiped"]+outcomes["step_limit"] != report.SeedCount || outcomes["wiped"] != report.Wiped || outcomes["step_limit"] != report.Stalled {
+		t.Fatalf("outcomes do not account for every run: %v %+v", outcomes, report)
 	}
 	for depth, rate := range report.DepthReachRates {
 		if depth < InitialDungeonDepth || depth > SimulationDepthLimit || rate < 0 || rate > 1 {

@@ -114,6 +114,8 @@ type SkillDefinition struct {
 	// Elemental skills build and spend the Arcanist's Arcane Focus.
 	Elemental bool          `json:"elemental,omitempty"`
 	Effects   []SkillEffect `json:"effects"`
+	// RankRules is the rule text at each rank (I to MaxSkillRank), for previewing an upgrade.
+	RankRules []string `json:"rankRules,omitempty"`
 }
 
 func dmg(amount int, stat string) SkillEffect {
@@ -312,6 +314,7 @@ func SkillCatalog() []SkillDefinition {
 	for i, definition := range skillCatalog {
 		result[i] = definition
 		result[i].Effects = append([]SkillEffect(nil), definition.Effects...)
+		result[i].RankRules = skillRankRules(definition)
 	}
 	return result
 }

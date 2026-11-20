@@ -20,7 +20,12 @@ export type FxKind =
   | "cloud" //   expanding puffs at (x,y) (gas, spores, steam)
   | "cross" //   an X for an interrupt at (x,y)
   | "shards" //  rising ice shards for a freeze at (x,y)
-  | "screenHit"; // red frame flash around the first-person view
+  | "screenHit" // red frame flash around the first-person view
+  // The player's own moves, drawn from the first-person arms. Their intensity follows the skill's rank (`p`).
+  | "smear" //   the arc of a weapon swing about a pivot (x,y), from angle x2 to y2 (degrees)
+  | "charge" //  motes converging on a palm at (x,y) with a growing glow
+  | "flare" //   a spell leaving the palm at (x,y): a bright ring and rays
+  | "ward"; //   a guard going up at (x,y): an expanding hex shield
 
 export type FxInstance = {
   id: string;
@@ -37,12 +42,14 @@ export type FxInstance = {
   u: number;
   /** A small per-effect number that varies direction and jitter. */
   n: number;
+  /** Power, 1-5: the rank of the skill behind it. Higher ranks draw a bigger, brighter, longer effect. */
+  p?: number;
 };
 
 /** A rectangle in scene units. */
 export type Rect = { x: number; y: number; w: number; h: number; f: string; o?: number };
 
-export const DURATIONS: Record<FxKind, number> = { spark: 380, slash: 360, claw: 440, impact: 540, bolt: 700, zap: 440, wave: 950, shield: 560, heal: 850, drain: 950, summon: 950, cloud: 950, cross: 440, shards: 750, screenHit: 420 };
+export const DURATIONS: Record<FxKind, number> = { spark: 380, slash: 360, claw: 440, impact: 540, bolt: 700, zap: 440, wave: 950, shield: 560, heal: 850, drain: 950, summon: 950, cloud: 950, cross: 440, shards: 750, screenHit: 420, smear: 300, charge: 520, flare: 460, ward: 640 };
 
 const STEPS = 9;
 const snap = (v: number, u: number) => Math.round(v / u) * u;
@@ -107,14 +114,18 @@ function cut(cx: number, cy: number, head: number, len: number, flip: number, u:
 
 export function renderFx(fx: FxInstance, progress: number): Rect[] {
   const q = quant(progress), c = ELEMENT_COLORS[fx.el], { x, y, u } = fx, out: Rect[] = [];
+  const p = Math.max(1, Math.min(5, fx.p ?? 1));
   const flip = fx.n % 2 ? -1 : 1;
   switch (fx.kind) {
     case "spark":
-      spark(fx, q, c, out);
+      spark(fx, q, c, out, 1 + (p - 1) * 0.18);
       break;
     case "slash":
-      cut(x, y, q * 1.55, 16, flip, u, c, out);
-      if (q > 0.45) spark({ ...fx, n: fx.n + 1 }, (q - 0.45) / 0.55, c, out, 0.7);
+      cut(x, y, q * 1.55, 16 + (p - 1) * 3, flip, u, c, out);
+      // Rank III+: a second cut crossing the first. Rank V: a white-hot burst on top.
+      if (p >= 3) cut(x, y + 2 * u, q * 1.55 - 0.15, 12 + p * 2, -flip, u, c, out);
+      if (q > 0.45) spark({ ...fx, n: fx.n + 1 }, (q - 0.45) / 0.55, c, out, 0.7 + (p - 1) * 0.15);
+      if (p >= 5 && q < 0.35) out.push(sq(x, y, 6, u, c.core, 1 - q * 2));
       break;
     case "claw":
       for (let i = 0; i < 3; i++) cut(x + (i - 1) * 3.6 * u * flip, y + (i - 1) * 0.6 * u, q * 1.55 - i * 0.14, 11, flip, u, c, out);
@@ -143,9 +154,13 @@ export function renderFx(fx: FxInstance, progress: number): Rect[] {
           out.push(sq(lerp(x, x2, tt) + ((k * 3 + fx.n) % 3 - 1) * u * 0.5, lerp(y, y2, tt) + ((k * 5 + fx.n) % 3 - 1) * u * 0.5, k > 3 ? 1 : 2, u, k > 2 ? c.dark : c.edge, 1 - k * 0.15));
         }
         const frames = BITMAPS[fx.el] ?? BITMAPS.orb;
-        drawBitmap(frames[Math.floor(progress * 14) % frames.length], hx, hy, Math.max(1, Math.round(1 + (u >= 5 ? 0.5 : 0))), u, c, out);
+        drawBitmap(frames[Math.floor(progress * 14) % frames.length], hx, hy, Math.max(1, Math.round(1 + (u >= 5 ? 0.5 : 0))) + (p >= 3 ? 1 : 0), u, c, out);
+        // Ranked spells leave a longer, brighter wake.
+        for (let k = 1; k < p; k++) { const tt = Math.max(0, t - k * 0.05); out.push(sq(lerp(x, x2, tt), lerp(y, y2, tt), 1, u, c.core, 0.8 - k * 0.12)); }
       } else {
-        spark({ ...fx, x: x2, y: y2 }, (q - flight) / (1 - flight), c, out, 1.1);
+        const t = (q - flight) / (1 - flight);
+        spark({ ...fx, x: x2, y: y2 }, t, c, out, 1.1 + (p - 1) * 0.25);
+        if (p >= 4) ring(x2, y2, (3 + t * (8 + p * 2)) * u, (3 + t * (8 + p * 2)) * u * 0.7, 16 + p * 2, 1, u, c.mid, out, 1 - t);
       }
       break;
     }
@@ -231,6 +246,54 @@ export function renderFx(fx: FxInstance, progress: number): Rect[] {
         drawBitmap(BITMAPS.frost[0], x + Math.cos(angle) * 8 * u, y + Math.sin(angle) * 3 * u - rise - (i % 2) * 3 * u, 1, u, c, out, o);
       }
       break;
+    case "smear": {
+      // x2/y2 hold the swing's start and end angles; the arc's head leads and the tail fades behind it.
+      const from = ((fx.x2 ?? -60) * Math.PI) / 180, to = ((fx.y2 ?? 40) * Math.PI) / 180, r = (30 + p * 2) * u;
+      const head = Math.min(1, q * 1.7), tail = Math.max(0, head - (0.4 + p * 0.07)), N = 30;
+      const o = q > 0.75 ? Math.max(0, 1 - (q - 0.75) / 0.25) : 1;
+      for (let i = 0; i <= N; i++) {
+        const f = tail + ((head - tail) * i) / N, a = lerp(from, to, f), near = (head - f) / Math.max(0.01, head - tail);
+        const size = near < 0.25 ? 1 + Math.floor(p / 2) : near < 0.6 ? 1 + Math.floor((p - 1) / 2) : 1;
+        out.push(sq(x + Math.sin(a) * r, y - Math.cos(a) * r, size, u, near < 0.2 ? c.core : near < 0.55 ? c.mid : c.edge, o * (1 - near * 0.7)));
+        if (p >= 3 && i % 2 === 0) out.push(sq(x + Math.sin(a) * r * 0.82, y - Math.cos(a) * r * 0.82, 1, u, c.edge, o * (1 - near) * 0.7));
+      }
+      if (p >= 4 && head >= 1) for (let i = 0; i < p; i++) { const a = to + (i - p / 2) * 0.12; out.push(sq(x + Math.sin(a) * (r + (2 + i % 3) * u), y - Math.cos(a) * (r + (2 + i % 3) * u), 1, u, c.core, o)); }
+      break;
+    }
+    case "charge": {
+      const motes = 4 + p * 2, glow = 1 + Math.floor(q * (2 + p / 2));
+      for (let i = 0; i < motes; i++) {
+        const a = (i / motes) * Math.PI * 2 + fx.n, d = (1 - q) * (10 + (i % 3) * 3 + p) * u;
+        out.push(sq(x + Math.cos(a) * d, y + Math.sin(a) * d, i % 3 ? 1 : 2, u, i % 2 ? c.mid : c.core, 0.4 + q * 0.6));
+      }
+      out.push(sq(x, y, glow + 1, u, c.edge, 0.55), sq(x, y, glow, u, c.mid, 0.9), sq(x, y, Math.max(1, glow - 1), u, c.core));
+      break;
+    }
+    case "flare": {
+      const r = (2 + q * (6 + p * 2)) * u, o = Math.max(0, 1 - q);
+      ring(x, y, r, r, 10 + p * 3, q < 0.4 ? 2 : 1, u, c.mid, out, o, fx.n);
+      if (p >= 2) ring(x, y, r * 0.6, r * 0.6, 8 + p * 2, 1, u, c.core, out, o, -fx.n);
+      for (let i = 0; i < 4 + p; i++) {
+        const a = (i / (4 + p)) * Math.PI * 2 + 0.2;
+        line(x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.5, x + Math.cos(a) * r * (1.1 + p * 0.08), y + Math.sin(a) * r * (1.1 + p * 0.08), u, c.core, 1, out, o, 2);
+      }
+      if (q < 0.3) out.push(sq(x, y, 3 + p, u, c.core, 1 - q * 3));
+      break;
+    }
+    case "ward": {
+      const rings = 1 + Math.floor((p - 1) / 2), o = q > 0.7 ? Math.max(0, 1 - (q - 0.7) / 0.3) : 1;
+      for (let k = 0; k < rings; k++) {
+        const t = Math.max(0, Math.min(1, q * 1.6 - k * 0.18)), r = (6 + t * (12 + p * 2) - k * 3) * u;
+        if (t <= 0) continue;
+        for (let i = 0; i < 6; i++) {
+          const a0 = (i / 6) * Math.PI * 2 + Math.PI / 6, a1 = ((i + 1) / 6) * Math.PI * 2 + Math.PI / 6;
+          line(x + Math.cos(a0) * r, y + Math.sin(a0) * r * 0.85, x + Math.cos(a1) * r, y + Math.sin(a1) * r * 0.85, u, k ? c.edge : c.mid, k ? 1 : 2, out, o);
+        }
+      }
+      if (q < 0.45) out.push(sq(x, y, 2 + p, u, c.core, 0.9 - q * 2));
+      if (p >= 4) ring(x, y, (4 + q * 22) * u, (4 + q * 22) * u * 0.85, 18, 1, u, c.core, out, o * 0.8, q * 3);
+      break;
+    }
     case "screenHit": {
       const t = Math.max(1, Math.round((5 - q * 4) * 6) / 1), o = Math.max(0.2, 1 - q * 0.8);
       out.push({ x: 0, y: 0, w: 1100, h: t, f: "#e0453a", o }, { x: 0, y: 620 - t, w: 1100, h: t, f: "#e0453a", o }, { x: 0, y: 0, w: t, h: 620, f: "#e0453a", o }, { x: 1100 - t, y: 0, w: t, h: 620, f: "#e0453a", o });

@@ -23,9 +23,12 @@
 .rn-console { grid-area: console; display: grid; grid-template-columns: minmax(220px, 1fr) minmax(460px, 1.9fr); gap: 8px; height: clamp(226px, 31vh, 270px); min-height: 0; }
 
 /* ---------- viewport ---------- */
-.rn-scene { position: absolute; inset: 0; overflow: hidden; }
+/* The viewport is a column: the enemy intents get their own strip, and the room is drawn in the space below it, so
+   no intent can ever sit over an enemy's name or health bar (#138). */
+.rn-scene { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; }
+.rn-scene-stage { position: relative; flex: 1 1 auto; min-height: 0; }
 .rn-scene-art { display: block; width: 100%; height: 100%; font-family: var(--copy); }
-.rn-threats { position: absolute; left: calc(6px * var(--px)); right: calc(6px * var(--px)); top: calc(5px * var(--px)); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; margin: 0; padding: 0; list-style: none; }
+.rn-threats { flex: none; position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; margin: 0; padding: calc(3px * var(--px)) calc(6px * var(--px)); list-style: none; background: #05030a; box-shadow: 0 2px 0 #1d1733; }
 .rn-threats li { min-width: 0; max-width: 100%; }
 .rn-threat-chip { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 3px 8px 4px 5px; border: 0; background: #0a0714e6; box-shadow: inset 3px 0 0 #9a4a4a, 0 0 0 2px var(--edge); color: var(--ink); font: inherit; text-align: left; line-height: 1; cursor: default; }
 button.rn-threat-chip { cursor: pointer; }
@@ -254,8 +257,8 @@ button.rn-card { cursor: pointer; background: none; }
   .rn-view { grid-row: 1; }
   .rn-console { grid-row: 3; display: flex; flex-direction: column; gap: 5px; height: auto; }
 
-  /* enemy moves: one compact line each, over the bottom edge of the scene */
-  .rn-threats { left: 2px; right: 2px; top: 2px; gap: 3px 4px; }
+  /* enemy moves: one compact line each, in their own strip above the scene */
+  .rn-threats { padding: 2px; gap: 3px 4px; }
   .rn-threat-chip { gap: 4px; padding: 1px 6px 2px 4px; align-items: center; }
   .rn-threat-chip > span:not(.px-icon) { display: flex; gap: 6px; align-items: baseline; }
   .rn-threat-chip b { display: none; } .rn-threat-chip i, .rn-threat-chip small { font-size: 16px; white-space: nowrap; }
@@ -402,3 +405,37 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-level-up-card > span { color: var(--muted); font-size: 12px; }
 .rn-level-up-card small { margin-top: 2px; color: var(--muted); font: 400 7px/1.3 var(--display); }
 @media (prefers-reduced-motion: reduce) { .rn-level-up, .rn-level-up-card { animation: none; } }
+
+/* ---------- first-person arms ----------
+   Out of sight until the player acts (FirstPersonArms.tsx). They rise in a few stepped frames, like the sprites. */
+.fp-arm { transition: transform .11s steps(3, end); }
+.fp-arm:not(.fp-arm-up) { transition-duration: .2s; }
+.fp-arm-push.fp-arm-r { transform: translate(-22px, -8px) !important; transition-duration: .05s; }
+.fp-arm-push.fp-arm-l { transform: translate(14px, -10px) !important; transition-duration: .05s; }
+@media (prefers-reduced-motion: reduce) { .fp-arms { display: none; } }
+
+/* ---------- skill ranks ---------- */
+.rn-act-icon { position: relative; }
+.rn-act-rank { position: absolute; left: -4px; top: -6px; padding: 0 2px; background: var(--edge); color: var(--gold); font: 400 7px/1.5 var(--display); font-style: normal; box-shadow: 0 0 0 1px var(--gold); }
+.rn-act-rank-4, .rn-act-rank-5 { color: var(--edge); background: var(--gold); box-shadow: 0 0 0 1px var(--edge), 0 0 6px var(--gold); }
+.rn-rank-up { position: absolute; left: calc(8px * var(--px)); bottom: calc(6px * var(--px)); z-index: 2; padding: 4px 8px 3px; border: 0; background: var(--gold); color: var(--edge); font: 400 9px/1.4 var(--display); box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold); cursor: pointer; animation: rn-rank-glow 1.6s steps(4) infinite; }
+.rn-rank-up:disabled { opacity: .6; cursor: default; }
+@keyframes rn-rank-glow { 50% { box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold), 0 0 12px var(--gold); } }
+.rn-ranks { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 40px); overflow: auto; }
+.rn-ranks-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.rn-ranks-head h2 { margin: 2px 0 6px; }
+.rn-ranks-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rn-rank-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; background: #ffffff0d; box-shadow: inset 0 0 0 2px #3d3658; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.rn-rank-row:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--gold); background: #ffffff16; }
+.rn-rank-row:disabled { cursor: default; opacity: .7; }
+.rn-rank-text { display: grid; flex: 1; min-width: 0; gap: 2px; }
+.rn-rank-text strong { display: flex; align-items: center; gap: 8px; color: var(--bone); font: 400 10px/1.5 var(--display); }
+.rn-rank-text small { color: var(--muted); font-size: 16px; line-height: 1.15; }
+.rn-rank-text s { opacity: .6; }
+.rn-rank-text em { color: var(--good, #b6e87a); font-style: normal; }
+.rn-rank-next { flex: none; color: var(--gold); font: 400 9px/1 var(--display); }
+.rn-rank-pips { display: inline-flex; gap: 2px; }
+.rn-rank-pips i { width: 5px; height: 5px; background: #3d3658; }
+.rn-rank-pips i.on { background: var(--gold); }
+.rn-ranks-note { margin-top: 8px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .rn-rank-up { animation: none; } }

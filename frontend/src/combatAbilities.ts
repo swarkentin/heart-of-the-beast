@@ -18,8 +18,19 @@ export type Skill = {
   masteryLevel: number;
   basic?: boolean;
   elemental?: boolean;
-  effects?: { kind: string; amount?: number; rounds?: number; scope?: string }[];
+  effects?: { kind: string; amount?: number; stat?: string; rounds?: number; scope?: string }[];
+  /** Rule text at each rank, I first (the server's MaxSkillRank entries). */
+  rankRules?: string[];
 };
+
+/** The highest rank a skill can reach in one run (MaxSkillRank on the server). */
+export const MAX_SKILL_RANK = 5;
+export const ROMAN = ["", "I", "II", "III", "IV", "V"];
+
+/** A player's rank in a skill this run: 1 until they spend a skill point on it. */
+export function skillRank(ranks: Record<string, number> | undefined, skillId: string): number {
+  return Math.max(1, Math.min(MAX_SKILL_RANK, ranks?.[skillId] ?? 1));
+}
 
 export const SKILL_DEFEND = "skill.defend";
 export const MAX_LOADOUT = 6;

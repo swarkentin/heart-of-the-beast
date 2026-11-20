@@ -47,6 +47,15 @@ export function plateOffset(view: StageView, count: number, index: number): numb
   return view === "player" ? -64 : 64;
 }
 
+/** The highest a first-person nameplate may sit (scene units from the top of the drawing), so a tall boss's name and
+ * health bar always stay inside the frame. Intents no longer overlay the drawing (#138), so the top is free. */
+export const PLATE_MIN_Y = 40;
+
+/** Where an enemy's nameplate goes: above its head in the first-person view, under its feet in the party view. */
+export function plateY(view: StageView, headY: number, floorY: number, count: number, index: number): number {
+  return view === "player" ? Math.max(PLATE_MIN_Y, headY - 40 + plateOffset(view, count, index)) : floorY + 40 + plateOffset(view, count, index);
+}
+
 /** Nameplate text size: smaller when six names share the row. */
 export function plateFontSize(count: number): number {
   return count >= 5 ? 22 : 28;

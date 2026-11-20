@@ -11,6 +11,8 @@ import { useReducedMotion } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { peekSprite } from "./spriteStore";
 import type { EventLike, StageEnemy, StageView } from "./types";
+import type { Skill } from "../combatAbilities";
+import { selfMoveIn, SELF_LEAD_MS, type SelfMove } from "../run/selfMoves";
 import "./monsters.css";
 
 /** Where the party is, as seen from each composition: the point enemy attacks land on and player effects start from. */
@@ -28,7 +30,18 @@ export type EnemyStageProps = {
   onTarget?: (id: string) => void;
   /** Called at the moment an effect lands on a party member, so portraits can react in step with the stage. */
   onPartyImpact?: (impact: PartyImpact) => void;
+  /**
+   * The first-person view only: the player's own moves, so the arms can play them in step with the stage. `begin`
+   * fires when a round containing the player's action arrives (the stage then holds the round back SELF_LEAD_MS so
+   * the arm can wind up), `land` when the player's hit lands, `block` when the player blocks an enemy hit.
+   */
+  self?: { id: string; skills: ReadonlyMap<string, Skill>; palm: { x: number; y: number }; onCue: (cue: SelfCue) => void };
 };
+
+export type SelfCue =
+  | { type: "begin"; move: SelfMove }
+  | { type: "land"; move: SelfMove; x: number; y: number; el: Element; critical?: boolean }
+  | { type: "block"; amount: number };
 
 export type PartyImpact = { playerId: string; effect: "damage" | "heal" | "block"; amount: number };
 
@@ -46,9 +59,12 @@ const nextId = (prefix: string) => `${prefix}${++counter}`;
  * (see choreography.ts) with pixel effects over the top (see fx/). It renders into the scene's SVG, so it is
  * used inside a <svg viewBox="0 0 1100 620"> by both the player view and the spectator (cast) view.
  */
-export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImpact }: EnemyStageProps) {
+export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImpact, self }: EnemyStageProps) {
   const impactRef = useRef(onPartyImpact);
   impactRef.current = onPartyImpact;
+  const selfRef = useRef(view === "player" ? self : undefined);
+  selfRef.current = view === "player" ? self : undefined;
+  const selfMove = useRef<SelfMove | null>(null);
   const reduced = useReducedMotion();
   const floorY = FLOOR_Y[view];
   const [effects, setEffects] = useState<FxInstance[]>([]);
@@ -79,8 +95,8 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     return { x, y: floorY - (sprite.creature.anchor.y - mid) * scale, theme: sprite.themeId, top: floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale, side: (sprite.bbox.right - sprite.creature.anchor.x) * scale };
   }, [floorY]);
 
-  const spawn = useCallback((kind: FxKind, el: Element, x: number, y: number, x2?: number, y2?: number) => {
-    const fx: FxInstance = { id: nextId("fx"), kind, el, x, y, x2, y2, born: performance.now(), dur: DURATIONS[kind], u: FX_UNIT[latest.current.view], n: counter % 4 };
+  const spawn = useCallback((kind: FxKind, el: Element, x: number, y: number, x2?: number, y2?: number, p = 1) => {
+    const fx: FxInstance = { id: nextId("fx"), kind, el, x, y, x2, y2, born: performance.now(), dur: DURATIONS[kind], u: FX_UNIT[latest.current.view], n: counter % 4, p };
     setEffects((list) => [...list.filter((item) => performance.now() - item.born < item.dur + 1200), fx]);
   }, []);
 
@@ -111,12 +127,19 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
       case "hit": {
         const c = centerOf(cue.enemyId);
         push(cue.enemyId, cue);
-        const el = elementFor(c.theme, cue.via.replace(/_/g, " "), undefined);
+        const own = selfRef.current && cue.actorId === selfRef.current.id && cue.via !== "thorns" ? selfMove.current : null;
+        // The player's own spell is cast from the first-person palm; its element follows the skill's name.
+        let el = elementFor(c.theme, cue.via.replace(/_/g, " "), undefined);
+        if (own?.kind === "spell") { const named = elementFor(undefined, (own.skill.split(".")[1] ?? "").replace(/-/g, " "), undefined); el = named === "physical" ? "arcane" : named; }
+        const from = own?.kind === "spell" ? selfRef.current!.palm : { x: party.x, y: party.y - 60 };
+        const p = own ? own.rank : 1;
         sfx(el === "physical" ? "impact" : "magic", cue.enemyId);
         if (cue.via === "thorns") spawn("spark", "physical", c.x, c.y);
-        else if (el === "physical") spawn("slash", "physical", c.x, c.y);
-        else if (el === "shock") spawn("zap", el, party.x, party.y - 60, c.x, c.y);
-        else spawn("bolt", el, party.x, party.y - 60, c.x, c.y);
+        else if (el === "physical") spawn("slash", "physical", c.x, c.y, undefined, undefined, p);
+        else if (el === "shock") spawn("zap", el, from.x, from.y, c.x, c.y, p);
+        else spawn("bolt", el, from.x, from.y, c.x, c.y, p);
+        if (own && p >= 5 && el === "physical") spawn("impact", "physical", c.x, c.y + 40, undefined, undefined, p);
+        if (own) selfRef.current!.onCue({ type: "land", move: own, x: c.x, y: c.y, el, critical: cue.critical });
         if (cue.amount > 0) popup(c.x + c.side * 0.6, c.top + 50, cue.critical ? "CRIT! " + cue.amount : String(cue.amount), cue.critical ? "#ffd166" : "#ffffff", Boolean(cue.critical));
         break;
       }
@@ -152,6 +175,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
       case "playerBlock":
         spawn("shield", "physical", party.x, party.y - 40);
         sfx("block");
+        if (cue.playerId && cue.playerId === selfRef.current?.id) selfRef.current.onCue({ type: "block", amount: cue.amount });
         if (cue.playerId) impactRef.current?.({ playerId: cue.playerId, effect: "block", amount: cue.amount });
         break;
     }
@@ -173,6 +197,7 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     const target = { x: party.x, y: party.y - 40 };
     for (const hit of cue.targets) {
       if (hit.blocked > 0) impactRef.current?.({ playerId: hit.playerId, effect: "block", amount: hit.blocked });
+      if (hit.blocked > 0 && hit.playerId === selfRef.current?.id) selfRef.current.onCue({ type: "block", amount: hit.blocked });
       if (hit.damage > 0) impactRef.current?.({ playerId: hit.playerId, effect: "damage", amount: hit.damage });
     }
     if (cue.miss) {
@@ -207,7 +232,10 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
     const fresh = events.filter((_, index) => !seen.current!.has(keys[index]));
     for (const key of keys) seen.current!.add(key);
     if (fresh.length === 0) return;
-    const plan = planRound(fresh, enemies, dead.current!);
+    const own = selfRef.current ? selfMoveIn(fresh, selfRef.current.id, selfRef.current.skills) : null;
+    selfMove.current = own;
+    if (own) selfRef.current!.onCue({ type: "begin", move: own });
+    const plan = planRound(fresh, enemies, dead.current!, own?.damaging && !reduced ? SELF_LEAD_MS : 0);
     for (const entry of plan) {
       if (entry.cue.type === "defeat") dead.current!.add(entry.cue.enemyId);
       timers.current.push(window.setTimeout(() => handleCue(entry.cue), reduced ? Math.min(entry.at, 400) : entry.at));

@@ -154,6 +154,10 @@ type PlayerState struct {
 	Items []string `json:"items,omitempty"`
 	// Boons are the IDs of the boons (boons.go) the player has claimed from capstone bosses, in order.
 	Boons []string `json:"boons,omitempty"`
+	// SkillRanks is each skill's rank this run (skill_ranks.go); a skill missing here is rank 1.
+	SkillRanks map[string]int `json:"skillRanks,omitempty"`
+	// SkillPoints are earned one per run level-up and spent with an "upgrade_skill" command.
+	SkillPoints int `json:"skillPoints,omitempty"`
 }
 
 type DungeonRoom struct {
@@ -286,6 +290,9 @@ type CombatEvent struct {
 	ActorID string `json:"actorId,omitempty"`
 	// Auto marks an action the server chose because the player did not act before the round deadline.
 	Auto bool `json:"auto,omitempty"`
+	// Skill and Rank say which skill, at which rank, a player's action used, so the client can animate it.
+	Skill string `json:"skill,omitempty"`
+	Rank  int    `json:"rank,omitempty"`
 }
 
 type Command struct {

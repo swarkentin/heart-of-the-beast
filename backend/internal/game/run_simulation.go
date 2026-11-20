@@ -187,6 +187,9 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 			}
 			round := room.Run.CombatRound.Number
 			for _, playerID := range room.PlayerIDs {
+				spendSkillPointsByPolicy(room, playerID)
+			}
+			for _, playerID := range room.PlayerIDs {
 				player := room.Run.Players[playerID]
 				if player == nil || player.Health <= 0 {
 					continue
