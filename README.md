@@ -2,6 +2,8 @@
 
 A cooperative, social-first roguelike dungeon crawler designed to be fun with one player or a small group of friends.
 
+[<img src="docs/images/readme-screenshot.png">](https://heart-of-the-beast.onrender.com/)
+
 Players explore illustrated, high-definition pixel-art environments, make choices together, fight tactical encounters, discover gear and abilities, and return to safe hubs between increasingly dangerous expeditions.
 
 ## Repository layout
