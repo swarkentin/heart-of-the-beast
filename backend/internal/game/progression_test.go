@@ -44,6 +44,26 @@ func TestEncounterExperienceLevelsAndImprovesStats(t *testing.T) {
 	}
 }
 
+func TestLevelSixGrantsAHealingHerbWithoutExceedingInventoryCap(t *testing.T) {
+	room := progressionRoom()
+	player := newPlayerState("player-1", "tank")
+	player.Level = 5
+	player.Experience = experienceForNextLevel(4)
+	player.Consumables = map[string]int{ConsumableHealingHerb: MaxHealingHerbs - 1}
+	room.Run = &Run{CurrentRoomID: "entry", Players: map[string]*PlayerState{"player-1": player}}
+
+	grantExperience(player, room, player.ID, 1, experienceForNextLevel(5)-player.Experience)
+	if player.Level != 6 || player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs {
+		t.Fatalf("level 6 should grant one herb up to the inventory cap: level=%d consumables=%v", player.Level, player.Consumables)
+	}
+
+	player.Consumables[ConsumableHealingHerb] = MaxHealingHerbs
+	grantExperience(player, room, player.ID, 2, experienceForNextLevel(6)-player.Experience)
+	if player.Level != 7 || player.Consumables[ConsumableHealingHerb] != MaxHealingHerbs {
+		t.Fatalf("level 7 should not overfill herbs: level=%d consumables=%v", player.Level, player.Consumables)
+	}
+}
+
 func TestBossEncounterGrantsMoreExperienceThanRegularEncounter(t *testing.T) {
 	room := progressionRoom()
 	player := newPlayerState("player-1", "tank")

@@ -72,6 +72,10 @@ func newPlayerState(id, archetype string) *PlayerState {
 	}
 }
 
+// experienceForNextLevel returns the cumulative XP threshold for the next level.
+// The original 1–5 curve is preserved; later levels grow by 20% per level so
+// players can keep progressing in long, multi-dungeon expeditions without
+// making each additional level trivially cheap.
 func experienceForNextLevel(level int) int {
 	switch level {
 	case 1:
@@ -82,9 +86,17 @@ func experienceForNextLevel(level int) int {
 		return 275
 	case 4:
 		return 425
-	default:
+	}
+	if level < 1 {
 		return 0
 	}
+
+	threshold, step := 425, 150
+	for current := 5; current <= level; current++ {
+		step = (step*6 + 4) / 5 // ceil(step * 1.2)
+		threshold += step
+	}
+	return threshold
 }
 
 func grantEncounterExperience(room *Room, round int) {
@@ -113,7 +125,19 @@ func grantExperience(player *PlayerState, room *Room, playerID string, round, am
 
 	addCombatEvent(room.Run, round, "experience", adventurerLabel(room, playerID)+" earns "+itoa(amount)+" XP.")
 	for _, level := range transition.LevelUps {
-		addCombatEvent(room.Run, round, "level_up", adventurerLabel(room, playerID)+" reaches level "+itoa(level)+" and grows stronger!")
+		message := adventurerLabel(room, playerID) + " reaches level " + itoa(level) + " and grows stronger!"
+		// Every third level from level 6 onward is a small supply milestone.
+		// Respect the normal carried-herb cap; a level-up never overfills inventory.
+		if level >= 6 && level%3 == 0 {
+			if player.Consumables == nil {
+				player.Consumables = make(map[string]int)
+			}
+			if player.Consumables[ConsumableHealingHerb] < MaxHealingHerbs {
+				player.Consumables[ConsumableHealingHerb]++
+				message += " They also find a Healing Herb!"
+			}
+		}
+		addCombatEvent(room.Run, round, "level_up", message)
 	}
 }
 

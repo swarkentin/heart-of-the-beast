@@ -36,19 +36,43 @@ func TestResolveExperienceGainCanCrossMultipleLevelsInOrder(t *testing.T) {
 	}
 }
 
-func TestResolveExperienceGainAtLevelCapAndForNonPositiveRewards(t *testing.T) {
-	player := PlayerState{Experience: 500, Level: 5, MaxHealth: 38, StrikeDamage: PlayerStrikeDamage + 2, GuardReduction: GuardDamageReduction + 2, Stats: PlayerStats{Power: 3, Focus: 3, Agility: 1}}
+func TestRunLevelsContinuePastFiveWithNonlinearXPAndGradualGrowth(t *testing.T) {
+	wantThresholds := []int{60, 150, 275, 425, 605, 821, 1081, 1393, 1768}
+	for level, want := range wantThresholds {
+		if got := experienceForNextLevel(level + 1); got != want {
+			t.Fatalf("threshold to reach level %d = %d, want %d", level+2, got, want)
+		}
+	}
+
+	player := PlayerState{Experience: 424, Level: 4, MaxHealth: 38, StrikeDamage: PlayerStrikeDamage + 2, GuardReduction: GuardDamageReduction + 1, Stats: PlayerStats{Power: 2, Focus: 3, Agility: 2}}
+	result := resolveExperienceGain(player, 1000)
+	if result.Level != 9 {
+		t.Fatalf("level 9 should be reachable with 1424 XP, got level %d", result.Level)
+	}
+	if len(result.LevelUps) != 5 || result.LevelUps[0] != 5 || result.LevelUps[4] != 9 {
+		t.Fatalf("unexpected continued level-ups: %v", result.LevelUps)
+	}
+	if result.MaxHealth <= player.MaxHealth || result.StrikeDamage <= player.StrikeDamage || result.GuardReduction <= player.GuardReduction {
+		t.Fatalf("continued levels should improve all core combat stats: %+v", result)
+	}
+	if result.Stats.Power <= player.Stats.Power || result.Stats.Focus <= player.Stats.Focus || result.Stats.Agility <= player.Stats.Agility {
+		t.Fatalf("continued levels should improve all attributes: %+v", result.Stats)
+	}
+}
+
+func TestResolveExperienceGainAtHighLevelAndForNonPositiveRewards(t *testing.T) {
+	player := PlayerState{Experience: experienceForNextLevel(12) - 30, Level: 12, MaxHealth: 62, StrikeDamage: PlayerStrikeDamage + 8, GuardReduction: GuardDamageReduction + 6, Stats: PlayerStats{Power: 7, Focus: 8, Agility: 5}}
 	for _, amount := range []int{0, -10, 25} {
 		result := resolveExperienceGain(player, amount)
 		wantExperience := player.Experience
 		if amount > 0 {
 			wantExperience += amount
 		}
-		if result.Experience != wantExperience || result.Level != 5 || len(result.LevelUps) != 0 {
-			t.Fatalf("unexpected level-cap/non-positive result for %d XP: %+v", amount, result)
+		if result.Experience != wantExperience || result.Level != 12 || len(result.LevelUps) != 0 {
+			t.Fatalf("unexpected high-level/non-positive result for %d XP: %+v", amount, result)
 		}
 		if result.MaxHealth != player.MaxHealth || result.StrikeDamage != player.StrikeDamage || result.GuardReduction != player.GuardReduction || result.Stats != player.Stats {
-			t.Fatalf("level cap changed stats for %d XP: %+v", amount, result)
+			t.Fatalf("high-level state changed stats without a level-up for %d XP: %+v", amount, result)
 		}
 	}
 }
