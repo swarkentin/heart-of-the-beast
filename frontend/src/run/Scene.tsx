@@ -58,10 +58,10 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
       </svg>
       {/* Over the floor at the bottom of the drawing (see INTENT_BAND): never over a nameplate, never resizing the room. */}
       {living.length > 0 ? <ul className={"rn-threats" + (living.length >= 2 ? " rn-threats-multi" : "") + (armsActive ? " rn-threats-dim" : "")} aria-label="Enemy intentions">{living.map(enemy => {
-        const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}{enemy.interruptible ? <span className="rn-long"> · CAN BE INTERRUPTED</span> : null}</small>{enemy.traits.length > 0 ? <em className="rn-traits">{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
+        const body = <><Icon id={enemy.interruptible ? "control" : "threat"} size={1} /><span><b>{enemy.name}</b><i><span className="rn-intent-move">{enemy.intentMove}{enemy.intentEffect ? " · " : ""}</span>{enemy.intentEffect}</i><small>{enemy.intentTarget}</small>{enemy.interruptible || enemy.traits.length > 0 ? <em className="rn-traits">{enemy.interruptible ? <span className="rn-trait rn-trait-interrupt" title="An interrupt skill cancels this move">⚡ INTERRUPT</span> : null}{enemy.traits.map(tag => <span key={tag.id} className={"rn-trait rn-trait-" + tag.tone} title={tag.rule}>{tag.label}</span>)}</em> : null}</span></>;
         return <li key={enemy.id}>{onTarget
-          ? <button type="button" className={"rn-threat-chip" + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
-          : <div className="rn-threat-chip">{body}</div>}</li>;
+          ? <button type="button" className={"rn-threat-chip" + (enemy.interruptible ? " rn-threat-chip-interrupt" : "") + (target === enemy.id ? " rn-threat-chip-on" : "")} onClick={() => onTarget(enemy.id)} aria-pressed={target === enemy.id}>{body}</button>
+          : <div className={"rn-threat-chip" + (enemy.interruptible ? " rn-threat-chip-interrupt" : "")}>{body}</div>}</li>;
       })}</ul> : null}
       {banner ? <div key={banner.text} className={"rn-banner rn-banner-" + banner.tone} role="status">{banner.text}</div> : null}
     </div>

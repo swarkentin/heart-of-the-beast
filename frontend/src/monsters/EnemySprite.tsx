@@ -138,6 +138,8 @@ function Placeholder({ floorY, dead }: { floorY: number; dead: boolean }) {
 }
 
 const MARKER = ["..##..", "..##..", "..##..", "..##..", "......", "..##.."];
+/** A broken-bolt glyph for a move an interrupt skill can cancel. */
+const BREAK = ["...##.", "..##..", ".####.", "..##..", ".##...", "##...."];
 
 type Props = {
   enemy: StageEnemy;
@@ -168,6 +170,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
   const plateTop = plateY(view, headY, floorY, count, index);
   const showDead = dead || !alive;
   const telegraphing = alive && Boolean(enemy.rawIntent);
+  const breakable = telegraphing && Boolean(enemy.rawIntent?.interruptible);
   return (
     <g transform={`translate(${x} 0)`} onClick={onClick} className={(onClick && alive ? "enemy-sprite " : "") + "enemy-stage-actor" + (enemy.modifier ? " enemy-empowered-actor enemy-empowered-actor-" + enemy.modifier : "")} data-enemy={enemy.id} data-anim={pose.anim} data-frame={pose.frame}>
       {selected && alive ? <ellipse cx="0" cy={floorY + 2} rx={Math.max(92, (boxRight - boxLeft) / 2 + 18)} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
@@ -185,12 +188,14 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
         <rect x="-69" y="5" width={Math.max(0, 138 * enemy.hp / Math.max(1, enemy.maxHp))} height="16" fill="#b45e53" />
         <text x="0" y="-11" textAnchor="middle" fill="#f1e5d5" stroke="#0b0d13" strokeWidth="5" paintOrder="stroke" fontSize={plateFontSize(count)}>{enemy.name}</text>
         {telegraphing ? (
-          <g transform="translate(-102 2)" className="enemy-ready" shapeRendering="crispEdges">
-            <title>{enemy.name} has readied {enemy.rawIntent?.label}</title>
-            <rect x="-4" y="-4" width="32" height="32" fill="#11151d" stroke="#e9bd80" strokeWidth="2" />
-            {MARKER.map((row, ry) => [...row].map((ch, rx) => ch === "#" ? <rect key={ry + "-" + rx} x={rx * 4} y={ry * 4} width="4" height="4" fill="#ffd27a" /> : null))}
+          <g transform="translate(-102 2)" className={breakable ? "enemy-ready enemy-breakable" : "enemy-ready"} shapeRendering="crispEdges">
+            <title>{enemy.name} has readied {enemy.rawIntent?.label}{breakable ? ". An interrupt skill can cancel it." : ""}</title>
+            <rect x="-4" y="-4" width="32" height="32" fill="#11151d" stroke={breakable ? "#7fe6ff" : "#e9bd80"} strokeWidth={breakable ? 3 : 2} />
+            {(breakable ? BREAK : MARKER).map((row, ry) => [...row].map((ch, rx) => ch === "#" ? <rect key={ry + "-" + rx} x={rx * 4} y={ry * 4} width="4" height="4" fill={breakable ? "#bff4ff" : "#ffd27a"} /> : null))}
           </g>
         ) : null}
+        {/* With three or more enemies the plates are staggered and a label would run into a neighbour's name; the cyan marker and the intent chip still say it. */}
+        {breakable && count < 3 ? <text className="enemy-breakable-label" x="0" y="44" textAnchor="middle" fill="#7fe6ff" stroke="#0b0d13" strokeWidth="6" paintOrder="stroke" fontSize="18" fontWeight="bold" letterSpacing="2">⚡ INTERRUPTIBLE</text> : null}
       </g>
     </g>
   );
