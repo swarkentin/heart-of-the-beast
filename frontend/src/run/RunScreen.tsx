@@ -121,6 +121,11 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     ].filter(([, before, after]) => before !== after).map(([label, before, after]) => String(label) + " +" + String(Number(after) - Number(before)));
     setLevelUp({ level: current.level, changes });
   }, [player?.level, player?.maxHealth, player?.strikeDamage, player?.guardReduction, player?.stats.power, player?.stats.focus, player?.stats.agility, run.id, selfId, spectator]);
+  useEffect(() => {
+    if (!levelUp) return;
+    const timeout = window.setTimeout(() => setLevelUp(null), 2600);
+    return () => window.clearTimeout(timeout);
+  }, [levelUp]);
 
   const enemies = useMemo(() => (room.encounter?.enemies ?? []).map((enemy, index, all) => sceneEnemy(enemy, index, all.length, snapshot.playerIds, selfId)), [room.encounter?.enemies, snapshot.playerIds, selfId]);
   const living = enemies.filter(enemy => enemy.hp > 0);
@@ -439,7 +444,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       <div className="rn-level-up-card">
         <p>LEVEL UP!</p><strong>LEVEL {levelUp.level}</strong><h2>YOU GREW STRONGER</h2>
         {levelUp.changes.length > 0 ? <ul>{levelUp.changes.map(change => <li key={change}>+ {change}</li>)}</ul> : <span>No stats changed this level.</span>}
-        <small>TAP TO CONTINUE</small>
+        <small>TAP TO DISMISS</small>
       </div>
     </div> : null}
     {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
