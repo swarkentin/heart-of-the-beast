@@ -96,6 +96,6 @@ export function VisualEffectsSettings({ profile }: { profile: ProfileProgress })
 
   return <>
     <button type="button" className="px-button px-button-small" onClick={() => setOpen(true)}>VISUAL DISPLAY</button>
-    {dialog ? createPortal(dialog, document.body) : null}
+    {dialog ? createPortal(<div className="px-portal">{dialog}</div>, document.body) : null}
   </>;
 }
