@@ -45,6 +45,7 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 	}
 	state := map[string]any{
 		"run":               run,
+		"updatedAt":         started,
 		"playerProfileIds":  map[string]string{"player-1": "pseudonymous-profile"},
 		"playerClasses":     map[string]string{"player-1": "ranger"},
 		"playerArchetypes":  map[string]string{"player-1": "scout"},
@@ -66,11 +67,11 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 	run["phase"] = "combat"
 	state["run"] = run
 	encoded, _ = json.Marshal(state)
-	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb, version = 1, updated_at = $3 WHERE id = $1", roomID, encoded, started); err != nil {
+	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb, version = 1 WHERE id = $1", roomID, encoded, started); err != nil {
 		t.Fatalf("record active snapshot: %v", err)
 	}
 	// A heartbeat-style update without a version increment must not create a telemetry event.
-	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET updated_at = $2 WHERE id = $1", roomID, started.Add(time.Second)); err != nil {
+	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb WHERE id = $1", roomID, started.Add(time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	var events int
@@ -85,11 +86,11 @@ func TestPostgresRunTelemetryCapturesVersionedSnapshotsAndTerminalRecord(t *test
 	run["completedAt"] = ended
 	state["run"] = run
 	encoded, _ = json.Marshal(state)
-	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb, version = 2, updated_at = $3 WHERE id = $1", roomID, encoded, ended); err != nil {
+	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET state = $2::jsonb, version = 2 WHERE id = $1", roomID, encoded, ended); err != nil {
 		t.Fatalf("record terminal snapshot: %v", err)
 	}
 	// A later versioned save of the terminal room must not create a second run record.
-	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET version = 3, updated_at = $2 WHERE id = $1", roomID, ended.Add(time.Second)); err != nil {
+	if _, err := db.ExecContext(t.Context(), "UPDATE rooms SET version = 3 WHERE id = $1", roomID, ended.Add(time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	var records int
