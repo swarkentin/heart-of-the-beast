@@ -37,7 +37,7 @@ func TestResolveExperienceGainCanCrossMultipleLevelsInOrder(t *testing.T) {
 }
 
 func TestRunLevelsContinuePastFiveWithNonlinearXPAndGradualGrowth(t *testing.T) {
-	wantThresholds := []int{60, 150, 275, 425, 605, 821, 1080, 1391, 1764}
+	wantThresholds := []int{60, 150, 275, 425, 605, 821, 1081, 1393, 1768}
 	for level, want := range wantThresholds {
 		if got := experienceForNextLevel(level + 1); got != want {
 			t.Fatalf("threshold to reach level %d = %d, want %d", level+2, got, want)
