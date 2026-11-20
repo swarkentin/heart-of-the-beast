@@ -18,7 +18,7 @@ Run levels have no fixed cap. The original levels 1–5 remain unchanged, and th
 
 Levels 6, 9, 12, 15… also grant one Healing Herb when the player's carried supply is below its normal cap. A level-up never overfills the inventory. The reward is a small milestone bonus, not a guaranteed extra item when the player is already stocked.
 
-Cumulative XP thresholds for levels 2–5 remain 60, 150, 275 and 425. Beyond level 5, the XP required for each next level grows by 20% over the previous level's requirement (rounded up): level 6 at 605 XP, level 7 at 821 XP, level 8 at 1,080 XP, and level 9 at 1,391 XP. This preserves the existing early curve while making later levels progressively harder to earn.
+Cumulative XP thresholds for levels 2–5 remain 60, 150, 275 and 425. Beyond level 5, the XP required for each next level grows by 20% over the previous level's requirement (rounded up): level 6 at 605 XP, level 7 at 821 XP, level 8 at 1,081 XP, and level 9 at 1,393 XP. This preserves the existing early curve while making later levels progressively harder to earn.
 
 Critical hits remain deterministic from the expedition seed, round, player and target. Their chance still rises from 8% at level 1 to a capped 16% at level 5; further levels continue to improve the core stats rather than increasing critical chance without bound.
 
