@@ -6,7 +6,7 @@ import { FxLayer } from "../fx/FxLayer";
 import { DURATIONS, type FxInstance, type FxKind } from "../fx/render";
 import { eventKeys, planRound, type Cue } from "./choreography";
 import { EnemySprite, type SeqCue } from "./EnemySprite";
-import { enemyX, spriteScale } from "./layout";
+import { enemyX, spriteScale, STAGE_FLOOR_Y } from "./layout";
 import { useReducedMotion } from "./hooks";
 import { moveAnimForLabel } from "./moves";
 import { peekSprite } from "./spriteStore";
@@ -17,7 +17,7 @@ import "./monsters.css";
 
 /** Where the party is, as seen from each composition: the point enemy attacks land on and player effects start from. */
 const PARTY_POINT: Record<StageView, { x: number; y: number }> = { player: { x: 550, y: 560 }, cast: { x: 550, y: 420 } };
-const FLOOR_Y: Record<StageView, number> = { player: 452, cast: 254 };
+const FLOOR_Y = STAGE_FLOOR_Y;
 const FX_UNIT: Record<StageView, number> = { player: 6, cast: 4 };
 
 type Popup = { id: string; x: number; y: number; text: string; color: string; critical?: boolean; born: number };
