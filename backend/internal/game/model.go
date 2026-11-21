@@ -84,6 +84,12 @@ type Run struct {
 	HeartStrikes []HeartStrike `json:"heartStrikes,omitempty"`
 	// HeartLured is set by a Beast Lure: the next dungeon boss will be the heart (ADR 0040).
 	HeartLured bool `json:"heartLured,omitempty"`
+	// CampaignID is the campaign (campaigns.go, ADR 0041) this run plays; empty for an endless expedition.
+	// CampaignInterlude is set once the heartshard falls, so clients play the mid-campaign interlude, and
+	// CampaignWon once the campaign's final heart is beaten.
+	CampaignID        string `json:"campaignId,omitempty"`
+	CampaignInterlude bool   `json:"campaignInterlude,omitempty"`
+	CampaignWon       bool   `json:"campaignWon,omitempty"`
 	// Camp is the respite between two floors of an expedition: a mini-game, then a shop.
 	Camp                    *Camp                   `json:"camp,omitempty"`
 	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`
@@ -267,6 +273,9 @@ type Enemy struct {
 	Calls           int    `json:"calls,omitempty"`
 	DevourIn        int    `json:"devourIn,omitempty"`
 	Devoured        int    `json:"devoured,omitempty"`
+	// HeartTier is the campaign number of a campaign's final heart (campaigns.go): clients draw stronger hearts
+	// grander. Zero for every other enemy.
+	HeartTier int `json:"heartTier,omitempty"`
 	// Stun is how many coming turns the enemy loses (a boss is staggered instead and hits for half).
 	Stun int `json:"stun,omitempty"`
 	// Bleed is damage taken at the end of each of the next BleedRounds rounds.

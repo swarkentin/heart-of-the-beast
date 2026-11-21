@@ -10,6 +10,8 @@ export type MapStop = {
   state: "cleared" | "current" | "next" | "ahead";
   capstone: boolean;
   themeId?: string;
+  /** The Heart's Chamber that ends a campaign (ADR 0041). */
+  heart?: boolean;
 };
 
 /** The stops of the group the party is in. At the camp after a dungeon boss, the group of the next dungeon is shown. */
@@ -28,4 +30,29 @@ export function expeditionMap(run: Pick<ApiRun, "dungeon" | "dungeonsCleared" | 
     stops.push({ dungeon: n, capstone: n % CAPSTONE_EVERY === 0, themeId: themeId || undefined, state: cleared ? "cleared" : n === dungeon ? "current" : n === focus ? "next" : "ahead" });
   }
   return stops;
+}
+
+/**
+ * A campaign's map (ADR 0041): its whole road is known from the start, three lands, the castle and then the Heart's
+ * Chamber, so every stop is named. At the camp after a chapter the next one is marked as next.
+ */
+export function campaignMap(run: Pick<ApiRun, "dungeon" | "camp">, road: { themes: string[]; capstone: string }): MapStop[] {
+  const dungeon = Math.max(1, run.dungeon ?? 1);
+  const between = Boolean(run.camp?.road);
+  const stops: MapStop[] = [...road.themes, road.capstone].map((themeId, index) => ({ dungeon: index + 1, capstone: index === road.themes.length, themeId, state: "ahead" }));
+  stops.push({ dungeon: stops.length + 1, capstone: false, heart: true, state: "ahead" });
+  for (const stop of stops) {
+    const cleared = stop.dungeon < dungeon || (stop.dungeon === dungeon && between);
+    stop.state = cleared ? "cleared" : stop.dungeon === dungeon ? "current" : between && stop.dungeon === dungeon + 1 ? "next" : "ahead";
+  }
+  return stops;
+}
+
+/** The line under a campaign's map: what is left between this chapter and the heart. */
+export function campaignRoadLine(chapter: number): string {
+  if (chapter >= 5) return "THE HEART'S CHAMBER: ONE FLOOR, AND THE HEART AT THE BOTTOM OF IT";
+  if (chapter === 4) return "THE CASTLE: EVERY BOSS IS ARMED, AND THE HEART WAITS BELOW IT";
+  if (chapter === 2) return "THE HEART HAS SENT A SHARD OF ITSELF TO MEET YOU";
+  const left = 4 - chapter;
+  return left + (left === 1 ? " LAND" : " LANDS") + " AFTER THIS ONE, THEN THE CASTLE AND THE HEART";
 }

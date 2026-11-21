@@ -5,6 +5,9 @@ import { VisualEffectsSettings } from "./visualEffects";
 import { SoundTestButton } from "./soundTest";
 import { AccountPanel } from "./account";
 import { BestiarySprite } from "./monsters/BestiarySprite";
+import { RoadPicker, TrophyShelf, type RoadChoice } from "./campaign/CampaignPicker";
+import type { CampaignRecords } from "./campaign/campaigns";
+import { useCampaigns } from "./campaign/useCampaigns";
 import type { ApiLinkedAccount } from "./api";
 import { SoundButton } from "./audio";
 import { cooldownLabel, loadoutProblem, MAX_LOADOUT, skillsForClass, usableLoadout, type Skill } from "./combatAbilities";
@@ -17,7 +20,7 @@ export type LobbyClass = { id: string; archetypeId: string; name: string; descri
 export type LobbyNamedRule = { id: string; name: string; description: string };
 export type LobbyProfileReward = { id: string; name: string; description: string; category: string; profileLevel?: number; classId?: string; classMasteryLevel?: number };
 export type LobbyBestiaryEntry = { enemyKey: string; name: string; themeId?: string; sprite?: string; lore?: string; loreStage: number; kills: number; eliteKills: number };
-export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; bestiary?: Record<string, LobbyBestiaryEntry>; accounts?: ApiLinkedAccount[] };
+export type LobbyProfile = { displayName: string; adventurerXp: number; adventurerLevel: number; classMastery: Record<string, { experience: number; level: number }>; unlockedCosmetics: string[]; bestiary?: Record<string, LobbyBestiaryEntry>; campaigns?: CampaignRecords; accounts?: ApiLinkedAccount[] };
 /** A class look: armour tier (1-6) and colour variant. Both unlock with class mastery; the server validates them. */
 export type HeroSkin = { tier: number; variant: string };
 export type LobbySkinTier = { tier: number; rank: string; name: string; description: string; masteryLevel: number };
@@ -271,6 +274,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
 }
 
 function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: LobbyProfile; classes: Pick<LobbyClass, "id" | "name">[]; rewards: LobbyProfileReward[]; onSaveName?: (name: string) => Promise<void> }) {
+  const campaigns = useCampaigns();
   const [name, setName] = useState(profile.displayName || "Adventurer");
   const [tab, setTab] = useState<"overview" | "bestiary">("overview");
   const [saving, setSaving] = useState(false);
@@ -299,6 +303,7 @@ function ProfileSummary({ profile, classes, rewards, onSaveName }: { profile: Lo
       <span className="px-profile-xp">{rankXP}/100 XP TO NEXT RANK</span>
     </div>
     <div className="px-profile-track" role="progressbar" aria-label="Adventurer rank progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={rankXP}><i style={{ width: rankXP + "%" }} /></div>
+    <TrophyShelf campaigns={campaigns} records={profile.campaigns} />
     <div className="px-mastery-heading"><strong>CLASS MASTERY</strong><span>Progress follows the class you play</span></div>
     <div className="px-mastery-grid">
       {classes.map(item => {
@@ -392,7 +397,8 @@ function SkinPicker({ classId, className, accent, tiers, variants, mastery, show
   </section>;
 }
 
-export function PartyLobby({ room, catalog, playerId, isHost, busy, error, themes = [], themeId = "random", onTheme, profile, audioControls, onSaveName, onSelectClass, onSaveLoadout, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; themeId?: string; onTheme?: (themeId: string) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin, skillIds?: string[]) => void; onSaveLoadout: (skillIds: string[]) => Promise<boolean>; onStart: () => void; onLeave: () => void }) {
+export function PartyLobby({ room, catalog, playerId, isHost, busy, error, themes = [], road = { mode: "endless", themeId: "random" }, onRoad, profile, audioControls, onSaveName, onSelectClass, onSaveLoadout, onStart, onLeave }: { themes?: { id: string; name: string; tagline: string }[]; road?: RoadChoice; onRoad?: (road: RoadChoice) => void; room: LobbyRoom; catalog: LobbyCatalog | null; playerId: string; isHost: boolean; busy: boolean; error: string; profile?: LobbyProfile | null; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void>; onSelectClass: (classId: string, skin?: HeroSkin, skillIds?: string[]) => void; onSaveLoadout: (skillIds: string[]) => Promise<boolean>; onStart: () => void; onLeave: () => void }) {
+  const campaigns = useCampaigns();
   const [previewClassId, setPreviewClassId] = useState("");
   const [loadoutOpen, setLoadoutOpen] = useState(false);
   const [bars, setBars] = useState<Record<string, string[]>>(savedBars);
@@ -489,6 +495,9 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, theme
         </ul>
       </div>
 
+      {isHost ? <div className="px-panel px-road"><p className="px-eyebrow">THE ROAD AHEAD</p><h2>{road.mode === "campaign" ? "Choose a campaign" : "The endless expedition"}</h2>
+        <RoadPicker campaigns={campaigns} records={profile?.campaigns} themes={themes} choice={road} busy={busy} onChoose={choice => onRoad?.(choice)} /></div> : null}
+
       <div className="px-panel px-classes">
         <div className="px-classes-head"><p className="px-eyebrow">CREATE YOUR ADVENTURER</p><h2>Choose your path</h2><p className="px-copy">Every class can survive the catacombs alone. Pick the way of fighting that feels like yours.</p></div>
         {!catalog ? <p className="px-copy" role="status">Preparing the class roster…</p> : !focusedClass ? <p className="px-copy">No classes are available yet.</p> : <div className="px-classes-body">
@@ -547,18 +556,11 @@ export function PartyLobby({ room, catalog, playerId, isHost, busy, error, theme
 
       <div className="px-panel px-depart">
         <p className="px-copy" role="status">{isHost
-          ? undecided > 0 ? (undecided === 1 ? "One adventurer is" : undecided + " adventurers are") + " still choosing a class." : "Everyone is ready. Choose a dungeon and begin."
+          ? undecided > 0 ? (undecided === 1 ? "One adventurer is" : undecided + " adventurers are") + " still choosing a class." : "Everyone is ready. Choose a campaign or the endless road, and begin."
           : selectedClassId ? "You are ready. Waiting for the host to begin." : "Choose your class. The host can begin once everyone is ready."}</p>
-        {isHost && themes.length > 0 ? <label className="px-dungeon"><span className="px-label">DUNGEON</span>
-          <select value={themeId} onChange={event => onTheme?.(event.target.value)} disabled={busy}>
-            <option value="random">Surprise us (random dungeon)</option>
-            {themes.map(theme => <option key={theme.id} value={theme.id}>{theme.name}</option>)}
-          </select>
-          <small>{themes.find(theme => theme.id === themeId)?.tagline ?? "Four to six floors, a camp between each, and a boss at the bottom."}</small>
-        </label> : null}
         <div className="px-depart-actions">
           <button className="px-button px-button-danger" onClick={onLeave} disabled={busy}>LEAVE PARTY</button>
-          {isHost ? <button className="px-button px-button-primary px-button-large" onClick={onStart} disabled={busy || undecided > 0}>{busy ? "PLEASE WAIT…" : "BEGIN THE ADVENTURE"}</button> : null}
+          {isHost ? <button className="px-button px-button-primary px-button-large" onClick={onStart} disabled={busy || undecided > 0}>{busy ? "PLEASE WAIT…" : road.mode === "campaign" ? "BEGIN THE CAMPAIGN" : "BEGIN THE ADVENTURE"}</button> : null}
         </div>
         {error ? <p className="px-error" role="alert">{error}</p> : null}
       </div>

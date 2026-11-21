@@ -34,6 +34,8 @@ type Handler struct {
 	watchers roomWatchers
 	// heartBanked remembers the Heart of the Beast strikes already banked (see beast_heart.go).
 	heartBanked bankedHeartStrikes
+	// campaignsBanked remembers the won campaigns already credited (see campaigns.go).
+	campaignsBanked bankedCampaigns
 }
 
 // bankedRunXP is a process-local record of run XP already banked. It is only an optimisation: AwardRunXP is
@@ -121,6 +123,7 @@ func NewHandlerWithOptions(rooms store.Repository, options Options) http.Handler
 	mux.HandleFunc("POST /auth/discord/resolve", h.resolveDiscordSignIn)
 	mux.HandleFunc("GET /themes", playableThemes)
 	mux.HandleFunc("GET /beast", h.getBeastHeart)
+	mux.HandleFunc("GET /campaigns", listCampaigns)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
@@ -361,6 +364,9 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 	}
 	// The shared heart is banked at the same moments as run progress: after every saved transition.
 	if err := h.awardHeartStrikes(ctx, room); err != nil {
+		return err
+	}
+	if err := h.awardCampaignTrophies(ctx, room); err != nil {
 		return err
 	}
 	profiles, ok := h.rooms.(store.ProfileRepository)
@@ -900,9 +906,11 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "only the room host can start the run")
 		return
 	}
-	// The body is optional: an empty body starts the default theme, and "random" lets the run seed choose.
+	// The body is optional: an empty body starts the default theme, and "random" lets the run seed choose. A
+	// campaignId starts that campaign instead (ADR 0041), if the leader has unlocked it.
 	var request struct {
-		ThemeID string `json:"themeId"`
+		ThemeID    string `json:"themeId"`
+		CampaignID string `json:"campaignId"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil && !errors.Is(err, io.EOF) {
 		writeError(w, http.StatusBadRequest, "invalid start request")
@@ -914,8 +922,20 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not start run")
 		return
 	}
-	if err := game.StartMultiLevelRunForTheme(room, runID, request.ThemeID, h.now().UTC()); err != nil {
-		if errors.Is(err, game.ErrUnknownDungeonTheme) || errors.Is(err, game.ErrThemeNotPlayable) {
+	start := func() error { return game.StartMultiLevelRunForTheme(room, runID, request.ThemeID, h.now().UTC()) }
+	if request.CampaignID != "" {
+		if _, known := game.CampaignByID(request.CampaignID); !known {
+			writeError(w, http.StatusBadRequest, "unknown campaign")
+			return
+		}
+		if !h.campaignUnlockedForLeader(r.Context(), room, request.CampaignID) {
+			writeError(w, http.StatusForbidden, game.ErrCampaignLocked.Error())
+			return
+		}
+		start = func() error { return game.StartCampaignRun(room, runID, request.CampaignID, h.now().UTC()) }
+	}
+	if err := start(); err != nil {
+		if errors.Is(err, game.ErrUnknownDungeonTheme) || errors.Is(err, game.ErrThemeNotPlayable) || errors.Is(err, game.ErrUnknownCampaign) {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}

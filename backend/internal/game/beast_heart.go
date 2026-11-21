@@ -24,6 +24,9 @@ const (
 	// HeartMonsterID and HeartEncounterID are the heart's catalog entries.
 	HeartMonsterID   = "heart-of-the-beast"
 	HeartEncounterID = "beast-heart"
+	// LesserHeartMonsterID and LesserHeartEncounterID are the heartshard, the mid-campaign heart (campaigns.go).
+	LesserHeartMonsterID   = "heartshard"
+	LesserHeartEncounterID = "beast-heartshard"
 	// HeartThemeID is the heart's own art theme. It is not a dungeon theme; the heart appears in every one.
 	HeartThemeID = "beast"
 	// HeartChanceDenominator: the heart takes a dungeon boss's place one time in this many.
@@ -39,13 +42,23 @@ const (
 // to survive as one; its mechanics (heartFinalBoss) are what make it a fight of its own.
 func heartMonsterContent() ([]AbilityDefinition, []MonsterDefinition) {
 	moves, ids := roleMoves(HeartMonsterID, "boss-drain", "Arterial lash", "Heartquake", 0)
-	return moves, []MonsterDefinition{defineMonster(art.BeastHeartOfTheBeast, MonsterDefinition{
-		ID: HeartMonsterID, Name: "The Heart of the Beast", Role: MonsterRoleBoss, BehaviorID: HeartMonsterID, BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: ids,
-	})}
+	// The heartshard is the mid-campaign heart (campaigns.go): a torn-off piece of the real one, smaller and weaker.
+	shardMoves, shardIDs := roleMoves(LesserHeartMonsterID, "boss-drain", "Arterial lash", "Heartquake", -1)
+	return append(moves, shardMoves...), []MonsterDefinition{
+		defineMonster(art.BeastHeartOfTheBeast, MonsterDefinition{
+			ID: HeartMonsterID, Name: "The Heart of the Beast", Role: MonsterRoleBoss, BehaviorID: HeartMonsterID, BaseHealth: 30, HealthPerDepth: 4, AbilityIDs: ids,
+		}),
+		defineMonster(art.BeastHeartOfTheBeast, MonsterDefinition{
+			ID: LesserHeartMonsterID, Name: "The Heartshard", Role: MonsterRoleBoss, BehaviorID: HeartMonsterID, BaseHealth: 24, HealthPerDepth: 3, AbilityIDs: shardIDs,
+		}),
+	}
 }
 
 func heartEncounters() []EncounterDefinition {
-	return []EncounterDefinition{{ID: HeartEncounterID, ThemeID: HeartThemeID, Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: HeartMonsterID, BudgetCost: 8}}}}
+	return []EncounterDefinition{
+		{ID: HeartEncounterID, ThemeID: HeartThemeID, Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: HeartMonsterID, BudgetCost: 8}}},
+		{ID: LesserHeartEncounterID, ThemeID: HeartThemeID, Budget: 8, Enemies: []EncounterMonsterDefinition{{ID: "boss", MonsterID: LesserHeartMonsterID, BudgetCost: 8}}},
+	}
 }
 
 // heartFinalBoss is the heart as a dungeon boss: it scars over (a barrier against basic attacks) and, at low health,
@@ -73,6 +86,10 @@ var heartCastleBoss = func() FinalBossTemplate {
 // summonHeart decides whether the dungeon boss the party is about to meet is the heart. A Beast Lure always summons
 // it (and is spent); otherwise each dungeon has a fixed, seeded one-in-HeartChanceDenominator chance.
 func summonHeart(run *Run) bool {
+	if run.CampaignID != "" {
+		// A campaign's hearts are part of its story (campaigns.go): they never turn up by chance.
+		return false
+	}
 	if run.HeartLured {
 		run.HeartLured = false
 		return true
@@ -117,7 +134,8 @@ func heartIndex(encounter *Encounter) int {
 		return -1
 	}
 	for i := range encounter.Enemies {
-		if encounter.Enemies[i].DefinitionID == HeartMonsterID {
+		// The heartshard is a piece of the same heart: its wounds count toward the shared pool too.
+		if id := encounter.Enemies[i].DefinitionID; id == HeartMonsterID || id == LesserHeartMonsterID {
 			return i
 		}
 	}

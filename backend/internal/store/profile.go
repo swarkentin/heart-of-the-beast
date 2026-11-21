@@ -25,6 +25,8 @@ type Profile struct {
 	AdventurerLevel   int                      `json:"adventurerLevel"`
 	ClassMastery      map[string]ClassMastery  `json:"classMastery"`
 	UnlockedCosmetics []string                 `json:"unlockedCosmetics"`
+	// Campaigns are the campaign trophies the profile has won (ADR 0041), by campaign ID.
+	Campaigns map[string]CampaignRecord `json:"campaigns"`
 	// Accounts is filled in by the HTTP layer; repositories leave it empty.
 	Accounts  []LinkedAccount `json:"accounts"`
 	CreatedAt time.Time       `json:"createdAt"`
@@ -52,7 +54,15 @@ func cloneProfile(profile *Profile) (*Profile, error) {
 	if copy.Accounts == nil {
 		copy.Accounts = []LinkedAccount{}
 	}
+	if copy.Campaigns == nil {
+		copy.Campaigns = map[string]CampaignRecord{}
+	}
 	return &copy, nil
+}
+
+// CampaignCompleted reports whether the profile has won a campaign at least once.
+func (profile *Profile) CampaignCompleted(campaignID string) bool {
+	return profile != nil && profile.Campaigns[campaignID].Completions > 0
 }
 
 // ProfileRepository is separate from room membership: a guest can retain the

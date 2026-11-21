@@ -90,6 +90,8 @@ func armDungeonBoss(encounter *Encounter, final FinalBossTemplate) {
 		}
 		enemy.Mechanics = append([]string{BossMechanicEnrage}, final.Mechanics...)
 		enemy.BarrierLabel, enemy.CataclysmLabel = final.BarrierLabel, final.CataclysmLabel
+		enemy.HeartTier = final.HeartTier
+		enemy.DamageBonus += final.DamageBonus
 		if enemy.hasMechanic(BossMechanicSummon) {
 			enemy.SummonMonsterID = final.SummonMonsterID
 			enemy.SummonsLeft = 1

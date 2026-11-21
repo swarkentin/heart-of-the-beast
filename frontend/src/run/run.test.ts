@@ -1,13 +1,15 @@
 // Unit tests for the pure parts of the run screen. Run with: npm run test:ui (node --test, no browser needed).
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { linesFor, relabel, toneOf } from "./logLines.ts";
 import { buildParty, partyLabels, seatParty } from "./party.ts";
 import { traitTags } from "./traits.ts";
 import { progressReport } from "./progress.ts";
-import { expeditionMap } from "./expeditionRoad.ts";
+import { campaignMap, campaignRoadLine, expeditionMap } from "./expeditionRoad.ts";
 import { interruptTarget } from "./interrupts.ts";
 import { herbPromptLevel } from "./herbPrompt.ts";
+import { STORY_SCENES } from "./storyScenes.ts";
 import type { ApiRoom, ApiRun } from "../api";
 
 const run = (over: Partial<ApiRun> = {}): ApiRun => ({
@@ -193,4 +195,27 @@ test("healing herb prompt escalates as health drops when herbs remain", () => {
   assert.equal(herbPromptLevel(16, 54, 0), "none", "no herbs means no prompt");
   assert.equal(herbPromptLevel(0, 54, 2), "none", "a fallen player cannot use a herb");
   assert.equal(herbPromptLevel(10, 0, 2), "none", "invalid health pools stay quiet");
+});
+
+test("a campaign's map names its whole road and ends at the heart (ADR 0041)", () => {
+  const road = { themes: ["catacombs", "sunken", "ghosttown"], capstone: "eldritch" };
+  const inChapterTwo = campaignMap({ dungeon: 2 }, road);
+  assert.deepEqual(inChapterTwo.map(stop => [stop.themeId ?? "heart", stop.state]), [["catacombs", "cleared"], ["sunken", "current"], ["ghosttown", "ahead"], ["eldritch", "ahead"], ["heart", "ahead"]]);
+  assert.equal(inChapterTwo[3].capstone, true);
+  assert.equal(inChapterTwo[4].heart, true);
+  const atCastleCamp = campaignMap({ dungeon: 4, camp: { road: { themeId: "eldritch", name: "The Heart's Chamber", tagline: "", floors: 1, modifiers: [], heart: true } } as never }, road);
+  assert.deepEqual(atCastleCamp.slice(3).map(stop => stop.state), ["cleared", "next"]);
+  assert.match(campaignRoadLine(1), /3 LANDS/);
+  assert.match(campaignRoadLine(5), /HEART'S CHAMBER/);
+});
+
+test("the server's story scenes and the client's agree, and every campaign panel names one (ADR 0041)", () => {
+  const source = readFileSync(new URL("../../../backend/internal/game/campaigns.go", import.meta.url), "utf8");
+  const listed = source.slice(source.indexOf("var storyArt = map[string]bool{"));
+  const server = [...listed.slice(0, listed.indexOf("\n}")).matchAll(/"([a-z-]+)": true/g)].map(match => match[1]).sort();
+  assert.deepEqual(server, [...STORY_SCENES].sort());
+  // Story panels sit three tabs deep, one per line; theme lists are inline, so they never match.
+  const used = new Set([...source.matchAll(/^\t\t\t\{"([a-z-]+)", "/gm)].map(match => match[1]));
+  assert.ok(used.size > 10, "the catalog's panels were found");
+  for (const scene of used) assert.ok((STORY_SCENES as readonly string[]).includes(scene), scene + " has no art");
 });

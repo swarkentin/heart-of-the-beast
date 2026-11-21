@@ -5,6 +5,9 @@ import { AudioControls, SoundContext, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
 import { RunScreen } from "./run/RunScreen";
+import type { RoadChoice } from "./campaign/CampaignPicker";
+import { nextCampaign } from "./campaign/campaigns";
+import { useCampaigns } from "./campaign/useCampaigns";
 
 // Session, polling and commands. The screens themselves live in lobby.tsx and run/.
 
@@ -44,9 +47,13 @@ export default function App() {
   const [joinCode, setJoinCode] = useState("");
   const [classCatalog, setClassCatalog] = useState<LobbyCatalog | null>(null);
   const [themes, setThemes] = useState<ApiTheme[]>([]);
-  const [chosenTheme, setChosenTheme] = useState("random");
+  const [chosenRoad, setChosenRoad] = useState<RoadChoice | null>(null);
+  const campaigns = useCampaigns();
   useEffect(() => { void apiRequest<{ themes: ApiTheme[] }>("/themes").then(result => setThemes(result.themes ?? [])).catch(() => undefined); }, []);
   const [profile, setProfile] = useState<ApiProfile | null>(null);
+  // The lobby offers the next campaign the player has not won (ADR 0041) until the host picks something else.
+  const suggested = nextCampaign(campaigns, profile?.campaigns);
+  const road: RoadChoice = chosenRoad ?? (suggested ? { mode: "campaign", campaignId: suggested.id } : { mode: "endless", themeId: "random" });
   const [discordEnabled, setDiscordEnabled] = useState(false);
   const [accountNotice, setAccountNotice] = useState(DISCORD_CALLBACK && "error" in DISCORD_CALLBACK ? DISCORD_CALLBACK.error : "");
   const [signInConflict, setSignInConflict] = useState<SignInConflict | null>(null);
@@ -287,12 +294,13 @@ export default function App() {
     if (!session || !isHost || busy) return;
     setBusy(true); setError("");
     try {
-      const themeId = new URLSearchParams(window.location.search).get("theme") || chosenTheme;
-      const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, {
-        method: "POST",
-        body: themeId ? JSON.stringify({ themeId }) : undefined,
-      });
+      // ?theme= still forces an endless run in one theme, for testing a theme directly.
+      const forced = new URLSearchParams(window.location.search).get("theme");
+      const body = forced ? { themeId: forced } : road.mode === "campaign" ? { campaignId: road.campaignId } : { themeId: road.themeId };
+      const started = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/start", session.playerToken, { method: "POST", body: JSON.stringify(body) });
       setSnapshot(started);
+      // A campaign picked by hand is forgotten once it starts, so the lobby afterwards suggests the next one to play.
+      if (road.mode === "campaign") setChosenRoad(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the run");
     } finally { setBusy(false); }
@@ -350,7 +358,7 @@ export default function App() {
   }
 
   if (!run || !serverRoom) {
-    return withSound(<PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} themeId={chosenTheme} onTheme={setChosenTheme} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />);
+    return withSound(<PartyLobby room={snapshot} catalog={classCatalog} playerId={session?.playerId || ""} isHost={isHost} busy={busy} error={error} themes={themes} road={road} onRoad={setChosenRoad} profile={profile} audioControls={audioControls} onSaveName={saveProfileName} onSelectClass={(classId, skin, skillIds) => void selectClass(classId, skin, skillIds)} onSaveLoadout={saveLoadout} onStart={() => void startRun()} onLeave={() => void leaveRoom()} />);
   }
 
   return withSound(<RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName} onRefreshProfile={refreshProgressProfile}

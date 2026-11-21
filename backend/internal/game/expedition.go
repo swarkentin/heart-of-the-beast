@@ -52,6 +52,11 @@ func StartMultiLevelRunForTheme(room *Room, runID, themeID string, now time.Time
 
 // startExpeditionWithSeed is StartMultiLevelRunForTheme with an explicit generation seed, for simulations.
 func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now time.Time) error {
+	return startRunOnRoad(room, runID, themeID, "", seed, now)
+}
+
+// startRunOnRoad starts an endless expedition, or with a campaignID the first dungeon of that campaign's road.
+func startRunOnRoad(room *Room, runID, themeID, campaignID string, seed uint64, now time.Time) error {
 	if room.Run != nil {
 		return ErrRunAlreadyStarted
 	}
@@ -70,10 +75,15 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 		return fmt.Errorf("%w: %q", ErrThemeNotPlayable, themeID)
 	}
 	maxDepth := dungeonFloors(seed, 1, themeID)
-	entryID, rooms := generateExpeditionFloor(themeID, seed, InitialDungeonDepth, maxDepth, len(room.PlayerIDs), nil, capstoneExtraDepth(themeID))
+	extra := capstoneExtraDepth(themeID)
+	if campaign, ok := CampaignByID(campaignID); ok {
+		extra += campaignTierDepth(campaign)
+	}
+	entryID, rooms := generateExpeditionFloor(themeID, seed, InitialDungeonDepth, maxDepth, len(room.PlayerIDs), nil, extra)
 	if err := beginRun(room, runID, now, themeID, rooms, entryID); err != nil {
 		return err
 	}
+	room.Run.CampaignID = campaignID
 	room.Run.Generator = ExpeditionGenerator
 	room.Run.DungeonThemes = []string{themeID}
 	room.Run.Seed = seed
@@ -101,7 +111,7 @@ func dungeonNumber(run *Run) int {
 // dungeonExtraDepth is how much deeper than its floor the current dungeon's enemies fight: two floors per earlier
 // dungeon, and more again inside a capstone castle.
 func dungeonExtraDepth(run *Run) int {
-	return (dungeonNumber(run)-1)*DungeonExtraDepthStep + capstoneExtraDepth(run.Theme())
+	return (dungeonNumber(run)-1)*DungeonExtraDepthStep + capstoneExtraDepth(run.Theme()) + campaignExtraDepth(run)
 }
 
 func capstoneExtraDepth(themeID string) int {
@@ -154,6 +164,18 @@ func finishExpeditionFloor(room *Room, boss *DungeonRoom, round int, now time.Ti
 	if run.Depth >= run.MaxDepth {
 		run.DungeonsCleared++
 		addCombatEvent(run, round, "dungeon_cleared", clearedText(run.Theme()))
+		if campaign, ok := run.campaign(); ok {
+			switch dungeonNumber(run) {
+			case CampaignChamberDungeon:
+				completeCampaign(room, campaign, round, now)
+				return
+			case CampaignCastleDungeon:
+				openChamberGate(room, campaign, round, now)
+				return
+			case CampaignShardDungeon:
+				run.CampaignInterlude = true
+			}
+		}
 	}
 	if campAfterFloor(run.Depth, run.MaxDepth) {
 		openCamp(room, round, now)
@@ -195,7 +217,10 @@ func descendExpedition(room *Room, now time.Time) {
 		run.DungeonThemes = append(run.DungeonThemes, camp.NextThemeID)
 		run.DungeonModifiers = camp.NextDungeonModifiers
 		run.Depth = 0
-		run.MaxDepth = dungeonFloors(run.Seed, run.Dungeon, run.ThemeID)
+		run.MaxDepth = camp.NextMaxDepth
+		if run.MaxDepth <= 0 {
+			run.MaxDepth = dungeonFloors(run.Seed, run.Dungeon, run.ThemeID)
+		}
 		run.Rooms = make(map[string]*DungeonRoom)
 		modifiers = camp.NextModifiers
 	case camp != nil:
@@ -210,8 +235,15 @@ func descendExpedition(room *Room, now time.Time) {
 		run.MusicIntensity = MaximumDungeonDepth
 	}
 	run.FloorModifiers = modifiers
-	heart := run.Depth >= run.MaxDepth && summonHeart(run)
-	entryID, rooms := generateFloor(heart, run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
+	var override *FinalBossTemplate
+	if run.Depth >= run.MaxDepth {
+		if run.CampaignID != "" {
+			override = campaignFinalBoss(run)
+		} else if summonHeart(run) {
+			override = heartBossFor(run.Theme())
+		}
+	}
+	entryID, rooms := generateFloor(override, run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
 	if tag := dungeonNumber(run); tag > 1 {
 		entryID = tagDungeonRooms(rooms, entryID, fmt.Sprintf("x%d", tag))
 	}
@@ -280,6 +312,8 @@ type DungeonChoice struct {
 	Modifiers []ActiveFloorModifier `json:"modifiers"`
 	// Capstone marks a castle: harder, every boss armed, and a boon for every boss beaten.
 	Capstone bool `json:"capstone,omitempty"`
+	// Heart marks a campaign's last road, to the heart's chamber (campaigns.go).
+	Heart bool `json:"heart,omitempty"`
 }
 
 // DungeonChoiceCount is how many dungeons the crossroads offers.
@@ -288,7 +322,6 @@ const DungeonChoiceCount = 2
 // rollDungeonChoices picks the themes offered after a dungeon, never the one just cleared, each with its own
 // modifiers: always one perk, and one debuff for the second dungeon of an expedition, two for every later one.
 func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []DungeonChoice {
-	rng := rand.New(rand.NewSource(int64(mixSeed(seed, uint64(nextDungeon), 0xc4055))))
 	var themes []DungeonThemeDefinition
 	pool := PlayableDungeonThemes()
 	if IsCapstoneDungeon(nextDungeon) {
@@ -300,6 +333,12 @@ func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []D
 			themes = append(themes, theme)
 		}
 	}
+	return rollChoicesFrom(seed, themes, nextDungeon, DungeonChoiceCount)
+}
+
+// rollChoicesFrom offers count of the given themes, in a seeded order, each with its own modifiers.
+func rollChoicesFrom(seed uint64, themes []DungeonThemeDefinition, nextDungeon, count int) []DungeonChoice {
+	rng := rand.New(rand.NewSource(int64(mixSeed(seed, uint64(nextDungeon), 0xc4055))))
 	rng.Shuffle(len(themes), func(i, j int) { themes[i], themes[j] = themes[j], themes[i] })
 	var debuffPool, perkPool []FloorModifierDefinition
 	for _, definition := range defaultFloorModifierCatalog.Definitions {
@@ -313,8 +352,8 @@ func rollDungeonChoices(seed uint64, currentThemeID string, nextDungeon int) []D
 	if debuffs > 2 {
 		debuffs = 2
 	}
-	choices := make([]DungeonChoice, 0, DungeonChoiceCount)
-	for _, theme := range themes[:DungeonChoiceCount] {
+	choices := make([]DungeonChoice, 0, count)
+	for _, theme := range themes[:count] {
 		rng.Shuffle(len(debuffPool), func(i, j int) { debuffPool[i], debuffPool[j] = debuffPool[j], debuffPool[i] })
 		rng.Shuffle(len(perkPool), func(i, j int) { perkPool[i], perkPool[j] = perkPool[j], perkPool[i] })
 		var modifiers, perk []ActiveFloorModifier
@@ -415,6 +454,8 @@ type RunProgress struct {
 	Floors          int   `json:"floors"`
 	Dungeons        int   `json:"dungeons"`
 	CompletionBonus int   `json:"completionBonus,omitempty"`
+	// CampaignBonus is the milestone for winning a campaign (ADR 0041).
+	CampaignBonus int `json:"campaignBonus,omitempty"`
 }
 
 // RunProgressXP is the persistent experience a finished run is worth to each adventurer who stayed. It is zero
@@ -460,9 +501,12 @@ func runProgressSoFar(run *Run) *RunProgress {
 		return nil
 	}
 	progress := &RunProgress{Encounters: encounters, Floors: run.FloorsCleared, Dungeons: run.DungeonsCleared}
-	if run.Phase == PhaseCompleted {
+	if run.Phase == PhaseCompleted && !run.CampaignWon {
 		progress.CompletionBonus = RunXPCompletionBonus
 	}
-	progress.XP = int64(encounters*RunXPPerEncounter + run.FloorsCleared*RunXPPerFloor + run.DungeonsCleared*RunXPPerDungeon + progress.CompletionBonus)
+	if run.CampaignWon {
+		progress.CampaignBonus = RunXPPerCampaign
+	}
+	progress.XP = int64(encounters*RunXPPerEncounter + run.FloorsCleared*RunXPPerFloor + run.DungeonsCleared*RunXPPerDungeon + progress.CompletionBonus + progress.CampaignBonus)
 	return progress
 }

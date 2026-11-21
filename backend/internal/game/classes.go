@@ -270,6 +270,9 @@ func ValidateCatalog() error {
 	if err := validateThemeBriefings(); err != nil {
 		return err
 	}
+	if err := validateCampaigns(); err != nil {
+		return err
+	}
 	return ValidateClassPassiveEffectCatalog(classPassives, defaultClassPassiveEffectCatalog)
 }
 

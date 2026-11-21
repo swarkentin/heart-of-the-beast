@@ -50,7 +50,7 @@ export function DungeonIntro({ briefing, run, runId, active, onOpenChange }: { b
     {/* The rift-gate the party steps through into a new land (ADR 0039): a stepped ring that opens with the iris. */}
     <div className="rn-intro-portal" aria-hidden="true" />
     <div className="rn-intro-title">
-      <p className="px-eyebrow">DUNGEON {briefing.dungeon} · {briefing.floors} FLOORS</p>
+      <p className="px-eyebrow">{briefing.campaign ? briefing.campaign.toUpperCase() + " · CHAPTER " + briefing.chapter + " OF " + briefing.chapters : "DUNGEON " + briefing.dungeon} · {briefing.floors} {briefing.floors === 1 ? "FLOOR" : "FLOORS"}</p>
       <h2 id="intro-title">{briefing.name}</h2>
       <p>{briefing.tagline}</p>
     </div>

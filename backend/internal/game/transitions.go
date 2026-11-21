@@ -211,7 +211,7 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 			AdvanceCamp(room, now)
 		}
 		if run.Phase == PhaseCombat {
-			addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
+			addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “idkfa? Really? ... Fine. Go on, then.”")
 			return nil
 		}
 		return ErrInvalidPhase
@@ -253,7 +253,7 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 		for _, exit := range guardian.Exits {
 			if exit.Destination == DescendDestination {
 				descendExpedition(room, now)
-				addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
+				addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “idkfa? Really? ... Fine. Go on, then.”")
 				return nil
 			}
 		}
@@ -270,6 +270,6 @@ func applyIDKFA(room *Room, actorID string, now time.Time) error {
 		run.Camp.Deadline = &deadline
 		AdvanceCamp(room, now)
 	}
-	addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “IDKFA? Really? ... Fine. Go on, then.”")
+	addCombatEvent(run, 0, "cheat_idkfa", "A weary voice echoes through the dungeon: “idkfa? Really? ... Fine. Go on, then.”")
 	return nil
 }

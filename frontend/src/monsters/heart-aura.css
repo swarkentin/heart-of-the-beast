@@ -1,0 +1,31 @@
+/* ---------- a campaign heart's aura (HeartAura.tsx, ADR 0041) ---------- */
+/* The beat quickens with every tier: one beat per --beat. */
+.ha { --beat: 1.2s; }
+.ha-tier-2 { --beat: 1.05s; }
+.ha-tier-3 { --beat: .9s; }
+.ha-tier-4 { --beat: .75s; }
+.ha-shard { --beat: 1.4s; }
+.ha-glow { transform-box: fill-box; transform-origin: center; animation: ha-glow var(--beat) steps(3) infinite alternate; }
+@keyframes ha-glow { from { transform: scale(.92); } to { transform: scale(1.12); opacity: .8; } }
+.ha-ring { animation: ha-spin var(--spin) steps(48) infinite; }
+.ha-ring-back { animation-direction: reverse; }
+@keyframes ha-spin { to { transform: rotate(360deg); } }
+.ha-shock { transform-box: fill-box; transform-origin: center; animation: ha-shock var(--beat) steps(8) infinite; }
+.ha-shock-late { animation-delay: calc(var(--beat) / 2); }
+.ha-shock-cracked { animation-name: ha-shock-small; }
+@keyframes ha-shock { from { transform: scale(.7); opacity: .9; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes ha-shock-small { from { transform: scale(.8); opacity: .7; } to { transform: scale(2); opacity: 0; } }
+.ha-ember { opacity: 0; animation: ha-ember 2.4s steps(12) infinite; animation-delay: var(--d); }
+@keyframes ha-ember { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-12px, -260px); } }
+.ha-veins path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ha-veins 1.6s steps(8) both, ha-vein-pulse var(--beat) steps(2) infinite 1.6s; animation-delay: calc(var(--i) * 200ms); }
+@keyframes ha-veins { to { stroke-dashoffset: 0; } }
+@keyframes ha-vein-pulse { 0%, 100% { stroke-dashoffset: 0; stroke: #a01530; } 50% { stroke-dashoffset: 0; stroke: #ff3a5a; } }
+/* The crown is always there and flickers, a bolt at a time. */
+.ha-crown path { filter: drop-shadow(0 0 6px #ff2a4a); animation: ha-arc 1.1s steps(1, end) infinite; animation-delay: calc(var(--i) * 140ms); }
+@keyframes ha-arc { 0%, 100% { opacity: 1; } 40% { opacity: .35; } 55% { opacity: 1; stroke: #ffe0e4; } 70% { opacity: .7; stroke: #ff3a5a; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ha-glow, .ha-ring, .ha-shock, .ha-ember, .ha-veins path, .ha-crown path { animation: none !important; }
+  .ha-veins path { stroke-dashoffset: 0; }
+  .ha-shock, .ha-ember { opacity: 0; }
+}

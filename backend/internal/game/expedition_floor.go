@@ -65,6 +65,12 @@ type FinalBossTemplate struct {
 	AnchorMonsterID string
 	RebirthLabel    string
 	LegionMonsterID string
+	// ExtraHealthPercent is health on top of FinalBossHealthPercent, and HeartTier marks a campaign's final heart
+	// (campaigns.go).
+	ExtraHealthPercent int
+	HeartTier          int
+	// DamageBonus is added to every hit the boss lands, from its first turn.
+	DamageBonus int
 }
 
 const (
@@ -262,12 +268,21 @@ var exitHints = map[string]string{
 // extraDepth, if given, is added to the depth enemies are scaled for: later dungeons of an expedition are harder
 // than their floor number alone says.
 func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
-	return generateFloor(false, themeID, seed, depth, maxDepth, partySize, modifiers, extraDepth...)
+	return generateFloor(nil, themeID, seed, depth, maxDepth, partySize, modifiers, extraDepth...)
 }
 
-// generateFloor generates a floor. On a dungeon's last floor, heart puts the Heart of the Beast in place of the
-// dungeon's boss (ADR 0040), as strong as that boss would be.
-func generateFloor(heart bool, themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
+// heartBossFor is the Heart of the Beast in place of a theme's dungeon boss (ADR 0040).
+func heartBossFor(themeID string) *FinalBossTemplate {
+	boss := heartFinalBoss
+	if IsCapstoneTheme(themeID) {
+		boss = heartCastleBoss
+	}
+	return &boss
+}
+
+// generateFloor generates a floor. On a dungeon's last floor, a non-nil override replaces the dungeon's boss: the
+// Heart of the Beast (ADR 0040), or a campaign's heartshard or final heart (ADR 0041).
+func generateFloor(override *FinalBossTemplate, themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
 	theme, err := defaultExpeditionThemeCatalog.Theme(themeID)
 	if err != nil {
 		panic(err.Error())
@@ -413,11 +428,8 @@ func generateFloor(heart bool, themeID string, seed uint64, depth, maxDepth, par
 	boss := theme.Guardians[(depth-1)%len(theme.Guardians)]
 	hints[bossID] = "boss"
 	finalBoss := theme.Final
-	if heart {
-		finalBoss = heartFinalBoss
-		if IsCapstoneTheme(themeID) {
-			finalBoss = heartCastleBoss
-		}
+	if override != nil {
+		finalBoss = *override
 	}
 	if final {
 		boss = finalBoss.FloorBossTemplate
@@ -425,7 +437,7 @@ func generateFloor(heart bool, themeID string, seed uint64, depth, maxDepth, par
 	}
 	rooms[bossID] = &DungeonRoom{ID: bossID, ThemeID: themeID, Name: boss.RoomName, Floor: floor, RoomType: "boss", Description: boss.Description}
 	if final {
-		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, FinalBossHealthPercent)
+		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, FinalBossHealthPercent+finalBoss.ExtraHealthPercent)
 		armDungeonBoss(rooms[bossID].Encounter, finalBoss)
 	} else {
 		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, 0)

@@ -58,6 +58,8 @@ These are the current priorities, not a promise that each item ships in strict i
    - [x] Per-player and per-party tallies, with adventurer and party high scores on the title screen.
    - [ ] Decide what happens when the heart dies, and whether the pool grows with the player base or resets by season.
    - [ ] Watch real heart-fight results against the simulation; retune the chance, the lure price and the pool size from data.
+   - [x] Campaigns (ADR 0041): four account-bound campaigns of three lands, a castle and the Heart's Chamber; a mid-campaign Heartshard and interlude; a final heart that grows grander and stronger each campaign; one story told across all four (Brother Ossic and the heart), with a prologue, an interlude and an epilogue for each; the party leader's unlocks decide; a trophy per campaign win, and stories replayable from the trophy shelf.
+   - [ ] Watch campaign results, especially solo play at tiers 2–4, and retune the hearts and tier depth from data.
 
 7. **Continue presentation and world-building polish.**
    - [x] Smooth transitions (ADR 0039): rooms dip in, floors descend down a stair over the viewport, new dungeons open through a rift-gate; the server gives each new floor's first round time for it.

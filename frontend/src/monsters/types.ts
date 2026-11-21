@@ -74,6 +74,8 @@ export type StageEnemy = {
   sprite?: string;
   rawIntent?: IntentLike;
   modifier?: "ambush" | "unyielding";
+  /** A campaign's heart (ADR 0041): its tier, or the lesser heartshard. Drawn grander, or smaller. */
+  heart?: { tier: number; lesser: boolean };
 };
 
 /** The two scene compositions. Both draw into a 1100x620 SVG viewBox. */

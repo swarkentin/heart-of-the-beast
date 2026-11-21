@@ -1,0 +1,29 @@
+/* ---------- campaigns (ADR 0041): the lobby's road picker and the trophy shelf ---------- */
+.cp { display: grid; gap: 8px; margin: 6px 0; flex: 1 1 100%; min-width: 0; }
+.cp-modes { display: flex; gap: 10px; flex-wrap: wrap; }
+.cp-list { list-style: none; margin: 0; padding: 6px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.cp-card { width: 100%; height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px; text-align: left; border: 0; background: var(--pit); box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px #3d3658; color: var(--bone); font: inherit; cursor: pointer; }
+.cp-card:hover:not(:disabled), .cp-card:focus-visible { box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--gold); outline: none; }
+.cp-card-on { background: #2a2440; box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--ember); }
+.cp-card-locked { cursor: not-allowed; opacity: .6; }
+.cp-copy { display: grid; gap: 2px; min-width: 0; }
+.cp-copy strong { font: 12px/1.6 var(--display); color: var(--bone); }
+.cp-copy small { color: #cfc6dc; font-size: 18px; line-height: 1.1; }
+.cp-road { color: var(--muted); font-size: 15px; letter-spacing: .06em; line-height: 1.15; }
+.cp-card-won .px-label { color: var(--good); }
+.cp-trophy { flex: none; image-rendering: pixelated; }
+.cp-trophy-won { filter: drop-shadow(0 0 4px #ffd27a88); }
+.cp-shelf { display: grid; gap: 6px; }
+.cp-shelf ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 14px; flex-wrap: wrap; }
+.cp-shelf li { display: grid; justify-items: center; gap: 2px; max-width: 104px; text-align: center; }
+.cp-shelf small { color: var(--muted); font-size: 15px; line-height: 1.1; }
+/* The epilogue's finale: the trophy won and the chapter that comes next. */
+.cp-finale { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.cp-finale .cp-trophy { filter: drop-shadow(0 0 10px #ffd27a); }
+/* Watching a campaign's prologue or epilogue again from the shelf. */
+.cp-watch { display: grid; gap: 4px; justify-items: center; }
+.cp-watch .px-button { font-size: 8px; padding: 4px 6px; }
+/* The developer story preview's gallery of scenes (StoryPreview.tsx). */
+.sp-gallery { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.sp-gallery li { display: grid; gap: 4px; }
+.sp-gallery .rp-art { width: 100%; height: auto; display: block; background: #05030a; box-shadow: 0 0 0 3px var(--edge); }

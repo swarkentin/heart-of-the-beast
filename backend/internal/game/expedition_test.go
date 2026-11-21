@@ -1572,7 +1572,7 @@ func TestIDKFASkipsSoloCampMinigameAndDescends(t *testing.T) {
 	}
 	found := false
 	for _, event := range run.LastCombatEvents {
-		if event.Kind == "cheat_idkfa" && strings.Contains(event.Message, "IDKFA? Really?") {
+		if event.Kind == "cheat_idkfa" && strings.Contains(event.Message, "idkfa? Really?") {
 			found = true
 			break
 		}
