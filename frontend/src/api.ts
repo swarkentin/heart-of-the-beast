@@ -13,7 +13,8 @@ export type ApiStats = { power: number; focus: number; agility: number };
 export type ApiClassCombat = { guardBonus?: number; ward?: number; wardReflect?: number; resolveReady?: boolean; arcaneCharges?: number; cooldowns?: Record<string, number>; empower?: number; thorns?: number; regen?: number; regenRounds?: number };
 export type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; classBuild?: { classId: string; passiveId: string }; classCombat?: ApiClassCombat; guarding?: boolean; experience: number; level: number; skills?: string[]; stats: ApiStats; strikeDamage?: number; guardReduction?: number; gold?: number; consumables?: Record<string, number>; items?: string[]; boons?: string[]; skillRanks?: Record<string, number>; skillPoints?: number };
 export type ApiCombatAction = { type: string; action: string; skill?: string; targetId?: string };
-export type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, ApiCombatAction> };
+/** held: the countdown (startedAt to deadline) waits until every player's screen is ready, ADR 0039. */
+export type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, ApiCombatAction>; held?: boolean; ready?: Record<string, boolean> };
 export type ApiVote = { startedAt: string; deadline: string; votes: Record<string, string>; auto?: boolean };
 export type ApiRoomEventVote = ApiVote & { eventId: string };
 /** A level-wide rule in force on one floor of an expedition. */
