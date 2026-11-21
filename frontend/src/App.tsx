@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { AccountContext, adoptCredential, completeDiscordSignIn, resolveDiscordSignIn, SignInConflictDialog, startDiscordSignIn, takeDiscordCallback, type SignInConflict, type SignInResult } from "./account";
-import { apiRequest, PROFILE_CREDENTIAL_KEY, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
+import { apiRequest, PROFILE_CREDENTIAL_KEY, WAITING_READ_TIMEOUT_MS, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
 import { ConnectingScreen, PartyLobby, TitleScreen, type HeroSkin, type LobbyCatalog } from "./lobby";
 import { deriveMusicCue } from "./music/cue";
@@ -138,39 +138,52 @@ export default function App() {
     {accountNotice ? <div className="px-panel px-account-toast" role="status"><span>{accountNotice}</span><button type="button" className="px-button px-button-small" onClick={() => setAccountNotice("")}>OK</button></div> : null}
     {signInConflict ? <SignInConflictDialog conflict={signInConflict} busy={conflictBusy} error={conflictError} onChoose={choice => void chooseSignIn(choice)} /> : null}
   </AccountContext.Provider></SoundContext.Provider>;
-  // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
-  const pollMs = run?.phase === "combat" ? 750 : 1500;
+  // The newest room version this client holds, from any source (a read, a command's answer, a heartbeat).
+  const knownVersion = useRef(-1);
+  useEffect(() => { if (snapshot) knownVersion.current = Math.max(knownVersion.current, snapshot.version); }, [snapshot]);
 
-  // Polls never overlap: the next one is scheduled when the last one finishes. With a fixed interval, a slow server
-  // gets more and more requests stacked on it, every response arrives late, and a player's actions queue behind
-  // them past the round's deadline (every round then auto-defends). refreshRoom polls at once, e.g. when a round's
-  // timer has run out but its result has not arrived.
+  // Snapshot reads wait on the server for the room to change (`?after=<version>`): the server answers the moment
+  // anyone's action is saved or a round or vote reaches its deadline, else after 15s. So each read is followed
+  // straight away by the next, and a party sees every action as soon as it happens instead of on a timer.
+  // Reads never overlap. A quick answer with nothing new (a server without waiting reads, say) or a failure
+  // falls back to the old polling pace, so the loop can never spin. refreshRoom reads at once if none is open.
   const pollNow = useRef<() => void>(() => undefined);
   const refreshRoom = useCallback(() => pollNow.current(), []);
   useEffect(() => {
     if (!roomId || !token) return;
+    knownVersion.current = -1;
     let active = true, inFlight = false, timer = 0;
+    const abort = new AbortController();
+    const fallbackMs = 1500;
     const load = async () => {
       if (!active || inFlight) return;
       inFlight = true;
       window.clearTimeout(timer);
+      const after = knownVersion.current;
+      const began = Date.now();
+      let delay = 0;
       try {
-        const next = await apiRequest<ApiRoom>(spectator ? "/spectate/" + roomId : "/rooms/" + roomId, token);
+        const path = (spectator ? "/spectate/" : "/rooms/") + roomId + (after >= 0 ? "?after=" + after : "");
+        const next = await apiRequest<ApiRoom>(path, token, { signal: abort.signal }, WAITING_READ_TIMEOUT_MS);
         if (active) {
           setSnapshot(current => !current || next.version >= current.version ? next : current);
+          // Now, not after the render: the next read starts at once and must ask for what comes after this one.
+          knownVersion.current = Math.max(knownVersion.current, next.version);
           setError("");
+          if (next.version <= after && Date.now() - began < 1000) delay = fallbackMs;
         }
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : "Unable to load room");
+        delay = fallbackMs;
       } finally {
         inFlight = false;
-        if (active) timer = window.setTimeout(() => { void load(); }, pollMs);
+        if (active) timer = window.setTimeout(() => { void load(); }, delay);
       }
     };
     pollNow.current = () => { void load(); };
     void load();
-    return () => { active = false; window.clearTimeout(timer); pollNow.current = () => undefined; };
-  }, [roomId, token, spectator, pollMs]);
+    return () => { active = false; abort.abort(); window.clearTimeout(timer); pollNow.current = () => undefined; };
+  }, [roomId, token, spectator]);
 
   const refreshProgressProfile = useCallback(async (): Promise<ApiProfile> => {
     const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);

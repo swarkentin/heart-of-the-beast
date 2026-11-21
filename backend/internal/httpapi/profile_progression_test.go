@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -206,4 +208,70 @@ func TestRunProgressIsBankedDuringTheRun(t *testing.T) {
 	room.Presence["player-1"] = game.PlayerPresence{LeftAt: &left}
 	room.Run.Rooms["c"] = cleared("c")
 	check(2*game.RunXPPerEncounter+game.RunXPPerFloor, "after leaving, banked progress stays and nothing more is added")
+}
+
+// countingAwards counts AwardRunXP calls: each is a database transaction per player in production.
+type countingAwards struct {
+	*store.Memory
+	awards int
+	fail   bool
+}
+
+func (c *countingAwards) AwardRunXP(ctx context.Context, profileID, runID, playerID, classID string, xp int64, now time.Time) (*store.Profile, error) {
+	c.awards++
+	if c.fail {
+		return nil, errors.New("database unavailable")
+	}
+	return c.Memory.AwardRunXP(ctx, profileID, runID, playerID, classID, xp, now)
+}
+
+// Snapshot polls pass through awardRunProgress many times a second in a party. Once a run's XP is banked, polls
+// that earned nothing new must not touch the profile store again; new XP and a failed award still go through.
+func TestRunProgressSkipsAwardsWhenNothingNewWasEarned(t *testing.T) {
+	memory := &countingAwards{Memory: store.NewMemory()}
+	credentialHash := tokenHash("00112233445566778899aabbccddeeff")
+	profile, err := memory.GetOrCreateProfile(t.Context(), "poll-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := &game.Room{
+		PlayerProfileIDs: map[string]string{"player-1": profile.ID},
+		Presence:         map[string]game.PlayerPresence{"player-1": {}},
+		Run: &game.Run{
+			ID: "poll-run", Phase: game.PhaseExploring,
+			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1"}},
+			Rooms:   map[string]*game.DungeonRoom{"a": {ID: "a", Encounter: &game.Encounter{Status: game.EncounterCleared}}},
+		},
+	}
+	handler := &Handler{rooms: memory, now: time.Now}
+	award := func() {
+		t.Helper()
+		if err := handler.awardRunProgress(t.Context(), room); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for range 5 {
+		award()
+	}
+	if memory.awards != 1 {
+		t.Fatalf("five polls with the same XP should bank once, banked %d times", memory.awards)
+	}
+	room.Run.Rooms["b"] = &game.DungeonRoom{ID: "b", Encounter: &game.Encounter{Status: game.EncounterCleared}}
+	memory.fail = true
+	if err := handler.awardRunProgress(t.Context(), room); err == nil {
+		t.Fatal("a failed award should be reported")
+	}
+	memory.fail = false
+	award()
+	award()
+	if memory.awards != 3 {
+		t.Fatalf("new XP should bank once after the failed attempt is retried, banked %d times in all", memory.awards)
+	}
+	updated, err := memory.GetProfile(t.Context(), credentialHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.AdventurerXP != 2*game.RunXPPerEncounter {
+		t.Fatalf("want %d XP banked, got %d", 2*game.RunXPPerEncounter, updated.AdventurerXP)
+	}
 }

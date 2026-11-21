@@ -65,7 +65,10 @@ function guestProfileCredential(): string | null {
 /** No request may hang: a stuck one would keep the UI waiting on it (in combat, every round would auto-defend). */
 export const REQUEST_TIMEOUT_MS = 8000;
 
-export async function apiRequest<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
+/** A snapshot read that waits for the room to change (`?after=`): the server answers within 15s, plus slack. */
+export const WAITING_READ_TIMEOUT_MS = 25000;
+
+export async function apiRequest<T>(path: string, token?: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
@@ -77,7 +80,7 @@ export async function apiRequest<T>(path: string, token?: string, init: RequestI
     if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
   }
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   init.signal?.addEventListener("abort", () => controller.abort());
   let response: Response;
   try {

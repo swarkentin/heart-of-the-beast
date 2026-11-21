@@ -37,7 +37,9 @@ func main() {
 	// Keep the pool deliberately small: Render instances should also work
 	// with Neon's pooled connection string and small database plans.
 	db.SetMaxOpenConns(8)
-	db.SetMaxIdleConns(2)
+	// Keep every pooled connection warm. Opening a new one to Neon costs several network round trips (TCP,
+	// TLS, auth), so with only 2 idle a burst of party requests paid that on most of them.
+	db.SetMaxIdleConns(8)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	db.SetConnMaxIdleTime(5 * time.Minute)
 
