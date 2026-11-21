@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -26,6 +27,9 @@ type Handler struct {
 	rooms   store.Repository
 	now     func() time.Time
 	discord *DiscordConfig
+	// banked is the run XP this process last banked per run ID, so polls that changed nothing skip the profile
+	// writes. The store still makes awards idempotent across processes.
+	banked sync.Map
 }
 
 // Options configures optional handler behavior.
@@ -320,6 +324,9 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 	if xp == 0 {
 		return nil
 	}
+	if last, ok := h.banked.Load(room.Run.ID); ok && last.(int64) >= xp {
+		return nil
+	}
 	for playerID, profileID := range room.PlayerProfileIDs {
 		if profileID == "" || room.Presence[playerID].LeftAt != nil {
 			continue
@@ -336,6 +343,7 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 			return err
 		}
 	}
+	h.banked.Store(room.Run.ID, xp)
 	return nil
 }
 
