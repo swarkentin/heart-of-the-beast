@@ -14,7 +14,7 @@
 //   - the mix is balanced: in a fight the bass, drums and melody each carry a real share of the energy and the pads do not swamp them
 //   - boss fights are bigger than ordinary fights, and capstone bosses bigger again
 //
-// Usage: node scripts/audio/offline-render.mjs [--seconds 10] [--json out.json]
+// Usage: node scripts/audio/offline-render.mjs [--seconds 10] [--themes catacombs,infernal] [--json out.json]
 // Env: PLAYWRIGHT_MODULE=path/to/playwright-core CHROME_PATH=path/to/chrome to use an installed browser.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -27,6 +27,8 @@ const musicDir = join(root, "frontend", "src", "music");
 const args = process.argv.slice(2);
 const argValue = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const SECONDS = Number(argValue("--seconds") ?? 10);
+// --themes catacombs,infernal renders only those themes (a full run renders every cue and takes a long time).
+const ONLY_THEMES = argValue("--themes")?.split(",") ?? null;
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -43,7 +45,8 @@ for (const file of readdirSync(musicDir).filter(f => f.endsWith(".ts") && !f.end
 }
 
 const pageScript = `
-import { THEME_IDS, MUSIC_STATES } from "/music/types.js";
+import { THEME_IDS as ALL_THEMES, MUSIC_STATES } from "/music/types.js";
+const THEME_IDS = window.ONLY_THEMES ? ALL_THEMES.filter(t => window.ONLY_THEMES.includes(t)) : ALL_THEMES;
 import { renderCueOffline } from "/music/synth.js";
 import { profileFor } from "/music/profiles.js";
 
@@ -132,6 +135,7 @@ await page.route("http://audio.test/**", route => {
 });
 page.on("pageerror", e => { console.error("page error:", e.message); });
 page.on("console", m => { if (m.type() === "error") console.error("console:", m.text()); });
+await page.addInitScript(themes => { window.ONLY_THEMES = themes; }, ONLY_THEMES);
 await page.goto("http://audio.test/");
 await page.waitForFunction(() => typeof window.run === "function", null, { timeout: 30000 });
 const started = Date.now();
