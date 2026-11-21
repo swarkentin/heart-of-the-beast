@@ -248,20 +248,39 @@ func (p *Postgres) AwardRunXP(ctx context.Context, profileID, runID, playerID, c
 	}
 	defer tx.Rollback()
 
+	// The award row holds the run's total banked so far. xp is the run's new total; only the increase is added.
 	key := profileID + ":" + runID
-	result, err := tx.ExecContext(ctx, `
-		INSERT INTO player_profile_run_awards (award_key, profile_id, run_id, player_id, xp, class_id, awarded_at)
-		VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), $7)
-		ON CONFLICT (award_key) DO NOTHING
-	`, key, profileID, runID, playerID, xp, classID, now.UTC())
-	if err != nil {
-		return nil, err
+	delta := int64(0)
+	if xp > 0 {
+		result, err := tx.ExecContext(ctx, `
+			INSERT INTO player_profile_run_awards (award_key, profile_id, run_id, player_id, xp, class_id, awarded_at)
+			VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), $7)
+			ON CONFLICT (award_key) DO NOTHING
+		`, key, profileID, runID, playerID, xp, classID, now.UTC())
+		if err != nil {
+			return nil, err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return nil, err
+		}
+		if rows > 0 {
+			delta = xp
+		} else {
+			var banked int64
+			if err := tx.QueryRowContext(ctx, `SELECT xp FROM player_profile_run_awards WHERE award_key = $1 FOR UPDATE`, key).Scan(&banked); err != nil {
+				return nil, err
+			}
+			if xp > banked {
+				delta = xp - banked
+				if _, err := tx.ExecContext(ctx, `UPDATE player_profile_run_awards SET xp = $2, awarded_at = $3 WHERE award_key = $1`, key, xp, now.UTC()); err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if rows > 0 {
+	if delta > 0 {
+		xp := delta
 		// The "/ 100" below is game.ProfileXPPerLevel.
 		if classID == "" {
 			_, err = tx.ExecContext(ctx, `

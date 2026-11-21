@@ -61,6 +61,8 @@ type ProfileRepository interface {
 	GetOrCreateProfile(context.Context, string, string, time.Time) (*Profile, error)
 	GetProfile(context.Context, string) (*Profile, error)
 	UpdateProfileName(context.Context, string, string, time.Time) (*Profile, error)
+	// AwardRunXP banks a run's experience. xp is the run's total so far; only the part above what this profile
+	// has already been awarded for the run is added, so it is safe to call after every fight and on repeats.
 	AwardRunXP(context.Context, string, string, string, string, int64, time.Time) (*Profile, error)
 }
 

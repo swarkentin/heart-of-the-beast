@@ -303,8 +303,11 @@ func (h *Handler) guestProfileID(r *http.Request) string {
 	return profile.ID
 }
 
+// awardRunProgress banks the run's profile and class-mastery experience as it is earned, not only when the run
+// ends: AwardRunXP takes the run's total so far and adds only what has not been banked yet. A player who leaves
+// mid-run keeps everything earned while they were there.
 func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
-	if room == nil || room.Run == nil || (room.Run.Phase != game.PhaseCompleted && room.Run.Phase != game.PhaseFailed) {
+	if room == nil || room.Run == nil {
 		return nil
 	}
 	profiles, ok := h.rooms.(store.ProfileRepository)
@@ -312,8 +315,8 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 		return nil
 	}
 	// Failed runs still earn progress for what the party achieved before it fell, and an expedition that got
-	// further earns more: see game.RunProgressXP.
-	xp := game.RunProgressXP(room.Run)
+	// further earns more: see game.RunProgressEarned.
+	xp := game.RunProgressEarned(room.Run)
 	if xp == 0 {
 		return nil
 	}

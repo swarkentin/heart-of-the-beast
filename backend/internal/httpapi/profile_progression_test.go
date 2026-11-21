@@ -161,3 +161,49 @@ func TestRunWithoutClearedEncountersDoesNotAwardProgress(t *testing.T) {
 		t.Fatalf("run without a cleared encounter should not award progression: %+v", updated)
 	}
 }
+
+// Progress is banked as the run goes, not only when it ends: a player who leaves mid-run keeps what they earned,
+// and later awards add only the new experience.
+func TestRunProgressIsBankedDuringTheRun(t *testing.T) {
+	memory := store.NewMemory()
+	credentialHash := tokenHash("fedcba9876543210fedcba9876543210")
+	profile, err := memory.GetOrCreateProfile(t.Context(), "mid-run-profile", credentialHash, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleared := func(id string) *game.DungeonRoom {
+		return &game.DungeonRoom{ID: id, Encounter: &game.Encounter{Status: game.EncounterCleared}}
+	}
+	room := &game.Room{
+		PlayerProfileIDs: map[string]string{"player-1": profile.ID},
+		Presence:         map[string]game.PlayerPresence{"player-1": {}},
+		Run: &game.Run{
+			ID: "mid-run", Phase: game.PhaseExploring,
+			Players: map[string]*game.PlayerState{"player-1": {ID: "player-1", ClassBuild: &game.ClassBuildSnapshot{ClassID: game.ClassRanger}}},
+			Rooms:   map[string]*game.DungeonRoom{"a": cleared("a")},
+		},
+	}
+	handler := &Handler{rooms: memory, now: time.Now}
+	check := func(want int64, why string) {
+		t.Helper()
+		if err := handler.awardRunProgress(t.Context(), room); err != nil {
+			t.Fatal(err)
+		}
+		updated, err := memory.GetProfile(t.Context(), credentialHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if updated.AdventurerXP != want || updated.ClassMastery[game.ClassRanger].Experience != want {
+			t.Fatalf("%s: want %d XP, got %+v", why, want, updated)
+		}
+	}
+	check(game.RunXPPerEncounter, "first fight won mid-run")
+	check(game.RunXPPerEncounter, "repeat award adds nothing")
+	room.Run.Rooms["b"] = cleared("b")
+	room.Run.FloorsCleared = 1
+	check(2*game.RunXPPerEncounter+game.RunXPPerFloor, "second fight and a floor add only the increase")
+	left := time.Now()
+	room.Presence["player-1"] = game.PlayerPresence{LeftAt: &left}
+	room.Run.Rooms["c"] = cleared("c")
+	check(2*game.RunXPPerEncounter+game.RunXPPerFloor, "after leaving, banked progress stays and nothing more is added")
+}
