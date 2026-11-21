@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { HeartMeter, HeartScores, useBeastHeart } from "./beast/HeartMeter";
+import { HeartStrip, useBeastHeart } from "./beast/HeartMeter";
 import "./lobby.css";
 import { VisualEffectsSettings } from "./visualEffects";
 import { SoundTestButton } from "./soundTest";
@@ -247,9 +247,8 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={paradeLooks[id]} />)}</div></div>
     </section>
     {/* The shared goal every party works toward (ADR 0040). */}
-    <HeartMeter heart={heart} />
-    <HeartScores heart={heart} />
-    {profile ? <div className="px-title-account"><AccountPanel accounts={profile.accounts} /></div> : null}
+    <HeartStrip heart={heart} />
+    {profile ? <div className="px-title-account"><AccountPanel accounts={profile.accounts} compact /></div> : null}
     <section className="px-panel px-title-actions" aria-label="Start playing">
       <div className="px-title-create">
         <h2>Gather your party</h2>

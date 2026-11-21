@@ -8,13 +8,13 @@ test("a whole heart is all lit, beats slowly and invites the first strike", () =
   assert.equal(report.percentLabel, "100");
   assert.equal(report.lit, HEART_SEGMENTS);
   assert.equal(report.health, "1,000,000");
-  assert.match(report.line, /No party has reached it yet/);
+  assert.match(report.line, /No blade has touched it yet/);
 });
 
 test("the first strikes still move the number, and the heart beats faster as it weakens", () => {
   const nearlyWhole = heartReport({ maxHealth: 1_000_000, health: 999_580, damage: 420, strikes: 1 });
   assert.equal(nearlyWhole.percentLabel, "99.96");
-  assert.equal(nearlyWhole.line, "420 damage in 1 strike by parties everywhere.");
+  assert.equal(nearlyWhole.line, "420 wounds carved in 1 fight. It still beats.");
   const weak = heartReport({ maxHealth: 1_000_000, health: 50_000, damage: 950_000, strikes: 3000 });
   assert.ok(weak.beatSeconds < nearlyWhole.beatSeconds);
   assert.equal(weak.lit, 2);

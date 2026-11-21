@@ -451,10 +451,25 @@
   .px-title-screen .px-parade .px-hero { --hs: .85; margin-inline: -13px; }
 }
 
+/* Short screens (most laptops): the whole title, the heart strip and the buttons fit without scrolling. */
+@media (max-height: 900px) and (min-width: 761px) {
+  .px-title-screen h1.px-wordmark { font-size: clamp(34px, min(6.6vw, 8vh), 82px); }
+  .px-title-screen .px-title-crest { --px: 2; }
+  .px-title-screen .px-parade .px-hero { --hs: 1.6; }
+  .px-title-screen .px-title-actions { margin-top: 10px; padding-block: 10px; }
+  .px-title-screen .px-title-actions p { font-size: 18px; }
+  .px-title-screen .px-build-footer { margin-top: 4px; }
+}
+@media (max-height: 700px) and (min-width: 761px) {
+  .px-title-screen .px-title-crest { display: none; }
+}
+@media (max-width: 760px) {
+  .px-title-screen .px-title-actions p { display: none; }
+}
 /* Make optional account linking visible on the title screen, not just buried in Profile. */
 .px-title-screen .px-title-account {
-  width: min(760px, 100%);
-  margin: 10px auto 0;
+  width: min(920px, 100%);
+  margin: 8px auto 0;
 }
 .px-title-screen .px-title-account .px-account {
   grid-template-columns: minmax(0, 1fr) auto;
@@ -580,3 +595,15 @@
 @media(prefers-reduced-motion:reduce){
   .px-profile-tabs button{transition:none}
 }
+
+/* The title's one-line guest sign-in prompt. */
+.px-title-screen .px-title-account .px-account-compact { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 6px 4px 12px; }
+.px-title-screen .px-title-account .px-account-compact p { margin: 0; font-size: 17px; }
+.px-title-screen .px-title-account .px-account-compact .px-account-discord { grid-column: auto; grid-row: auto; flex: none; }
+@media (max-width: 560px) {
+  .px-title-screen .px-title-account .px-account-compact p { font-size: 15px; }
+  .px-title-screen .px-title-account .px-account-compact .px-account-discord { font-size: 7px; }
+}
+/* Phones: drop the crest on shorter screens so the buttons stay on the first screen. */
+@media (max-width: 760px) and (max-height: 860px) { .px-title-screen .px-title-crest { display: none; } }
+.px-title-screen { padding-bottom: 8px; }

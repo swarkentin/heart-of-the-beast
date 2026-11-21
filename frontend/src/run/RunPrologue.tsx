@@ -16,7 +16,9 @@ import "./prologue.css";
 // gives the run's first round RunPrologueWindow, so watching it never costs a turn.
 
 const SEEN_KEY = "hotb.prologuesSeen";
-const PANEL_MS = 3800;
+// Each panel holds for HOLD_MS after its line has finished typing, so there is time to take in the scene.
+const HOLD_MS = 4200;
+const REDUCED_HOLD_MS = 6500;
 const TYPE_MS = 26;
 
 function seen(): string[] { try { return JSON.parse(window.sessionStorage.getItem(SEEN_KEY) || "[]") as string[]; } catch { return []; } }
@@ -57,10 +59,10 @@ export function RunPrologue({ runId, themeId, party, onDone }: { runId: string; 
     return () => window.clearInterval(timer);
   }, [index, reduced]);
   useEffect(() => {
-    if (last) return;
-    const timer = window.setTimeout(() => setIndex(value => Math.min(all.length - 1, value + 1)), PANEL_MS + (reduced ? 1200 : 0));
+    if (last || !full) return;
+    const timer = window.setTimeout(() => setIndex(value => Math.min(all.length - 1, value + 1)), reduced ? REDUCED_HOLD_MS : HOLD_MS);
     return () => window.clearTimeout(timer);
-  }, [index, last, all.length, reduced]);
+  }, [index, last, full, all.length, reduced]);
   useEffect(() => {
     if (reduced) return;
     const timer = window.setInterval(() => setFrame(value => value + 1), 160);

@@ -13,13 +13,25 @@
 .bh-meter-compact { width: min(620px, 100%); margin: 0 auto; padding: 6px 10px; background: #120e22e6; }
 .bh-meter-dead .bh-heart { animation: none; filter: grayscale(1); }
 @media (prefers-reduced-motion: reduce) { .bh-heart { animation: none; } }
-.bh-scores { width: min(920px, 100%); margin: 8px auto 0; padding: 6px 12px; text-align: left; }
-.bh-scores summary { cursor: pointer; color: var(--gold); font: 10px/2 var(--display); }
-.bh-scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 6px 0; }
-.bh-scores ol { display: grid; gap: 4px; margin: 4px 0 0; padding-left: 22px; color: var(--ink); }
-.bh-scores li span { overflow-wrap: anywhere; }
-.bh-scores li b { margin-left: 8px; color: #ff8a8a; font-weight: 400; }
-.bh-scores li small { display: block; color: var(--muted); font-size: 15px; letter-spacing: .08em; }
+/* The title screen's slim strip, and its dialog. */
+.bh-strip { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; width: min(920px, 100%); margin: -6px auto 0; padding: 4px 6px 4px 10px; background: #100d1be6; box-shadow: 0 0 0 2px #5e0f1f, 0 0 0 4px var(--edge), 0 0 18px #ff2a4a33; }
+.bh-strip-body { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.bh-strip-body p { display: flex; justify-content: space-between; gap: 10px; margin: 0; line-height: 1; }
+.bh-strip-title { color: #ff8a8a; font: 400 9px/1.4 var(--display); letter-spacing: .06em; }
+.bh-strip-left { color: var(--bone); font-size: 17px; letter-spacing: .06em; white-space: nowrap; }
+.bh-strip .bh-bar { height: 12px; padding: 2px; gap: 2px; }
+.bh-strip .bh-bar i.on { box-shadow: inset 0 2px 0 #ff6f7d, inset 0 -2px 0 #6e0f20; }
+.bh-strip .px-button { flex: none; }
+.bh-dialog { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 40px); overflow: auto; display: grid; gap: 10px; }
+.bh-dialog header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.bh-dialog header h2 { margin: 0; }
+.bh-dialog .bh-meter { width: 100%; margin: 0; }
+.bh-scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.bh-scores-grid ol { display: grid; gap: 4px; margin: 4px 0 0; padding-left: 22px; color: var(--ink); }
+.bh-scores-grid li span { overflow-wrap: anywhere; }
+.bh-scores-grid li b { margin-left: 8px; color: #ff8a8a; font-weight: 400; }
+.bh-scores-grid li small { display: block; color: var(--muted); font-size: 15px; letter-spacing: .08em; }
+@media (max-width: 560px) { .bh-strip-title { display: none; } .bh-strip { gap: 8px; } }
 .bh-fight { position: absolute; top: 8px; left: 50%; translate: -50% 0; z-index: 3; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 16px); padding: 4px 10px; background: #12040cdd; box-shadow: 0 0 0 2px #5e0f1f, 0 0 14px #ff2a4a55; pointer-events: none; }
 .bh-fight span { display: grid; line-height: 1; }
 .bh-fight b { color: #ff8a8a; font: 400 9px/1.4 var(--display); }

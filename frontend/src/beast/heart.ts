@@ -35,8 +35,8 @@ export function heartReport(heart: ApiBeastHeart) {
   const lit = left <= 0 ? 0 : Math.max(1, Math.ceil(fraction * HEART_SEGMENTS));
   const beatSeconds = Number((0.45 + fraction * 0.9).toFixed(2));
   const line = left <= 0 ? "The heart is still. What comes next is not yet known."
-    : heart.strikes === 0 ? "No party has reached it yet. Every run is a chance to find it."
-    : number(heart.damage) + " damage in " + number(heart.strikes) + (heart.strikes === 1 ? " strike" : " strikes") + " by parties everywhere.";
+    : heart.strikes === 0 ? "No blade has touched it yet. It waits beneath some dungeon's boss."
+    : number(heart.damage) + " wounds carved in " + number(heart.strikes) + (heart.strikes === 1 ? " fight" : " fights") + ". It still beats.";
   return { health: number(left), maxHealth: number(max), percentLabel, lit, beatSeconds, line, dead: left <= 0 };
 }
 

@@ -34,7 +34,7 @@ export function HeartMeter({ heart, compact = false }: { heart?: ApiBeastHeart; 
   return <section className={"bh-meter px-panel" + (compact ? " bh-meter-compact" : "") + (report.dead ? " bh-meter-dead" : "")} aria-label={"The Heart of the Beast: " + report.percentLabel + " percent of its health remains"} style={{ ["--beat" as string]: report.beatSeconds + "s" }}>
     <PixelHeart size={compact ? 3 : 4} />
     <div className="bh-body">
-      <p className="px-eyebrow">THE HEART OF THE BEAST · A FIGHT FOR EVERYONE</p>
+      <p className="px-eyebrow">THE HEART OF THE BEAST · IT STILL BEATS</p>
       <div className="bh-bar" role="meter" aria-valuemin={0} aria-valuemax={heart.maxHealth} aria-valuenow={Math.max(0, heart.health)}>
         {Array.from({ length: HEART_SEGMENTS }, (_, index) => <i key={index} className={index < report.lit ? "on" : ""} />)}
       </div>
@@ -44,30 +44,57 @@ export function HeartMeter({ heart, compact = false }: { heart?: ApiBeastHeart; 
   </section>;
 }
 
-/** The heart's high scores: who has hurt it most, and the parties' best fights. */
-export function HeartScores({ heart }: { heart?: ApiBeastHeart }) {
-  const board = heart?.leaderboard;
-  if (!board || (board.players.length === 0 && board.parties.length === 0)) return null;
-  return <details className="bh-scores px-panel">
-    <summary>HIGH SCORES AGAINST THE HEART</summary>
-    <div className="bh-scores-grid">
-      <section aria-label="Adventurers who have hurt the heart most">
-        <p className="px-label">ADVENTURERS</p>
-        <ol>{board.players.map(score => <li key={score.profileId}><span>{score.name}</span><b>{formatDamage(score.damage)}</b><small>{score.fights} {score.fights === 1 ? "FIGHT" : "FIGHTS"}</small></li>)}</ol>
+/**
+ * The title screen's heart: one slim strip (a beating heart, the bar and what remains) so the title still fits on
+ * one screen, with the high scores a tap away in a dialog.
+ */
+export function HeartStrip({ heart }: { heart?: ApiBeastHeart }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  if (!heart) return null;
+  const report = heartReport(heart);
+  const board = heart.leaderboard;
+  const hasScores = Boolean(board && (board.players.length > 0 || board.parties.length > 0));
+  return <>
+    <section className={"bh-strip" + (report.dead ? " bh-meter-dead" : "")} aria-label={"The Heart of the Beast, shared by every party: " + report.percentLabel + " percent of its health remains. " + report.line} style={{ ["--beat" as string]: report.beatSeconds + "s" }}>
+      <PixelHeart size={2} />
+      <div className="bh-strip-body">
+        <p><span className="bh-strip-title">THE HEART OF THE BEAST</span><span className="bh-strip-left">{report.percentLabel}% REMAINS</span></p>
+        <div className="bh-bar" role="meter" aria-valuemin={0} aria-valuemax={heart.maxHealth} aria-valuenow={Math.max(0, heart.health)}>
+          {Array.from({ length: HEART_SEGMENTS }, (_, index) => <i key={index} className={index < report.lit ? "on" : ""} />)}
+        </div>
+      </div>
+      <button type="button" className="px-button px-button-small" onClick={() => setOpen(true)}>{hasScores ? "HIGH SCORES" : "THE HUNT"}</button>
+    </section>
+    {open ? <div className="px-backdrop" role="presentation" onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+      <section className="px-panel bh-dialog" role="dialog" aria-modal="true" aria-labelledby="bh-dialog-title">
+        <header><div><p className="px-eyebrow">EVERY WOUND EVER DEALT IT</p><h2 id="bh-dialog-title">The Heart of the Beast</h2></div><button type="button" className="px-button px-button-small" onClick={() => setOpen(false)} autoFocus>CLOSE</button></header>
+        <HeartMeter heart={heart} />
+        {hasScores && board ? <div className="bh-scores-grid">
+          <section aria-label="Adventurers who have hurt the heart most">
+            <p className="px-label">ADVENTURERS</p>
+            <ol>{board.players.map(score => <li key={score.profileId}><span>{score.name}</span><b>{formatDamage(score.damage)}</b><small>{score.fights} {score.fights === 1 ? "FIGHT" : "FIGHTS"}</small></li>)}</ol>
+          </section>
+          <section aria-label="The parties' best fights against the heart">
+            <p className="px-label">PARTIES</p>
+            <ol>{board.parties.map(score => <li key={score.runId + score.at}><span>{partyNames(score.names)}</span><b>{formatDamage(score.damage)}</b><small>{score.drivenOff ? "DROVE IT OFF" : "FELL"}{score.themeId ? " · " + themeTitle(score.themeId) : ""}</small></li>)}</ol>
+          </section>
+        </div> : <p className="bh-line">The heart turns up in place of a dungeon boss now and then, or every time after a Beast Lure from a camp shop. Every wound any party deals it stays.</p>}
       </section>
-      <section aria-label="The parties' best fights against the heart">
-        <p className="px-label">PARTIES</p>
-        <ol>{board.parties.map(score => <li key={score.runId + score.at}><span>{partyNames(score.names)}</span><b>{formatDamage(score.damage)}</b><small>{score.drivenOff ? "DROVE IT OFF" : "FELL"}{score.themeId ? " · " + themeTitle(score.themeId) : ""}</small></li>)}</ol>
-      </section>
-    </div>
-  </details>;
+    </div> : null}
+  </>;
 }
 
 /** Over the viewport while the party fights the heart: what this party has done to it so far. */
 export function HeartFightBadge({ party, mine, spectator }: { party: number; mine: number; spectator: boolean }) {
   return <div className="bh-fight" role="status">
     <PixelHeart size={2} />
-    <span><b>THE HEART OF THE BEAST</b><small>DRIVE IT OFF · EVERY WOUND COUNTS FOR EVERYONE</small></span>
+    <span><b>THE HEART OF THE BEAST</b><small>DRIVE IT BACK INTO THE DARK · EVERY WOUND STAYS</small></span>
     <span className="bh-fight-tally"><b>{formatDamage(party)}</b><small>PARTY{spectator ? "" : " · YOU " + formatDamage(mine)}</small></span>
   </div>;
 }

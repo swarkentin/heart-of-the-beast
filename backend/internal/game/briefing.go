@@ -21,7 +21,7 @@ const FloorTransitionWindow = 3 * time.Second
 // RunPrologueWindow is extra time on the very first round of a run, for the prologue cutscene the clients play
 // before the first briefing (ADR 0039). Players who skip it can act at once; the round still resolves as soon as
 // everyone has chosen.
-const RunPrologueWindow = 20 * time.Second
+const RunPrologueWindow = 45 * time.Second
 
 // extendFirstRound gives the round the party has just been placed into more time, if there is one.
 func extendFirstRound(run *Run, window time.Duration) {
