@@ -5,7 +5,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Img, encodePNG } from "../engine.mjs";
-import { themes } from "../themes/index.mjs";
+import { themes as allThemes } from "../themes/index.mjs";
+// Unique art themes (the Heart of the Beast, ADR 0040) are not dungeons and have no rooms.
+const themes = allThemes.filter((t) => !t.unique);
 import { renderRoom, KINDS, ROOM_W, ROOM_H } from "./index.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");

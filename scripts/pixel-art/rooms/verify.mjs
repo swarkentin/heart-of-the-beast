@@ -8,7 +8,9 @@
 // enemies stand is not busier than the frame as a whole (props stay at the edges).
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { themes } from "../themes/index.mjs";
+import { themes as allThemes } from "../themes/index.mjs";
+// Unique art themes (the Heart of the Beast, ADR 0040) are not dungeons and have no rooms.
+const themes = allThemes.filter((t) => !t.unique);
 import { renderRoom, KINDS, VIEWS, ROOM_W, ROOM_H, styles } from "./index.mjs";
 import { themeFiles, indexFile, ROOMS_OUT, ROOMS_GO } from "./build.mjs";
 import { roomBindings } from "./gobindings.mjs";
