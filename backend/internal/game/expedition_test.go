@@ -1086,7 +1086,7 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 	for _, offer := range run.Camp.Offers {
 		ids[offer.ID] = offer
 	}
-	if len(run.Camp.Offers) != ShopOfferCount+2 || ids["healing-draught"].Price != 12 || ids["healing-herb"].ID == "" || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
+	if len(run.Camp.Offers) != ShopOfferCount+3 || ids["beast-lure"].Price != HeartLurePrice || ids["healing-draught"].Price != 12 || ids["healing-herb"].ID == "" || ids["revival-draught"].ID == "" || ids["cleansing-salt"].ID == "" {
 		t.Fatalf("offers: %+v", run.Camp.Offers)
 	}
 	for _, item := range ShopCatalog() {
@@ -1117,8 +1117,8 @@ func TestShopShelfIsSeededAndSituational(t *testing.T) {
 	}
 	calm.Run.Camp.NextModifiers = nil
 	AdvanceCamp(calm, expeditionNow)
-	if len(calm.Run.Camp.Offers) != ShopOfferCount {
-		t.Fatalf("with nobody down and no debuff ahead the shelf is %d items: %+v", ShopOfferCount, calm.Run.Camp.Offers)
+	if len(calm.Run.Camp.Offers) != ShopOfferCount+1 {
+		t.Fatalf("with nobody down and no debuff ahead the shelf is %d items and the Beast Lure: %+v", ShopOfferCount, calm.Run.Camp.Offers)
 	}
 }
 

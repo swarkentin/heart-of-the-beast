@@ -13,4 +13,5 @@ import noir from "./noir.mjs";
 import arcade from "./arcade.mjs";
 import eldritch from "./eldritch.mjs";
 import infernal from "./infernal.mjs";
-export const themes = [catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland, noir, arcade, eldritch, infernal];
+import beast from "./beast.mjs";
+export const themes = [catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland, noir, arcade, eldritch, infernal, beast];

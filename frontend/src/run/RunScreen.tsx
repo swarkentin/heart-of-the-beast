@@ -12,6 +12,11 @@ import { relabel, useCombatLog, type LogLine } from "./log";
 import { NO_FX, PartyCard, type CardFx } from "./PartyCard";
 import { themeVars } from "../uiTheme";
 import { DungeonIntro } from "./DungeonIntro";
+import { FloorDescent } from "./FloorDescent";
+import { prologueSeen, RunPrologue } from "./RunPrologue";
+import { placeOf, prologueDue, transitionBetween, type Place } from "./transitions.ts";
+import { HeartFightBadge } from "../beast/HeartMeter";
+import { heartAwaits, heartTally, HEART_SPRITE } from "../beast/heart.ts";
 import { interruptTarget } from "./interrupts.ts";
 import { herbPromptLevel } from "./herbPrompt.ts";
 import { Celebrations } from "./Celebration";
@@ -135,6 +140,28 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   useEffect(() => { if (livingTarget && target !== livingTarget.id) setTarget(livingTarget.id); }, [livingTarget?.id, target]);
 
   const party = buildParty(snapshot, run, selfId, catalog, enemies);
+
+  // ---- getting from place to place (ADR 0039) --------------------------------------------------------------------
+  // A new run opens on the prologue, before the first briefing. Whether it shows is decided once per run, on the
+  // first look at it, so a reconnect later in the run never replays it. Decided during render, not in an effect:
+  // the briefing below would otherwise open first.
+  const prologueFor = useRef<{ runId: string; show: boolean } | null>(null);
+  if (prologueFor.current?.runId !== run.id) prologueFor.current = { runId: run.id, show: !gameOver && prologueDue(run) && !prologueSeen(run.id) };
+  const [prologueDone, setPrologueDone] = useState("");
+  const prologueOpen = prologueFor.current.show && prologueDone !== run.id;
+  const endPrologue = useCallback(() => setPrologueDone(run.id), [run.id]);
+  // Going down to the next floor of the same dungeon plays the descent over the viewport. A new dungeon has the
+  // briefing's portal instead, and a step through a doorway only dips the scene (see Scene).
+  const place = placeOf(run);
+  const lastPlace = useRef<Place | null>(null);
+  const [descending, setDescending] = useState<{ key: string; depth: number } | null>(null);
+  useEffect(() => {
+    const kind = transitionBetween(lastPlace.current, place);
+    lastPlace.current = place;
+    if (kind === "floor") setDescending({ key: place.runId + ":" + place.dungeon + ":" + place.depth, depth: place.depth });
+    else if (kind === "dungeon") setDescending(null);
+  }, [place.runId, place.dungeon, place.depth, place.roomId]);
+  const endDescent = useCallback(() => setDescending(null), []);
   const seats = seatParty(party);
   const self = party.find(member => member.isSelf);
   const eligible = party.filter(member => member.alive && snapshot.presence?.[member.id]?.status !== "left");
@@ -299,8 +326,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const keys = useRef({ act, cycleTarget, actions, enabled: false, cheatEnabled: false, cheat: () => {} });
   keys.current = {
     act, cycleTarget, actions,
-    enabled: acting && combat && !introOpen,
-    cheatEnabled: acting && !gameOver && !introOpen && !busy,
+    enabled: acting && combat && !introOpen && !prologueOpen && !descending,
+    cheatEnabled: acting && !gameOver && !introOpen && !prologueOpen && !busy,
     cheat: () => { void onCommand({ type: "cheat_idkfa" }); },
   };
   const cheatSequence = useRef("");
@@ -455,6 +482,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           props={camp ? (camp.stage === "shop" ? "shop" : "camp") : room.roomType === "reward" ? "vault" : undefined}
           keeper={room.roomType === "reward" ? room.event?.keeper : undefined} sales={Object.values(camp?.purchases ?? {}).reduce((total, list) => total + list.length, 0)} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
+        {combat && room.encounter?.enemies.some(enemy => enemy.sprite === HEART_SPRITE) ? (() => { const tally = heartTally(run, room.id, selfId); return <HeartFightBadge party={tally.party} mine={tally.mine} spectator={!selfId} />; })() : null}
+        {descending ? <FloorDescent key={descending.key} depth={descending.depth} maxDepth={run.maxDepth} boss={heartAwaits(run) ? "The Heart of the Beast" : run.briefing?.boss} onDone={endDescent} /> : null}
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
@@ -481,6 +510,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
         <small>{skillPoints > 0 ? "+1 SKILL POINT · TAP TO RANK UP A SKILL" : "TAP TO DISMISS"}</small>
       </div>
     </div> : null}
-    {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver} onOpenChange={setIntroOpen} /> : null}
+    {prologueOpen ? <RunPrologue runId={run.id} themeId={run.briefing?.themeId || run.themeId || "catacombs"} party={party} onDone={endPrologue} /> : null}
+    {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver && !prologueOpen} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

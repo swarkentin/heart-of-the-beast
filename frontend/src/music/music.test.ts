@@ -26,7 +26,8 @@ const cueOf = (theme: ThemeId, state: MusicCue["state"], depth: Depth = 1, extra
 test("a profile exists for every theme in the backend catalog and the art manifest", () => {
   const backend = [...read("backend/internal/game/dungeon_theme_catalog.go").matchAll(/\{ID: "([a-z]+)"/g)].map(m => m[1]);
   assert.deepEqual([...THEME_IDS].sort(), backend.sort());
-  const art = (JSON.parse(read("frontend/public/art/monsters/index.json")) as { themes: { id: string }[] }).themes.map(t => t.id);
+  // The Heart of the Beast's own art theme is not a dungeon (ADR 0040): it plays over each dungeon's music.
+  const art = (JSON.parse(read("frontend/public/art/monsters/index.json")) as { themes: { id: string }[] }).themes.map(t => t.id).filter(id => id !== "beast");
   assert.deepEqual([...THEME_IDS].sort(), art.sort());
   for (const id of THEME_IDS) assert.equal(PROFILES[id].id, id);
 });

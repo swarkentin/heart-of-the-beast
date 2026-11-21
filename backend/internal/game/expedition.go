@@ -81,6 +81,7 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 	room.Run.MaxDepth = maxDepth
 	room.Run.MusicIntensity = InitialDungeonDepth
 	briefDungeon(room.Run)
+	extendFirstRound(room.Run, RunPrologueWindow)
 	return nil
 }
 
@@ -209,7 +210,8 @@ func descendExpedition(room *Room, now time.Time) {
 		run.MusicIntensity = MaximumDungeonDepth
 	}
 	run.FloorModifiers = modifiers
-	entryID, rooms := generateExpeditionFloor(run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
+	heart := run.Depth >= run.MaxDepth && summonHeart(run)
+	entryID, rooms := generateFloor(heart, run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
 	if tag := dungeonNumber(run); tag > 1 {
 		entryID = tagDungeonRooms(rooms, entryID, fmt.Sprintf("x%d", tag))
 	}
@@ -234,6 +236,7 @@ func descendExpedition(room *Room, now time.Time) {
 	}
 	applyFloorEntryDamage(room)
 	startCombatRound(room, now)
+	extendFirstRound(run, FloorTransitionWindow)
 	if camp != nil && camp.NextThemeID != "" {
 		briefDungeon(run)
 	}

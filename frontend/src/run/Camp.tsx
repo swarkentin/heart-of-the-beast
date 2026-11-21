@@ -108,7 +108,7 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
       {acting ? <div className="rn-choices">{(camp.offers ?? []).map(item => {
         const soldOut = !item.repeatable && bought.includes(item.id);
         return <button key={item.id} className="rn-choice" onClick={() => void onCommand({ type: "buy", choiceId: item.id })} disabled={busy || ready || soldOut || gold < item.price}>
-          <Icon id={item.kind === "strike" ? "strike" : item.kind === "guard" ? "guard" : item.kind === "ward" ? "ward" : item.kind === "cleanse" ? "arcane" : item.kind === "max_health" ? "vitality" : item.kind === "experience" ? "power" : item.kind === "skill_point" ? "empower" : "life"} size={2} />
+          <Icon id={item.kind === "strike" ? "strike" : item.kind === "guard" ? "guard" : item.kind === "ward" ? "ward" : item.kind === "cleanse" ? "arcane" : item.kind === "max_health" ? "vitality" : item.kind === "experience" ? "power" : item.kind === "skill_point" ? "empower" : item.kind === "heart_lure" ? "threat" : "life"} size={2} />
           <span><strong>{item.name}{(item.tier ?? 1) > 1 ? <span className="rn-tier" title={"Tier " + item.tier}> {"I".repeat(item.tier ?? 1)}</span> : null}</strong><small>{item.description}</small></span><em>{soldOut ? "BOUGHT" : item.price + " GOLD"}</em>
         </button>;
       })}</div> : <p className="px-label">{spectator ? "THE PARTY IS SHOPPING" : player && player.health <= 0 ? "YOU ARE DOWN · AN ALLY CAN BUY A REVIVAL DRAUGHT" : "THE PARTY IS SHOPPING"}</p>}

@@ -169,6 +169,9 @@ func resolveCombatRound(room *Room, now time.Time) {
 	playerIDs := append([]string(nil), room.PlayerIDs...)
 	sort.Strings(playerIDs)
 
+	// The heart's wounds are tallied per player, whoever ends the fight (ADR 0040).
+	heart := newHeartTally(run, current, roundNumber)
+
 	// Resolve all player choices before enemy intents. An enemy defeated here
 	// cannot carry out its already-telegraphed action.
 	for _, playerID := range playerIDs {
@@ -184,6 +187,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 			if err := applySkill(room, player, action, roundNumber); err != nil {
 				addCombatEvent(run, roundNumber, "class_ability_failed", adventurerLabel(room, playerID)+" could not use that skill.")
 			}
+			heart.credit(playerID)
 			continue
 		}
 		player.ClassCombat.ArcaneCharges = 0
@@ -266,6 +270,7 @@ func resolveCombatRound(room *Room, now time.Time) {
 				if reflected > 0 {
 					addCombatImpact(run, roundNumber, "thorns", enemy.Name+" takes "+itoa(reflected)+" reflected damage.", "damage", enemy.ID, "enemy", reflected)
 				}
+				heart.credit(playerID)
 				if enemy.Health == 0 {
 					enemy.Intent = nil
 					addCombatEvent(run, roundNumber, "enemy_defeated", enemy.Name+" is defeated by reflected damage.")
@@ -289,11 +294,15 @@ func resolveCombatRound(room *Room, now time.Time) {
 		enemy.Intent = nil
 	}
 
+	// Anything else that wounded the heart this round (companions, damage over time) is the party's.
+	heart.credit(HeartPartyKey)
 	applyCompanionInstinct(room, roundNumber)
 	endCombatRound(room, current.Encounter, roundNumber)
+	heart.credit(HeartPartyKey)
 	applyBossRebirths(run, current.Encounter, roundNumber)
 
 	if allEnemiesDefeated(current.Encounter) {
+		heart.won()
 		current.Encounter.Status = EncounterCleared
 		// Every fight starts with every skill ready.
 		resetFightStatuses(run)

@@ -14,6 +14,22 @@ import (
 // anyone their first turn.
 const DungeonBriefingWindow = 10 * time.Second
 
+// FloorTransitionWindow is extra time on the first round of every new floor, for the descent the clients play
+// between floors (ADR 0039). It is a little longer than the animation, so arriving never costs a turn.
+const FloorTransitionWindow = 3 * time.Second
+
+// RunPrologueWindow is extra time on the very first round of a run, for the prologue cutscene the clients play
+// before the first briefing (ADR 0039). Players who skip it can act at once; the round still resolves as soon as
+// everyone has chosen.
+const RunPrologueWindow = 45 * time.Second
+
+// extendFirstRound gives the round the party has just been placed into more time, if there is one.
+func extendFirstRound(run *Run, window time.Duration) {
+	if run.CombatRound != nil {
+		run.CombatRound.Deadline = run.CombatRound.Deadline.Add(window)
+	}
+}
+
 type DungeonBriefing struct {
 	Dungeon  int      `json:"dungeon"`
 	ThemeID  string   `json:"themeId"`
@@ -183,9 +199,7 @@ func bossAdvice(boss string, final FinalBossTemplate) []string {
 // briefing window.
 func briefDungeon(run *Run) {
 	run.Briefing = newDungeonBriefing(run)
-	if run.CombatRound != nil {
-		run.CombatRound.Deadline = run.CombatRound.Deadline.Add(DungeonBriefingWindow)
-	}
+	extendFirstRound(run, DungeonBriefingWindow)
 }
 
 func validateThemeBriefings() error {

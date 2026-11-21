@@ -65,7 +65,8 @@ export function adoptCredential(value: string) {
 }
 
 /** The sign-in block at the top of the Profile dialog. */
-export function AccountPanel({ accounts }: { accounts?: ApiLinkedAccount[] }) {
+/** compact is the title screen's one-line version, so the title fits on one screen. */
+export function AccountPanel({ accounts, compact = false }: { accounts?: ApiLinkedAccount[]; compact?: boolean }) {
   const account = useContext(AccountContext);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -75,6 +76,12 @@ export function AccountPanel({ accounts }: { accounts?: ApiLinkedAccount[] }) {
     setBusy(true); setError("");
     try { await account.startDiscord(); } catch (err) { setError(err instanceof Error ? err.message : "Could not start Discord sign-in"); setBusy(false); }
   }
+  if (compact && !discord) return <div className="px-account px-account-compact">
+    <p>Playing as a guest. Sign in to keep your rank on every device.</p>
+    <button type="button" className="px-button px-button-small px-account-discord" disabled={busy || !account.canSignIn} onClick={() => void signIn()}>{busy ? "OPENING DISCORD…" : "SIGN IN WITH DISCORD"}</button>
+    {error ? <span className="px-error" role="alert">{error}</span> : null}
+  </div>;
+  if (compact && discord) return null;
   return <div className="px-account">
     <span className="px-label">ACCOUNT</span>
     {discord

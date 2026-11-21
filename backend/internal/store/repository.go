@@ -33,6 +33,10 @@ type Memory struct {
 	// keys in profiles that point at the same *Profile.
 	identities map[string]memoryIdentity
 	signIns    map[string]SignIn
+	// The shared Heart of the Beast (ADR 0040).
+	heartDamage  int64
+	heartStrikes map[string]*memoryHeartStrike
+	heartUpdated time.Time
 }
 
 type memoryIdentity struct {

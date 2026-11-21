@@ -6,7 +6,7 @@ import { Icon } from "../lobby";
 import { backdropUrl } from "../scenes";
 import { themeVars } from "../uiTheme";
 
-// The briefing that opens each dungeon of a run (not each floor). An iris wipe over the dungeon's entrance art
+// The briefing that opens each dungeon of a run (not each floor). A rift-gate opens in an iris wipe over the dungeon's entrance art
 // carries its title, then a short card: one line from the narrator, the boss, the floor modifiers by name and the
 // expedition map. Everything else (the rest of the story, threats, boss advice, modifier rules) sits under DETAILS. The server gives the first round of each dungeon extra time, so reading it never costs a turn.
 
@@ -47,6 +47,8 @@ export function DungeonIntro({ briefing, run, runId, active, onOpenChange }: { b
   return createPortal(<div className={"px-portal rn-intro rn-intro-at-" + stage + " rn-intro-theme-" + briefing.themeId} role="dialog" aria-modal="true" aria-labelledby="intro-title" style={themeVars(briefing.themeId)} onClick={() => stage === "wipe" && setStage("card")}>
     <div className="rn-intro-art" style={{ backgroundImage: "url(" + backdropUrl(briefing.themeId, "entry", "cinema") + ")" }} aria-hidden="true" />
     <div className="rn-intro-iris" aria-hidden="true" />
+    {/* The rift-gate the party steps through into a new land (ADR 0039): a stepped ring that opens with the iris. */}
+    <div className="rn-intro-portal" aria-hidden="true" />
     <div className="rn-intro-title">
       <p className="px-eyebrow">DUNGEON {briefing.dungeon} · {briefing.floors} FLOORS</p>
       <h2 id="intro-title">{briefing.name}</h2>

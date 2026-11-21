@@ -31,8 +31,10 @@ const seen = new Set(); let total = 0;
 for (const theme of themes) {
   const where = `[${theme.id}]`;
   const monsters = theme.creatures.filter((c) => (c.tier || "monster") !== "boss"), bosses = theme.creatures.filter((c) => c.tier === "boss");
-  if (monsters.length < 5) fail(`${where} needs >= 5 monsters (has ${monsters.length})`);
-  if (bosses.length < 1 || bosses.length > 4) fail(`${where} needs 1-4 bosses (has ${bosses.length})`);
+  // A unique theme (the Heart of the Beast, ADR 0040) holds one special creature and no roster.
+  if (!theme.unique && monsters.length < 5) fail(`${where} needs >= 5 monsters (has ${monsters.length})`);
+  if (!theme.unique && (bosses.length < 1 || bosses.length > 4)) fail(`${where} needs 1-4 bosses (has ${bosses.length})`);
+  if (theme.unique && theme.creatures.length !== 1) fail(`${where} is unique and must hold exactly one creature`);
   const manifestPath = resolve(OUT, theme.id, "manifest.json");
   const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : null;
   if (!manifest) fail(`${where} manifest.json missing - run npm run art:build`);

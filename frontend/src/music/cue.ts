@@ -1,6 +1,6 @@
 // Turns an authoritative run snapshot into a MusicCue. Pure: the same snapshot always gives the same cue, so a
 // reconnecting client or a spectator converges on the same score without any client-side memory.
-import { PROFILES } from "./profiles.ts";
+import { HEART_BOSS_ID, PROFILES } from "./profiles.ts";
 import { CAPSTONE_THEMES, THEME_IDS } from "./types.ts";
 import type { Depth, Layers, MusicCue, MusicState, ThemeId } from "./types.ts";
 
@@ -69,7 +69,7 @@ export function themeForRoom(run: Pick<CueRun, "themeId">, room: CueRoom | undef
 function bossFor(theme: ThemeId, room: CueRoom | undefined): { id: string; enemy: CueEnemy } | undefined {
   for (const enemy of room?.encounter?.enemies ?? []) {
     const creature = spriteParts(enemy.sprite).creature ?? enemy.definitionId?.replace(/-/g, "_");
-    if (creature && creature in PROFILES[theme].bosses) return { id: creature, enemy };
+    if (creature && (creature in PROFILES[theme].bosses || creature === HEART_BOSS_ID)) return { id: creature, enemy };
   }
   return undefined;
 }

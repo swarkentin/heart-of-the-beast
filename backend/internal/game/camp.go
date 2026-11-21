@@ -494,6 +494,8 @@ const (
 	ShopConsumable ShopItemKind = "consumable"
 	ShopExperience ShopItemKind = "experience"
 	ShopSkillPoint ShopItemKind = "skill_point"
+	// ShopHeartLure makes the next dungeon boss the Heart of the Beast (ADR 0040).
+	ShopHeartLure ShopItemKind = "heart_lure"
 )
 
 // ShopItem is something a camp sells. Items take effect when bought; nothing is carried into combat as an action.
@@ -620,6 +622,10 @@ func openShop(room *Room, now time.Time) {
 			offers = append(offers, atTier(item, tier))
 		}
 	}
+	// The Beast Lure is always for sale until someone in the party has bought one.
+	if !run.HeartLured {
+		offers = append(offers, atTier(beastLure, tier))
+	}
 	// Permanent boons become progressively more expensive. Whetstones use a quadratic curve because
 	// permanent damage compounds across every later fight; linear pricing let gold income keep pace.
 	for i := range offers {
@@ -741,6 +747,19 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 		ally := run.Players[allyID]
 		ally.Health = (ally.MaxHealth + 1) / 2
 		message = label + " buys " + item.Name + ". " + adventurerLabel(room, allyID) + " is back on their feet!"
+	case ShopHeartLure:
+		if run.HeartLured {
+			return ErrItemUnavailable
+		}
+		run.HeartLured = true
+		// One lure is enough for the party: take it off the shelf for everyone.
+		for i := range camp.Offers {
+			if camp.Offers[i].ID == item.ID {
+				camp.Offers = append(camp.Offers[:i:i], camp.Offers[i+1:]...)
+				break
+			}
+		}
+		message = label + " buys a " + item.Name + ". Somewhere below, something vast turns toward the party. The next dungeon boss will be the Heart of the Beast."
 	case ShopCleanse:
 		index := firstDebuff(camp.NextModifiers)
 		if index < 0 {

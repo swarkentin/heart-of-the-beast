@@ -32,8 +32,8 @@ func TestEveryMonsterHasArtAndEverySpriteHasAMonster(t *testing.T) {
 			t.Errorf("sprite %s (%s) has no monster definition", sprite.ID, sprite.Name)
 		}
 	}
-	if len(art.Sprites()) != 165 {
-		t.Errorf("expected the 165-creature bestiary, registry has %d sprites", len(art.Sprites()))
+	if len(art.Sprites()) != 166 {
+		t.Errorf("expected the 166-creature bestiary (165 and the Heart of the Beast), registry has %d sprites", len(art.Sprites()))
 	}
 }
 
@@ -53,6 +53,9 @@ func TestEveryThemeHasMonstersAndFourBosses(t *testing.T) {
 		}
 	}
 	for _, theme := range art.Themes() {
+		if theme.Unique {
+			continue
+		}
 		bossSprites := 0
 		for _, sprite := range art.Sprites() {
 			if sprite.Theme == theme.ID && sprite.Boss {

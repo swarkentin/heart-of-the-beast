@@ -113,6 +113,13 @@
       "manifest": "infernal/manifest.json",
       "creatures": 11,
       "bosses": 4
+    },
+    {
+      "id": "beast",
+      "name": "The Heart of the Beast",
+      "manifest": "beast/manifest.json",
+      "creatures": 1,
+      "bosses": 1
     }
   ]
 }

@@ -80,6 +80,10 @@ type Run struct {
 	FloorModifiers []ActiveFloorModifier `json:"floorModifiers,omitempty"`
 	// Briefing describes the dungeon the party is in; clients show it as an intro on entering it.
 	Briefing *DungeonBriefing `json:"briefing,omitempty"`
+	// HeartStrikes is the damage this run dealt the shared Heart of the Beast, one entry per fight (ADR 0040).
+	HeartStrikes []HeartStrike `json:"heartStrikes,omitempty"`
+	// HeartLured is set by a Beast Lure: the next dungeon boss will be the heart (ADR 0040).
+	HeartLured bool `json:"heartLured,omitempty"`
 	// Camp is the respite between two floors of an expedition: a mini-game, then a shop.
 	Camp                    *Camp                   `json:"camp,omitempty"`
 	PendingInterFloorChoice bool                    `json:"pendingInterFloorChoice,omitempty"`

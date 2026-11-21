@@ -1,6 +1,6 @@
 import type { ApiCombatEvent } from "../api";
 import type { TraitTag } from "./traits.ts";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Skill } from "../combatAbilities";
 import { EnemyStage, type PartyImpact, type SelfCue } from "../monsters/EnemyStage";
 import { useReducedMotion } from "../monsters/hooks";
@@ -37,6 +37,16 @@ export function Scene({ view, roomId, roomName, backdrop, props, keeper, sales, 
     const d = 4 + strength * 4;
     el.animate([{ transform: "translate(0,0)" }, { transform: `translate(${-d}px,${d / 2}px)` }, { transform: `translate(${d}px,${-d / 2}px)` }, { transform: `translate(${-d / 2}px,0)` }, { transform: "translate(0,0)" }], { duration: 120 + strength * 50, easing: "steps(4, end)" });
   }, [reduced]);
+  // A step through a doorway (ADR 0039): the new room comes up out of the dark with a slight push-in, in a few
+  // stepped frames, rather than cutting. Not on the first room shown, and not for players who ask for less motion.
+  const shownRoom = useRef(roomId);
+  useEffect(() => {
+    if (shownRoom.current === roomId) return;
+    shownRoom.current = roomId;
+    const el = art.current;
+    if (!el || reduced || typeof el.animate !== "function") return;
+    el.animate([{ filter: "brightness(.15)", transform: "scale(1.04)" }, { filter: "brightness(1)", transform: "scale(1)" }], { duration: 320, easing: "steps(5, end)" });
+  }, [roomId, reduced]);
   const self = useMemo(() => player ? { id: player.id, skills, palm: ARMS_PALM, onCue: (cue: SelfCue) => armsCue.current?.(cue) } : undefined, [player?.id, skills]);
   const sheet = "/art/first-person/" + (player?.classId ?? "bulwark") + "/t" + (player?.skin?.tier ?? 1) + "-" + (player?.skin?.variant ?? "heraldic") + ".png";
   return <div className={"rn-scene rn-scene-" + view}>
