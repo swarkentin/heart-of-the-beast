@@ -63,9 +63,75 @@
 .rpa-ember { animation: rpa-ember 3s steps(15) infinite; animation-delay: var(--d); opacity: 0; }
 @keyframes rpa-ember { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-20px, -420px); } }
 
+/* Campaign scenes (ADR 0041). Havoc: lanterns go out one by one and the heartshard bursts. */
+.rpa-snuff { animation: rpa-snuff 1.4s steps(1, end) both; animation-delay: calc(var(--i) * 260ms + .4s); }
+@keyframes rpa-snuff { 0%, 40%, 60% { opacity: 1; } 30%, 50%, 100% { opacity: 0; } }
+.rpa-burst rect { animation: rpa-burst 1.6s steps(8, end) both; animation-delay: calc(var(--d) + 1.2s); }
+.rpa-burst-big rect { animation-delay: calc(var(--d) + .3s); animation-duration: 2.2s; }
+@keyframes rpa-burst { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+/* Flight: the trail of blood runs away from the heart toward the next road. */
+.rpa-drop { opacity: 0; animation: rpa-drop 2.8s steps(1, end) infinite; animation-delay: calc(var(--i) * 140ms); }
+@keyframes rpa-drop { 0% { opacity: 0; } 10%, 70% { opacity: 1; } 100% { opacity: 0; } }
+/* Victory: a single flash, gold rays and a dawn where the heart was. */
+.rpa-flash-once { animation: rpa-flash-once 1.2s steps(3, end) both .3s; }
+@keyframes rpa-flash-once { 0% { opacity: 0; } 15% { opacity: .9; } 100% { opacity: 0; } }
+.rpa-rays-gold { transform-origin: 550px 250px; }
+.rpa-dawn { transform-box: fill-box; transform-origin: center; animation: rpa-light 2s steps(8) both 1s, rpa-glow 1.6s steps(3) infinite alternate 3s; }
+/* Beyond: a far gate beats red on the horizon. */
+.rpa-far-gate { transform-box: fill-box; transform-origin: center; animation: rpa-open 1.6s steps(8, end) both 1s; }
+.rpa-shock-slow { animation-duration: 2.2s; }
+
 @media (prefers-reduced-motion: reduce) {
   .rpa-stars rect, .rpa-slice, .rpa-moon, .rpa-lantern-core, .rpa-lantern-halo, .rpa-firefly, .rpa-quake, .rpa-cracks path, .rpa-rise, .rpa-heart, .rpa-deep-glow, .rpa-shock, .rpa-dust,
-  .rpa-rot, .rpa-tendrils path, .rpa-bolt, .rpa-flash, .rpa-master, .rpa-gate, .rpa-ring, .rpa-rays, .rpa-mote, .rpa-walker, .rpa-floor-glow, .rpa-veins path, .rpa-ember { animation: none !important; }
+  .rpa-rot, .rpa-tendrils path, .rpa-bolt, .rpa-flash, .rpa-master, .rpa-gate, .rpa-ring, .rpa-rays, .rpa-mote, .rpa-walker, .rpa-floor-glow, .rpa-veins path, .rpa-ember,
+  .rpa-snuff, .rpa-burst rect, .rpa-drop, .rpa-flash-once, .rpa-dawn, .rpa-far-gate { animation: none !important; }
+  .rpa-snuff, .rpa-flash-once { opacity: 0; }
+  .rpa-drop { opacity: 1; }
   .rpa-cracks path, .rpa-tendrils path, .rpa-veins path { stroke-dashoffset: 0; }
   .rpa-shock, .rpa-dust, .rpa-bolt, .rpa-flash, .rpa-mote, .rpa-ember, .rpa-firefly { opacity: 0; }
+}
+
+/* ---------- the campaigns' story scenes (storyArt.tsx, ADR 0041) ---------- */
+.rps-flicker { animation: rps-flicker 1.4s steps(3, jump-none) infinite alternate; }
+@keyframes rps-flicker { from { opacity: .75; } to { opacity: 1; } }
+/* A light's glow: faint, breathing. Opacity lives here, not on the element, so the animation cannot override it. */
+.rps-halo { opacity: .2; animation: rps-halo 1.4s steps(3, jump-none) infinite alternate; }
+@keyframes rps-halo { from { opacity: .12; } to { opacity: .26; } }
+.rps-beat { transform-box: fill-box; transform-origin: center; animation: rps-beat .9s steps(3) infinite; }
+@keyframes rps-beat { 0%, 60%, 100% { transform: scale(1); } 20% { transform: scale(1.12); } }
+.rps-beat-fade { animation: rps-beat-fade .9s steps(3) infinite; opacity: 0; }
+@keyframes rps-beat-fade { 0%, 60%, 100% { opacity: 0; } 20% { opacity: .22; } }
+.rps-dash { animation: rps-dash 2.4s steps(12) infinite linear; }
+@keyframes rps-dash { to { stroke-dashoffset: -72; } }
+.rps-rise { opacity: 0; animation: rps-rise 2.4s steps(12) infinite; animation-delay: var(--d); }
+@keyframes rps-rise { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(0, -300px); } }
+.rps-spin { transform-box: fill-box; transform-origin: center; animation: rps-spin 6s steps(48) infinite; }
+.rps-spin-back { transform-box: fill-box; transform-origin: center; animation: rps-spin 3s steps(24) infinite reverse; }
+.rps-pivot { transform-box: view-box; }
+.rps-slow { animation-duration: 18s; }
+@keyframes rps-spin { to { transform: rotate(360deg); } }
+.rps-spark { opacity: 0; animation: rps-spark .8s steps(6) infinite; animation-delay: var(--d); }
+@keyframes rps-spark { 0% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+.rps-appear { opacity: 0; animation: rps-appear .8s steps(4) both; animation-delay: calc(var(--i) * 350ms + .4s); }
+@keyframes rps-appear { to { opacity: 1; } }
+.rps-bubble { opacity: 0; animation: rps-appear .6s steps(3) both; animation-delay: calc(var(--i) * 300ms + .3s); }
+.rps-memory { filter: sepia(.45) saturate(.9); animation: rps-memory 1.6s steps(6) both; }
+@keyframes rps-memory { from { opacity: 0; filter: sepia(.45) saturate(.9) blur(6px); } to { opacity: 1; filter: sepia(.45) saturate(.9) blur(0); } }
+.rps-old-heart { opacity: .8; }
+.rps-sink { animation: rps-sink 4s steps(16) both .8s; }
+@keyframes rps-sink { to { transform: translate(40px, 150px); opacity: .2; } }
+.rps-shock-fast { animation-duration: .7s; }
+.rps-flash-late { opacity: 0; animation: rps-flash-late 1.4s steps(4, end) both 3.2s; }
+@keyframes rps-flash-late { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: .9; fill: #05030a; } }
+.rps-eyelid { transform-box: fill-box; transform-origin: top; animation: rps-eyelid 1.2s steps(6) both 1.4s; }
+@keyframes rps-eyelid { to { transform: scaleY(0); } }
+.rps-look { animation: rps-look 4s steps(4) infinite 2.6s; }
+@keyframes rps-look { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(-90px, 0); } 60% { transform: translate(90px, -10px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rps-flicker, .rps-halo, .rps-beat, .rps-beat-fade, .rps-dash, .rps-rise, .rps-spin, .rps-spin-back, .rps-spark, .rps-appear, .rps-bubble,
+  .rps-memory, .rps-sink, .rps-flash-late, .rps-eyelid, .rps-look { animation: none !important; }
+  .rps-appear, .rps-bubble { opacity: 1; }
+  .rps-rise, .rps-spark, .rps-beat-fade, .rps-flash-late { opacity: 0; }
+  .rps-eyelid { transform: scaleY(0); }
 }

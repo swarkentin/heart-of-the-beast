@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -51,6 +52,10 @@ type RunSimulationReport struct {
 	// EndDungeon and EndThemeID name the dungeon of the expedition the party fell in.
 	EndDungeon int    `json:"endDungeon,omitempty"`
 	EndThemeID string `json:"endThemeId,omitempty"`
+	// CampaignWon is set when a simulated campaign (SimulationCampaignPrefix) beat its final heart.
+	CampaignWon bool `json:"campaignWon,omitempty"`
+	// DungeonThemes is the road the run took, one theme per dungeon entered.
+	DungeonThemes []string `json:"dungeonThemes,omitempty"`
 }
 
 // RunSimulationEnemyReport identifies an enemy present when an expedition ended, including its remaining health.
@@ -168,7 +173,12 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 	}
 	// The supplied seed is the canonical generation seed. The run ID remains
 	// stable and unique within this in-memory aggregate.
-	if err := startExpeditionWithSeed(room, runID, themeID, uint64(seed), now); err != nil {
+	start := func() error { return startExpeditionWithSeed(room, runID, themeID, uint64(seed), now) }
+	if campaignID, ok := strings.CutPrefix(themeID, SimulationCampaignPrefix); ok {
+		// "campaign:<id>" simulates a campaign road instead of an endless expedition.
+		start = func() error { return startCampaignWithSeed(room, runID, campaignID, uint64(seed), now) }
+	}
+	if err := start(); err != nil {
 		return RunSimulationReport{}, fmt.Errorf("start simulated run: %w", err)
 	}
 
@@ -360,7 +370,7 @@ func SimulateRunWithPolicy(seed int64, themeID string, classIDs []string, maxSte
 		DungeonsCleared: room.Run.DungeonsCleared, Rank: ExpeditionRank(room.Run.FloorsCleared),
 		ReachedDepth: room.Run.FloorsCleared + 1, RoomsVisited: len(visited), CombatRounds: room.Run.CombatRoundNumber,
 		Levels: make(map[string]int), Steps: steps, CombatMetrics: combatMetrics, StrikeDamageAtEnd: make(map[string]int),
-		NetPartyHealthLoss: netPartyHealthLoss,
+		NetPartyHealthLoss: netPartyHealthLoss, CampaignWon: room.Run.CampaignWon, DungeonThemes: append([]string(nil), room.Run.DungeonThemes...),
 	}
 	switch {
 	case report.Wiped:
@@ -631,3 +641,6 @@ func percentileNearestRank(values []int, percentile int) int {
 	}
 	return values[index]
 }
+
+// SimulationCampaignPrefix, followed by a campaign ID in place of a theme, simulates that campaign's road.
+const SimulationCampaignPrefix = "campaign:"

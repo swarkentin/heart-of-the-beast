@@ -57,6 +57,8 @@ type Camp struct {
 	Votes                map[string]string     `json:"votes,omitempty"`
 	NextThemeID          string                `json:"nextThemeId,omitempty"`
 	NextDungeonModifiers []ActiveFloorModifier `json:"nextDungeonModifiers,omitempty"`
+	// Road is where a campaign goes next, in place of the crossroads vote (campaigns.go).
+	Road *DungeonChoice `json:"road,omitempty"`
 	// After a capstone boss: each adventurer's boon offer and choice (boons.go). BoonOnly marks a camp that is
 	// only the boon choice, after a castle floor that does not camp.
 	BoonOffers  map[string][]Boon `json:"boonOffers,omitempty"`
@@ -114,11 +116,20 @@ func openCamp(room *Room, round int, now time.Time) {
 		Purchases: make(map[string][]string), Ready: make(map[string]bool),
 	}
 	if between {
-		// The next floor is the first of whichever dungeon the party votes for at the crossroads.
+		// The next floor is the first of whichever dungeon the party votes for at the crossroads. A campaign's
+		// road is set by its story, so there is no vote: the camp just says where it leads.
 		camp.NextDepth = 1
-		camp.Choices = rollDungeonChoices(run.Seed, run.Theme(), dungeonNumber(run)+1)
-		camp.NextMaxDepth = camp.Choices[0].Floors
 		camp.Votes = make(map[string]string)
+		if campaign, ok := run.campaign(); ok {
+			road := campaignRoad(run, campaign, dungeonNumber(run)+1)
+			camp.Road = &road
+			camp.NextThemeID, camp.NextMaxDepth = road.ThemeID, road.Floors
+			camp.NextDungeonModifiers = road.Modifiers
+			camp.NextModifiers = append([]ActiveFloorModifier(nil), road.Modifiers...)
+		} else {
+			camp.Choices = rollDungeonChoices(run.Seed, run.Theme(), dungeonNumber(run)+1)
+			camp.NextMaxDepth = camp.Choices[0].Floors
+		}
 	} else {
 		camp.NextModifiers = nextFloorModifiers(run, run.Depth+1)
 	}
@@ -129,7 +140,12 @@ func openCamp(room *Room, round int, now time.Time) {
 		startBoonStage(room, now)
 		return
 	}
-	setCampDeadline(room, CampGameWindow, now)
+	window := CampGameWindow
+	if between && run.CampaignInterlude && dungeonNumber(run) == CampaignShardDungeon {
+		// The interlude plays over this camp: watching it must not cost anyone their mini-game.
+		window += CampaignInterludeWindow
+	}
+	setCampDeadline(room, window, now)
 }
 
 func setCampDeadline(room *Room, window time.Duration, now time.Time) {
@@ -240,13 +256,19 @@ func chooseDungeon(room *Room, eligible []string) {
 	for _, playerID := range eligible {
 		tally[camp.Votes[playerID]]++
 	}
-	order := []int{0, 1}
-	if mixSeed(run.Seed, uint64(dungeonNumber(run)), 0x71e)%2 == 1 {
-		order = []int{1, 0}
+	if len(camp.Choices) == 0 {
+		return
 	}
-	winner := camp.Choices[order[0]]
-	if tally[camp.Choices[order[1]].ThemeID] > tally[winner.ThemeID] {
-		winner = camp.Choices[order[1]]
+	winner := camp.Choices[0]
+	if len(camp.Choices) > 1 {
+		order := []int{0, 1}
+		if mixSeed(run.Seed, uint64(dungeonNumber(run)), 0x71e)%2 == 1 {
+			order = []int{1, 0}
+		}
+		winner = camp.Choices[order[0]]
+		if tally[camp.Choices[order[1]].ThemeID] > tally[winner.ThemeID] {
+			winner = camp.Choices[order[1]]
+		}
 	}
 	camp.NextThemeID = winner.ThemeID
 	camp.NextDungeonModifiers = winner.Modifiers
@@ -622,8 +644,9 @@ func openShop(room *Room, now time.Time) {
 			offers = append(offers, atTier(item, tier))
 		}
 	}
-	// The Beast Lure is always for sale until someone in the party has bought one.
-	if !run.HeartLured {
+	// The Beast Lure is always for sale until someone in the party has bought one. A campaign's hearts are set by
+	// its story, so campaigns never sell it.
+	if !run.HeartLured && run.CampaignID == "" {
 		offers = append(offers, atTier(beastLure, tier))
 	}
 	// Permanent boons become progressively more expensive. Whetstones use a quadratic curve because

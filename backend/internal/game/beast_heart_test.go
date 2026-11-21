@@ -135,7 +135,7 @@ func TestTheHeartTemplatesAreValidBossesAndCastlesGetTheirExtraMechanic(t *testi
 			t.Fatal(err)
 		}
 	}
-	_, rooms := generateFloor(true, "eldritch", 99, CapstoneFloors, CapstoneFloors, 2, nil)
+	_, rooms := generateFloor(heartBossFor("eldritch"), "eldritch", 99, CapstoneFloors, CapstoneFloors, 2, nil)
 	for _, room := range rooms {
 		if room.RoomType == "boss" && room.Encounter != nil && !room.Encounter.Enemies[0].hasMechanic(BossMechanicRebirth) {
 			t.Fatalf("a castle's heart rises again like a castle boss: %+v", room.Encounter.Enemies[0])

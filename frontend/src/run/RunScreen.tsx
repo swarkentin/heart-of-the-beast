@@ -23,6 +23,8 @@ import { Celebrations } from "./Celebration";
 import { progressReport } from "./progress.ts";
 import { buildParty, partyLabels, seatParty } from "./party";
 import { Scene, type SceneEnemy } from "./Scene";
+import { CampaignResult, CampaignStories } from "./CampaignStory";
+import { useCampaigns } from "../campaign/useCampaigns";
 import "./run.css";
 
 // The run screen. Everything has one home:
@@ -44,6 +46,7 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
   const targetIndex = intent?.targetPlayerId ? playerIds.indexOf(intent.targetPlayerId) + 1 : 0;
   return {
     id: enemy.id, name: enemy.name + (enemy.enraged ? " · ENRAGED" : "") + ((enemy.barrier ?? 0) > 0 ? " · BARRIER " + enemy.barrier : ""), hp: enemy.health, maxHp: enemy.maxHealth, sprite: enemy.sprite, rawIntent: intent, modifier: enemy.modifier,
+    heart: enemy.definitionId === "heartshard" ? { tier: 0, lesser: true } : enemy.heartTier ? { tier: enemy.heartTier, lesser: false } : undefined,
     x: enemyX("player", count, index),
     intentMove: intent ? intent.label : "No move ready",
     intentEffect: intent ? intent.damage + " DMG" + (intent.heal ? " · HEALS " + intent.heal : "") : "",
@@ -140,6 +143,10 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   useEffect(() => { if (livingTarget && target !== livingTarget.id) setTarget(livingTarget.id); }, [livingTarget?.id, target]);
 
   const party = buildParty(snapshot, run, selfId, catalog, enemies);
+  // A campaign run (ADR 0041) tells its own story: prologue, interlude and epilogue come from its catalog entry.
+  const campaigns = useCampaigns();
+  const campaign = run.campaignId ? campaigns.find(item => item.id === run.campaignId) : undefined;
+  const [epilogueAgain, setEpilogueAgain] = useState(false);
 
   // ---- getting from place to place (ADR 0039) --------------------------------------------------------------------
   // A new run opens on the prologue, before the first briefing. Whether it shows is decided once per run, on the
@@ -373,9 +380,9 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   let command: ReactNode;
   if (gameOver) {
     command = <div className="rn-context">
-      <p className="px-eyebrow">{run.phase === "completed" ? "RUN COMPLETE" : "RUN OVER"}</p>
-      <h2>{run.phase === "completed" ? "The dungeon is cleared" : "The party has fallen"}</h2>
-      {run.generator ? <ExpeditionResult run={run} /> : null}
+      <p className="px-eyebrow">{campaign ? campaign.name.toUpperCase() + (run.campaignWon ? " · VICTORY" : " · RUN OVER") : run.phase === "completed" ? "RUN COMPLETE" : "RUN OVER"}</p>
+      <h2>{run.campaignWon ? "The heart is beaten" : run.phase === "completed" ? "The dungeon is cleared" : "The party has fallen"}</h2>
+      {run.campaignId ? <CampaignResult run={run} campaign={campaign} onReplay={() => setEpilogueAgain(true)} /> : run.generator ? <ExpeditionResult run={run} /> : null}
       <p className="px-copy">{spectator ? "The host can take the party back to the lobby." : isHost ? "Take the party back to the lobby to choose classes and go again." : "Waiting for the host to return the party to the lobby."}</p>
       {!spectator && isHost ? <div className="rn-choices"><button className="px-button px-button-primary" onClick={onReturnToLobby} disabled={busy}>{busy ? "RETURNING…" : "RETURN TO LOBBY"}</button></div> : null}
     </div>;
@@ -466,7 +473,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const order = (id: string) => Math.max(0, [seats.left[0], seats.right[0], seats.left[1], seats.right[1]].findIndex(member => member?.id === id));
 
   return <GameShell status="" className={"rn-screen rn-party-" + Math.max(1, Math.min(4, party.length))} style={themeVars(room.themeId || run.themeId)}
-    center={<div className="rn-location"><b>{room.name}</b><span>{(run.dungeon ?? 1) > 1 ? "DUNGEON " + run.dungeon + " · " : ""}{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
+    center={<div className="rn-location"><b>{room.name}</b><span>{run.campaignId ? "CHAPTER " + (run.dungeon ?? 1) + " · " : (run.dungeon ?? 1) > 1 ? "DUNGEON " + run.dungeon + " · " : ""}{camp ? "CAMP BELOW FLOOR " + (run.depth ?? 1) : "FLOOR " + String(run.depth ?? 1).padStart(2, "0")}{run.maxDepth ? " OF " + String(run.maxDepth).padStart(2, "0") : ""} · {themeTitle(room.themeId || run.themeId)}{spectator ? " · SPECTATING" : ""}</span></div>}
     tools={<>
       {!spectator ? <button type="button" className="px-button px-button-small rn-view-switch" onClick={() => setView(view === "player" ? "cast" : "player")} aria-pressed={view === "cast"}>{view === "player" ? "CAST VIEW" : "PLAYER VIEW"}</button> : null}
       <SharedMenu profile={profile} classes={catalog?.classes ?? []} rewards={catalog?.profileRewards ?? []} audioControls={audioControls} onSaveName={onSaveName} actions={<>
@@ -483,7 +490,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           keeper={room.roomType === "reward" ? room.event?.keeper : undefined} sales={Object.values(camp?.purchases ?? {}).reduce((total, list) => total + list.length, 0)} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
         {combat && room.encounter?.enemies.some(enemy => enemy.sprite === HEART_SPRITE) ? (() => { const tally = heartTally(run, room.id, selfId); return <HeartFightBadge party={tally.party} mine={tally.mine} spectator={!selfId} />; })() : null}
-        {descending ? <FloorDescent key={descending.key} depth={descending.depth} maxDepth={run.maxDepth} boss={heartAwaits(run) ? "The Heart of the Beast" : run.briefing?.boss} onDone={endDescent} /> : null}
+        {descending ? <FloorDescent key={descending.key} depth={descending.depth} maxDepth={run.maxDepth} boss={!run.campaignId && heartAwaits(run) ? "The Heart of the Beast" : run.briefing?.boss} onDone={endDescent} /> : null}
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
@@ -510,7 +517,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
         <small>{skillPoints > 0 ? "+1 SKILL POINT · TAP TO RANK UP A SKILL" : "TAP TO DISMISS"}</small>
       </div>
     </div> : null}
-    {prologueOpen ? <RunPrologue runId={run.id} themeId={run.briefing?.themeId || run.themeId || "catacombs"} party={party} onDone={endPrologue} /> : null}
+    {prologueOpen && (!run.campaignId || campaign) ? <RunPrologue runId={run.id} themeId={run.briefing?.themeId || run.themeId || "catacombs"} party={party} story={campaign ? { name: campaign.name, panels: campaign.prologue, lands: campaign.themes, masters: campaign.masters } : undefined} onDone={endPrologue} /> : null}
+    <CampaignStories run={run} campaign={campaign} party={party} active={!prologueOpen && !introOpen} replay={epilogueAgain} onReplayDone={() => setEpilogueAgain(false)} onEpilogueDone={!spectator && isHost ? onReturnToLobby : undefined} />
     {run.briefing ? <DungeonIntro briefing={run.briefing} run={run} runId={run.id} active={!gameOver && !prologueOpen} onOpenChange={setIntroOpen} /> : null}
   </GameShell>;
 }

@@ -67,8 +67,9 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
   const next = camp.nextModifiers ?? [];
   const floors = camp.nextMaxDepth ?? run.maxDepth;
   const last = camp.nextDepth === floors;
-  const between = (camp.choices?.length ?? 0) > 0;
-  const chosen = camp.choices?.find(choice => choice.themeId === camp.nextThemeId);
+  // A campaign has no vote between dungeons: its road (ADR 0041) says where the story goes next.
+  const between = (camp.choices?.length ?? 0) > 0 || Boolean(camp.road);
+  const chosen = camp.choices?.find(choice => choice.themeId === camp.nextThemeId) ?? camp.road;
   const myVote = camp.votes?.[selfId];
   const votesFor = (themeId: string) => Object.values(camp.votes ?? {}).filter(vote => vote === themeId).length;
   const castleAhead = camp.choices?.some(choice => choice.capstone) ?? false;
@@ -76,15 +77,17 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
   const boonOffers = camp.boonOffers?.[selfId] ?? [];
   const boonsChosen = Object.keys(camp.boonChoices ?? {}).length;
   const boonsOffered = Object.keys(camp.boonOffers ?? {}).length;
-  const where = between ? "DUNGEON " + (run.dungeon || 1) + " CLEARED" : camp.boonOnly ? "FLOOR " + (camp.nextDepth - 1) + " CLEARED" : "HALFWAY DOWN";
+  const where = between ? (run.campaignId ? "CHAPTER " : "DUNGEON ") + (run.dungeon || 1) + " CLEARED" : camp.boonOnly ? "FLOOR " + (camp.nextDepth - 1) + " CLEARED" : "HALFWAY DOWN";
   const stage = camp.stage === "boon" ? "BOONS" : camp.stage === "game" ? (camp.game?.name ?? "").toUpperCase() : camp.stage === "crossroads" ? "CROSSROADS" : "SHOP";
   return <div className="rn-context rn-camp">
     <p className="px-eyebrow">{where} · {camp.boonOnly ? "" : "CAMP · "}{stage}</p>
     {timer}
     {between && camp.stage !== "boon" ? <ExpeditionMap run={run} /> : null}
+    {camp.road && camp.stage !== "boon" ? <p className="px-label">THE ROAD LEADS ON TO {camp.road.name.toUpperCase()}{camp.road.capstone && !camp.road.heart ? " · THE CASTLE" : ""}</p> : null}
     {camp.stage === "boon" ? <>
       <h2>Claim a boon</h2>
       {boonsOffered > 1 ? <p className="px-label">{boonsChosen}/{boonsOffered} CLAIMED</p> : null}
+      {camp.road?.heart ? <p className="px-copy">The castle floor splits open. The heart is beating below, and there is no time to rest.</p> : null}
       {boonOffers.length > 0 ? <Boons offers={boonOffers} chosen={camp.boonChoices?.[selfId]} acting={acting} busy={busy} send={onCommand} /> : <p className="px-label">{spectator ? "THE PARTY IS CHOOSING BOONS" : "WAITING FOR THE PARTY"}</p>}
     </> : camp.stage === "game" && camp.game ? <>
       <h2>A moment of respite</h2>

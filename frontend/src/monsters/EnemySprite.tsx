@@ -5,6 +5,7 @@ import { moveAnimForLabel } from "./moves";
 import { moveAnim } from "./moves";
 import type { SpriteData } from "./spriteStore";
 import { plateFontSize, plateY, spriteScale } from "./layout";
+import { HeartAura } from "./HeartAura";
 import type { AnimName, StageEnemy, StageView } from "./types";
 
 export type SeqCue = { seq: number; cue: Cue };
@@ -163,7 +164,8 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
   const alive = enemy.hp > 0;
   const telegraph = alive && enemy.rawIntent ? moveAnim(sprite?.creature, enemy.rawIntent) : null;
   const { pose, dead } = useSpriteMachine(sprite, telegraph, startDead, reduced, cues, onImpact, () => setShake((value) => value + 1));
-  const scale = sprite ? spriteScale(view, sprite.creature.tier, count) : 5;
+  // The heartshard is a torn-off piece of the heart: the same sheet, drawn smaller.
+  const scale = (sprite ? spriteScale(view, sprite.creature.tier, count) : 5) * (enemy.heart?.lesser ? 0.72 : 1);
   const headY = sprite ? floorY - (sprite.creature.anchor.y - sprite.bbox.top) * scale : floorY - 200;
   const boxLeft = sprite ? (sprite.bbox.left - sprite.creature.anchor.x) * scale : -50;
   const boxRight = sprite ? (sprite.bbox.right - sprite.creature.anchor.x) * scale : 50;
@@ -175,6 +177,7 @@ export function EnemySprite({ enemy, view, x, index, count, floorY, selected, on
     <g transform={`translate(${x} 0)`} onClick={onClick} className={(onClick && alive ? "enemy-sprite " : "") + "enemy-stage-actor" + (enemy.modifier ? " enemy-empowered-actor enemy-empowered-actor-" + enemy.modifier : "")} data-enemy={enemy.id} data-anim={pose.anim} data-frame={pose.frame}>
       {selected && alive ? <ellipse cx="0" cy={floorY + 2} rx={Math.max(92, (boxRight - boxLeft) / 2 + 18)} ry="15" fill="none" stroke="#e9bd80" strokeWidth="4" strokeDasharray="9 7" /> : null}
       <ellipse cx="0" cy={floorY + 4} rx={Math.max(60, (boxRight - boxLeft) / 2.2)} ry="14" fill="#080a10" opacity=".8" />
+      {enemy.heart && alive ? <HeartAura look={enemy.heart} cy={(headY + floorY) / 2} floorY={floorY} radius={Math.max(80, (boxRight - boxLeft) / 2)} /> : null}
       {enemy.modifier ? <g className={"enemy-empowered enemy-empowered-" + enemy.modifier} pointerEvents="none">
         <ellipse cx="0" cy={floorY - 88} rx={Math.max(74, (boxRight - boxLeft) / 2 + 18)} ry={Math.max(118, (floorY - headY) * 0.62)} fill="none" strokeWidth="5" strokeDasharray={enemy.modifier === "ambush" ? "10 12" : "5 7"} />
         <text x="0" y={headY - 38} textAnchor="middle" fontSize="13" fontWeight="bold" letterSpacing="2" stroke="#10121a" strokeWidth="5" paintOrder="stroke">{enemy.modifier === "ambush" ? "AMBUSH" : "UNYIELDING"}</text>

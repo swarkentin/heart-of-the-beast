@@ -45,6 +45,10 @@ type DungeonBriefing struct {
 	// Advice is one tip per boss mechanic, naming the boss's own moves.
 	Advice    []string              `json:"advice"`
 	Modifiers []ActiveFloorModifier `json:"modifiers,omitempty"`
+	// Campaign names the campaign this dungeon belongs to, and Chapter which of its Chapters it is (ADR 0041).
+	Campaign string `json:"campaign,omitempty"`
+	Chapter  int    `json:"chapter,omitempty"`
+	Chapters int    `json:"chapters,omitempty"`
 }
 
 type themeBriefing struct {
@@ -130,9 +134,25 @@ func newDungeonBriefing(run *Run) *DungeonBriefing {
 		return briefing
 	}
 	briefing.Threats = expeditionThreats(expedition)
-	briefing.BossLair = expedition.Final.RoomName
+	final := expedition.Final
+	if campaign, ok := run.campaign(); ok {
+		briefing.Campaign = campaign.Name
+		briefing.Chapter = dungeonNumber(run)
+		briefing.Chapters = CampaignDungeons
+		if override := campaignFinalBoss(run); override != nil {
+			// The campaign's hearts take this dungeon's boss's place, and the briefing says so.
+			final = *override
+		}
+		if dungeonNumber(run) == CampaignChamberDungeon {
+			briefing.Name = "The Heart's Chamber"
+			briefing.Tagline = "One floor, and the heart at the bottom of it."
+			briefing.Lines = []string{campaign.Chamber}
+			briefing.Threats = nil
+		}
+	}
+	briefing.BossLair = final.RoomName
 	boss := ""
-	if encounter, err := defaultEncounterCatalog.Encounter(expedition.Final.EncounterID); err == nil {
+	if encounter, err := defaultEncounterCatalog.Encounter(final.EncounterID); err == nil {
 		for _, spawn := range encounter.Enemies {
 			if monster, err := defaultMonsterCatalog.Monster(spawn.MonsterID); err == nil && monster.Role == MonsterRoleBoss {
 				boss = monster.Name
@@ -140,7 +160,7 @@ func newDungeonBriefing(run *Run) *DungeonBriefing {
 		}
 	}
 	briefing.Boss = boss
-	briefing.Advice = bossAdvice(boss, expedition.Final)
+	briefing.Advice = bossAdvice(boss, final)
 	return briefing
 }
 
