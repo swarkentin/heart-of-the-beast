@@ -327,7 +327,7 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 		}
 		specials = []floorRoomKind{bonusKinds[rng.Intn(len(bonusKinds))]}
 	} else {
-		if rng.Intn(100) < 35+5*depth {
+		if rng.Intn(100) < vaultChance(depth) {
 			specials = append(specials, floorRoomVault)
 		}
 		if rng.Intn(100) < 45 {
@@ -377,7 +377,7 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 			}
 		case floorRoomVault:
 			room.Name, room.Description = theme.Vault.Room.Name, theme.Vault.Room.Description
-			room.Event = newRoomEvent(id, theme.Vault.Event)
+			room.Event = newVaultEvent(id, theme.Vault.Event, mixSeed(seed, uint64(depth), hashString(id+"/keeper")))
 		case floorRoomElite:
 			room.Name, room.Description = theme.Elite.Name, theme.Elite.Description
 			room.Encounter = encounter(id, theme.EliteID, EliteHealthPercent)
@@ -483,6 +483,12 @@ func roomLeadsTo(room *DungeonRoom, destination string) bool {
 		}
 	}
 	return false
+}
+
+// vaultChance is the percent chance that a floor holds a vault. Vaults are a treat, so they stay uncommon: about one
+// floor in five early on, rising slowly to one in three.
+func vaultChance(depth int) int {
+	return min(20+3*depth, 33)
 }
 
 func newRoomEvent(roomID string, event FloorEventTemplate) *RoomEvent {

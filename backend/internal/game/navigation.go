@@ -8,6 +8,10 @@ import (
 
 const NavigationVoteWindow = 15 * time.Second
 
+// SinglePathDelay is how long the party stays in a cleared room with only one way on before it moves by itself
+// (ADR 0038): long enough to read what just happened, and nobody has to press a button to take the only road.
+const SinglePathDelay = 4 * time.Second
+
 var ErrNavigationVoteClosed = errors.New("navigation vote has already closed")
 
 func startNavigationVote(room *Room, now time.Time) {
@@ -16,7 +20,15 @@ func startNavigationVote(room *Room, now time.Time) {
 		return
 	}
 	current := run.Rooms[run.CurrentRoomID]
-	if current == nil || len(current.Exits) < 2 || len(eligibleNavigationVoters(room)) < 2 {
+	if current == nil || len(current.Exits) == 0 {
+		run.NavigationVote = nil
+		return
+	}
+	if len(current.Exits) == 1 {
+		run.NavigationVote = &NavigationVote{StartedAt: now.UTC(), Deadline: now.UTC().Add(SinglePathDelay), Votes: make(map[string]string), Auto: true}
+		return
+	}
+	if len(eligibleNavigationVoters(room)) < 2 {
 		run.NavigationVote = nil
 		return
 	}

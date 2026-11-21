@@ -402,11 +402,21 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     // Vault and discovery rooms can offer several choices. Keep the heading and timer fixed while
     // the choice list owns the available vertical space and scrolls independently.
     command = <div className="rn-context rn-context-scroll">
-      <p className="px-eyebrow">{room.roomType === "reward" ? "TREASURE" : "DISCOVERY"}</p>
+      <p className="px-eyebrow">{room.roomType !== "reward" ? "DISCOVERY" : room.event.keeper && room.event.keeper !== "warden" ? "A STRANGER'S DEAL" : "TREASURE"}</p>
       <h2>{room.event.title}</h2>
       <p className="px-copy">{room.event.description}</p>
       {eventDecision ? <div className="rn-timer" role="timer"><strong>PARTY DECISION · {cast}/{eligible.length} VOTED · TIES RANDOM</strong><TimerBar seconds={Math.min(15, eventDecision.seconds)} total={15} urgent={eventDecision.seconds <= 3} /><b>{eventDecision.seconds}s</b></div> : null}
       {acting ? <div className="rn-choices">{room.event.choices.map(choice => <button key={choice.id} className={"rn-choice" + (mine === choice.id ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_event", choiceId: choice.id })} disabled={busy || Boolean(eventDecision && eventDecision.remainingMs <= 0)}><Icon id="focus" size={2} /><span><strong>{choice.label}</strong><small>{choice.description}</small></span>{eventVote ? <em>{votesFor(eventVote, choice.id)} {mine === choice.id ? "· YOURS" : ""}</em> : null}</button>)}</div> : <p className="px-label">THE PARTY IS DECIDING</p>}
+    </div>;
+  } else if (exitsOpen && navigationVote?.auto && room.exits.length === 1) {
+    // Only one way on: the party moves by itself when the countdown ends, and anyone can go at once.
+    const onward = room.exits[0];
+    command = <div className="rn-context">
+      <p className="px-eyebrow">{room.cleared ? "ROOM CLEARED" : "EXPLORING"}</p>
+      <h2>{onward.label}</h2>
+      {room.event?.resolved ? <p className="px-copy">{room.event.result || "The party moves on."}</p> : null}
+      {navigation ? <div className="rn-timer" role="timer"><strong>MOVING ON</strong><TimerBar seconds={navigation.seconds} total={4} urgent={false} /><b>{navigation.seconds}s</b></div> : null}
+      {acting ? <div className="rn-choices"><button className="rn-choice" onClick={() => void onCommand({ type: "choose_exit", exitId: onward.id })} disabled={busy || Boolean(navigation && navigation.remainingMs <= 0)}><Icon id="agility" size={2} /><span><strong>Go now</strong><small>{onward.description || "Take the only way on."}</small></span></button></div> : null}
     </div>;
   } else {
     const mine = navigationVote?.votes?.[selfId];
@@ -442,7 +452,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       <aside className="rn-side rn-side-left" aria-label="Party">{seats.left.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside>
       <section className="rn-view" aria-label="Encounter">
         <Scene view={acting ? "player" : "cast"} roomId={room.id} roomName={room.name} backdrop={backdropRef({ id: room.id, roomType: room.roomType, themeId: room.themeId }, run.themeId)}
-          props={camp ? (camp.stage === "shop" ? "shop" : "camp") : room.roomType === "reward" ? "vault" : undefined} enemies={enemies} events={events} party={party}
+          props={camp ? (camp.stage === "shop" ? "shop" : "camp") : room.roomType === "reward" ? "vault" : undefined}
+          keeper={room.roomType === "reward" ? room.event?.keeper : undefined} sales={Object.values(camp?.purchases ?? {}).reduce((total, list) => total + list.length, 0)} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}

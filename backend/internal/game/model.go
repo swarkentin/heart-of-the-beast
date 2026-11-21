@@ -102,6 +102,9 @@ type NavigationVote struct {
 	StartedAt time.Time         `json:"startedAt"`
 	Deadline  time.Time         `json:"deadline"`
 	Votes     map[string]string `json:"votes"`
+	// Auto marks the countdown in a room with only one way on: the party takes it at the deadline unless someone
+	// goes sooner.
+	Auto bool `json:"auto,omitempty"`
 }
 
 type RoomEventVote struct {
@@ -175,7 +178,9 @@ type DungeonRoom struct {
 }
 
 type RoomEvent struct {
-	ID          string        `json:"id"`
+	ID string `json:"id"`
+	// Keeper is the character waiting in a vault (vault_keepers.go); empty for other events.
+	Keeper      string        `json:"keeper,omitempty"`
 	Title       string        `json:"title"`
 	Description string        `json:"description"`
 	Choices     []EventChoice `json:"choices"`

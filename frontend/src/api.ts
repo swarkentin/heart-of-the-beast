@@ -7,21 +7,21 @@ export type ApiMonsterTrait = { kind: string; amount?: number; every?: number; l
 export type ApiCombatEvent = { round: number; kind: string; message: string; effect?: "damage" | "heal" | "block"; targetId?: string; targetType?: "enemy" | "player"; amount?: number; critical?: boolean; actorId?: string; auto?: boolean; skill?: string; rank?: number };
 export type ApiExit = { id: string; destination: string; label: string; description?: string };
 export type ApiEventChoice = { id: string; label: string; description: string };
-export type ApiRoomEvent = { id: string; title: string; description: string; choices: ApiEventChoice[]; resolved: boolean; result?: string };
+export type ApiRoomEvent = { id: string; keeper?: string; title: string; description: string; choices: ApiEventChoice[]; resolved: boolean; result?: string };
 export type ApiDungeonRoom = { id: string; themeId?: string; name: string; floor?: string; roomType?: string; description: string; exits: ApiExit[]; encounter?: { status: string; enemies: ApiEnemy[] }; event?: ApiRoomEvent; cleared: boolean };
 export type ApiStats = { power: number; focus: number; agility: number };
 export type ApiClassCombat = { guardBonus?: number; ward?: number; wardReflect?: number; resolveReady?: boolean; arcaneCharges?: number; cooldowns?: Record<string, number>; empower?: number; thorns?: number; regen?: number; regenRounds?: number };
 export type ApiPlayer = { id: string; health: number; maxHealth: number; archetype: string; classBuild?: { classId: string; passiveId: string }; classCombat?: ApiClassCombat; guarding?: boolean; experience: number; level: number; skills?: string[]; stats: ApiStats; strikeDamage?: number; guardReduction?: number; gold?: number; consumables?: Record<string, number>; items?: string[]; boons?: string[]; skillRanks?: Record<string, number>; skillPoints?: number };
 export type ApiCombatAction = { type: string; action: string; skill?: string; targetId?: string };
 export type ApiCombatRound = { number: number; startedAt: string; deadline: string; actions: Record<string, ApiCombatAction> };
-export type ApiVote = { startedAt: string; deadline: string; votes: Record<string, string> };
+export type ApiVote = { startedAt: string; deadline: string; votes: Record<string, string>; auto?: boolean };
 export type ApiRoomEventVote = ApiVote & { eventId: string };
 /** A level-wide rule in force on one floor of an expedition. */
 export type ApiFloorModifier = { id: string; name: string; description: string; kind: "debuff" | "perk" };
 /** One adventurer's copy of the camp mini-game. `chests` holds -1 for a shut chest, 0 for the mimic, else gold. */
 export type ApiMinigamePlay = { index: number; done: boolean; gold: number; pot: number; rolls?: number[]; chests?: number[]; result?: string };
 export type ApiMinigame = { kind: "dice" | "chests"; name: string; rules: string; depth: number; players: Record<string, ApiMinigamePlay> };
-export type ApiShopItem = { id: string; name: string; description: string; kind: string; amount?: number; price: number; repeatable?: boolean };
+export type ApiShopItem = { id: string; name: string; description: string; kind: string; amount?: number; price: number; repeatable?: boolean; tier?: number };
 /** The respite at a dungeon's midpoint and between dungeons: a mini-game for gold, a vote for the next dungeon (between dungeons only), then a shop. `deadline` is absent for a party of one. */
 /** One of the two dungeons offered after a dungeon boss; its modifiers hold on every floor of it. */
 export type ApiDungeonChoice = { themeId: string; name: string; tagline: string; floors: number; modifiers: ApiFloorModifier[]; capstone?: boolean };
