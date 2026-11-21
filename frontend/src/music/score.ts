@@ -234,6 +234,20 @@ export function chordAt(plan: Plan, place: BarPlace): number {
 }
 
 /** Moves a frequency by octaves into the octave centred on `centre`, so chord changes move by small steps. */
+/**
+ * The octave (counted from the key's tonic) that keeps a part's tonic at or above `floor` Hz. Low keys sink
+ * further with depth and boss transposition; without this the bass and melody fall below what speakers and ears
+ * can carry (an Infernal boss would put its bass near 27 Hz and its melody under its own filter).
+ */
+export function octaveAtLeast(root: number, octave: number, floor: number): number {
+  let oct = octave;
+  while (root * 2 ** oct < floor) oct += 1;
+  return oct;
+}
+
+/** Register floors for the tonic of each part, in Hz. */
+export const REGISTER = { bass: 52, lead: 230, counter: 175, arp: 175 } as const;
+
 function nearOctave(freq: number, centre: number): number {
   let f = freq;
   while (f > centre * Math.SQRT2) f /= 2;
@@ -288,7 +302,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   // ---- Pads: the chord, voice-led around a fixed register, re-struck when it changes. Fights put them behind the band.
   if (layers.pad > 0 && chordBar === 0) {
     const centre = plan.rootHz * 4;
-    const vel = (plan.fight ? 0.3 : 0.4) * layers.pad * (breakdown ? 1.25 : 1);
+    const vel = (plan.fight ? 0.38 : 0.42) * layers.pad * (breakdown ? 1.25 : 1);
     for (const tone of [0, 2, 4]) note("pad", 0, plan.voices.pad, nearOctave(freqOf(root, scale, chord + tone), centre), plan.barSec * 2.05, vel);
     if (!plan.fight) note("pad", 0, plan.voices.pad, nearOctave(freqOf(root, scale, chord + 4), centre * 2), plan.barSec * 2.05, vel * 0.35);
   }
@@ -311,7 +325,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
         default: break;
       }
       const dur = Math.max(0.12, (next - hit.step) * plan.stepSec * (plan.bassStyle === "walk" ? 0.8 : 0.92));
-      note("bass", hit.step, plan.voices.bass, freqOf(root, scale, degree, octave), dur, 0.7 * hit.vel * layers.bass * accent(hit.step));
+      note("bass", hit.step, plan.voices.bass, freqOf(root, scale, degree, octave + octaveAtLeast(root, 0, REGISTER.bass)), dur, 0.7 * hit.vel * layers.bass * accent(hit.step));
     });
   }
 
@@ -329,7 +343,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
     for (let p = 0; p < inPhrase; p += 1) idx += onsets((p === 3 || (!plan.fight && p % 2 === 1) ? plan.patterns.leadSparse : plan.patterns.lead).slice(0, steps), melodyLevel).length;
     const hits = onsets(pattern.slice(0, steps), melodyLevel);
     const shift = section === "B" ? 2 : 0;
-    const octave = profile.leadOct + (section === "B" ? -1 : 0);
+    const octave = octaveAtLeast(root, profile.leadOct, REGISTER.lead) + (section === "B" ? -1 : 0);
     hits.forEach((hit, k) => {
       let degree = plan.motif[mod(idx + k + shift, plan.motif.length)] + chord + (section === "B" ? 2 : 0);
       if (hit.step % beat === 0) degree = snapToChord(degree, chord, len);
@@ -351,8 +365,8 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
   // ---- Counter-line: in fights, a sustained harmony line (the chord's third) above the band in A and D,
   // and a slow, long-note theme in the breakdown.
   if (layers.counter >= 0.5 && plan.fight && section !== "B") {
-    if (breakdown && chordBar === 0) note("counter", 0, plan.voices.counter, freqOf(root, scale, plan.motif[mod(inSection, plan.motif.length)] + chord, profile.leadOct), plan.barSec * 1.9, 0.5 * layers.counter);
-    else if (!breakdown && chordBar === 0) note("counter", 0, plan.voices.counter, freqOf(root, scale, chord + 2, profile.leadOct - 1), plan.barSec * 1.95, 0.32 * layers.counter);
+    if (breakdown && chordBar === 0) note("counter", 0, plan.voices.counter, freqOf(root, scale, plan.motif[mod(inSection, plan.motif.length)] + chord, octaveAtLeast(root, profile.leadOct, REGISTER.lead)), plan.barSec * 1.9, 0.5 * layers.counter);
+    else if (!breakdown && chordBar === 0) note("counter", 0, plan.voices.counter, freqOf(root, scale, chord + 2, octaveAtLeast(root, profile.leadOct - 1, REGISTER.counter)), plan.barSec * 1.95, 0.32 * layers.counter);
   }
 
   // ---- Ostinato: the chord broken into a running figure. Quarter notes at rest, eighths in fights,
@@ -361,7 +375,7 @@ export function generateBar(plan: Plan, bar: number): ScoreEvent[] {
     const every = e >= 0.8 ? 1 : e >= 0.45 ? 2 : steps === 12 ? 3 : 4;
     const order = ARP_ORDER[plan.arpStyle];
     const tones = [0, 2, 4, len];
-    const octave = Math.max(1, profile.leadOct - 1);
+    const octave = octaveAtLeast(root, Math.max(1, profile.leadOct - 1), REGISTER.arp);
     for (let step = 0, k = 0; step < steps; step += every, k += 1) {
       const degree = chord + tones[order[k % order.length]];
       const vel = 0.42 * layers.arp * accent(step) * (breakdown ? 0.8 : 1);
@@ -436,7 +450,7 @@ export function generateStinger(plan: Plan, kind: "victory" | "defeat"): ScoreEv
   const scale = scaleForBar(plan, 0);
   const len = scale.length;
   const lead = plan.voices.lead;
-  const oct = plan.profile.leadOct;
+  const oct = octaveAtLeast(plan.rootHz, plan.profile.leadOct, REGISTER.lead);
   const melodic = (t: number, voice: MelodicVoice, freq: number, dur: number, vel: number, part: Part): MelodicEvent => ({ kind: "melodic", t, voice, freq, dur, vel, cents: 0, part });
   const events: ScoreEvent[] = [];
   if (kind === "victory") {

@@ -275,7 +275,7 @@ const infernal: ThemeProfile = {
   patterns: { kick: "X..X..X.X..X..X.", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X..X..X.X..X..X.", lead: "x...x.x.x...x...", leadSparse: "X.......X......." },
   motif: [0, 1, 4, 5, 4, 1, 0, -1], chordRoots: [0, 1, 5, 4],
   ensemble: { arp: "staccato", arpStyle: "broken", counter: "choirLead", calm: "violin", stab: "stab", choir: "brassPad", timpani: "timpani", crash: "crash", openHat: "openHat", bassStyle: "drive", progB: [5, 1, 4, 0], room: { size: 3.6, bright: 0.45, wet: 0.38 }, echo: 0.2,
-    fight: { kick: "X.xX..X.X.xX..X.", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X.xX..X.X.xX..X.", voices: { kick: "taiko" } } },
+    fight: { kick: "X..X..X.X..X..x.", back: "....X.......X...", tick: "x.x.x.x.x.x.x.x.", bass: "X.xX..X.X.xX..X.", voices: { kick: "kick" } } },
   bed: { noise: "brown", filter: "lowpass", f: 500, q: 0.8, gain: 0.11, lfo: { rate: 0.3, depth: 0.4 }, drones: [{ ratio: 1, w: "sawtooth", gain: 0.04, cents: -6 }, { ratio: 1.5, w: "sawtooth", gain: 0.03, cents: 6 }] },
   fx: [{ fx: "steam", p: 0.4 }, { fx: "metalClank", p: 0.3 }, { fx: "toll", p: 0.15, minDepth: 2 }],
   variants: {},

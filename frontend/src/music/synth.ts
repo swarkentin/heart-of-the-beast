@@ -23,14 +23,14 @@ export interface MasterChain {
 
 /** The mix: each part's level, stereo position, reverb send and echo send. Tuned so the melody and bass lead, the drums punch and the pads sit behind. */
 export const MIX: Record<Part, { gain: number; pan: number; rev: number; echo: number }> = {
-  pad: { gain: 0.5, pan: 0, rev: 0.5, echo: 0 },
+  pad: { gain: 0.6, pan: 0, rev: 0.5, echo: 0 },
   bass: { gain: 0.95, pan: 0, rev: 0.06, echo: 0 },
-  lead: { gain: 0.85, pan: 0.06, rev: 0.32, echo: 0.22 },
-  counter: { gain: 0.62, pan: -0.32, rev: 0.4, echo: 0.12 },
+  lead: { gain: 1, pan: 0.06, rev: 0.32, echo: 0.22 },
+  counter: { gain: 0.72, pan: -0.32, rev: 0.4, echo: 0.12 },
   arp: { gain: 0.5, pan: 0.34, rev: 0.28, echo: 0.2 },
   orch: { gain: 0.72, pan: -0.12, rev: 0.45, echo: 0 },
-  drums: { gain: 0.95, pan: 0, rev: 0.14, echo: 0 },
-  perc: { gain: 0.62, pan: 0.24, rev: 0.18, echo: 0 },
+  drums: { gain: 0.72, pan: 0, rev: 0.14, echo: 0 },
+  perc: { gain: 0.55, pan: 0.24, rev: 0.18, echo: 0 },
   fx: { gain: 0.75, pan: -0.15, rev: 0.55, echo: 0.1 },
 };
 

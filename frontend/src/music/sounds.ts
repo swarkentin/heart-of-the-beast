@@ -78,7 +78,7 @@ export const RECIPES: Record<MelodicVoice, Recipe> = {
   walkBass: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "sine", r: 1, v: 0.18 }, { w: "sine", r: 2, v: 0.06 }], a: 0.006, gain: 0.9, filter: { type: "lowpass", fmul: 3 }, hammer: { v: 0.03, f: 700, d: 0.03 } },
   pulseBass: { layers: [{ w: "square", r: 1, v: 0.12 }], a: 0.002, gain: 0.9, filter: { type: "lowpass", fmul: 2.5, to: 1.2, q: 2, t: 0.2 } },
   tubaBass: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "square", r: 1, v: 0.06 }], a: 0.02, gain: 0.9, filter: { type: "lowpass", fmul: 3 } },
-  ironBass: { layers: [{ w: "sawtooth", r: 1, v: 0.14 }, { w: "sawtooth", r: 1, v: 0.1, cents: 12 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 2.5, q: 5 }, drive: 1.5 },
+  ironBass: { layers: [{ w: "sawtooth", r: 1, v: 0.14 }, { w: "sawtooth", r: 1, v: 0.1, cents: 12 }, { w: "sine", r: 2, v: 0.08 }], a: 0.004, gain: 0.8, filter: { type: "lowpass", fmul: 4.5, q: 3 }, drive: 1.5 },
   thumpBass: { layers: [{ w: "sine", r: 1, v: 0.38 }, { w: "sine", r: 2, v: 0.06 }], a: 0.002, gain: 0.9, bend: 1.8 },
   fmBass: { layers: [{ w: "sine", r: 1, v: 0.3 }, { w: "sine", r: 2, v: 0.05 }], a: 0.003, r: 0.06, sustain: true, gain: 0.9, fm: { r: 1, index: 2.2, end: 0.4 } },
   upright: { layers: [{ w: "triangle", r: 1, v: 0.3 }, { w: "sine", r: 1, v: 0.18 }, { w: "sine", r: 2, v: 0.06, decay: 0.5 }], a: 0.004, gain: 0.95, ring: 0.6, filter: { type: "lowpass", fmul: 3.5, to: 1.6, t: 0.25 }, hammer: { v: 0.05, f: 600, d: 0.03 } },
@@ -168,15 +168,17 @@ export function fxSteps(fx: FxVoice, rng: Rng, pool: readonly number[]): Step[] 
 
 /** The original Catacombs effects, expressed as data. Every theme starts from these and is flavoured below. */
 const BASE_EFFECTS: Record<EffectKind, readonly Step[]> = {
-  impact: [noise(0.045, 3200, 0.28), { k: "crunch", d: 0.075, v: 0.3 }, tone(125, 0.14, "triangle", 0.3, { to: 48, a: 0.002 }), noise(0.095, 620, 0.16)],
-  block: [noise(0.12, 850, 0.12), tone(185, 0.14, "triangle", 0.18, { cents: -10 }), tone(740, 0.07, "sine", 0.08, { cents: -12 })],
-  magic: [tone(310, 0.34, "sine", 0.16, { to: 920, a: 0.002 }), noise(0.24, 2400, 0.07)],
-  heal: [tone(523.25, 0.45, "sine", 0.09), tone(659.25, 0.45, "sine", 0.08, { at: 0.09 }), tone(783.99, 0.5, "sine", 0.06, { at: 0.18 })],
-  defeat: [noise(0.28, 520, 0.2), tone(180, 0.42, "sawtooth", 0.18, { to: 48, a: 0.002 })],
-  door: [noise(0.38, 480, 0.11), tone(110, 0.45, "triangle", 0.13, { to: 54, a: 0.002 })],
-  encounter: [tone(110, 0.5, "triangle", 0.18, { cents: -8 }), tone(164.81, 0.65, "sine", 0.1, { cents: -12 })],
-  victory: [293.66, 369.99, 440].map((f, i) => tone(f, 0.8, "sine", 0.12, { at: i * 0.08, cents: -5 + i * 2 })),
-  failure: [tone(220, 0.9, "triangle", 0.17, { to: 55, a: 0.002 })],
+  // Every core effect has a body as well as a transient: a sub thump under hits, a clang under blocks, a boom
+  // when something falls. They should land with weight on laptop and phone speakers, not just click.
+  impact: [noise(0.05, 3200, 0.34), { k: "crunch", d: 0.085, v: 0.38 }, tone(125, 0.16, "triangle", 0.34, { to: 48, a: 0.002 }), tone(78, 0.24, "sine", 0.42, { to: 36, a: 0.002 }), noise(0.11, 620, 0.2)],
+  block: [noise(0.12, 850, 0.15), tone(185, 0.16, "triangle", 0.22, { cents: -10 }), tone(740, 0.09, "sine", 0.1, { cents: -12 }), tone(96, 0.2, "sine", 0.3, { to: 60, a: 0.002 }), { k: "metal", d: 0.35, v: 0.06, f: 2400, base: 67 }],
+  magic: [tone(310, 0.36, "sine", 0.2, { to: 920, a: 0.002 }), tone(155, 0.45, "triangle", 0.12, { to: 460, a: 0.01 }), noise(0.3, 1200, 0.1, "bandpass", { q: 1.5, to: 5200, a: 0.04 }), tone(62, 0.4, "sine", 0.22, { a: 0.03 })],
+  heal: [tone(523.25, 0.5, "sine", 0.11), tone(659.25, 0.5, "sine", 0.1, { at: 0.09 }), tone(783.99, 0.6, "sine", 0.08, { at: 0.18 }), tone(261.63, 0.8, "triangle", 0.1, { a: 0.04 }), tone(2093, 0.4, "sine", 0.025, { at: 0.24, a: 0.003 })],
+  defeat: [noise(0.32, 520, 0.24), tone(180, 0.46, "sawtooth", 0.2, { to: 48, a: 0.002 }), tone(64, 0.8, "sine", 0.45, { to: 28, a: 0.003 }), noise(0.5, 260, 0.2, "lowpass", { at: 0.02, a: 0.01 })],
+  door: [noise(0.4, 480, 0.13), tone(110, 0.5, "triangle", 0.16, { to: 54, a: 0.002 }), tone(56, 0.45, "sine", 0.3, { to: 34, a: 0.004 })],
+  encounter: [tone(98, 0.6, "sine", 0.42, { to: 49, a: 0.003 }), noise(0.08, 420, 0.22), tone(110, 0.6, "triangle", 0.2, { at: 0.04, cents: -8 }), tone(164.81, 0.75, "sine", 0.12, { at: 0.04, cents: -12 }), { k: "metal", d: 0.9, v: 0.035, f: 3800, base: 58, at: 0.04 }],
+  victory: [...[293.66, 369.99, 440].map((f, i) => tone(f, 0.85, "sine", 0.14, { at: i * 0.08, cents: -5 + i * 2 })), tone(146.83, 0.9, "triangle", 0.14, { a: 0.01 }), tone(880, 0.6, "sine", 0.04, { at: 0.24, a: 0.003 })],
+  failure: [tone(220, 0.9, "triangle", 0.2, { to: 55, a: 0.002 }), tone(55, 1.3, "sine", 0.4, { to: 30, a: 0.004 }), noise(0.7, 300, 0.16, "lowpass", { a: 0.02 })],
   // Adventurer Rank up: a quick brass-like climb to a held major chord, with a sparkle on top.
   rankUp: [
     ...[392, 523.25, 659.25].map((f, i) => tone(f, 0.13, "square", 0.05, { at: i * 0.1, a: 0.004 })),
