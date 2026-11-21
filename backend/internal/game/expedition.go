@@ -425,7 +425,23 @@ func RunProgressXP(run *Run) int64 {
 
 // RunProgressOf breaks RunProgressXP down. It is nil until the run is over, and nil for a run that won no fight.
 func RunProgressOf(run *Run) *RunProgress {
-	if run == nil || run.Cheated || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
+	if run == nil || (run.Phase != PhaseCompleted && run.Phase != PhaseFailed) {
+		return nil
+	}
+	return runProgressSoFar(run)
+}
+
+// RunProgressEarned is the persistent experience the run has earned so far, whether or not it is over. The server
+// banks it to each adventurer's profile as it grows, so leaving mid-run keeps everything earned before leaving.
+func RunProgressEarned(run *Run) int64 {
+	if progress := runProgressSoFar(run); progress != nil {
+		return progress.XP
+	}
+	return 0
+}
+
+func runProgressSoFar(run *Run) *RunProgress {
+	if run == nil || run.Cheated {
 		return nil
 	}
 	encounters := 0

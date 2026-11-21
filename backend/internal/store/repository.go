@@ -27,6 +27,8 @@ type Memory struct {
 	rooms    map[string][]byte
 	profiles map[string]*Profile
 	awards   map[string]bool
+	// runXP is the experience already banked per profile:run key (AwardRunXP adds only the increase).
+	runXP map[string]int64
 	// Optional sign-in state (ADR 0034). Extra device credentials are extra
 	// keys in profiles that point at the same *Profile.
 	identities map[string]memoryIdentity
@@ -42,7 +44,7 @@ type memoryIdentity struct {
 
 func NewMemory() *Memory {
 	return &Memory{
-		rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool),
+		rooms: make(map[string][]byte), profiles: make(map[string]*Profile), awards: make(map[string]bool), runXP: make(map[string]int64),
 		identities: make(map[string]memoryIdentity), signIns: make(map[string]SignIn),
 	}
 }
@@ -200,7 +202,8 @@ func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, class
 		if profile.ID != profileID {
 			continue
 		}
-		if !m.awards[key] {
+		if delta := xp - m.runXP[key]; delta > 0 {
+			xp := delta
 			profile.AdventurerXP += xp
 			profile.AdventurerLevel = game.ProfileLevelFor(profile.AdventurerXP)
 			if classID != "" {
@@ -211,7 +214,7 @@ func (m *Memory) AwardRunXP(_ context.Context, profileID, runID, playerID, class
 			}
 			applyProfileRewardUnlocks(profile)
 			profile.UpdatedAt = now.UTC()
-			m.awards[key] = true
+			m.runXP[key] += delta
 		}
 		return cloneProfile(profile)
 	}
