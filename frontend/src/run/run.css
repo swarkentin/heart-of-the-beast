@@ -467,3 +467,35 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-rank-pips i.on { background: var(--gold); }
 .rn-ranks-note { margin-top: 8px; font-size: 16px; }
 @media (prefers-reduced-motion: reduce) { .rn-rank-up { animation: none; } }
+
+/* Scene props (scenes/ScenePropsLayer.tsx): twinkling treasure, a flickering campfire, a slow glow. */
+.scene-sparkles > g { opacity: 0; animation: scene-twinkle 2.6s steps(4) infinite; }
+@keyframes scene-twinkle { 0%, 70%, 100% { opacity: 0; } 80%, 90% { opacity: .9; } }
+.scene-glow { animation: scene-glow 3s ease-in-out infinite alternate; }
+@keyframes scene-glow { from { opacity: .6; } to { opacity: 1; } }
+.scene-flame { animation: scene-flicker .5s steps(1) infinite; }
+.scene-flame-alt { animation-delay: .25s; }
+@keyframes scene-flicker { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .scene-sparkles > g, .scene-glow, .scene-flame { animation: none; } .scene-sparkles > g { opacity: .7; } .scene-flame-alt { opacity: 0; } }
+
+/* The dungeon briefing at a glance (DungeonIntro): one line, the boss, modifier chips, the road; DETAILS opens the rest. */
+.rn-intro-card { width: min(640px, 100%); }
+.rn-intro-line { margin: 0; color: var(--ink); line-height: 1.1; }
+.rn-intro-glance { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.rn-intro-glance .rn-intro-boss { display: flex; align-items: center; gap: 10px; }
+.rn-intro-mods { display: flex; flex-wrap: wrap; gap: 6px; }
+.rn-intro-card .rn-intro-road { margin-bottom: 0; }
+.rn-intro-more { display: grid; gap: 8px; }
+.rn-intro-more > summary { width: fit-content; cursor: pointer; color: var(--muted); font: 400 8px/1.8 var(--display); letter-spacing: .1em; list-style: none; }
+.rn-intro-more > summary::before { content: "+ "; }
+.rn-intro-more[open] > summary::before { content: "- "; }
+.rn-intro-more[open] { max-height: 46vh; overflow-y: auto; }
+.rn-intro-more > * + * { margin-top: 8px; }
+.rn-intro-roadline { display: block; color: #cfc6dc; font-size: 15px; }
+.rn-intro-foot { justify-content: flex-end; }
+
+/* Less to read: a choice shows one line of its description; hovering or focusing it shows the rest. */
+.rn-choice small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden; font-size: 16px; }
+.rn-choice:hover small, .rn-choice:focus-visible small { -webkit-line-clamp: unset; line-clamp: none; }
+.rn-mod-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.rn-act small:empty { display: none; }

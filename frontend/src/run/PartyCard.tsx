@@ -13,7 +13,7 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
   const canAid = Boolean(aid && (aid.fallen ? !member.alive && !member.isSelf : member.alive));
   const who = (member.isSelf ? "You, " : "Player " + member.position + ", ") + member.className;
   const body = <>
-    <span className="rn-card-head"><b>P{member.position}</b><strong title={member.className}>{displayName || member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
+    <span className="rn-card-head"><b>P{member.position}</b><strong title={[member.className, ...(kit ?? []).map(item => item.name + ": " + item.description)].join(" · ")}>{displayName || member.className}</strong>{member.isSelf ? <em>YOU</em> : null}<i>LV {member.level}</i></span>
     <span className="rn-portrait">
       <span className="rn-portrait-bg" aria-hidden="true" />
       {canAid && onAid ? <button type="button" className="rn-aid-target" onClick={() => onAid(member.id)} disabled={aid?.disabled} aria-label={aid?.label + " " + who} /> : null}
@@ -36,7 +36,6 @@ export function PartyCard({ member, fx, order, aid, onAid, kit, displayName }: {
     <span className="rn-stats"><span><Icon id="power" size={1} />{member.power}</span><span><Icon id="focus" size={1} />{member.focus}</span><span><Icon id="agility" size={1} />{member.agility}</span></span>
     {member.statuses.length > 0 ? <span className="rn-statuses">{member.statuses.map(status => <span key={status.id} className={"rn-status rn-status-" + status.tone}><Icon id={status.icon} size={1} />{status.label}</span>)}</span> : null}
     {member.threats.length > 0 ? <span className="rn-incoming"><Icon id="threat" size={1} /><span>{member.threats.map(threat => threat.label + " " + threat.damage).join(" · ")}</span></span> : null}
-    {kit && kit.length > 0 ? <span className="rn-kit">{kit.map((item, index) => <span key={item.name}><Icon id={index === 0 ? "arcane" : "empower"} size={1} /><span><b>{item.name}</b>{item.description}</span></span>)}</span> : null}
   </>;
   const className = "rn-card px-panel rn-card-level-" + Math.min(5, member.level) + (member.isSelf ? " rn-card-self" : "") + (member.alive ? "" : " rn-card-down") + (member.online ? "" : " rn-card-away") + (member.threats.length > 0 ? " rn-card-threatened" : "");
   const style = { "--accent": ACCENTS[member.classId || ""] || "#d6a64d", order } as unknown as CSSProperties;

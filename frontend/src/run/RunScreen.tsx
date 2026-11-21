@@ -49,7 +49,6 @@ function sceneEnemy(enemy: ApiEnemy, index: number, count: number, playerIds: st
 }
 
 /** The opening of a skill rule ("Taunt", "Guard 5 more"), short enough for a button. */
-function firstClause(rules: string) { return rules.split(/[.:;,]/)[0].trim(); }
 
 /** A clock that only ticks while a deadline is running. */
 function useNow(active: boolean, restartKey: string, serverTime?: string) {
@@ -243,13 +242,13 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
       let hint = "", command: ApiCommand | undefined, pick: ActionDef["pick"], disabled = left > 0;
       switch (skill.target) {
         case "enemy":
-          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "⚡ Interrupt " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "→ " + foeName;
+          hint = !foe ? "No enemy" : interrupts && foe.interruptible ? "⚡ Interrupt " + (foe.id === livingTarget?.id ? "" : foeName + "'s ") + (foe.rawIntent?.label ?? "its move") : "";
           disabled ||= !foe;
           command = foe ? skillCommand(skill, n, foe.id) : undefined;
           break;
-        case "all_enemies": hint = "Every enemy"; command = skillCommand(skill, n); break;
+        case "all_enemies": hint = "All enemies"; command = skillCommand(skill, n); break;
         case "party": hint = "Whole party"; command = skillCommand(skill, n); break;
-        case "self": hint = id === SKILL_DEFEND ? "Block " + (player.guardReduction || 4) + "+ damage" : firstClause(skill.rules); command = skillCommand(skill, n); break;
+        case "self": hint = id === SKILL_DEFEND ? "Block " + (player.guardReduction || 4) : ""; command = skillCommand(skill, n); break;
         case "ally":
           hint = eligible.length > 1 ? "Pick a portrait" : "Yourself";
           if (eligible.length > 1) pick = "ally"; else command = skillCommand(skill, n, selfId);
@@ -367,7 +366,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           <span className="rn-act-icon"><SkillIcon skill={action.skill} size={2} />{action.rank > 1 ? <i className={"rn-act-rank rn-act-rank-" + action.rank} aria-label={"rank " + ROMAN[action.rank]}>{ROMAN[action.rank]}</i> : null}{action.cooldown > 0 ? <b className="rn-act-cd" aria-label={"ready in " + action.cooldown + " rounds"}>{action.cooldown}</b> : null}</span>
           <span><strong>{action.label}</strong><small>{lockedKey === action.key ? "LOCKED IN" : shownKey === action.key ? "AUTOMATIC" : armed === action.key ? (action.pick === "fallen" ? "Pick a fallen ally" : "Pick a portrait") : autoSoon && action.key === SKILL_DEFEND ? "Automatic in " + seconds : action.hint}</small></span>
         </button>)}</div>
-        <p className="rn-inspect" aria-live="polite">{focusedAction ? <><b>{focusedAction.label}</b> {focusedAction.details}</> : "Keys 1–" + actions.length + " use a skill · ◀ ▶ change target · one skill per round"}</p>
+        <p className="rn-inspect" aria-live="polite">{focusedAction ? <><b>{focusedAction.label}</b> {focusedAction.details}</> : "1–" + actions.length + " skills · ◀ ▶ target"}</p>
       </> : <p className="px-copy">{spectator ? "Spectating. The party is choosing its actions." : "Cast view is read-only. Switch to the player view to act."}</p>}
     </div>;
   } else if (camp) {
@@ -433,7 +432,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
     <div className="rn-board">
       <aside className="rn-side rn-side-left" aria-label="Party">{seats.left.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside>
       <section className="rn-view" aria-label="Encounter">
-        <Scene view={acting ? "player" : "cast"} roomId={room.id} roomName={room.name} backdrop={backdropRef({ id: room.id, roomType: room.roomType, themeId: room.themeId }, run.themeId)} enemies={enemies} events={events} party={party}
+        <Scene view={acting ? "player" : "cast"} roomId={room.id} roomName={room.name} backdrop={backdropRef({ id: room.id, roomType: room.roomType, themeId: room.themeId }, run.themeId)}
+          props={camp ? (camp.stage === "shop" ? "shop" : "camp") : room.roomType === "reward" ? "vault" : undefined} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
