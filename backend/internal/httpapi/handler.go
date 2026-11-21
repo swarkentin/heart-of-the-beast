@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -26,6 +27,51 @@ type Handler struct {
 	rooms   store.Repository
 	now     func() time.Time
 	discord *DiscordConfig
+	// banked remembers how much run XP this process has already banked to every profile in a run, so a request
+	// that earned nothing new skips the per-player database transaction. It works from its zero value.
+	banked bankedRunXP
+	// watchers wakes snapshot reads that are waiting for a room to change (see watch.go).
+	watchers roomWatchers
+}
+
+// bankedRunXP is a process-local record of run XP already banked. It is only an optimisation: AwardRunXP is
+// idempotent, so a restart, a second instance or an evicted entry just banks the same total once more.
+type bankedRunXP struct {
+	mu   sync.Mutex
+	runs map[string]bankedEntry
+}
+
+type bankedEntry struct {
+	xp   int64
+	seen time.Time
+}
+
+const bankedRunXPLimit = 2048
+
+func (b *bankedRunXP) has(runID string, xp int64) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	entry, ok := b.runs[runID]
+	return ok && entry.xp >= xp
+}
+
+func (b *bankedRunXP) record(runID string, xp int64, now time.Time) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.runs == nil {
+		b.runs = make(map[string]bankedEntry)
+	}
+	if len(b.runs) >= bankedRunXPLimit {
+		// Drop runs idle for an hour, then any others until there is room; a dropped run is simply banked once
+		// more on its next request.
+		cutoff := now.Add(-time.Hour)
+		for id, entry := range b.runs {
+			if entry.seen.Before(cutoff) || len(b.runs) >= bankedRunXPLimit {
+				delete(b.runs, id)
+			}
+		}
+	}
+	b.runs[runID] = bankedEntry{xp: xp, seen: now}
 }
 
 // Options configures optional handler behavior.
@@ -320,6 +366,11 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 	if xp == 0 {
 		return nil
 	}
+	// Every snapshot poll passes through here. Without this check each poll ran one transaction per player
+	// against the database even when nothing new was earned, which made every request in a party slow.
+	if h.banked.has(room.Run.ID, xp) {
+		return nil
+	}
 	for playerID, profileID := range room.PlayerProfileIDs {
 		if profileID == "" || room.Presence[playerID].LeftAt != nil {
 			continue
@@ -336,6 +387,8 @@ func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 			return err
 		}
 	}
+	// Record only after every award committed, so a failed one is retried on the next request.
+	h.banked.record(room.Run.ID, xp, h.now().UTC())
 	return nil
 }
 
@@ -464,7 +517,7 @@ func (h *Handler) joinRoom(w http.ResponseWriter, r *http.Request) {
 	room.Presence[playerID] = game.PlayerPresence{LastSeenAt: h.now().UTC()}
 	room.Version++
 	room.UpdatedAt = h.now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+	if err := h.saveRoom(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
@@ -553,7 +606,7 @@ func (h *Handler) updatePlayerPresence(w http.ResponseWriter, r *http.Request, l
 		expectedVersion := room.Version
 		room.Version++
 		room.UpdatedAt = now
-		if err := h.rooms.Save(r.Context(), room, expectedVersion); err != nil {
+		if err := h.saveRoom(r.Context(), room, expectedVersion); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				continue
 			}
@@ -572,6 +625,23 @@ func (h *Handler) getRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	room, err := h.advanceRoomIfDue(r, room)
+	if err == nil {
+		if after, wait := waitAfter(r); wait {
+			hash := tokenHash(bearer(r))
+			room, err = h.waitForRoom(r, room.ID, after, h.reloadRoom(r, room, func(latest *game.Room) bool {
+				for _, expected := range latest.PlayerTokenHashes {
+					if expected == hash {
+						return true
+					}
+				}
+				return false
+			}))
+		}
+	}
+	if errors.Is(err, errAccessRevoked) {
+		writeError(w, http.StatusUnauthorized, "invalid player token")
+		return
+	}
 	if err != nil {
 		writeStoreError(w, err)
 		return
@@ -601,7 +671,7 @@ func (h *Handler) advanceRoomIfDue(r *http.Request, room *game.Room) (*game.Room
 	expected := room.Version
 	room.Version++
 	room.UpdatedAt = h.now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+	if err := h.saveRoom(r.Context(), room, expected); err != nil {
 		if errors.Is(err, store.ErrConflict) {
 			latest, getErr := h.rooms.Get(r.Context(), room.ID)
 			if getErr != nil {
@@ -683,7 +753,7 @@ func (h *Handler) selectClass(w http.ResponseWriter, r *http.Request) {
 		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
-		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if err := h.saveRoom(r.Context(), room, expected); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				continue
 			}
@@ -739,7 +809,7 @@ func (h *Handler) selectArchetype(w http.ResponseWriter, r *http.Request) {
 		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
-		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if err := h.saveRoom(r.Context(), room, expected); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				continue
 			}
@@ -784,7 +854,7 @@ func (h *Handler) selectLoadout(w http.ResponseWriter, r *http.Request) {
 		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
-		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if err := h.saveRoom(r.Context(), room, expected); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				continue
 			}
@@ -847,7 +917,7 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 	}
 	room.Version++
 	room.UpdatedAt = h.now().UTC()
-	if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+	if err := h.saveRoom(r.Context(), room, expected); err != nil {
 		writeStoreError(w, err)
 		return
 	}
@@ -873,7 +943,7 @@ func (h *Handler) returnToLobby(w http.ResponseWriter, r *http.Request) {
 		room.Run = nil
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
-		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if err := h.saveRoom(r.Context(), room, expected); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				continue
 			}
@@ -911,7 +981,7 @@ func (h *Handler) command(w http.ResponseWriter, r *http.Request) {
 		}
 		room.Version++
 		room.UpdatedAt = h.now().UTC()
-		if err := h.rooms.Save(r.Context(), room, expected); err != nil {
+		if err := h.saveRoom(r.Context(), room, expected); err != nil {
 			if errors.Is(err, store.ErrConflict) {
 				room, err = h.rooms.Get(r.Context(), room.ID)
 				if err == nil {
@@ -949,11 +1019,52 @@ func (h *Handler) spectate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	room, err = h.advanceRoomIfDue(r, room)
+	if err == nil {
+		if after, wait := waitAfter(r); wait {
+			hash := room.SpectatorTokenHash
+			room, err = h.waitForRoom(r, room.ID, after, h.reloadRoom(r, room, func(latest *game.Room) bool { return latest.SpectatorTokenHash == hash }))
+		}
+	}
+	if errors.Is(err, errAccessRevoked) {
+		writeError(w, http.StatusUnauthorized, "invalid spectator token")
+		return
+	}
 	if err != nil {
 		writeStoreError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, publicRoom(room, h.now()))
+}
+
+// reloadRoom returns the long-poll's re-read: the first call reuses the room already loaded, later ones fetch
+// it again, check the caller still has access and advance anything due.
+func (h *Handler) reloadRoom(r *http.Request, first *game.Room, allowed func(*game.Room) bool) func() (*game.Room, error) {
+	return func() (*game.Room, error) {
+		if first != nil {
+			room := first
+			first = nil
+			return room, nil
+		}
+		room, err := h.rooms.Get(r.Context(), r.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		if !allowed(room) {
+			return nil, errAccessRevoked
+		}
+		return h.advanceRoomIfDue(r, room)
+	}
+}
+
+var errAccessRevoked = errors.New("room access was revoked")
+
+// saveRoom persists a room and wakes everyone long-polling it. Every room save in the API goes through here.
+func (h *Handler) saveRoom(ctx context.Context, room *game.Room, expectedVersion int64) error {
+	if err := h.rooms.Save(ctx, room, expectedVersion); err != nil {
+		return err
+	}
+	h.watchers.changed(room.ID)
+	return nil
 }
 
 func writeStoreError(w http.ResponseWriter, err error) {
