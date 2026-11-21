@@ -30,9 +30,11 @@
 .rn-scene-stage { position: absolute; inset: 0; }
 .rn-scene-art { display: block; width: 100%; height: 100%; font-family: var(--copy); }
 /* One row at a fixed height, so it never grows into the fight; long names and moves are cut with an ellipsis. */
-.rn-threats { --threats-h: 70px; position: absolute; left: calc(6px * var(--px)); right: calc(6px * var(--px)); bottom: calc(4px * var(--px)); z-index: 1; display: flex; flex-wrap: nowrap; justify-content: center; align-items: stretch; gap: 10px; height: min(var(--threats-h), 24%); box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; list-style: none; transition: opacity .15s; }
+.rn-threats { --threats-h: 80px; /* three lines plus a trait badge on the first, in VT323, without clipping */ position: absolute; left: calc(6px * var(--px)); right: calc(6px * var(--px)); bottom: calc(4px * var(--px)); z-index: 1; display: flex; flex-wrap: nowrap; justify-content: center; align-items: stretch; gap: 10px; height: min(var(--threats-h), 24%); box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; list-style: none; transition: opacity .15s; }
 .rn-threats-dim { opacity: .25; }
 .rn-threats > li { display: flex; flex: 0 1 280px; }
+/* A lone enemy (often a boss with a long name and move) gets a wider chip. */
+.rn-threats:not(.rn-threats-multi) > li { flex-basis: 380px; }
 .rn-threats > li > .rn-threat-chip { overflow: hidden; }
 .rn-threat-chip b, .rn-threat-chip i, .rn-threat-chip small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Three lines at most: name and traits share the first, then the move, then its target. */
