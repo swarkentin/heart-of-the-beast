@@ -7,8 +7,8 @@ import { backdropUrl } from "../scenes";
 import { themeVars } from "../uiTheme";
 
 // The briefing that opens each dungeon of a run (not each floor). An iris wipe over the dungeon's entrance art
-// carries its title, then a briefing card says what waits below: the narrator's lines, threats, the boss and the
-// floor modifiers, with the expedition map: the road through this group of dungeons to its castle. The server gives the first round of each dungeon extra time, so reading it never costs a turn.
+// carries its title, then a short card: one line from the narrator, the boss, the floor modifiers by name and the
+// expedition map. Everything else (the rest of the story, threats, boss advice, modifier rules) sits under DETAILS. The server gives the first round of each dungeon extra time, so reading it never costs a turn.
 
 const SEEN_KEY = "hotb.briefingsSeen";
 const AUTO_CLOSE_MS = 22000;
@@ -53,18 +53,25 @@ export function DungeonIntro({ briefing, run, runId, active, onOpenChange }: { b
       <p>{briefing.tagline}</p>
     </div>
     {stage === "card" ? <section className="px-panel rn-intro-card">
-      <div className="rn-intro-voice">
-        <span className="px-label">BRIEFING · {briefing.narrator.toUpperCase()}</span>
-        {briefing.lines.map((line, index) => <p key={index} style={{ animationDelay: index * 0.45 + "s" }}>{line}</p>)}
+      {/* At a glance: one line of story, who waits at the bottom and the floor rules by name. The rest is a tap away. */}
+      {briefing.lines[0] ? <p className="rn-intro-line">{briefing.lines[0]}</p> : null}
+      <div className="rn-intro-glance">
+        <div className="rn-intro-boss"><span className="px-label"><Icon id="damage" size={1} /> BOSS</span><strong>{briefing.boss}</strong></div>
+        {briefing.modifiers && briefing.modifiers.length > 0 ? <div className="rn-intro-mods">{briefing.modifiers.map(modifier => <span key={modifier.id} className={"rn-mod rn-mod-" + modifier.kind} title={modifier.description} tabIndex={0} aria-label={modifier.name + ": " + modifier.description}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name.toUpperCase()}</span>)}</div> : null}
       </div>
-      {run ? <div className="rn-intro-road"><span className="px-label"><Icon id="focus" size={1} /> THE ROAD AHEAD</span><ExpeditionMap run={run} /><small>{roadToCastle(run)}</small></div> : null}
-      <div className="rn-intro-grid">
-        {briefing.threats && briefing.threats.length > 0 ? <div><span className="px-label"><Icon id="threat" size={1} /> WHAT LURKS</span><ul>{briefing.threats.map(threat => <li key={threat}>{threat}</li>)}</ul></div> : null}
-        <div className="rn-intro-boss"><span className="px-label"><Icon id="damage" size={1} /> AT THE BOTTOM</span><strong>{briefing.boss}</strong><small>{briefing.bossLair}</small></div>
-        {briefing.advice && briefing.advice.length > 0 ? <div><span className="px-label"><Icon id="focus" size={1} /> FIELD ADVICE</span><ul>{briefing.advice.map(item => <li key={item}>{item}</li>)}</ul></div> : null}
-        {briefing.modifiers && briefing.modifiers.length > 0 ? <div><span className="px-label"><Icon id="arcane" size={1} /> ON EVERY FLOOR</span><ul>{briefing.modifiers.map(modifier => <li key={modifier.id} className={"rn-mod-" + modifier.kind}><b>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}.</b> {modifier.description}</li>)}</ul></div> : null}
-      </div>
-      <div className="rn-intro-foot"><span className="px-copy">The first round waits for you.</span><button type="button" className="px-button px-button-primary" onClick={close} autoFocus>INTO THE DARK</button></div>
+      {run ? <div className="rn-intro-road"><ExpeditionMap run={run} /></div> : null}
+      <details className="rn-intro-more">
+        <summary>DETAILS</summary>
+        {briefing.lines.slice(1).map((line, index) => <p key={index} className="rn-intro-line">{line}</p>)}
+        {run ? <small className="rn-intro-roadline">{roadToCastle(run)}</small> : null}
+        <div className="rn-intro-grid">
+          {briefing.threats && briefing.threats.length > 0 ? <div><span className="px-label"><Icon id="threat" size={1} /> WHAT LURKS</span><ul>{briefing.threats.map(threat => <li key={threat}>{threat}</li>)}</ul></div> : null}
+          <div className="rn-intro-boss"><span className="px-label"><Icon id="damage" size={1} /> AT THE BOTTOM</span><strong>{briefing.boss}</strong><small>{briefing.bossLair}</small></div>
+          {briefing.advice && briefing.advice.length > 0 ? <div><span className="px-label"><Icon id="focus" size={1} /> FIELD ADVICE</span><ul>{briefing.advice.map(item => <li key={item}>{item}</li>)}</ul></div> : null}
+          {briefing.modifiers && briefing.modifiers.length > 0 ? <div><span className="px-label"><Icon id="arcane" size={1} /> ON EVERY FLOOR</span><ul>{briefing.modifiers.map(modifier => <li key={modifier.id} className={"rn-mod-" + modifier.kind}><b>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}.</b> {modifier.description}</li>)}</ul></div> : null}
+        </div>
+      </details>
+      <div className="rn-intro-foot"><button type="button" className="px-button px-button-primary" onClick={close} autoFocus>INTO THE DARK</button></div>
     </section> : <span className="rn-intro-skip">PRESS ENTER</span>}
   </div>, document.body);
 }

@@ -6,7 +6,7 @@ import { EnemyStage, type PartyImpact, type SelfCue } from "../monsters/EnemySta
 import { useReducedMotion } from "../monsters/hooks";
 import { ARMS_PALM, FirstPersonArms } from "./FirstPersonArms";
 import type { StageEnemy } from "../monsters/types";
-import { RoomBackdrop, type BackdropRef } from "../scenes";
+import { RoomBackdrop, ScenePropsLayer, type BackdropRef, type SceneProps } from "../scenes";
 import { Icon, heroArt } from "../lobby";
 import type { PartyMember } from "./party";
 
@@ -19,8 +19,8 @@ export type SceneEnemy = StageEnemy & { intentMove: string; intentEffect: string
  * bar however tall the enemy (#138), and as an overlay they never change the size of the room. The first-person arms
  * are hidden until the player acts; while they are up, the intents dim.
  */
-export function Scene({ view, roomId, roomName, backdrop, enemies, events, party, target, onTarget, onPartyImpact, banner, skills }: {
-  view: "player" | "cast"; roomId: string; roomName: string; backdrop: BackdropRef; enemies: SceneEnemy[]; events: ApiCombatEvent[]; party: PartyMember[];
+export function Scene({ view, roomId, roomName, backdrop, props, enemies, events, party, target, onTarget, onPartyImpact, banner, skills }: {
+  view: "player" | "cast"; roomId: string; roomName: string; backdrop: BackdropRef; props?: SceneProps; enemies: SceneEnemy[]; events: ApiCombatEvent[]; party: PartyMember[];
   target: string; onTarget?: (id: string) => void; onPartyImpact: (impact: PartyImpact) => void; banner?: { text: string; tone: string };
   skills: ReadonlyMap<string, Skill>;
 }) {
@@ -43,6 +43,7 @@ export function Scene({ view, roomId, roomName, backdrop, enemies, events, party
     <div className="rn-scene-stage">
       <svg ref={art} className="rn-scene-art" viewBox="0 0 1100 620" role="img" aria-label={(view === "player" ? "First-person view of " : "Party view of ") + roomName}>
         <RoomBackdrop {...backdrop} view={view === "player" ? "first" : "cinema"} />
+        <ScenePropsLayer props={props} />
         {view !== "player" ? <g aria-hidden="true">{party.map((member, index) => {
           // The party as the spectator sees it: each hero's resting (or fallen) frame, at 3x, standing in a row.
           const x = 550 + (index - (party.length - 1) / 2) * 120;

@@ -84,18 +84,18 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
     {between && camp.stage !== "boon" ? <ExpeditionMap run={run} /> : null}
     {camp.stage === "boon" ? <>
       <h2>Claim a boon</h2>
-      <p className="px-copy">The castle's power is loose. Each adventurer keeps one boon for the rest of the run.{boonsOffered > 1 ? " " + boonsChosen + "/" + boonsOffered + " claimed." : ""}</p>
+      {boonsOffered > 1 ? <p className="px-label">{boonsChosen}/{boonsOffered} CLAIMED</p> : null}
       {boonOffers.length > 0 ? <Boons offers={boonOffers} chosen={camp.boonChoices?.[selfId]} acting={acting} busy={busy} send={onCommand} /> : <p className="px-label">{spectator ? "THE PARTY IS CHOOSING BOONS" : "WAITING FOR THE PARTY"}</p>}
     </> : camp.stage === "game" && camp.game ? <>
       <h2>A moment of respite</h2>
       <Game game={camp.game} selfId={selfId} acting={acting} busy={busy} send={onCommand} />
     </> : camp.stage === "crossroads" ? <>
       <h2>{castleAhead ? "Choose your castle" : "Choose the next dungeon"}</h2>
-      <p className="px-copy">{castleAhead ? "Four dungeons down, the road ends at a castle: harder fights, every boss armed, and a boon for every boss you beat. " : ""}Its modifiers hold on every floor. The party goes where most votes point.</p>
+      {castleAhead ? <p className="px-copy">The road ends at a castle: harder fights, a boon for every boss.</p> : null}
       <div className="rn-choices">{(camp.choices ?? []).map(choice => <button key={choice.themeId} className={"rn-choice rn-dungeon" + (myVote === choice.themeId ? " rn-choice-mine" : "")} onClick={() => void onCommand({ type: "choose_dungeon", choiceId: choice.themeId })} disabled={!acting || busy} aria-label={"Vote for " + choice.name}>
         <Icon id="agility" size={2} />
         <span><strong>{choice.capstone ? "♜ " : ""}{choice.name} · {choice.floors} FLOORS</strong><small>{choice.tagline}</small>
-          {choice.modifiers.map(modifier => <small key={modifier.id} className={"rn-mod-" + modifier.kind}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}. {modifier.description}</small>)}</span>
+          {choice.modifiers.length > 0 ? <span className="rn-mod-row">{choice.modifiers.map(modifier => <span key={modifier.id} className={"rn-mod rn-mod-" + modifier.kind} title={modifier.description} tabIndex={0} aria-label={modifier.name + ": " + modifier.description}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name.toUpperCase()}</span>)}</span> : null}</span>
         <em>{votesFor(choice.themeId)} {myVote === choice.themeId ? "· YOURS" : ""}</em>
       </button>)}</div>
     </> : <>
@@ -103,7 +103,7 @@ export function Camp({ camp, run, selfId, acting, spectator, busy, timer, onComm
       {myBoons > 0 ? <p className="px-label">YOUR BOONS · {(player?.boons ?? []).map(id => id.replace(/-/g, " ").toUpperCase()).join(" · ")}</p> : null}
       <div className="rn-camp-next">
         <span className="px-label">NEXT: {chosen ? chosen.name.toUpperCase() + " · " : ""}FLOOR {camp.nextDepth} OF {floors}{last ? " · THE DUNGEON BOSS" : ""}</span>
-        {next.length === 0 ? <span className="px-copy">No modifiers. A clean floor.</span> : <ul>{next.map(modifier => <li key={modifier.id} className={"rn-mod-" + modifier.kind}><b>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name}.</b> {modifier.description}</li>)}</ul>}
+        {next.length === 0 ? null : <span className="rn-mod-row">{next.map(modifier => <span key={modifier.id} className={"rn-mod rn-mod-" + modifier.kind} title={modifier.description} tabIndex={0} aria-label={modifier.name + ": " + modifier.description}>{modifier.kind === "debuff" ? "▼ " : "▲ "}{modifier.name.toUpperCase()}</span>)}</span>}
       </div>
       {acting ? <div className="rn-choices">{(camp.offers ?? []).map(item => {
         const soldOut = !item.repeatable && bought.includes(item.id);
