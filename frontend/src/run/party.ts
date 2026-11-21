@@ -14,7 +14,21 @@ export type PartyMember = {
 };
 export type EnemyLike = { id: string; name: string; hp: number; rawIntent?: { label: string; damage: number; targetPlayerId?: string; targetAll?: boolean } };
 
-export const LEVEL_THRESHOLDS = [0, 60, 150, 275, 425];
+/**
+ * Cumulative XP needed to leave `level` (the server's experienceForNextLevel in progression.go). Levels have no
+ * cap: past level 5 each step costs 20% more than the last, rounded up.
+ */
+export function experienceForNextLevel(level: number): number {
+  const early = [0, 60, 150, 275, 425];
+  if (level < 1) return 0;
+  if (level < 5) return early[level];
+  let threshold = 425, step = 150;
+  for (let current = 5; current <= level; current++) {
+    step = Math.floor((step * 6 + 4) / 5);
+    threshold += step;
+  }
+  return threshold;
+}
 /** A hero at or below this share of health shows the injured pose. */
 export const INJURED_AT = 0.35;
 
@@ -64,7 +78,7 @@ export function buildParty(room: ApiRoom, run: ApiRun, selfId: string, catalog: 
     if (!online) statuses.push({ id: "offline", icon: "offline", label: presence === "left" ? "LEFT" : "OFFLINE", tone: "info" });
     const action = run.combatRound?.actions?.[id];
     const level = player?.level ?? 1;
-    const floor = LEVEL_THRESHOLDS[level - 1] ?? 325, next = LEVEL_THRESHOLDS[level];
+    const floor = experienceForNextLevel(level - 1), next = experienceForNextLevel(level);
     return {
       id, position: room.playerIds.indexOf(id) + 1, isSelf: id === selfId, classId, skin: room.playerSkins?.[id],
       className: catalog?.classes.find(item => item.id === classId)?.name || archetypeName(player?.archetype || room.playerArchetypes?.[id]),
