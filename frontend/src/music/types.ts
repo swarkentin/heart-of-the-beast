@@ -6,7 +6,10 @@
 export const THEME_IDS = ["catacombs", "scifi", "mobster", "sunken", "clockwork", "carnival", "jungle", "dreamscape", "arctic", "ghosttown", "wasteland", "noir", "arcade", "eldritch", "infernal"] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
-/** What the party is doing. Each state gets its own layer mix, tempo and (for victory and defeat) a stinger. */
+/** The two capstone castles (backend capstone.go). Their whole score sits a step higher than an ordinary dungeon. */
+export const CAPSTONE_THEMES: readonly ThemeId[] = ["eldritch", "infernal"];
+
+/** What the party is doing. Each state gets its own arrangement, tempo and (for victory and defeat) a stinger. */
 export const MUSIC_STATES = ["title", "party", "exploration", "event", "combat", "miniboss", "boss", "victory", "defeat"] as const;
 export type MusicState = (typeof MUSIC_STATES)[number];
 
@@ -19,6 +22,8 @@ export interface MusicCue {
   depth: Depth;
   /** Art creature id of the boss being fought (for example "crypt_warden"), when the profile has a treatment for it. */
   boss?: string;
+  /** 2 once a boss is below half health or has risen again: the score jumps to its climax and lifts a semitone. */
+  phase?: 1 | 2;
   /** Room flavour inside a theme, such as the flooded crossing in the catacombs. "default" when none applies. */
   variant: string;
   /** Used only for room-change effects. It is deliberately not part of the music identity (see cueKey). */
@@ -30,6 +35,7 @@ export type FilterKind = "lowpass" | "highpass" | "bandpass";
 
 export const SCALES = {
   minor: [0, 2, 3, 5, 7, 8, 10],
+  major: [0, 2, 4, 5, 7, 9, 11],
   dorian: [0, 2, 3, 5, 7, 9, 10],
   phrygian: [0, 1, 3, 5, 7, 8, 10],
   phrygianDominant: [0, 1, 4, 5, 7, 8, 10],
@@ -44,6 +50,16 @@ export const SCALES = {
   blues: [0, 3, 5, 6, 7, 10],
 } as const satisfies Record<string, readonly number[]>;
 export type ScaleName = keyof typeof SCALES;
+
+// ---------------------------------------------------------------------------------------------------------
+// Mixer parts. Every score event is routed to one part; each part has its own level, stereo position, reverb
+// and echo send (synth.ts MIX), and the sound test can mute any of them.
+// ---------------------------------------------------------------------------------------------------------
+
+export const PARTS = ["pad", "bass", "lead", "counter", "arp", "orch", "drums", "perc", "fx"] as const;
+export type Part = (typeof PARTS)[number];
+
+export const PART_LABELS: Record<Part, string> = { pad: "PADS", bass: "BASS", lead: "MELODY", counter: "HARMONY", arp: "OSTINATO", orch: "ORCHESTRA", drums: "DRUMS", perc: "PERCUSSION", fx: "AMBIENCE" };
 
 // ---------------------------------------------------------------------------------------------------------
 // Sounds as data. A sound is either a Recipe (pitched, played at a frequency) or a list of Steps (unpitched or
@@ -85,7 +101,20 @@ export interface CrunchStep {
   at?: number;
 }
 
-export type Step = ToneStep | NoiseStep | CrunchStep;
+/** A metallic cluster (six detuned square waves, as in classic drum machines) through a high-pass: hats, cymbals, gongs. */
+export interface MetalStep {
+  k: "metal";
+  d: number;
+  v: number;
+  /** High-pass cutoff. */
+  f: number;
+  /** Base frequency of the cluster; the classic drum-machine value is about 40 Hz. */
+  base?: number;
+  at?: number;
+  a?: number;
+}
+
+export type Step = ToneStep | NoiseStep | CrunchStep | MetalStep;
 
 export interface PartialLayer {
   w: Wave;
@@ -105,20 +134,32 @@ export interface Recipe {
   r?: number;
   /** Sustained voices hold at full level for the duration; percussive voices decay across it. */
   sustain?: boolean;
+  /** Percussive voices ring for at least this many seconds, however short the written note. */
+  ring?: number;
   gain: number;
   /** Low-pass or band-pass filter; frequencies are multiples of the note frequency so it tracks pitch. */
-  filter?: { type: FilterKind; fmul: number; to?: number; q?: number };
-  vib?: { rate: number; cents: number };
+  filter?: { type: FilterKind; fmul: number; to?: number; q?: number; /** Seconds the sweep to `to` takes (default min(dur, 1.5)). */ t?: number };
+  vib?: { rate: number; cents: number; /** Seconds before the vibrato reaches full depth (string and wind players). */ delay?: number };
   trem?: { rate: number; depth: number };
   /** Starts this many times the pitch and falls to the note (a plucked twang or a thump). */
   bend?: number;
+  /** Seconds the bend takes (default 0.06). */
+  bendT?: number;
   echo?: { delay: number; gain: number };
+  /** Each layer is doubled into this many detuned copies spread across ±cents: ensemble strings, supersaws, choirs. */
+  unison?: { n: number; cents: number };
+  /** Frequency modulation of every layer by a sine at r x the note: electric piano, brass bite, bell clang, FM bass. */
+  fm?: { r: number; index: number; /** Index the modulator decays to by the end of the note (brightness envelope). */ end?: number };
+  /** A short filtered noise burst at the start: hammer, pick, breath or bow. */
+  hammer?: { v: number; f: number; d: number; ft?: FilterKind; q?: number };
+  /** Soft saturation amount (1 = gentle warmth, 4 = growl). */
+  drive?: number;
 }
 
-export const PAD_VOICES = ["dronePad", "choirPad", "glassPad", "muffledPad", "synthPad", "smokePad", "boilerPad", "ironPad", "breathPad", "reedPad", "organPad"] as const;
-export const LEAD_VOICES = ["bell", "pluck", "arp", "musicBox", "calliope", "marimba", "glass", "twang", "vibes", "warble", "horn", "sub", "sonarBell"] as const;
-export const BASS_VOICES = ["subBass", "walkBass", "pulseBass", "tubaBass", "ironBass", "thumpBass"] as const;
-export const DRUM_VOICES = ["kick", "tom", "snare", "rim", "tick", "hat", "shaker", "wood", "clank", "gear", "bongo", "heartbeat", "brush", "bellTick", "anvil", "crack"] as const;
+export const PAD_VOICES = ["dronePad", "choirPad", "glassPad", "muffledPad", "synthPad", "smokePad", "boilerPad", "ironPad", "breathPad", "reedPad", "organPad", "strings", "warmPad", "choirAah", "brassPad", "junoPad"] as const;
+export const LEAD_VOICES = ["bell", "pluck", "arp", "musicBox", "calliope", "marimba", "glass", "twang", "vibes", "warble", "horn", "sub", "sonarBell", "piano", "epiano", "harp", "flute", "violin", "brass", "frenchHorn", "celesta", "sawLead", "squareLead", "kalimba", "steelDrum", "staccato", "stab", "choirLead", "organLead", "accordion", "trumpet", "sax", "guitar", "theremin", "chime", "koto", "timpani"] as const;
+export const BASS_VOICES = ["subBass", "walkBass", "pulseBass", "tubaBass", "ironBass", "thumpBass", "fmBass", "upright", "synthBass", "cello", "reeseBass", "chipBass"] as const;
+export const DRUM_VOICES = ["kick", "tom", "snare", "rim", "tick", "hat", "shaker", "wood", "clank", "gear", "bongo", "heartbeat", "brush", "bellTick", "anvil", "crack", "openHat", "crash", "ride", "clap", "taiko", "gong", "tambourine", "conga", "chipKick", "chipSnare", "chipHat", "snap", "boom", "cowbell"] as const;
 export const FX_VOICES = ["drip", "creak", "toll", "beep", "steam", "sonar", "bubble", "pop", "honk", "insect", "bird", "swell", "whisper", "wind", "icecreak", "glassPing", "tumble", "metalClank", "static", "geiger", "siren", "carHorn"] as const;
 
 export type PadVoice = (typeof PAD_VOICES)[number];
@@ -170,7 +211,7 @@ export interface BossTreatment {
   lead?: LeadVoice;
   fill?: DrumVoice;
   extraFx?: FxVoice;
-  /** One line describing the intent, for the audition page and the ADR. */
+  /** One line describing the intent, for the sound test and the ADR. */
   note: string;
 }
 
@@ -181,10 +222,47 @@ export interface VariantTweak {
   tempoMul?: number;
 }
 
+export type BassStyle = "root" | "octave" | "fifth" | "walk" | "pulse" | "drive";
+export type ArpStyle = "up" | "updown" | "broken" | "pedal";
+
+/**
+ * The band around the theme's signature sound: the instruments that join as the music builds, how the bass and
+ * ostinato move, the second-section chord progression and the room the music plays in.
+ */
+export interface Ensemble {
+  /** Ostinato / arpeggio instrument. */
+  arp: LeadVoice;
+  arpStyle: ArpStyle;
+  /** Counter-melody and second-section melody instrument. */
+  counter: LeadVoice;
+  /** Instrument for the calm exploration and rest melody (the combat lead is ThemeProfile.voices.lead). */
+  calm: LeadVoice;
+  /** Boss-fight orchestra: chord stabs, the sustained choir and the pitched drum. */
+  stab: LeadVoice;
+  choir: PadVoice;
+  /** Tuned drum struck on chord changes in boss fights (timpani, or something stranger). */
+  timpani: LeadVoice;
+  /** Cymbal or gong that marks the start of every section in fights. */
+  crash: DrumVoice;
+  /** Off-beat open hat for driving fights, or null for themes whose kit has none. */
+  openHat: DrumVoice | null;
+  bassStyle: BassStyle;
+  /** Bass instrument for boss fights (defaults to the theme's own). */
+  bossBass?: BassVoice;
+  /** Scale degrees of the B section's chords; the A section uses ThemeProfile.chordRoots. */
+  progB: readonly number[];
+  /** Reverb: tail length in seconds, brightness 0 (dark) to 1 (bright), and the overall wet level. */
+  room: { size: number; bright: number; wet: number };
+  /** Echo feedback 0..0.6; the echo time is a dotted eighth of the current tempo. */
+  echo: number;
+  /** The groove for fights: its own kick, backbeat, ticks and bass rhythm, and optionally a heavier kit. */
+  fight: { kick: string; back: string; tick: string; bass: string; voices: { kick?: DrumVoice; back?: DrumVoice; tick?: DrumVoice } };
+}
+
 export interface ThemeProfile {
   id: ThemeId;
   name: string;
-  /** One line describing the sound, for the audition page. */
+  /** One line describing the sound, for the sound test. */
   character: string;
   /** Tonic in Hz at depth 1, in the bass register. */
   rootHz: number;
@@ -204,12 +282,11 @@ export interface ThemeProfile {
   leadOct: number;
   voices: { pad: PadVoice; bass: BassVoice; lead: LeadVoice; accent: LeadVoice; kick: DrumVoice; back: DrumVoice; tick: DrumVoice; fill: DrumVoice };
   patterns: Patterns;
-  /** Scale degrees of the theme's tune. */
+  /** Scale degrees of the theme's tune, relative to the chord in force. */
   motif: readonly number[];
-  /** Scale degrees on which the two-bar chords are built (a triad is stacked on each). */
+  /** Scale degrees on which the two-bar chords of the A section are built (a triad is stacked on each). */
   chordRoots: readonly number[];
-  /** Bass note degrees, cycled across the onsets in patterns.bass. */
-  bassLines: readonly (readonly number[])[];
+  ensemble: Ensemble;
   bed: BedSpec;
   fx: readonly AmbientEvent[];
   variants: Readonly<Record<string, VariantTweak>>;
@@ -230,6 +307,7 @@ export interface MelodicEvent {
   dur: number;
   vel: number;
   cents: number;
+  part: Part;
 }
 
 export interface SoundEvent {
@@ -237,19 +315,29 @@ export interface SoundEvent {
   t: number;
   voice: DrumVoice | FxVoice;
   vel: number;
+  part: Part;
+  /** Multiplies every frequency of a drum (tom fills, tuned toms). */
+  pitch?: number;
   /** Concrete steps for fx (they are randomised per occurrence); drums look their steps up by voice. */
   steps?: readonly Step[];
 }
 
 export type ScoreEvent = MelodicEvent | SoundEvent;
 
+/** How present each group is, from 0 (silent) to 1 (full); higher levels unlock denser patterns. */
 export interface Layers {
   pad: number;
   bass: number;
   lead: number;
+  counter: number;
+  arp: number;
   perc: number;
+  orch: number;
   fx: number;
 }
+
+/** Song sections. A states the tune, B answers it, C is the boss breakdown, D the climax. */
+export type Section = "A" | "B" | "C" | "D";
 
 export type EffectKind = "impact" | "block" | "magic" | "heal" | "defeat" | "door" | "encounter" | "victory" | "failure" | "rankUp" | "masteryUp";
 export const EFFECT_KINDS: readonly EffectKind[] = ["impact", "block", "magic", "heal", "defeat", "door", "encounter", "victory", "failure", "rankUp", "masteryUp"];

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { MusicEngine } from "./music/engine";
 import { profileFor } from "./music/profiles";
-import type { EffectKind, MusicCue, ThemeId } from "./music/types";
+import type { EffectKind, MusicCue, Part, ThemeId } from "./music/types";
 
 export type AudioSettings = {
   enabled: boolean;
@@ -41,6 +41,20 @@ export type { EffectKind, ThemeId };
 export function playEffect(kind: EffectKind, theme: ThemeId) {
   engine.playEffect(kind, theme);
 }
+
+/**
+ * The sound test drives the same engine the game uses: an override cue plays instead of the game's music (which
+ * resumes, crossfading, when the override is cleared), and parts can be muted like channels on a mixer.
+ */
+export const soundTest = {
+  start: () => engine.enable(),
+  play: (cue: MusicCue) => engine.setOverride(cue),
+  stop: () => engine.setOverride(null),
+  setMutes: (mutes: ReadonlySet<Part>) => engine.setMutes(mutes),
+  effect: (kind: EffectKind, theme: ThemeId) => engine.playEffect(kind, theme),
+  analyser: () => engine.analyser,
+  position: () => engine.position(),
+};
 
 export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number, enemyHealths: { id: string; hp: number }[], events: { round: number; kind: string; message: string }[], version: number) {
   const [settings, setSettings] = useState<AudioSettings>(readSettings);
@@ -92,7 +106,7 @@ export function useGameAudio(cue: MusicCue, phase: string, playerHealth: number,
   // cues with an unchanged identity and crossfades otherwise.
   useEffect(() => {
     if (settings.enabled) engine.setCue(cue);
-  }, [cue.theme, cue.state, cue.depth, cue.boss, cue.variant, settings.enabled]);
+  }, [cue.theme, cue.state, cue.depth, cue.boss, cue.variant, cue.phase, settings.enabled]);
 
   useEffect(() => {
     const before = previous.current;

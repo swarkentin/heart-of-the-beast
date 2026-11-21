@@ -1,11 +1,11 @@
-// The live music engine. It owns the AudioContext, keeps exactly one "layer" (a cue's bed plus its scheduled bars)
-// audible at steady state, and crossfades to a new layer when the cue changes instead of restarting anything.
+// The live music engine. It owns the AudioContext, keeps exactly one "layer" (a cue's mixer, bed and scheduled
+// bars) audible at steady state, and crossfades to a new layer when the cue changes instead of restarting anything.
 import { cueKey } from "./cue.ts";
-import { generateBar, makePlan } from "./score.ts";
+import { generateBar, makePlan, placeOf } from "./score.ts";
 import type { Plan } from "./score.ts";
-import { createMasterChain, playEffect as playEffectOn, playStinger, scheduleEvents, startBed } from "./synth.ts";
-import type { Bed, MasterChain } from "./synth.ts";
-import type { EffectKind, MusicCue, ThemeId } from "./types.ts";
+import { createLayerBus, createMasterChain, playEffect as playEffectOn, playStinger, scheduleEvents, startBed } from "./synth.ts";
+import type { Bed, LayerBus, MasterChain } from "./synth.ts";
+import type { EffectKind, MusicCue, Part, Section, ThemeId } from "./types.ts";
 
 export interface Volumes {
   muted: boolean;
@@ -17,12 +17,21 @@ export interface Volumes {
 interface Layer {
   key: string;
   plan: Plan;
-  gain: GainNode;
+  bus: LayerBus;
   bed: Bed;
   /** Absolute context time at which the next bar to schedule begins. */
   nextTime: number;
   bar: number;
   cue: MusicCue;
+}
+
+/** Where the score is right now, for the sound test's display. */
+export interface Position {
+  cue: MusicCue;
+  plan: Plan;
+  bar: number;
+  section: Section;
+  barInSection: number;
 }
 
 const LOOKAHEAD = 0.45;
@@ -36,6 +45,10 @@ export class MusicEngine {
   private layer: Layer | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private pending: MusicCue | null = null;
+  /** The cue the game asked for; the sound test's override plays instead while it is set. */
+  private gameCue: MusicCue | null = null;
+  private override: MusicCue | null = null;
+  private mutes: ReadonlySet<Part> = new Set();
   private volumes: Volumes = { muted: false, master: 0.72, music: 0.48, effects: 0.72 };
   private lastEffectAt = new Map<string, number>();
   private listeners = new Set<() => void>();
@@ -52,6 +65,22 @@ export class MusicEngine {
 
   get currentKey(): string | null {
     return this.layer?.key ?? null;
+  }
+
+  /** The output analyser (for a visualiser), once audio has started. */
+  get analyser(): AnalyserNode | null {
+    return this.chain?.analyser ?? null;
+  }
+
+  /** The bar that is sounding now, and where it sits in the song. */
+  position(): Position | null {
+    const ctx = this.ctx;
+    const layer = this.layer;
+    if (!ctx || !layer || !Number.isFinite(layer.nextTime)) return null;
+    const ahead = Math.max(0, Math.ceil((layer.nextTime - ctx.currentTime) / layer.plan.barSec));
+    const bar = Math.max(layer.plan.entryBar, layer.bar - ahead);
+    const place = placeOf(layer.plan, bar);
+    return { cue: layer.cue, plan: layer.plan, bar, section: place.section, barInSection: place.inSection };
   }
 
   /**
@@ -81,7 +110,7 @@ export class MusicEngine {
     if (this.pending) {
       const cue = this.pending;
       this.pending = null;
-      this.setCue(cue);
+      this.play(cue);
     }
   }
 
@@ -99,8 +128,30 @@ export class MusicEngine {
     this.chain.effects.gain.setTargetAtTime(effects, t, 0.05);
   }
 
-  /** Switches the score. Same cue identity is a no-op; otherwise the old layer fades out as the new one fades in. */
+  /** The game's cue. While the sound test overrides the music it is remembered and resumes when the override ends. */
   setCue(cue: MusicCue): void {
+    this.gameCue = cue;
+    if (!this.override) this.play(cue);
+  }
+
+  /** The sound test: play this cue instead of the game's, or (null) hand the music back to the game. */
+  setOverride(cue: MusicCue | null): void {
+    this.override = cue;
+    if (cue) this.play(cue);
+    else {
+      this.setMutes(new Set());
+      if (this.gameCue) this.play(this.gameCue);
+    }
+  }
+
+  /** Silences mixer parts (the sound test's channel toggles). Applies to the playing layer and to later ones. */
+  setMutes(mutes: ReadonlySet<Part>): void {
+    this.mutes = new Set(mutes);
+    if (this.ctx && this.layer) this.layer.bus.setMutes(this.mutes, this.ctx.currentTime);
+  }
+
+  /** Switches the score. Same cue identity is a no-op; otherwise the old layer fades out as the new one fades in. */
+  private play(cue: MusicCue): void {
     const ctx = this.ctx;
     if (!ctx || !this.chain || ctx.state !== "running") {
       this.pending = cue;
@@ -113,7 +164,7 @@ export class MusicEngine {
     const now = ctx.currentTime;
     const urgent = URGENT.has(cue.state);
     let start = now + 0.05;
-    if (previous) {
+    if (previous && Number.isFinite(previous.nextTime)) {
       // Quantise to the old score's grid: the next beat for fights, the next bar otherwise.
       const barSec = previous.plan.barSec;
       const barStart = previous.nextTime - barSec;
@@ -123,28 +174,26 @@ export class MusicEngine {
       start = Math.max(start, now + 0.05);
     }
     const fade = urgent ? 0.35 : previous ? 1.6 : 1.2;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.linearRampToValueAtTime(1, start + fade);
-    gain.connect(this.chain.music);
-    const bed = startBed(ctx, gain, plan, start, fade);
-    const layer: Layer = { key, plan, gain, bed, nextTime: start, bar: 0, cue };
+    const bus = createLayerBus(ctx, this.chain.music, plan, this.mutes);
+    bus.out.gain.setValueAtTime(0.0001, start);
+    bus.out.gain.linearRampToValueAtTime(1, start + fade);
+    const bed = startBed(ctx, bus.parts.fx, plan, start, fade);
+    const layer: Layer = { key, plan, bus, bed, nextTime: start, bar: plan.entryBar, cue };
     this.layer = layer;
     if (previous) this.retire(previous, start, fade);
-    if ((cue.state === "victory" || cue.state === "defeat") && previous?.cue.state !== cue.state) playStinger(ctx, gain, plan, cue.state, start);
+    if ((cue.state === "victory" || cue.state === "defeat") && previous?.cue.state !== cue.state) playStinger(ctx, bus, plan, cue.state, start);
     this.tick();
   }
 
   private retire(layer: Layer, at: number, fade: number): void {
-    layer.gain.gain.cancelScheduledValues(at);
-    layer.gain.gain.setValueAtTime(Math.max(0.0001, layer.gain.gain.value), at);
-    layer.gain.gain.linearRampToValueAtTime(0.0001, at + fade);
+    const gain = layer.bus.out.gain;
+    gain.cancelScheduledValues(at);
+    gain.setValueAtTime(Math.max(0.0001, gain.value), at);
+    gain.linearRampToValueAtTime(0.0001, at + fade);
     layer.bed.stop(at, fade);
     layer.nextTime = Infinity; // scheduler stops feeding it; bars already queued ring out under the fade
     const ctx = this.ctx;
-    window.setTimeout(() => {
-      try { layer.gain.disconnect(); } catch { /* already gone */ }
-    }, Math.max(0, (at + fade - (ctx?.currentTime ?? 0)) * 1000) + 3000);
+    window.setTimeout(() => layer.bus.dispose(), Math.max(0, (at + fade - (ctx?.currentTime ?? 0)) * 1000) + 3000);
   }
 
   private tick(): void {
@@ -158,7 +207,7 @@ export class MusicEngine {
       layer.nextTime += missed * layer.plan.barSec;
     }
     while (layer.nextTime < ctx.currentTime + LOOKAHEAD) {
-      scheduleEvents(ctx, layer.gain, generateBar(layer.plan, layer.bar), layer.nextTime);
+      scheduleEvents(ctx, layer.bus, generateBar(layer.plan, layer.bar), layer.nextTime);
       layer.nextTime += layer.plan.barSec;
       layer.bar += 1;
     }
