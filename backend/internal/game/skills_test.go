@@ -380,8 +380,8 @@ func TestLoadoutCanOnlyChangeAtTheCampBetweenDungeons(t *testing.T) {
 	if run.Briefing == nil || run.Briefing.Dungeon == first || run.Briefing.ThemeID != run.Theme() {
 		t.Fatalf("entering a new dungeon should brief it: %+v", run.Briefing)
 	}
-	if want := run.CombatRound.StartedAt.Add(CombatActionWindow + FloorTransitionWindow + DungeonBriefingWindow); !run.CombatRound.Deadline.Equal(want) {
-		t.Fatalf("the first round of a dungeon should allow time for the portal and the briefing: deadline %v, want %v", run.CombatRound.Deadline, want)
+	if round := run.CombatRound; !round.Held || !round.Deadline.Equal(round.StartedAt.Add(CombatActionWindow)) || round.StartedAt.Sub(expeditionNow) < FloorTransitionWindow+DungeonBriefingWindow {
+		t.Fatalf("the first round of a dungeon is held for the portal and the briefing, then gets a full action window: %+v", round)
 	}
 }
 

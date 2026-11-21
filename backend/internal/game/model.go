@@ -331,4 +331,9 @@ type CombatRound struct {
 	StartedAt time.Time          `json:"startedAt"`
 	Deadline  time.Time          `json:"deadline"`
 	Actions   map[string]Command `json:"actions"`
+	// Held is set on a round that opens behind something the clients play first (the prologue, a briefing, the
+	// descent to a new floor): its countdown (StartedAt to Deadline) does not begin until every player's screen
+	// is ready, or the hold runs out (ADR 0039). Ready lists the players whose screens are ready.
+	Held  bool            `json:"held,omitempty"`
+	Ready map[string]bool `json:"ready,omitempty"`
 }

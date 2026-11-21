@@ -161,6 +161,8 @@ func ApplyCommand(room *Room, actorID string, command Command, now time.Time) er
 		return useConsumable(room, actorID, command.ChoiceID)
 	case "combat":
 		return SubmitCombatAction(room, actorID, command, now)
+	case "combat_ready":
+		return SubmitCombatReady(room, actorID, command, now)
 	case "choose_exit":
 		return SubmitNavigationVote(room, actorID, command.ExitID, now)
 	case "choose_event":

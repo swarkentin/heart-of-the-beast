@@ -12,7 +12,7 @@ import (
 
 // DungeonBriefingWindow is extra time on the first round of every dungeon, so reading the briefing never costs
 // anyone their first turn.
-const DungeonBriefingWindow = 10 * time.Second
+const DungeonBriefingWindow = 25 * time.Second
 
 // FloorTransitionWindow is extra time on the first round of every new floor, for the descent the clients play
 // between floors (ADR 0039). It is a little longer than the animation, so arriving never costs a turn.
@@ -21,13 +21,59 @@ const FloorTransitionWindow = 3 * time.Second
 // RunPrologueWindow is extra time on the very first round of a run, for the prologue cutscene the clients play
 // before the first briefing (ADR 0039). Players who skip it can act at once; the round still resolves as soon as
 // everyone has chosen.
-const RunPrologueWindow = 45 * time.Second
+const RunPrologueWindow = 50 * time.Second
 
-// extendFirstRound gives the round the party has just been placed into more time, if there is one.
+// extendFirstRound holds the round the party has just been placed into, if there is one, while the clients play
+// what comes before it: its countdown is pushed back by window, and starts as soon as every player is ready
+// (markCombatReady) if that is sooner. The windows add up, so they are the most a party can be kept waiting.
 func extendFirstRound(run *Run, window time.Duration) {
 	if run.CombatRound != nil {
+		run.CombatRound.StartedAt = run.CombatRound.StartedAt.Add(window)
 		run.CombatRound.Deadline = run.CombatRound.Deadline.Add(window)
+		run.CombatRound.Held = true
 	}
+}
+
+// markCombatReady records that a player's screen is ready for a held round (the prologue, briefing or descent has
+// closed, or they have already chosen an action). When every player who can act is ready, the countdown starts now.
+func markCombatReady(room *Room, actorID string, now time.Time) {
+	round := room.Run.CombatRound
+	if round == nil || !round.Held {
+		return
+	}
+	if round.Ready == nil {
+		round.Ready = map[string]bool{}
+	}
+	round.Ready[actorID] = true
+	for _, playerID := range eligibleCombatPlayers(room) {
+		if !round.Ready[playerID] {
+			if _, acted := round.Actions[playerID]; !acted {
+				return
+			}
+		}
+	}
+	round.Held = false
+	if now.Before(round.StartedAt) {
+		round.StartedAt = now.UTC()
+		round.Deadline = round.StartedAt.Add(CombatActionWindow)
+	}
+}
+
+// SubmitCombatReady is the "combat_ready" command: this player's screen has finished what it played before a held
+// round, so their countdown can begin.
+func SubmitCombatReady(room *Room, actorID string, command Command, now time.Time) error {
+	run := room.Run
+	if run == nil || run.Phase != PhaseCombat || run.CombatRound == nil {
+		return ErrInvalidPhase
+	}
+	if _, ok := run.Players[actorID]; !ok {
+		return ErrNotPlayer
+	}
+	if command.Round != run.CombatRound.Number {
+		return ErrStaleCombatRound
+	}
+	markCombatReady(room, actorID, now)
+	return nil
 }
 
 type DungeonBriefing struct {

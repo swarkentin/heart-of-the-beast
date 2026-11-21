@@ -183,7 +183,10 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const roundDeadline = round ? new Date(round.deadline).getTime() : 0;
   const roundTotal = round ? Math.max(1, Math.round((roundDeadline - new Date(round.startedAt).getTime()) / 1000)) : 8;
   const remainingMs = round ? Math.max(0, roundDeadline - now) : 0;
-  const seconds = Math.ceil(remainingMs / 1000);
+  // A held round (after the prologue, a briefing or a descent) shows a full, still timer until its countdown starts:
+  // when every player's screen is ready, or the hold runs out.
+  const holding = Boolean(round?.held && now < new Date(round.startedAt).getTime());
+  const seconds = holding ? roundTotal : Math.ceil(remainingMs / 1000);
   const myAction = round && selfId ? round.actions[selfId] : undefined;
   const waitingOn = round ? eligible.filter(member => !round.actions[member.id]).length : 0;
   const lockedKey = myAction ? (myAction.action === "defend" ? SKILL_DEFEND : myAction.skill ?? "") : pending && pending.round === round?.number ? pending.key : "";
@@ -203,6 +206,17 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const undecided = Boolean(acting && round && self?.alive && !lockedKey);
   const autoSoon = undecided && remainingMs > 0 && seconds <= 3;
   const shownKey = lockedKey || (undecided && remainingMs <= 0 ? SKILL_DEFEND : "");
+  // Tell the server this screen is ready once nothing is playing over the fight, so a held round's countdown can
+  // start. Once per round; the server ignores it for rounds that are not held.
+  const readySent = useRef(0);
+  const overlayOpen = prologueOpen || introOpen || Boolean(descending);
+  useEffect(() => {
+    if (!round?.held || !acting || !selfId || overlayOpen || round.ready?.[selfId] || readySent.current === round.number) return;
+    // A beat later, so an overlay that opens right after another (the briefing after the prologue) cancels it.
+    const number = round.number;
+    const timer = window.setTimeout(() => { readySent.current = number; void onCommand({ type: "combat_ready", round: number }); }, 400);
+    return () => window.clearTimeout(timer);
+  }, [round?.held, round?.number, round?.ready, acting, selfId, overlayOpen, onCommand]);
 
   // ---- log -------------------------------------------------------------------------------------------------------
   const labels = partyLabels(party);
@@ -389,8 +403,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   } else if (combat && round) {
     command = <div className="rn-combat">
       <div className={"rn-timer" + (lockedKey ? " rn-timer-locked" : "")} role="timer" aria-label={remainingMs > 0 ? seconds + " seconds left in round " + round.number : "Round " + round.number + " resolving"}>
-        <strong>{acting ? timerLabel : "ROUND " + round.number + " · " + (eligible.length - waitingOn) + "/" + eligible.length + " READY"}</strong>
-        <TimerBar seconds={seconds} total={roundTotal} urgent={seconds <= 3 && !lockedKey} />
+        <strong>{holding && !lockedKey ? "GET READY · THE ROUND STARTS WHEN THE PARTY IS" : acting ? timerLabel : "ROUND " + round.number + " · " + (eligible.length - waitingOn) + "/" + eligible.length + " READY"}</strong>
+        <TimerBar seconds={seconds} total={roundTotal} urgent={!holding && seconds <= 3 && !lockedKey} />
         <b>{remainingMs > 0 ? seconds + "s" : "…"}</b>
       </div>
       {acting ? <>
