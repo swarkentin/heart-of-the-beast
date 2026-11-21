@@ -121,6 +121,7 @@ func SubmitCombatAction(room *Room, actorID string, command Command, now time.Ti
 		return ErrInvalidAction
 	}
 	run.CombatRound.Actions[actorID] = command
+	markCombatReady(room, actorID, now)
 	if allCombatActionsSubmitted(room) {
 		resolveCombatRound(room, now)
 	}
