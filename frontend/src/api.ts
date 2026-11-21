@@ -62,6 +62,9 @@ function guestProfileCredential(): string | null {
   }
 }
 
+/** No request may hang: a stuck one would keep the UI waiting on it (in combat, every round would auto-defend). */
+export const REQUEST_TIMEOUT_MS = 8000;
+
 export async function apiRequest<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -73,7 +76,16 @@ export async function apiRequest<T>(path: string, token?: string, init: RequestI
     const profileCredential = guestProfileCredential();
     if (profileCredential) headers.set("X-Guest-Profile-Credential", profileCredential);
   }
-  const response = await fetch("/api" + path, { ...init, headers });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  init.signal?.addEventListener("abort", () => controller.abort());
+  let response: Response;
+  try {
+    response = await fetch("/api" + path, { ...init, headers, signal: controller.signal });
+  } catch (err) {
+    if (controller.signal.aborted) throw new Error("The server took too long to answer. Try again.");
+    throw err;
+  } finally { window.clearTimeout(timeout); }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Request failed (" + response.status + ")");
   return payload as T;
