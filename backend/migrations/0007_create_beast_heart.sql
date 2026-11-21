@@ -10,11 +10,32 @@ CREATE TABLE IF NOT EXISTS beast_heart (
 
 INSERT INTO beast_heart (id, max_health) VALUES (1, 1000000) ON CONFLICT (id) DO NOTHING;
 
--- Each fight against the heart counts once, however often its result is saved, retried or polled.
+-- One row per party fight against the heart: the party's high score.
 CREATE TABLE IF NOT EXISTS beast_heart_strikes (
     run_id TEXT NOT NULL,
     encounter_id TEXT NOT NULL,
-    damage BIGINT NOT NULL CHECK (damage >= 0),
+    theme_id TEXT NOT NULL DEFAULT '',
+    dungeon INTEGER NOT NULL DEFAULT 0,
+    damage BIGINT NOT NULL DEFAULT 0 CHECK (damage >= 0),
+    driven_off BOOLEAN NOT NULL DEFAULT FALSE,
     struck_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (run_id, encounter_id)
 );
+
+CREATE INDEX IF NOT EXISTS beast_heart_strikes_damage_idx ON beast_heart_strikes (damage DESC);
+
+-- What each player (or, for damage no one player dealt, the party) did in a fight. Damage only ever grows: it is
+-- the running total of the fight, so retries, polls and reconnects can resend it without counting it twice.
+CREATE TABLE IF NOT EXISTS beast_heart_contributions (
+    run_id TEXT NOT NULL,
+    encounter_id TEXT NOT NULL,
+    contributor TEXT NOT NULL,
+    profile_id TEXT NOT NULL DEFAULT '',
+    damage BIGINT NOT NULL DEFAULT 0 CHECK (damage >= 0),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (run_id, encounter_id, contributor),
+    FOREIGN KEY (run_id, encounter_id) REFERENCES beast_heart_strikes (run_id, encounter_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS beast_heart_contributions_profile_idx ON beast_heart_contributions (profile_id) WHERE profile_id <> '';

@@ -210,7 +210,8 @@ func descendExpedition(room *Room, now time.Time) {
 		run.MusicIntensity = MaximumDungeonDepth
 	}
 	run.FloorModifiers = modifiers
-	entryID, rooms := generateExpeditionFloor(run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
+	heart := run.Depth >= run.MaxDepth && summonHeart(run)
+	entryID, rooms := generateFloor(heart, run.Theme(), dungeonSeed(run.Seed, dungeonNumber(run)), run.Depth, run.MaxDepth, len(eligibleCombatPlayers(room)), modifiers, dungeonExtraDepth(run))
 	if tag := dungeonNumber(run); tag > 1 {
 		entryID = tagDungeonRooms(rooms, entryID, fmt.Sprintf("x%d", tag))
 	}

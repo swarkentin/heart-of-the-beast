@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { HeartMeter, useBeastHeart } from "./beast/HeartMeter";
+import { HeartMeter, HeartScores, useBeastHeart } from "./beast/HeartMeter";
 import "./lobby.css";
 import { VisualEffectsSettings } from "./visualEffects";
 import { SoundTestButton } from "./soundTest";
@@ -248,6 +248,7 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
     </section>
     {/* The shared goal every party works toward (ADR 0040). */}
     <HeartMeter heart={heart} />
+    <HeartScores heart={heart} />
     {profile ? <div className="px-title-account"><AccountPanel accounts={profile.accounts} /></div> : null}
     <section className="px-panel px-title-actions" aria-label="Start playing">
       <div className="px-title-create">

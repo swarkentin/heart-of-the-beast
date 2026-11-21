@@ -1,6 +1,6 @@
 // One music profile per dungeon theme in the backend DungeonThemeCatalog, plus a treatment for every boss in the
 // bestiary. All numbers are starting points for a human to audition and tune; see docs/decisions/0026.
-import type { ThemeId, ThemeProfile } from "./types.ts";
+import type { BossTreatment, ThemeId, ThemeProfile } from "./types.ts";
 
 const catacombs: ThemeProfile = {
   id: "catacombs", name: "Forgotten Catacombs", character: "Minor drone, tolling bells, slow heartbeat toms and dripping stone",
@@ -286,6 +286,11 @@ const infernal: ThemeProfile = {
     gluttonous_maw: { tempoMul: 0.8, transpose: -12, lead: "sub", fill: "heartbeat", extraFx: "bubble", note: "The gullet: a low hungry heartbeat and boiling slag" },
   },
 };
+
+/** The Heart of the Beast (ADR 0040) can replace any dungeon's boss, so it plays over that dungeon's own music
+ * with one treatment of its own: slow, low and pounding, a heartbeat under the theme. */
+export const HEART_BOSS_ID = "heart_of_the_beast";
+export const HEART_TREATMENT: BossTreatment = { tempoMul: 0.8, transpose: -7, scale: "harmonicMinor", fill: "tom", lead: "sub", note: "The great beat: the dungeon's theme a fifth down and slower, a sub-bass lead over pounding toms" };
 
 export const PROFILES: Readonly<Record<ThemeId, ThemeProfile>> = { catacombs, scifi, mobster, sunken, clockwork, carnival, jungle, dreamscape, arctic, ghosttown, wasteland, noir, arcade, eldritch, infernal };
 

@@ -9,7 +9,7 @@
 // exactly from loop to loop and can be remembered; only the ambience is random (seeded).
 import { energyFor, isCapstone, isFight, layersFor } from "./cue.ts";
 import { fxSteps } from "./sounds.ts";
-import { profileFor } from "./profiles.ts";
+import { HEART_BOSS_ID, HEART_TREATMENT, profileFor } from "./profiles.ts";
 import { partyBar, titleBar, MENU_FORM_BARS } from "./title.ts";
 import { SCALES } from "./types.ts";
 import type { Rng } from "./sounds.ts";
@@ -90,7 +90,7 @@ export function makePlan(cue: MusicCue): Plan {
   const profile = profileFor(cue.theme);
   const ens = profile.ensemble;
   const menu = cue.state === "title" || cue.state === "party";
-  const boss = cue.state === "boss" && cue.boss ? profile.bosses[cue.boss] : undefined;
+  const boss = cue.state === "boss" && cue.boss ? (cue.boss === HEART_BOSS_ID ? HEART_TREATMENT : profile.bosses[cue.boss]) : undefined;
   const variant = profile.variants[cue.variant];
   const capstone = isCapstone(cue.theme);
   const fight = isFight(cue.state);

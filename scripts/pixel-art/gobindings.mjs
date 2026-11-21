@@ -25,7 +25,7 @@ export function goBindings(themes) {
     }
   }
   out.push("var themes = []Theme{");
-  for (const [v, t] of themeVars) out.push(`\t{ID: ${v}, Name: ${q(t.name)}, Tagline: ${q(t.tagline || "")}},`);
+  for (const [v, t] of themeVars) out.push(`\t{ID: ${v}, Name: ${q(t.name)}, Tagline: ${q(t.tagline || "")}${t.unique ? ", Unique: true" : ""}},`);
   out.push("}", "", "var sprites = []Sprite{", ...sprites, "}", "");
   return out.join("\n");
 }

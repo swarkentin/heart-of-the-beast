@@ -15,6 +15,9 @@ func TestBackdropRegistryIsCompleteAndMatchesDisk(t *testing.T) {
 		t.Fatal("no room kinds generated (run `npm run art:rooms`)")
 	}
 	for _, theme := range Themes() {
+		if theme.Unique {
+			continue
+		}
 		var manifest struct {
 			Backdrops []struct{ Kind, First, Cinema string } `json:"backdrops"`
 		}
@@ -41,8 +44,14 @@ func TestBackdropRegistryIsCompleteAndMatchesDisk(t *testing.T) {
 			}
 		}
 	}
-	if len(Backdrops()) != len(Themes())*len(RoomKinds()) {
-		t.Errorf("registry has %d backdrops, want %d themes x %d kinds", len(Backdrops()), len(Themes()), len(RoomKinds()))
+	rooms := 0
+	for _, theme := range Themes() {
+		if !theme.Unique {
+			rooms++
+		}
+	}
+	if len(Backdrops()) != rooms*len(RoomKinds()) {
+		t.Errorf("registry has %d backdrops, want %d themes x %d kinds", len(Backdrops()), rooms, len(RoomKinds()))
 	}
 	if _, ok := BackdropFor(ThemeID{}, RoomKindEntry); ok {
 		t.Error("a forged theme id must not resolve to a backdrop")

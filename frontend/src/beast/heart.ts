@@ -2,7 +2,7 @@
 // title screen and the run prologue show how close everyone together is to destroying it. Pure, so it runs under
 // node --test.
 
-export type ApiBeastHeart = { maxHealth: number; health: number; damage: number; strikes: number; updatedAt?: string };
+export type ApiBeastHeart = { maxHealth: number; health: number; damage: number; strikes: number; updatedAt?: string; leaderboard?: ApiHeartLeaderboard };
 
 /** The Beast's heart, one character per pixel: # flesh, + highlight, . empty. Shared by the meter and the prologue. */
 export const HEART_PIXELS = [
@@ -39,3 +39,32 @@ export function heartReport(heart: ApiBeastHeart) {
     : number(heart.damage) + " damage in " + number(heart.strikes) + (heart.strikes === 1 ? " strike" : " strikes") + " by parties everywhere.";
   return { health: number(left), maxHealth: number(max), percentLabel, lit, beatSeconds, line, dead: left <= 0 };
 }
+
+export type ApiHeartPlayerScore = { profileId: string; name: string; damage: number; fights: number };
+export type ApiHeartPartyScore = { runId: string; names?: string[]; themeId?: string; dungeon?: number; damage: number; drivenOff: boolean; at: string };
+export type ApiHeartLeaderboard = { players: ApiHeartPlayerScore[]; parties: ApiHeartPartyScore[] };
+
+/** The heart's sprite id: how the client knows an enemy is the heart. */
+export const HEART_SPRITE = "beast/heart_of_the_beast";
+
+type RunLike = { rooms: Record<string, { encounter?: { enemies: { sprite?: string }[] } }>; heartStrikes?: { encounterId: string; byPlayer: Record<string, number>; drivenOff?: boolean }[] };
+
+/** Whether the heart waits on this run's current floors (it takes the place of the dungeon's boss). */
+export function heartAwaits(run: RunLike): boolean {
+  return Object.values(run.rooms).some(room => room.encounter?.enemies.some(enemy => enemy.sprite === HEART_SPRITE));
+}
+
+/** The party's tally in the fight in this room: the party's total and the given player's own share. */
+export function heartTally(run: RunLike, roomId: string, playerId: string) {
+  const strike = run.heartStrikes?.find(item => item.encounterId === roomId);
+  const party = strike ? Object.values(strike.byPlayer).reduce((total, amount) => total + amount, 0) : 0;
+  return { party, mine: strike?.byPlayer[playerId] ?? 0, drivenOff: Boolean(strike?.drivenOff) };
+}
+
+/** A party's names for the high scores: "Ada, Brin & Cole". */
+export function partyNames(names: string[] | undefined): string {
+  const list = names && names.length > 0 ? names : ["A party"];
+  return list.length === 1 ? list[0] : list.slice(0, -1).join(", ") + " & " + list[list.length - 1];
+}
+
+export const formatDamage = (value: number) => Math.max(0, Math.round(value)).toLocaleString("en-US");

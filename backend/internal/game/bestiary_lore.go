@@ -170,6 +170,7 @@ var bestiaryBackstories = map[string]string{
 	"infernal/hellforge_smith":        "The Smith forged the chains that bind the citadel's nobles to their servants. When the forge cooled, it fed its own heart to the anvil and became the last tool it ever made.",
 	"infernal/chain_duke":             "The Duke wears the chains of every soul he ever claimed as property. He believes ownership is eternal, and the links tighten whenever someone speaks the word freedom.",
 	"infernal/archfiend":              "Malgareth won the citadel by devouring the names of every rival prince. The throne grew wings around him, and now he consumes his own servants to keep the crown from remembering another ruler.",
+	"beast/heart_of_the_beast":        "No one has seen the Beast, only its heart: torn up from beneath whatever land it has taken, beating loud enough to shake the stone. It cannot be killed in one fight. Every wound any party deals it stays, and it is weaker each time it is driven off.",
 	"infernal/gluttonous_maw":         "The Maw was the pit beneath the citadel where failed bargains were thrown away. It learned to bite back at anyone who tried to reclaim what they had lost.",
 }
 

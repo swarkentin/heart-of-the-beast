@@ -48,6 +48,9 @@ var ThemeEldritch = ThemeID{"eldritch"}
 // ThemeInfernal is the The Infernal Citadel art theme.
 var ThemeInfernal = ThemeID{"infernal"}
 
+// ThemeBeast is the The Heart of the Beast art theme.
+var ThemeBeast = ThemeID{"beast"}
+
 // CatacombsSkeletonSentinel is the Restless Sentinel sprite sheet.
 var CatacombsSkeletonSentinel = SpriteID{"catacombs/skeleton_sentinel"}
 
@@ -543,6 +546,9 @@ var InfernalArchfiend = SpriteID{"infernal/archfiend"}
 // InfernalGluttonousMaw is the The Gluttonous Maw sprite sheet.
 var InfernalGluttonousMaw = SpriteID{"infernal/gluttonous_maw"}
 
+// BeastHeartOfTheBeast is the The Heart of the Beast sprite sheet.
+var BeastHeartOfTheBeast = SpriteID{"beast/heart_of_the_beast"}
+
 var themes = []Theme{
 	{ID: ThemeCatacombs, Name: "Forgotten Catacombs", Tagline: "Ancient ruins, undead, and forgotten horrors"},
 	{ID: ThemeScifi, Name: "Sci-Fi Research Facility", Tagline: "High-tech experiments and rogue AI"},
@@ -559,6 +565,7 @@ var themes = []Theme{
 	{ID: ThemeArcade, Name: "8-Bit Arcade", Tagline: "Blocky beasts, power-ups and a boss stage at the end of every level"},
 	{ID: ThemeEldritch, Name: "The Eldritch Castle", Tagline: "A drowned keep that dreams of the thing asleep beneath it"},
 	{ID: ThemeInfernal, Name: "The Infernal Citadel", Tagline: "Brimstone halls where demon princes keep court"},
+	{ID: ThemeBeast, Name: "The Heart of the Beast", Tagline: "The heart that beats beneath every land", Unique: true},
 }
 
 var sprites = []Sprite{
@@ -727,4 +734,5 @@ var sprites = []Sprite{
 	{ID: InfernalChainDuke, Theme: ThemeInfernal, CreatureID: "chain_duke", Name: "The Chain Duke", Boss: true, Sheet: "infernal/chain_duke.png", FrameSize: 128},
 	{ID: InfernalArchfiend, Theme: ThemeInfernal, CreatureID: "archfiend", Name: "Archfiend Malgareth", Boss: true, Sheet: "infernal/archfiend.png", FrameSize: 128},
 	{ID: InfernalGluttonousMaw, Theme: ThemeInfernal, CreatureID: "gluttonous_maw", Name: "The Gluttonous Maw", Boss: true, Sheet: "infernal/gluttonous_maw.png", FrameSize: 128},
+	{ID: BeastHeartOfTheBeast, Theme: ThemeBeast, CreatureID: "heart_of_the_beast", Name: "The Heart of the Beast", Boss: true, Sheet: "beast/heart_of_the_beast.png", FrameSize: 128},
 }

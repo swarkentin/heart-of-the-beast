@@ -1,0 +1,69 @@
+{
+  "id": "beast",
+  "name": "The Heart of the Beast",
+  "tagline": "The heart that beats beneath every land",
+  "palette": [
+    "#5e0f1f",
+    "#a3192e",
+    "#ff6f7d",
+    "#ff3a5a"
+  ],
+  "creatures": [
+    {
+      "id": "heart_of_the_beast",
+      "name": "The Heart of the Beast",
+      "tier": "boss",
+      "role": "Unique boss; the Beast's own heart, fought by every party at once. It never dies in one run: drive it off",
+      "sheet": "beast/heart_of_the_beast.png",
+      "frame": {
+        "w": 128,
+        "h": 128
+      },
+      "columns": 6,
+      "anchor": {
+        "x": 64,
+        "y": 125
+      },
+      "animations": {
+        "idle": {
+          "row": 0,
+          "frames": 4,
+          "fps": 6,
+          "loop": true
+        },
+        "hit": {
+          "row": 1,
+          "frames": 2,
+          "fps": 12,
+          "loop": false
+        },
+        "attack": {
+          "row": 2,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "lunge"
+        },
+        "special": {
+          "row": 3,
+          "frames": 6,
+          "fps": 10,
+          "loop": false,
+          "impactFrame": 3,
+          "move": "roar"
+        },
+        "death": {
+          "row": 4,
+          "frames": 6,
+          "fps": 8,
+          "loop": false,
+          "hold": true,
+          "style": "dissolve"
+        }
+      },
+      "attack": "Arterial lash",
+      "special": "Heartquake"
+    }
+  ]
+}

@@ -23,6 +23,9 @@ type Theme struct {
 	ID      ThemeID
 	Name    string
 	Tagline string
+	// Unique themes hold one special creature that is not a dungeon theme's (the Heart of the Beast, ADR 0040):
+	// they have no rooms, no roster and no dungeon of their own.
+	Unique bool
 }
 
 // Sprite describes one creature's sprite sheet.

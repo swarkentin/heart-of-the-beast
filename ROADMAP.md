@@ -53,10 +53,11 @@ These are the current priorities, not a promise that each item ships in strict i
 
 6. **The Heart of the Beast: a shared objective (ADR 0040).** The most important motivation work right now.
    - [x] One shared, persistent heart health pool for every party on the server, banked once per fight; public `GET /beast`; a beating heart meter on the title screen and in the run prologue.
-   - [ ] The heart encounter: rarely replaces a dungeon boss, unbeatable, round-limited with its own mechanics, then withdraws and records the party's damage. Needs a sprite, music treatment, rewards and balance (including a guard against one build dominating the pool).
-   - [ ] An expensive shop item that forces the heart to appear in the next dungeon.
-   - [ ] Decide what happens when the heart dies.
-   - [ ] Optional: per-profile contribution ("your strikes") and a contributors board.
+   - [x] The heart fight: replaces one dungeon boss in eight, balanced as a dungeon boss (its own sprite, mechanics and music); driving it off wins the fight, and every point of damage is banked to the shared pool, win or lose.
+   - [x] The Beast Lure (250 gold): the next dungeon boss is the heart.
+   - [x] Per-player and per-party tallies, with adventurer and party high scores on the title screen.
+   - [ ] Decide what happens when the heart dies, and whether the pool grows with the player base or resets by season.
+   - [ ] Watch real heart-fight results against the simulation; retune the chance, the lure price and the pool size from data.
 
 7. **Continue presentation and world-building polish.**
    - [x] Smooth transitions (ADR 0039): rooms dip in, floors descend down a stair over the viewport, new dungeons open through a rift-gate; the server gives each new floor's first round time for it.

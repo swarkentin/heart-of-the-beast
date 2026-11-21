@@ -34,8 +34,9 @@ type Memory struct {
 	identities map[string]memoryIdentity
 	signIns    map[string]SignIn
 	// The shared Heart of the Beast (ADR 0040).
-	heartDamage, heartStrikes int64
-	heartUpdated              time.Time
+	heartDamage  int64
+	heartStrikes map[string]*memoryHeartStrike
+	heartUpdated time.Time
 }
 
 type memoryIdentity struct {

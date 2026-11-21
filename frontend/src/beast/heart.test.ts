@@ -25,3 +25,14 @@ test("a dead heart shows nothing lit and says so", () => {
   assert.equal(report.lit, 0);
   assert.equal(report.dead, true);
 });
+
+test("the client finds the heart on a floor and the party's tally in its fight", async () => {
+  const { heartAwaits, heartTally, partyNames } = await import("./heart.ts");
+  const run = { rooms: { a: { encounter: { enemies: [{ sprite: "noir/fedora_thug" }] } }, boss: { encounter: { enemies: [{ sprite: "beast/heart_of_the_beast" }] } } }, heartStrikes: [{ encounterId: "boss", byPlayer: { p1: 30, p2: 12, "": 3 } }] };
+  assert.equal(heartAwaits(run), true);
+  assert.equal(heartAwaits({ rooms: { a: run.rooms.a } }), false);
+  assert.deepEqual(heartTally(run, "boss", "p1"), { party: 45, mine: 30, drivenOff: false });
+  assert.deepEqual(heartTally(run, "a", "p1"), { party: 0, mine: 0, drivenOff: false });
+  assert.equal(partyNames(["Ada", "Brin", "Cole"]), "Ada, Brin & Cole");
+  assert.equal(partyNames([]), "A party");
+});

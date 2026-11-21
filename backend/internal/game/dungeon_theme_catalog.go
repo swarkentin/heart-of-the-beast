@@ -138,7 +138,7 @@ func (catalog DungeonThemeCatalog) Validate(monsters MonsterCatalog, encounters 
 		artThemes[theme.Art] = id
 	}
 	for _, theme := range art.Themes() {
-		if _, ok := artThemes[theme.ID]; !ok {
+		if _, ok := artThemes[theme.ID]; !ok && !theme.Unique {
 			return fmt.Errorf("art theme %q has no dungeon theme", theme.ID)
 		}
 	}
@@ -166,6 +166,10 @@ func (catalog DungeonThemeCatalog) Validate(monsters MonsterCatalog, encounters 
 	spawned := make(map[string]bool)
 	for id, encounter := range encounters.Encounters {
 		theme, ok := catalog.Themes[encounter.ThemeID]
+		if !ok && encounter.ThemeID == HeartThemeID {
+			// The heart's own encounter belongs to no dungeon; it can stand in for any dungeon's boss (ADR 0040).
+			continue
+		}
 		if !ok {
 			return fmt.Errorf("encounter %q belongs to unknown dungeon theme %q", id, encounter.ThemeID)
 		}

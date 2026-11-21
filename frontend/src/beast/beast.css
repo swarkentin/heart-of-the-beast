@@ -13,3 +13,16 @@
 .bh-meter-compact { width: min(620px, 100%); margin: 0 auto; padding: 6px 10px; background: #120e22e6; }
 .bh-meter-dead .bh-heart { animation: none; filter: grayscale(1); }
 @media (prefers-reduced-motion: reduce) { .bh-heart { animation: none; } }
+.bh-scores { width: min(920px, 100%); margin: 8px auto 0; padding: 6px 12px; text-align: left; }
+.bh-scores summary { cursor: pointer; color: var(--gold); font: 10px/2 var(--display); }
+.bh-scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 6px 0; }
+.bh-scores ol { display: grid; gap: 4px; margin: 4px 0 0; padding-left: 22px; color: var(--ink); }
+.bh-scores li span { overflow-wrap: anywhere; }
+.bh-scores li b { margin-left: 8px; color: #ff8a8a; font-weight: 400; }
+.bh-scores li small { display: block; color: var(--muted); font-size: 15px; letter-spacing: .08em; }
+.bh-fight { position: absolute; top: 8px; left: 50%; translate: -50% 0; z-index: 3; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 16px); padding: 4px 10px; background: #12040cdd; box-shadow: 0 0 0 2px #5e0f1f, 0 0 14px #ff2a4a55; pointer-events: none; }
+.bh-fight span { display: grid; line-height: 1; }
+.bh-fight b { color: #ff8a8a; font: 400 9px/1.4 var(--display); }
+.bh-fight small { color: var(--muted); font-size: 15px; letter-spacing: .06em; }
+.bh-fight-tally { text-align: right; }
+.bh-fight-tally b { color: var(--bone); font-size: 12px; }

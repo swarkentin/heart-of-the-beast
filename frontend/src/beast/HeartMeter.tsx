@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api";
-import { HEART_PIXELS, HEART_SEGMENTS, heartReport, type ApiBeastHeart } from "./heart.ts";
+import { formatDamage, HEART_PIXELS, HEART_SEGMENTS, heartReport, partyNames, type ApiBeastHeart } from "./heart.ts";
+import { themeTitle } from "../scenes";
 import "./beast.css";
 
 // The shared Heart of the Beast (ADR 0040), as the title screen and the prologue show it: a beating pixel heart and
@@ -41,4 +42,32 @@ export function HeartMeter({ heart, compact = false }: { heart?: ApiBeastHeart; 
       {compact ? null : <p className="bh-line">{report.line}</p>}
     </div>
   </section>;
+}
+
+/** The heart's high scores: who has hurt it most, and the parties' best fights. */
+export function HeartScores({ heart }: { heart?: ApiBeastHeart }) {
+  const board = heart?.leaderboard;
+  if (!board || (board.players.length === 0 && board.parties.length === 0)) return null;
+  return <details className="bh-scores px-panel">
+    <summary>HIGH SCORES AGAINST THE HEART</summary>
+    <div className="bh-scores-grid">
+      <section aria-label="Adventurers who have hurt the heart most">
+        <p className="px-label">ADVENTURERS</p>
+        <ol>{board.players.map(score => <li key={score.profileId}><span>{score.name}</span><b>{formatDamage(score.damage)}</b><small>{score.fights} {score.fights === 1 ? "FIGHT" : "FIGHTS"}</small></li>)}</ol>
+      </section>
+      <section aria-label="The parties' best fights against the heart">
+        <p className="px-label">PARTIES</p>
+        <ol>{board.parties.map(score => <li key={score.runId + score.at}><span>{partyNames(score.names)}</span><b>{formatDamage(score.damage)}</b><small>{score.drivenOff ? "DROVE IT OFF" : "FELL"}{score.themeId ? " · " + themeTitle(score.themeId) : ""}</small></li>)}</ol>
+      </section>
+    </div>
+  </details>;
+}
+
+/** Over the viewport while the party fights the heart: what this party has done to it so far. */
+export function HeartFightBadge({ party, mine, spectator }: { party: number; mine: number; spectator: boolean }) {
+  return <div className="bh-fight" role="status">
+    <PixelHeart size={2} />
+    <span><b>THE HEART OF THE BEAST</b><small>DRIVE IT OFF · EVERY WOUND COUNTS FOR EVERYONE</small></span>
+    <span className="bh-fight-tally"><b>{formatDamage(party)}</b><small>PARTY{spectator ? "" : " · YOU " + formatDamage(mine)}</small></span>
+  </div>;
 }

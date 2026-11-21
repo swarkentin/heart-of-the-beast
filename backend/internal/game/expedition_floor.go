@@ -262,6 +262,12 @@ var exitHints = map[string]string{
 // extraDepth, if given, is added to the depth enemies are scaled for: later dungeons of an expedition are harder
 // than their floor number alone says.
 func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
+	return generateFloor(false, themeID, seed, depth, maxDepth, partySize, modifiers, extraDepth...)
+}
+
+// generateFloor generates a floor. On a dungeon's last floor, heart puts the Heart of the Beast in place of the
+// dungeon's boss (ADR 0040), as strong as that boss would be.
+func generateFloor(heart bool, themeID string, seed uint64, depth, maxDepth, partySize int, modifiers []ActiveFloorModifier, extraDepth ...int) (string, map[string]*DungeonRoom) {
 	theme, err := defaultExpeditionThemeCatalog.Theme(themeID)
 	if err != nil {
 		panic(err.Error())
@@ -406,14 +412,21 @@ func generateExpeditionFloor(themeID string, seed uint64, depth, maxDepth, party
 
 	boss := theme.Guardians[(depth-1)%len(theme.Guardians)]
 	hints[bossID] = "boss"
+	finalBoss := theme.Final
+	if heart {
+		finalBoss = heartFinalBoss
+		if IsCapstoneTheme(themeID) {
+			finalBoss = heartCastleBoss
+		}
+	}
 	if final {
-		boss = theme.Final.FloorBossTemplate
+		boss = finalBoss.FloorBossTemplate
 		hints[bossID] = "final"
 	}
 	rooms[bossID] = &DungeonRoom{ID: bossID, ThemeID: themeID, Name: boss.RoomName, Floor: floor, RoomType: "boss", Description: boss.Description}
 	if final {
 		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, FinalBossHealthPercent)
-		armDungeonBoss(rooms[bossID].Encounter, theme.Final)
+		armDungeonBoss(rooms[bossID].Encounter, finalBoss)
 	} else {
 		rooms[bossID].Encounter = encounter(bossID, boss.EncounterID, 0)
 		if len(theme.ArmedGuardians) > 0 {

@@ -15,6 +15,8 @@ import { DungeonIntro } from "./DungeonIntro";
 import { FloorDescent } from "./FloorDescent";
 import { prologueSeen, RunPrologue } from "./RunPrologue";
 import { placeOf, prologueDue, transitionBetween, type Place } from "./transitions.ts";
+import { HeartFightBadge } from "../beast/HeartMeter";
+import { heartAwaits, heartTally, HEART_SPRITE } from "../beast/heart.ts";
 import { interruptTarget } from "./interrupts.ts";
 import { herbPromptLevel } from "./herbPrompt.ts";
 import { Celebrations } from "./Celebration";
@@ -480,7 +482,8 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           props={camp ? (camp.stage === "shop" ? "shop" : "camp") : room.roomType === "reward" ? "vault" : undefined}
           keeper={room.roomType === "reward" ? room.event?.keeper : undefined} sales={Object.values(camp?.purchases ?? {}).reduce((total, list) => total + list.length, 0)} enemies={enemies} events={events} party={party}
           target={livingTarget?.id ?? ""} onTarget={acting && combat ? setTarget : undefined} onPartyImpact={onPartyImpact} banner={banner} skills={skillById} />
-        {descending ? <FloorDescent key={descending.key} depth={descending.depth} maxDepth={run.maxDepth} boss={run.briefing?.boss} onDone={endDescent} /> : null}
+        {combat && room.encounter?.enemies.some(enemy => enemy.sprite === HEART_SPRITE) ? (() => { const tally = heartTally(run, room.id, selfId); return <HeartFightBadge party={tally.party} mine={tally.mine} spectator={!selfId} />; })() : null}
+        {descending ? <FloorDescent key={descending.key} depth={descending.depth} maxDepth={run.maxDepth} boss={heartAwaits(run) ? "The Heart of the Beast" : run.briefing?.boss} onDone={endDescent} /> : null}
       </section>
       {seats.right.length > 0 ? <aside className="rn-side rn-side-right" aria-label="Party">{seats.right.map(member => <PartyCard key={member.id} {...cardProps(member, order(member.id))} />)}</aside> : null}
       <div className="rn-console">
