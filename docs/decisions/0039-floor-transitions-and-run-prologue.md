@@ -16,7 +16,13 @@ Moving from room to room is quick, but every change of place was a hard cut: the
 
 Nothing plays on the first look at a run (a fresh mount or a reconnect): the client compares where the party is with where it last saw it.
 
-**The prologue** (`RunPrologue.tsx`). Every new run opens on five short panels before the first briefing, drawn only from the game's own art: the lands as slices of their entrance backdrops; the Beast's pixel heart waking with veins spreading; the lands turning as four themes' bosses rise as its masters; a rift-gate opening onto the run's first theme with the party's own heroes before it; and the charge, with the title and the live shared heart (ADR 0040). Narration types out; tap completes a line, then moves on; panels auto-advance after 3.8 s; SKIP or Escape leaves at once. It is decided once per run, during render so the briefing cannot open first, and only while the party stands in the first room of the first dungeon before round 2, so a reconnect never replays it. It is marked seen per tab.
+**The prologue** (`RunPrologue.tsx`, scenes in `prologueArt.tsx` and `prologue.css`). Every new run opens on five short panels before the first briefing, built from the game's own art (room backdrops, boss sheets, the party's own heroes) and pixel shapes in the same palette. Each panel has an animation of its own, stepped like the rest of the game's motion:
+
+1. **The lands**: under a dusk sky with stars and a moon, five lands' entrances rise into view one by one, then each lights its own lantern with a flicker, and fireflies drift up.
+2. **The Beast wakes**: the ground under the lands shakes, red cracks run down through the rock, and the heart rises out of the deep, every beat sending out a shockwave while dust falls.
+3. **Its masters**: the lands drain of colour as rot climbs them in tendrils, lightning splits the sky, and four lands' bosses rise glowing red.
+4. **The rift-gates**: a portal tears open onto the run's first land, light fans out, motes spiral into it, and the party's heroes walk up to it out of the dark.
+5. **The charge**: veins spread from the heart, every beat sends out a shockwave and embers rise, under the title and the live shared heart (ADR 0040). Narration types out; tap completes a line, then moves on; panels auto-advance after 3.8 s; SKIP or Escape leaves at once. It is decided once per run, during render so the briefing cannot open first, and only while the party stands in the first room of the first dungeon before round 2, so a reconnect never replays it. It is marked seen per tab.
 
 **The server pays for the time.** The first round of every new floor gets `FloorTransitionWindow` (3 s) and the first round of a run gets `RunPrologueWindow` (20 s), on top of the existing `DungeonBriefingWindow` (`briefing.go`). Rounds still resolve as soon as every player has acted, so a party that skips loses nothing either.
 

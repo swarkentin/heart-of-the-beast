@@ -1,0 +1,71 @@
+/* ---------- the run prologue's scenes (prologueArt.tsx, ADR 0039) ---------- */
+/* Every animation is stepped like the rest of the game, and each scene has one of its own. */
+.rpa-stars rect { animation: rpa-twinkle 2.6s steps(2, jump-none) infinite; animation-delay: var(--d, 0s); }
+@keyframes rpa-twinkle { 50% { opacity: .25; } }
+
+/* 1. The lands rise into view one by one, then each lights its lantern; fireflies drift up. */
+.rpa-slice { transform-box: fill-box; transform-origin: 50% 100%; animation: rpa-slice-up .7s steps(7, end) both; animation-delay: calc(var(--i) * 160ms); }
+@keyframes rpa-slice-up { from { transform: translateY(620px); } }
+.rpa-moon { animation: rpa-moon 3.6s steps(12) both; }
+@keyframes rpa-moon { from { transform: translateY(40px); opacity: 0; } }
+.rpa-lantern-core { animation: rpa-ignite .6s steps(1, end) both; animation-delay: calc(var(--i) * 160ms + .9s); }
+@keyframes rpa-ignite { 0%, 30%, 55% { opacity: 0; } 20%, 45%, 100% { opacity: 1; } }
+@keyframes rpa-light { from { transform: scale(0); opacity: 0; } }
+.rpa-lantern-halo { transform-box: fill-box; transform-origin: center; animation: rpa-light .5s steps(4, end) both, rpa-halo 1.6s steps(3, jump-none) infinite alternate; animation-delay: calc(var(--i) * 160ms + 1.1s), calc(var(--i) * 160ms + 1.6s); }
+@keyframes rpa-halo { to { transform: scale(1.25); opacity: .1; } }
+.rpa-firefly { animation: rpa-drift 2.4s steps(12) infinite; animation-delay: calc(var(--d) + 1.2s); opacity: 0; }
+@keyframes rpa-drift { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(12px, -110px); } }
+
+/* 2. The Beast wakes: the ground shakes, cracks run down, the heart rises and every beat sends a shockwave. */
+.rpa-quake { animation: rpa-quake .5s steps(4) 3 .2s; }
+@keyframes rpa-quake { 25% { transform: translate(-6px, 3px); } 50% { transform: translate(5px, -3px); } 75% { transform: translate(-3px, 0); } }
+.rpa-cracks path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rpa-draw 1.6s steps(10) both; animation-delay: calc(var(--i) * 180ms + .4s); }
+@keyframes rpa-draw { to { stroke-dashoffset: 0; } }
+.rpa-rise { animation: rpa-rise-up 1.6s steps(8) both; }
+@keyframes rpa-rise-up { from { transform: translateY(120px); opacity: 0; } 30% { opacity: 1; } }
+.rpa-heart { transform-box: fill-box; transform-origin: center; animation: bh-beat 1.1s steps(3, end) infinite; }
+.rpa-deep-glow { transform-box: fill-box; transform-origin: center; animation: rpa-glow 1.1s steps(3) infinite alternate; }
+@keyframes rpa-glow { to { transform: scale(1.12); opacity: .7; } }
+.rpa-shock { transform-box: fill-box; transform-origin: center; animation: rpa-shock 1.1s steps(8) infinite; }
+.rpa-shock-late { animation-delay: .55s; }
+@keyframes rpa-shock { from { transform: scale(.6); opacity: .9; } to { transform: scale(4); opacity: 0; } }
+.rpa-dust { animation: rpa-fall 1.4s steps(8) infinite; animation-delay: var(--d); opacity: 0; }
+@keyframes rpa-fall { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(160px); } }
+
+/* 3. The masters: rot climbs in tendrils, lightning splits the sky, the wardens rise glowing red. */
+.rpa-slices-turned svg { filter: saturate(.5) hue-rotate(-40deg) brightness(.65); }
+.rpa-slices-turned .rpa-slice { animation: none; }
+.rpa-rot { animation: rpa-rot 3.2s steps(10) both; }
+@keyframes rpa-rot { from { transform: translateY(620px); } }
+.rpa-tendrils path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rpa-draw 2s steps(10) both; animation-delay: calc(var(--i) * 140ms + .2s); }
+.rpa-bolt { opacity: 0; animation: rpa-bolt 3.4s steps(1, end) both .5s; }
+@keyframes rpa-bolt { 0%, 6%, 12%, 100% { opacity: 0; } 3%, 9% { opacity: 1; } }
+.rpa-flash { opacity: 0; pointer-events: none; animation: rpa-flash 3.4s steps(1, end) both .5s; }
+@keyframes rpa-flash { 0%, 4%, 10%, 100% { opacity: 0; } 3% { opacity: .55; } 9% { opacity: .3; } }
+.rpa-master { animation: rpa-rise-up 1s steps(6) both; animation-delay: calc(var(--i) * 260ms + .6s); filter: drop-shadow(0 0 6px #ff2a4a); }
+
+/* 4. The gates: the rift tears open, light fans out, motes spiral in, and the party walks up out of the dark. */
+.rpa-gate { transform-box: fill-box; transform-origin: center; animation: rpa-open 1s steps(8, end) both .2s; }
+@keyframes rpa-open { from { transform: scale(0) rotate(-90deg); opacity: 0; } }
+.rpa-ring { transform-box: fill-box; transform-origin: center; animation: rn-portal-spin 2.4s steps(16) infinite; }
+.rpa-ring-back { animation-direction: reverse; animation-duration: 3.6s; }
+.rpa-rays { transform-box: view-box; transform-origin: 550px 270px; animation: rpa-rays 12s linear infinite, rp-in 1.2s steps(6) both .8s; }
+@keyframes rpa-rays { to { rotate: 360deg; } }
+.rpa-mote { animation: rpa-spiral 2.2s steps(11) infinite; animation-delay: var(--d); opacity: 0; }
+@keyframes rpa-spiral { 0% { opacity: 0; transform: translate(260px, 0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(0, 0); } }
+.rpa-walker { animation: rpa-walk 2.2s steps(11) both; animation-delay: calc(var(--i) * 120ms + .6s); }
+@keyframes rpa-walk { from { transform: translateX(var(--from)); opacity: 0; } 20% { opacity: 1; } }
+.rpa-hero { filter: brightness(.55) drop-shadow(0 0 4px #c58cff); }
+.rpa-floor-glow { transform-box: fill-box; transform-origin: center; animation: rpa-light 1s steps(5) both .6s; }
+
+/* 5. The charge: veins spread, every beat sends a shockwave out, and embers rise. */
+.rpa-veins path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rpa-draw 2.4s steps(12) both; animation-delay: calc(var(--i) * 120ms + .3s); }
+.rpa-ember { animation: rpa-ember 3s steps(15) infinite; animation-delay: var(--d); opacity: 0; }
+@keyframes rpa-ember { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-20px, -420px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rpa-stars rect, .rpa-slice, .rpa-moon, .rpa-lantern-core, .rpa-lantern-halo, .rpa-firefly, .rpa-quake, .rpa-cracks path, .rpa-rise, .rpa-heart, .rpa-deep-glow, .rpa-shock, .rpa-dust,
+  .rpa-rot, .rpa-tendrils path, .rpa-bolt, .rpa-flash, .rpa-master, .rpa-gate, .rpa-ring, .rpa-rays, .rpa-mote, .rpa-walker, .rpa-floor-glow, .rpa-veins path, .rpa-ember { animation: none !important; }
+  .rpa-cracks path, .rpa-tendrils path, .rpa-veins path { stroke-dashoffset: 0; }
+  .rpa-shock, .rpa-dust, .rpa-bolt, .rpa-flash, .rpa-mote, .rpa-ember, .rpa-firefly { opacity: 0; }
+}
