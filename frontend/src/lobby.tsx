@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { HeartMeter, useBeastHeart } from "./beast/HeartMeter";
 import "./lobby.css";
 import { VisualEffectsSettings } from "./visualEffects";
 import { SoundTestButton } from "./soundTest";
@@ -235,6 +236,7 @@ export function SharedMenu({ profile, classes = [], rewards = [], audioControls,
 
 export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoin, profile, classes = [], rewards = [], audioControls, onSaveName }: { busy: boolean; error: string; joinCode: string; onJoinCode: (value: string) => void; onCreate: () => void; onJoin: () => void; profile?: LobbyProfile | null; classes?: Pick<LobbyClass, "id" | "name">[]; rewards?: LobbyProfileReward[]; audioControls: ReactNode; onSaveName?: (name: string) => Promise<void> }) {
   const [paradeLooks] = useState<Record<string, HeroSkin>>(titleParadeLooks);
+  const heart = useBeastHeart();
   const commitUrl = DEPLOY_COMMIT ? "https://github.com/swarkentin/heart-of-the-beast/commit/" + DEPLOY_COMMIT : "";
   const versionLabel = DEPLOY_COMMIT ? DEPLOY_COMMIT.slice(0, 7) : "development";
   return <GameShell status="READY" className="px-title-screen" tools={<SharedMenu profile={profile} classes={classes} rewards={rewards} audioControls={audioControls} onSaveName={onSaveName} />}>
@@ -244,6 +246,8 @@ export function TitleScreen({ busy, error, joinCode, onJoinCode, onCreate, onJoi
       <SoundButton large />
       <div className="px-parade" aria-hidden="true"><div className="px-parade-line">{PARADE.map(id => <HeroSprite key={id} classId={id} skin={paradeLooks[id]} />)}</div></div>
     </section>
+    {/* The shared goal every party works toward (ADR 0040). */}
+    <HeartMeter heart={heart} />
     {profile ? <div className="px-title-account"><AccountPanel accounts={profile.accounts} /></div> : null}
     <section className="px-panel px-title-actions" aria-label="Start playing">
       <div className="px-title-create">

@@ -81,6 +81,7 @@ func startExpeditionWithSeed(room *Room, runID, themeID string, seed uint64, now
 	room.Run.MaxDepth = maxDepth
 	room.Run.MusicIntensity = InitialDungeonDepth
 	briefDungeon(room.Run)
+	extendFirstRound(room.Run, RunPrologueWindow)
 	return nil
 }
 
@@ -234,6 +235,7 @@ func descendExpedition(room *Room, now time.Time) {
 	}
 	applyFloorEntryDamage(room)
 	startCombatRound(room, now)
+	extendFirstRound(run, FloorTransitionWindow)
 	if camp != nil && camp.NextThemeID != "" {
 		briefDungeon(run)
 	}

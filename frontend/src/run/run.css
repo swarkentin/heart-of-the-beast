@@ -517,3 +517,66 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 
 /* Finer shop goods deeper in (ADR 0038) carry their tier in gold numerals. */
 .rn-tier { color: #f2c94c; }
+
+/* ---------- getting from place to place (ADR 0039) ---------- */
+/* The rift-gate of a new dungeon: a stepped ring that opens with the briefing's iris, then lets the land through. */
+.rn-intro-portal { position: absolute; left: 50%; top: 45%; width: 46vmin; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, #c58cff 0 12deg, #5b2aa6 12deg 24deg, transparent 24deg 30deg);
+  mask: radial-gradient(circle, transparent 0 50%, #000 51% 64%, transparent 65%); filter: drop-shadow(0 0 14px #b46cff);
+  animation: rn-portal-spin 1.2s steps(10) infinite, rn-portal-open 1.7s steps(12) both; }
+@keyframes rn-portal-spin { to { rotate: 360deg; } }
+@keyframes rn-portal-open { 0% { scale: .05; opacity: 0; } 15% { opacity: 1; } 70% { scale: 1.6; opacity: 1; } 100% { scale: 4; opacity: 0; } }
+.rn-intro-at-card .rn-intro-portal { display: none; }
+
+/* The way down between floors: stone steps rise over the viewport, the floor card holds between torches, the steps go on up. */
+.rn-descent { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; overflow: hidden; cursor: pointer; container-type: size; }
+.rn-descent-steps i { position: absolute; left: 0; right: 0; top: calc(var(--i) * 100% / var(--n)); height: calc(100% / var(--n) + 1px); background: #0b0814;
+  box-shadow: inset 0 calc(3px * var(--px, 3)) 0 #3d3658, inset 0 calc(6px * var(--px, 3)) 0 #1b1630;
+  animation: rn-descent-step 2.6s steps(14, end) both; animation-delay: calc((var(--n) - 1 - var(--i)) * 45ms); }
+@keyframes rn-descent-step { 0% { translate: 0 calc((var(--n) - var(--i)) * 100% + 2%); } 26% { translate: 0 0; } 70% { translate: 0 0; } 100% { translate: 0 calc((var(--i) + 1) * -100% - 2%); } }
+.rn-descent-card { position: relative; display: flex; align-items: center; gap: 18px; text-align: center; animation: rn-descent-card 2.6s steps(8, end) both; }
+.rn-descent-card > div { display: grid; gap: 6px; }
+.rn-descent-card .px-eyebrow { margin: 0; }
+.rn-descent-card h2 { margin: 0; color: var(--bone); font: 400 clamp(14px, 3.2cqw, 28px)/1.3 var(--display); text-shadow: 0 4px 0 #05030a, 0 0 18px #d6a64d55; }
+.rn-descent-card p:last-child { margin: 0; color: var(--ink); font-size: clamp(16px, 2.4cqw, 22px); }
+.rn-descent-card .px-torch { --px: 3; }
+@keyframes rn-descent-card { 0%, 22% { opacity: 0; translate: 0 18px; } 34%, 66% { opacity: 1; translate: 0 0; } 78%, 100% { opacity: 0; translate: 0 -18px; } }
+.rn-descent-still { background: #0b0814; animation: rn-descent-fade 1.2s linear both; }
+.rn-descent-still .rn-descent-steps { display: none; }
+.rn-descent-still .rn-descent-card { animation: none; }
+@keyframes rn-descent-fade { 0%, 100% { opacity: 0; } 20%, 80% { opacity: 1; } }
+
+/* ---------- the run prologue ---------- */
+.rp { position: fixed; inset: 0; z-index: 41; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; padding: 16px; background: #05030a; cursor: pointer; }
+.rp-panel { position: relative; min-height: 0; display: grid; place-items: center; animation: rp-in .5s steps(5) both; }
+@keyframes rp-in { from { opacity: 0; } }
+.rp-art { width: min(100%, calc((100vh - 220px) * 1100 / 620)); max-height: 100%; aspect-ratio: 1100 / 620; image-rendering: pixelated; box-shadow: 0 0 0 4px #2a2440, 0 0 0 8px var(--edge); }
+.rp-lands image { animation: rp-pan 9s linear both; }
+@keyframes rp-pan { from { transform: translateX(-24px); } to { transform: translateX(0); } }
+.rp-lands-turned svg { filter: saturate(.55) hue-rotate(-40deg) brightness(.7); }
+.rp-rot { animation: rp-rot 3.2s steps(10) both; }
+@keyframes rp-rot { from { transform: translateY(620px); } to { transform: translateY(0); } }
+.rp-heart { animation: bh-beat 1.1s steps(3, end) infinite; }
+.rp-veins path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: rp-vein 2.4s steps(12) both; animation-delay: calc(var(--i) * 120ms + .3s); }
+@keyframes rp-vein { to { stroke-dashoffset: 0; } }
+.rp-master { animation: rp-rise 1s steps(6) both; animation-delay: calc(var(--i) * 260ms + .6s); filter: drop-shadow(0 0 6px #ff2a4a); }
+@keyframes rp-rise { from { opacity: 0; transform: translateY(60px); } }
+.rp-gate-ring { transform-origin: 550px 270px; animation: rn-portal-spin 2.4s steps(16) infinite; }
+.rp-gate-view { animation: rp-in 1.4s steps(6) both; }
+.rp-hero { animation: rp-rise .8s steps(5) both; animation-delay: calc(var(--i) * 200ms + .4s); filter: brightness(.45) drop-shadow(0 0 4px #b46cff); }
+.rp-title { position: absolute; left: 50%; bottom: 6%; translate: -50% 0; display: grid; justify-items: center; gap: 10px; width: min(640px, 92%); text-align: center; animation: rn-intro-rise .9s steps(6) .4s both; }
+.rp-title h2 { margin: 0; color: var(--bone); font: 400 clamp(18px, 3.6vw, 36px)/1.3 var(--display); text-shadow: 0 4px 0 #05030a, 0 0 18px #ff2a4a88; }
+.rp-title .px-eyebrow { margin: 0; }
+.rp-caption { width: min(900px, 100%); margin: 0 auto; display: grid; gap: 10px; background: #120e22f0; }
+.rp-caption p { min-height: 3.4em; margin: 0; color: var(--ink); font-size: clamp(18px, 2.4vw, 24px); line-height: 1.15; }
+.rp-caret { display: inline-block; width: .5em; height: .9em; margin-left: 4px; background: var(--gold); vertical-align: -.1em; animation: rn-blink .8s steps(1) infinite; }
+.rp-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rp-dots { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rp-dots li { width: 12px; height: 12px; background: #2a2440; box-shadow: 0 0 0 2px var(--edge); }
+.rp-dots li.done { background: #6b5a8f; }
+.rp-dots li.on { background: var(--gold); }
+@media (prefers-reduced-motion: reduce) {
+  .rn-intro-portal { display: none; }
+  .rp-panel, .rp-lands image, .rp-rot, .rp-heart, .rp-veins path, .rp-master, .rp-gate-ring, .rp-gate-view, .rp-hero, .rp-title, .rp-caret { animation: none; }
+  .rp-veins path { stroke-dashoffset: 0; }
+}

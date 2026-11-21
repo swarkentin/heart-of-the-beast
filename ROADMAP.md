@@ -51,12 +51,22 @@ These are the current priorities, not a promise that each item ships in strict i
    - [ ] Prototype richer environmental interactions in boss arenas (hazards, switches, destructible/usable objects, positioning, arena phase changes) and make them meaningful to boss mechanics.
    - [ ] Treat raids and boss rushes as distinct modes with their own party-size, pacing, matchmaking/lobby, scaling, and reward rules—not merely longer standard expeditions.
 
-6. **Continue presentation and world-building polish.**
+6. **The Heart of the Beast: a shared objective (ADR 0040).** The most important motivation work right now.
+   - [x] One shared, persistent heart health pool for every party on the server, banked once per fight; public `GET /beast`; a beating heart meter on the title screen and in the run prologue.
+   - [ ] The heart encounter: rarely replaces a dungeon boss, unbeatable, round-limited with its own mechanics, then withdraws and records the party's damage. Needs a sprite, music treatment, rewards and balance (including a guard against one build dominating the pool).
+   - [ ] An expensive shop item that forces the heart to appear in the next dungeon.
+   - [ ] Decide what happens when the heart dies.
+   - [ ] Optional: per-profile contribution ("your strikes") and a contributors board.
+
+7. **Continue presentation and world-building polish.**
+   - [x] Smooth transitions (ADR 0039): rooms dip in, floors descend down a stair over the viewport, new dungeons open through a rift-gate; the server gives each new floor's first round time for it.
+   - [x] A prologue cutscene at the start of every run explaining the Beast, its masters, the rift-gates and the heart (ADR 0039).
+   - [ ] A music cue for the prologue.
    - [ ] Improve combat readability and impact: character/enemy animation, attack anticipation, hit feedback, status presentation, and spectator cinematography.
    - [ ] Improve room-specific environmental props/layouts and interactions across themes; make the world feel less like repeated backdrops.
    - [ ] Continue audio, accessibility, localization, and UI polish. Maintain continuous real-device QA as part of normal delivery.
 
-7. **Longer-term world and community work.**
+8. **Longer-term world and community work.**
    - [ ] Build a safe hub/intermission with NPCs, repair/resupply, ambience, and environmental storytelling when the core expedition loop is well tuned.
    - [ ] Complete self-hosting documentation, backup/restore, provider-neutral configuration, and release/contribution workflows after the product systems stabilize.
 

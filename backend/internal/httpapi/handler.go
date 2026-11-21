@@ -32,6 +32,8 @@ type Handler struct {
 	banked bankedRunXP
 	// watchers wakes snapshot reads that are waiting for a room to change (see watch.go).
 	watchers roomWatchers
+	// heartBanked remembers the Heart of the Beast strikes already banked (see beast_heart.go).
+	heartBanked bankedHeartStrikes
 }
 
 // bankedRunXP is a process-local record of run XP already banked. It is only an optimisation: AwardRunXP is
@@ -118,6 +120,7 @@ func NewHandlerWithOptions(rooms store.Repository, options Options) http.Handler
 	mux.HandleFunc("POST /auth/discord/complete", h.completeDiscordSignIn)
 	mux.HandleFunc("POST /auth/discord/resolve", h.resolveDiscordSignIn)
 	mux.HandleFunc("GET /themes", playableThemes)
+	mux.HandleFunc("GET /beast", h.getBeastHeart)
 	mux.HandleFunc("POST /rooms/{id}/commands", h.command)
 	mux.HandleFunc("GET /spectate/{id}", h.spectate)
 	return mux
@@ -355,6 +358,10 @@ func (h *Handler) guestProfileID(r *http.Request) string {
 func (h *Handler) awardRunProgress(ctx context.Context, room *game.Room) error {
 	if room == nil || room.Run == nil {
 		return nil
+	}
+	// The shared heart is banked at the same moments as run progress: after every saved transition.
+	if err := h.awardHeartStrikes(ctx, room); err != nil {
+		return err
 	}
 	profiles, ok := h.rooms.(store.ProfileRepository)
 	if !ok {
