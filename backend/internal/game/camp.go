@@ -492,6 +492,8 @@ const (
 	ShopRevive     ShopItemKind = "revive"
 	ShopCleanse    ShopItemKind = "cleanse"
 	ShopConsumable ShopItemKind = "consumable"
+	ShopExperience ShopItemKind = "experience"
+	ShopSkillPoint ShopItemKind = "skill_point"
 )
 
 // ShopItem is something a camp sells. Items take effect when bought; nothing is carried into combat as an action.
@@ -505,6 +507,10 @@ type ShopItem struct {
 	// Repeatable items can be bought more than once at the same camp.
 	Repeatable   bool   `json:"repeatable,omitempty"`
 	ConsumableID string `json:"consumableId,omitempty"`
+	// Tier is how fine the item is: 1 at the first camps, up to ShopTopTier deeper in (ADR 0038).
+	Tier int `json:"tier,omitempty"`
+	// MinTier keeps an item off the shelf until the shop reaches that tier.
+	MinTier int `json:"-"`
 }
 
 var shopCatalog = []ShopItem{
@@ -517,6 +523,51 @@ var shopCatalog = []ShopItem{
 	{ID: "ward-charm", Name: "Ward Charm", Kind: ShopWard, Amount: 8, Price: 14, Description: "A ward that absorbs the next 8 damage you would take."},
 	{ID: "revival-draught", Name: "Revival Draught", Kind: ShopRevive, Price: 40, Description: "Bring one fallen ally back at half health."},
 	{ID: "cleansing-salt", Name: "Cleansing Salt", Kind: ShopCleanse, Price: 34, Description: "Lift one debuff from the next floor, for the whole party."},
+	{ID: "field-journal", Name: "Field Journal", Kind: ShopExperience, Amount: 30, Price: 20, Description: "Read up on what lies ahead: gain 30 experience."},
+	{ID: "scroll-of-practice", Name: "Scroll of Practice", Kind: ShopSkillPoint, Amount: 1, Price: 40, MinTier: 2, Description: "Gain a skill point to rank up one of your skills."},
+}
+
+// ShopTopTier is the finest tier a shop reaches.
+const ShopTopTier = 3
+
+// shopUpgrades are the finer versions of shop items that deeper camps sell instead: [0] is tier 2, [1] tier 3. An
+// item with no entry for a tier sells its best lower version. A finer item is a bigger purchase, never a better deal:
+// it costs at least as much per point as the basic one. Guard and maximum health have no finer versions: they are
+// permanent and stack at every camp, and bigger ones made deep runs much easier in simulation (ADR 0038).
+var shopUpgrades = map[string][]ShopItem{
+	"healing-draught": {
+		{ID: "greater-draught", Name: "Greater Draught", Kind: ShopHeal, Amount: 20, Price: 22, Repeatable: true, Description: "Recover 20 health now."},
+		{ID: "elixir-of-mending", Name: "Elixir of Mending", Kind: ShopHeal, Amount: 32, Price: 38, Repeatable: true, Description: "Recover 32 health now."},
+	},
+	"healing-herb": {
+		{ID: "herb-bundle", Name: "Herb Bundle", Kind: ShopConsumable, ConsumableID: ConsumableHealingHerb, Amount: 2, Price: 18, Repeatable: true, Description: "Carry two herbs. Use one any time to recover up to 50% of your maximum health."},
+	},
+	"ward-charm": {
+		{ID: "runed-ward", Name: "Runed Ward", Kind: ShopWard, Amount: 14, Price: 26, Description: "A ward that absorbs the next 14 damage you would take."},
+		{ID: "aegis-sigil", Name: "Aegis Sigil", Kind: ShopWard, Amount: 20, Price: 40, Description: "A ward that absorbs the next 20 damage you would take."},
+	},
+	"field-journal": {
+		{ID: "veterans-memoir", Name: "Veteran's Memoir", Kind: ShopExperience, Amount: 60, Price: 40, Description: "Learn from those who came before: gain 60 experience."},
+		{ID: "sages-codex", Name: "Sage's Codex", Kind: ShopExperience, Amount: 100, Price: 68, Description: "Ancient lore: gain 100 experience."},
+	},
+}
+
+// shopTier is how fine a camp's goods are at an effective depth: the first two camps sell tier 1, the next two
+// tier 2, and every camp after that the finest.
+func shopTier(depth int) int {
+	return min(max(1+(depth-1)/2, 1), ShopTopTier)
+}
+
+// atTier returns the best version of a catalog item a tier allows, marked with its tier.
+func atTier(item ShopItem, tier int) ShopItem {
+	best, bestTier := item, 1
+	for index, upgrade := range shopUpgrades[item.ID] {
+		if index+2 <= tier {
+			best, bestTier = upgrade, index+2
+		}
+	}
+	best.Tier = bestTier
+	return best
 }
 
 // ShopCatalog returns every item a camp can sell.
@@ -529,12 +580,23 @@ func validateShopCatalog() error {
 			return fmt.Errorf("invalid or duplicate shop item %q", item.ID)
 		}
 		seen[item.ID] = true
+		for _, upgrade := range shopUpgrades[item.ID] {
+			if upgrade.ID == "" || seen[upgrade.ID] || upgrade.Name == "" || upgrade.Description == "" || upgrade.Kind != item.Kind || upgrade.Price <= item.Price || upgrade.Amount < item.Amount {
+				return fmt.Errorf("invalid shop upgrade %q of %q", upgrade.ID, item.ID)
+			}
+			seen[upgrade.ID] = true
+		}
+	}
+	for id := range shopUpgrades {
+		if !seen[id] {
+			return fmt.Errorf("shop upgrades for unknown item %q", id)
+		}
 	}
 	return nil
 }
 
 // ShopOfferCount is how many items a camp puts on sale, before situational items.
-const ShopOfferCount = 4
+const ShopOfferCount = 5
 
 // openShop starts the shop stage. A healing draught and a healing herb are always for sale; the rest of the
 // shelf is seeded. A revival draught appears only while someone is down, and cleansing salt only when the next floor carries a debuff.
@@ -543,22 +605,23 @@ func openShop(room *Room, now time.Time) {
 	camp := run.Camp
 	camp.Stage = CampStageShop
 	rng := rand.New(rand.NewSource(int64(mixSeed(dungeonSeed(run.Seed, dungeonNumber(run)), uint64(run.Depth), 0x5409))))
+	depth := run.Depth + dungeonExtraDepth(run)
+	tier := shopTier(depth)
 	var shelf []ShopItem
 	for _, item := range shopCatalog[2:] {
-		if item.Kind != ShopRevive && item.Kind != ShopCleanse {
-			shelf = append(shelf, item)
+		if item.Kind != ShopRevive && item.Kind != ShopCleanse && item.MinTier <= tier {
+			shelf = append(shelf, atTier(item, tier))
 		}
 	}
 	rng.Shuffle(len(shelf), func(i, j int) { shelf[i], shelf[j] = shelf[j], shelf[i] })
-	offers := append([]ShopItem{shopCatalog[0], shopCatalog[1]}, shelf[:ShopOfferCount-2]...)
+	offers := append([]ShopItem{atTier(shopCatalog[0], tier), atTier(shopCatalog[1], tier)}, shelf[:min(ShopOfferCount-2, len(shelf))]...)
 	for _, item := range shopCatalog {
 		if (item.Kind == ShopRevive && fallenAlly(room, "") != "") || (item.Kind == ShopCleanse && firstDebuff(camp.NextModifiers) >= 0) {
-			offers = append(offers, item)
+			offers = append(offers, atTier(item, tier))
 		}
 	}
 	// Permanent boons become progressively more expensive. Whetstones use a quadratic curve because
 	// permanent damage compounds across every later fight; linear pricing let gold income keep pace.
-	depth := run.Depth + dungeonExtraDepth(run)
 	for i := range offers {
 		offers[i].Price = shopItemPriceAtDepth(offers[i], depth)
 	}
@@ -634,7 +697,15 @@ func buyShopItem(room *Room, buyerID, itemID string) error {
 		if buyer.Consumables[item.ConsumableID] >= MaxHealingHerbs {
 			return ErrItemUnavailable
 		}
-		buyer.Consumables[item.ConsumableID] += item.Amount
+		buyer.Consumables[item.ConsumableID] = min(buyer.Consumables[item.ConsumableID]+item.Amount, MaxHealingHerbs)
+	case ShopExperience:
+		if run.Cheated {
+			return ErrItemUnavailable
+		}
+		grantExperience(buyer, room, buyerID, 0, item.Amount)
+	case ShopSkillPoint:
+		buyer.SkillPoints += item.Amount
+		message = label + " buys " + item.Name + ": +" + itoa(item.Amount) + " skill point."
 	case ShopHeal, ShopFullHeal:
 		amount := item.Amount
 		if item.Kind == ShopFullHeal {

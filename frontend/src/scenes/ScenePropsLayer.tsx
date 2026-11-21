@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { COIN, LANTERN, SHOPKEEPER, VAULT_KEEPERS, WARES_SHELF, type Character, type Sprite } from "./characters";
 
 // Pixel-art props drawn over a room's backdrop so rooms with something to offer look it: the vault fills with
 // treasure, and the camp gets a fire and, while the shop is open, a vendor behind a stall. The sprites are tiny
@@ -7,7 +8,6 @@ import type { ReactElement } from "react";
 
 export type SceneProps = "vault" | "camp" | "shop";
 
-type Sprite = { rows: readonly string[]; palette: Record<string, string> };
 
 const OUTLINE = "#1a0f08";
 const WOOD = { K: OUTLINE, b: "#5a3414", B: "#7a4a1e", y: "#c98a2b", Y: "#8a5a1c", G: "#f2c94c", o: "#fff2a8", g: "#b57a1e" };
@@ -73,21 +73,6 @@ const PEDESTAL: Sprite = { palette: { K: OUTLINE, m: "#b86bff", M: "#e2b8ff", W:
   ".KKKKKKK.",
   "KsssssssK",
   "KKKKKKKKK",
-] };
-
-const VENDOR: Sprite = { palette: { K: OUTLINE, H: "#2b1d3a", h: "#4a3466", F: "#d9a37a", e: OUTLINE, R: "#6a2c3a", r: "#8f3d50", G: "#f2c94c" }, rows: [
-  "....HHHH....",
-  "...HhhhhH...",
-  "..HhhhhhhH..",
-  "..HhFFFFhH..",
-  "..HhFeFeFH..",
-  "..HhFFFFhH..",
-  "...HFFFFH...",
-  "..RRRRRRRR..",
-  ".RrRRRRRRrR.",
-  ".RrRRGGRRrR.",
-  ".RrRRRRRRrR.",
-  ".FFRRRRRRFF.",
 ] };
 
 const COUNTER: Sprite = { palette: WOOD, rows: [
@@ -201,22 +186,61 @@ function Campfire() {
   </g>;
 }
 
-function Stall() {
+/** A character who breathes and blinks; ghosts also float and shimmer. */
+function Figure({ character, x, y, s, className }: { character: Character; x: number; y: number; s: number; className?: string }) {
+  const eyeColor = character.body.palette.e ?? OUTLINE;
+  return <g className={"scene-figure" + (character.float ? " scene-figure-float" : "") + (character.ghost ? " scene-figure-ghost" : "") + (className ? " " + className : "")}>
+    <Pixels sprite={character.body} x={x} y={y} s={s} />
+    <g className="scene-eyes" transform={"translate(" + x + " " + y + ") scale(" + s + ")"} shapeRendering="crispEdges">
+      {character.eyes.map(([ex, ey]) => <rect key={ex + ":" + ey} x={ex} y={ey} width={1} height={1} fill={eyeColor} />)}
+    </g>
+  </g>;
+}
+
+// The stall: a striped canopy on two posts, a shelf of wares behind the shopkeeper, a lantern, and a counter he
+// leans on. Every sale pops a coin off the counter and makes him bob a thank-you.
+function Stall({ sales }: { sales: number }) {
   const bottles = [bottle("#c0392b", "#ff7a6b"), bottle("#2d6fc0", "#7ab8ff"), bottle("#2f9a4a", "#8fe6a0"), bottle("#8a3dc0", "#d4a0ff")];
-  return <g data-props="vendor">
-    {shadow(902, 520, 130)}
-    <Pixels sprite={AWNING} x={782} y={300} s={8} />
-    <Pixels sprite={VENDOR} x={854} y={360} s={8} />
+  const canopy: Sprite = { palette: AWNING.palette, rows: AWNING.rows.slice(0, 5) };
+  // Drawn a third larger than the other props, from its base, so the shopkeeper is the first thing you see.
+  return <g data-props="vendor" transform="translate(902 522) scale(1.3) translate(-902 -522)">
+    {shadow(902, 522, 140)}
+    <Pixels sprite={WARES_SHELF} x={800} y={292} s={6} />
+    {[798, 990].map(x => <g key={x}><rect x={x - 2} y={266} width={12} height={190} fill={OUTLINE} /><rect x={x} y={266} width={8} height={190} fill="#5a3414" /></g>)}
+    <g key={"keeper-" + sales} className={sales > 0 ? "scene-keeper-thanks" : undefined}>
+      <Figure character={SHOPKEEPER} x={818} y={270} s={7} />
+    </g>
+    <Pixels sprite={canopy} x={782} y={226} s={8} />
+    <defs><radialGradient id="scene-lantern-glow"><stop offset="0" stopColor="#ffd27a" stopOpacity=".6" /><stop offset="1" stopColor="#ffd27a" stopOpacity="0" /></radialGradient></defs>
+    <circle className="scene-glow" cx={972} cy={298} r={46} fill="url(#scene-lantern-glow)" />
+    <rect x={971} y={266} width={2} height={14} fill={OUTLINE} />
+    <g className="scene-lantern"><Pixels sprite={LANTERN} x={960} y={278} s={5} /></g>
     <Pixels sprite={COUNTER} x={790} y={452} s={8} />
-    {bottles.map((sprite, index) => <Pixels key={index} sprite={sprite} x={812 + index * 52} y={404} s={8} />)}
+    {bottles.map((sprite, index) => <Pixels key={index} sprite={sprite} x={index < 2 ? 798 + index * 30 : 946 + (index - 2) * 30} y={404} s={8} />)}
     <Pixels sprite={GOLD_PILE} x={1010} y={430} s={3} />
+    {sales > 0 ? <g key={"coin-" + sales} className="scene-coin-pop"><Pixels sprite={COIN} x={886} y={418} s={6} /></g> : null}
+  </g>;
+}
+
+// A vault keeper stands at the back of the vault, behind where the party gathers, with a soft light around them.
+function Keeper({ keeper, cx }: { keeper: string; cx: number }) {
+  const character = VAULT_KEEPERS[keeper];
+  if (!character) return null;
+  const s = 8, width = Math.max(...character.body.rows.map(row => row.length)) * s, height = character.body.rows.length * s;
+  const x = cx - width / 2, y = 478 - height;
+  const glow = character.ghost ? "#8fd8ff" : "#ffd27a";
+  return <g data-keeper={keeper}>
+    <defs><radialGradient id="scene-keeper-glow"><stop offset="0" stopColor={glow} stopOpacity=".35" /><stop offset="1" stopColor={glow} stopOpacity="0" /></radialGradient></defs>
+    <circle className="scene-glow" cx={cx} cy={478 - height / 2} r={height * .75} fill="url(#scene-keeper-glow)" />
+    {shadow(cx, 480, width / 2)}
+    <Figure character={character} x={x} y={y} s={s} />
   </g>;
 }
 
 /** Props for the room, if it has any. Drawn after the backdrop and before the enemies. */
-export function ScenePropsLayer({ props }: { props?: SceneProps }) {
+export function ScenePropsLayer({ props, keeper, sales = 0, keeperX = 550 }: { props?: SceneProps; keeper?: string; sales?: number; keeperX?: number }) {
   if (!props) return null;
   return <g className="scene-props" aria-hidden="true">
-    {props === "vault" ? <Vault /> : <><Campfire />{props === "shop" ? <Stall /> : null}</>}
+    {props === "vault" ? <><Vault />{keeper ? <Keeper keeper={keeper} cx={keeperX} /> : null}</> : <><Campfire />{props === "shop" ? <Stall sales={sales} /> : null}</>}
   </g>;
 }

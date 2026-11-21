@@ -476,7 +476,22 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .scene-flame { animation: scene-flicker .5s steps(1) infinite; }
 .scene-flame-alt { animation-delay: .25s; }
 @keyframes scene-flicker { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .scene-sparkles > g, .scene-glow, .scene-flame { animation: none; } .scene-sparkles > g { opacity: .7; } .scene-flame-alt { opacity: 0; } }
+/* Characters in rooms (ADR 0038): everyone breathes and blinks, ghosts float, the shopkeeper bobs a thank-you and a
+   coin pops off the counter on every sale. */
+.scene-figure { animation: scene-breathe 2.8s steps(2) infinite; }
+@keyframes scene-breathe { from { transform: translateY(0); } to { transform: translateY(4px); } }
+.scene-figure-float { animation: scene-float 3.2s ease-in-out infinite alternate; }
+@keyframes scene-float { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+.scene-figure-ghost { opacity: .85; }
+.scene-eyes { animation: scene-blink 4.3s steps(1) infinite; }
+@keyframes scene-blink { 0%, 93% { opacity: 1; } 94%, 97% { opacity: 0; } 98%, 100% { opacity: 1; } }
+.scene-keeper-thanks { animation: scene-thanks .6s steps(3) 1; }
+@keyframes scene-thanks { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.scene-coin-pop { animation: scene-coin .9s ease-out forwards; }
+@keyframes scene-coin { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-70px); opacity: 0; } }
+.scene-lantern { transform-box: fill-box; transform-origin: 50% 0; animation: scene-sway 2.4s ease-in-out infinite alternate; }
+@keyframes scene-sway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .scene-sparkles > g, .scene-glow, .scene-flame, .scene-figure, .scene-figure-float, .scene-eyes, .scene-keeper-thanks, .scene-coin-pop, .scene-lantern { animation: none; } .scene-sparkles > g { opacity: .7; } .scene-flame-alt { opacity: 0; } .scene-coin-pop { opacity: 0; } }
 
 /* The dungeon briefing at a glance (DungeonIntro): one line, the boss, modifier chips, the road; DETAILS opens the rest. */
 .rn-intro-card { width: min(640px, 100%); }
@@ -499,3 +514,6 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-choice:hover small, .rn-choice:focus-visible small { -webkit-line-clamp: unset; line-clamp: none; }
 .rn-mod-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
 .rn-act small:empty { display: none; }
+
+/* Finer shop goods deeper in (ADR 0038) carry their tier in gold numerals. */
+.rn-tier { color: #f2c94c; }
