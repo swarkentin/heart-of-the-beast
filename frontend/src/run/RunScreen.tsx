@@ -28,7 +28,7 @@ import "./run.css";
 
 type Props = {
   snapshot: ApiRoom; run: ApiRun; room: ApiDungeonRoom; session: PlayerSession | null; spectator: boolean;
-  catalog: LobbyCatalog | null; profile: ApiProfile | null; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>; onRefreshProfile: () => Promise<ApiProfile>;
+  catalog: LobbyCatalog | null; profile: ApiProfile | null; busy: boolean; error: string; isHost: boolean; audioControls: ReactNode; onSaveName: (name: string) => Promise<void>; onRefreshProfile: () => Promise<ApiProfile>; onRefreshRoom?: () => void;
   onCommand: (command: ApiCommand) => Promise<boolean>; onLeave: () => void; onReturnToLobby: () => void;
 };
 /** One button on the skill bar. A skill that targets an ally or a fallen adventurer has no command until one is picked. */
@@ -81,7 +81,7 @@ function LogText({ line, labels }: { line: LogLine; labels: Record<number, strin
   return <li className={"rn-log-line rn-log-" + line.tone}>{line.tone === "auto" ? <Icon id="waiting" size={1} /> : null}<span>{parts.map((part, index) => index % 2 ? <b key={index}>{part}</b> : part)}</span></li>;
 }
 
-export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, busy, error, isHost, audioControls, onSaveName, onRefreshProfile, onCommand, onLeave, onReturnToLobby }: Props) {
+export function RunScreen({ snapshot, run, room, session, spectator, catalog, profile, busy, error, isHost, audioControls, onSaveName, onRefreshProfile, onRefreshRoom, onCommand, onLeave, onReturnToLobby }: Props) {
   const selfId = spectator ? "" : session?.playerId ?? "";
   const [view, setView] = useState<"player" | "cast">(spectator ? "cast" : "player");
   const [target, setTarget] = useState("");
@@ -153,7 +153,16 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
   const myAction = round && selfId ? round.actions[selfId] : undefined;
   const waitingOn = round ? eligible.filter(member => !round.actions[member.id]).length : 0;
   const lockedKey = myAction ? (myAction.action === "defend" ? SKILL_DEFEND : myAction.skill ?? "") : pending && pending.round === round?.number ? pending.key : "";
-  const canAct = Boolean(acting && round && self?.alive && !lockedKey && remainingMs > 0 && !busy);
+  // Not gated on `busy`: that is any request in flight, and a slow one must never cost a player their turn.
+  const canAct = Boolean(acting && round && self?.alive && !lockedKey && remainingMs > 0);
+  // The round's timer ran out here but the next round has not arrived: ask for it now rather than wait for a poll.
+  const expired = Boolean(round && remainingMs <= 0);
+  useEffect(() => {
+    if (!expired || !onRefreshRoom) return;
+    onRefreshRoom();
+    const timer = window.setInterval(onRefreshRoom, 1000);
+    return () => window.clearInterval(timer);
+  }, [expired, round?.number, onRefreshRoom]);
   useEffect(() => { setPending(null); setArmed(""); }, [round?.number]);
   // If the timer runs out the server defends for you. Say so on the Defend button itself: it flashes over the last
   // seconds, then shows as pressed while the round resolves.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { AccountContext, adoptCredential, completeDiscordSignIn, resolveDiscordSignIn, SignInConflictDialog, startDiscordSignIn, takeDiscordCallback, type SignInConflict, type SignInResult } from "./account";
 import { apiRequest, PROFILE_CREDENTIAL_KEY, type ApiCommand, type ApiProfile, type ApiRoom, type ApiTheme, type PlayerSession, type SpectatorAccess } from "./api";
 import { AudioControls, SoundContext, useGameAudio } from "./audio";
@@ -141,10 +141,19 @@ export default function App() {
   // A round resolves on the server at its deadline and only a snapshot reveals it, so poll faster while one is running.
   const pollMs = run?.phase === "combat" ? 750 : 1500;
 
+  // Polls never overlap: the next one is scheduled when the last one finishes. With a fixed interval, a slow server
+  // gets more and more requests stacked on it, every response arrives late, and a player's actions queue behind
+  // them past the round's deadline (every round then auto-defends). refreshRoom polls at once, e.g. when a round's
+  // timer has run out but its result has not arrived.
+  const pollNow = useRef<() => void>(() => undefined);
+  const refreshRoom = useCallback(() => pollNow.current(), []);
   useEffect(() => {
     if (!roomId || !token) return;
-    let active = true;
+    let active = true, inFlight = false, timer = 0;
     const load = async () => {
+      if (!active || inFlight) return;
+      inFlight = true;
+      window.clearTimeout(timer);
       try {
         const next = await apiRequest<ApiRoom>(spectator ? "/spectate/" + roomId : "/rooms/" + roomId, token);
         if (active) {
@@ -153,11 +162,14 @@ export default function App() {
         }
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : "Unable to load room");
+      } finally {
+        inFlight = false;
+        if (active) timer = window.setTimeout(() => { void load(); }, pollMs);
       }
     };
+    pollNow.current = () => { void load(); };
     void load();
-    const timer = window.setInterval(() => { void load(); }, pollMs);
-    return () => { active = false; window.clearInterval(timer); };
+    return () => { active = false; window.clearTimeout(timer); pollNow.current = () => undefined; };
   }, [roomId, token, spectator, pollMs]);
 
   const refreshProgressProfile = useCallback(async (): Promise<ApiProfile> => {
@@ -298,16 +310,22 @@ export default function App() {
   }
 
   async function sendCommand(command: ApiCommand): Promise<boolean> {
-    if (!session || busy) return false;
-    setBusy(true); setError("");
+    // A combat action never waits on another request: the run screen locks its own button per round, and the
+    // round's deadline will not wait. Everything else goes one at a time.
+    const combatAction = command.type === "combat";
+    if (!session || (busy && !combatAction)) return false;
+    if (!combatAction) setBusy(true);
+    setError("");
     try {
-      setSnapshot(await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/commands", session.playerToken, { method: "POST", body: JSON.stringify(command) }));
+      // A late answer must not roll the screen back past a newer poll.
+      const next = await apiRequest<ApiRoom>("/rooms/" + session.roomId + "/commands", session.playerToken, { method: "POST", body: JSON.stringify(command) });
+      setSnapshot(current => !current || next.version >= current.version ? next : current);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Command failed");
       try { setSnapshot(await apiRequest<ApiRoom>("/rooms/" + session.roomId, session.playerToken)); } catch { /* Keep the original command error visible. */ }
       return false;
-    } finally { setBusy(false); }
+    } finally { if (!combatAction) setBusy(false); }
   }
 
   if (!roomId || !token) {
@@ -323,5 +341,5 @@ export default function App() {
   }
 
   return withSound(<RunScreen snapshot={snapshot} run={run} room={serverRoom} session={session} spectator={spectator} catalog={classCatalog} profile={profile} busy={busy} error={error} isHost={isHost} audioControls={audioControls} onSaveName={saveProfileName} onRefreshProfile={refreshProgressProfile}
-    onCommand={sendCommand} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />);
+    onCommand={sendCommand} onRefreshRoom={refreshRoom} onLeave={() => void leaveRoom()} onReturnToLobby={() => void returnToLobby()} />);
 }
