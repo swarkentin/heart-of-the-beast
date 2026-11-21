@@ -92,9 +92,8 @@ export function HeartStrip({ heart }: { heart?: ApiBeastHeart }) {
 
 /** Over the viewport while the party fights the heart: what this party has done to it so far. */
 export function HeartFightBadge({ party, mine, spectator }: { party: number; mine: number; spectator: boolean }) {
-  return <div className="bh-fight" role="status">
+  return <div className="bh-fight" role="status" title="Drive it back into the dark. Every wound stays with the heart for every party.">
     <PixelHeart size={2} />
-    <span><b>THE HEART OF THE BEAST</b><small>DRIVE IT BACK INTO THE DARK · EVERY WOUND STAYS</small></span>
-    <span className="bh-fight-tally"><b>{formatDamage(party)}</b><small>PARTY{spectator ? "" : " · YOU " + formatDamage(mine)}</small></span>
+    <span className="bh-fight-tally"><b>{formatDamage(party)}</b><small>{spectator ? "WOUNDS DEALT" : "PARTY · YOU " + formatDamage(mine)}</small></span>
   </div>;
 }

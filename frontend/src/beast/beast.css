@@ -32,9 +32,10 @@
 .bh-scores-grid li b { margin-left: 8px; color: #ff8a8a; font-weight: 400; }
 .bh-scores-grid li small { display: block; color: var(--muted); font-size: 15px; letter-spacing: .08em; }
 @media (max-width: 560px) { .bh-strip-title { display: none; } .bh-strip { gap: 8px; } }
-.bh-fight { position: absolute; top: 8px; left: 50%; translate: -50% 0; z-index: 3; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 16px); padding: 4px 10px; background: #12040cdd; box-shadow: 0 0 0 2px #5e0f1f, 0 0 14px #ff2a4a55; pointer-events: none; }
+/* Tucked into the top-left corner of the viewport, clear of the centred nameplates and health bars. */
+.bh-fight { position: absolute; top: calc(4px * var(--px, 3)); left: calc(4px * var(--px, 3)); z-index: 3; display: flex; align-items: center; gap: 8px; max-width: 40%; padding: 4px 8px; background: #12040cdd; box-shadow: 0 0 0 2px #5e0f1f, 0 0 14px #ff2a4a55; pointer-events: none; }
 .bh-fight span { display: grid; line-height: 1; }
 .bh-fight b { color: #ff8a8a; font: 400 9px/1.4 var(--display); }
 .bh-fight small { color: var(--muted); font-size: 15px; letter-spacing: .06em; }
-.bh-fight-tally { text-align: right; }
+.bh-fight-tally { text-align: left; }
 .bh-fight-tally b { color: var(--bone); font-size: 12px; }
