@@ -9,7 +9,7 @@
     "test": "node --test combatAbilities.test.mjs",
     "preview": "vite preview",
     "test:audio": "node --test --experimental-strip-types src/music/music.test.ts",
-    "test:ui": "node --test --experimental-strip-types src/campaign/campaigns.test.ts src/run/run.test.ts src/run/transitions.test.ts src/beast/heart.test.ts src/run/arms.test.ts src/monsters/layout.test.ts src/startupLoad.test.ts"
+    "test:ui": "node --test --experimental-strip-types src/campaign/campaigns.test.ts src/run/run.test.ts src/run/transitions.test.ts src/beast/heart.test.ts src/run/arms.test.ts src/monsters/layout.test.ts src/startupLoad.test.ts src/run/rankGains.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",

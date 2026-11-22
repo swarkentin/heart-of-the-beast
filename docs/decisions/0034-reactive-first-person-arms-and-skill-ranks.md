@@ -53,6 +53,10 @@ nothing on screen showed that a character had grown.
   including the automatic one.
 - The catalog sends each skill's rule text at every rank (`SkillDefinition.RankRules`) so the picker can show the
   current and next rank side by side, and the combat bar shows a rank badge and the ranked rules.
+  Update: the picker no longer shows both texts with the old one struck through; that was too much to read. It shows
+  only what the next rank adds ("+1 damage", "+2 ward"), worked out by `rankGains` (`frontend/src/run/rankGains.ts`)
+  from the numbers that differ between the two rank texts, with the full rule on hover. A rank that changes no
+  numbers (III and V for most skills, since the step is +1 at II–III and +2 at IV–V) says so plainly.
 - **The rank drives the animation**: smear length, thickness and afterimages, slash cross-cuts and a white-hot core
   at V, longer brighter bolt wakes and an impact ring from IV, more charge motes and flare rays, more ward rings, a
   harder shake.

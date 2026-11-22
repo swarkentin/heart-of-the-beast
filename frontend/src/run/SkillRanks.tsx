@@ -1,5 +1,6 @@
 import { MAX_SKILL_RANK, ROMAN, skillRank, type Skill } from "../combatAbilities";
 import { SkillIcon } from "../lobby";
+import { rankGains } from "./rankGains";
 
 /** A skill's rule text at a rank, falling back to its base rules for an older server. */
 export function rankedRules(skill: Skill, rank: number): string {
@@ -23,18 +24,20 @@ export function SkillRankPicker({ skills, ranks, points, busy, onRank, onClose }
       </div>
       <ul className="rn-ranks-list">{skills.map(skill => {
         const rank = skillRank(ranks, skill.id), top = rank >= MAX_SKILL_RANK;
+        // Only what the next rank adds; the full rule text is on hover and in the skill bar.
+        const gains = top ? [] : rankGains(rankedRules(skill, rank), rankedRules(skill, rank + 1));
         return <li key={skill.id}>
-          <button type="button" className="rn-rank-row" disabled={busy || top || points <= 0} onClick={() => onRank(skill.id)} aria-label={top ? skill.name + " is at its highest rank" : "Rank " + skill.name + " up to " + ROMAN[rank + 1]}>
+          <button type="button" className="rn-rank-row" title={rankedRules(skill, rank)} disabled={busy || top || points <= 0} onClick={() => onRank(skill.id)} aria-label={top ? skill.name + " is at its highest rank" : "Rank " + skill.name + " up to " + ROMAN[rank + 1]}>
             <SkillIcon skill={skill} size={2} />
             <span className="rn-rank-text">
               <strong>{skill.name} <RankPips rank={rank} /></strong>
-              <small>{top ? rankedRules(skill, rank) : <><s>{rankedRules(skill, rank)}</s> <em>{rankedRules(skill, rank + 1)}</em></>}</small>
+              <small>{top ? "Fully ranked" : gains.length ? gains.map(gain => <em key={gain}>{gain}</em>) : "Flashier on screen, same numbers"}</small>
             </span>
             <b className="rn-rank-next">{top ? "MAX" : ROMAN[rank] + " → " + ROMAN[rank + 1]}</b>
           </button>
         </li>;
       })}</ul>
-      <p className="px-copy rn-ranks-note">Each rank adds a little to the skill's numbers and makes its strike, spell or guard hit harder on screen. Ranks last for this run, even if you swap the skill out at camp.</p>
+      <p className="px-copy rn-ranks-note">Ranks last for this run.</p>
     </section>
   </div>;
 }

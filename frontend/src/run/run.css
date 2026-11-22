@@ -461,7 +461,7 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 .rn-rank-text { display: grid; flex: 1; min-width: 0; gap: 2px; }
 .rn-rank-text strong { display: flex; align-items: center; gap: 8px; color: var(--bone); font: 400 10px/1.5 var(--display); }
 .rn-rank-text small { color: var(--muted); font-size: 16px; line-height: 1.15; }
-.rn-rank-text s { opacity: .6; }
+.rn-rank-text small { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .rn-rank-text em { color: var(--good, #b6e87a); font-style: normal; }
 .rn-rank-next { flex: none; color: var(--gold); font: 400 9px/1 var(--display); }
 .rn-rank-pips { display: inline-flex; gap: 2px; }
