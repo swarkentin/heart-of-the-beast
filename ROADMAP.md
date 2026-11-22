@@ -65,6 +65,7 @@ These are the current priorities, not a promise that each item ships in strict i
    - [x] Smooth transitions (ADR 0039): rooms dip in, floors descend down a stair over the viewport, new dungeons open through a rift-gate; the server gives each new floor's first round time for it.
    - [x] A prologue cutscene at the start of every run explaining the Beast, its masters, the rift-gates and the heart (ADR 0039).
    - [ ] A music cue for the prologue.
+   - [x] The skill rank-up picker shows only what each rank adds (e.g. "+1 damage") instead of the old and new rule text side by side (ADR 0034).
    - [ ] Improve combat readability and impact: character/enemy animation, attack anticipation, hit feedback, status presentation, and spectator cinematography.
    - [ ] Improve room-specific environmental props/layouts and interactions across themes; make the world feel less like repeated backdrops.
    - [ ] Continue audio, accessibility, localization, and UI polish. Maintain continuous real-device QA as part of normal delivery.
