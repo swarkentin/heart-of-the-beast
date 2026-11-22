@@ -66,6 +66,7 @@ const (
 	EffectLifesteal SkillEffectKind = "lifesteal" // the caster recovers Amount% of the damage this skill dealt
 	EffectRevive    SkillEffectKind = "revive"    // a downed ally stands back up with Amount% of their health
 	EffectHasten    SkillEffectKind = "hasten"    // the target's other skills recover Amount rounds sooner
+	EffectEcho      SkillEffectKind = "echo"      // a Bonus% chance per enemy hit to strike again for Amount (a rank flourish)
 )
 
 // Effect scopes override the skill's target for one effect, so a skill can strike a foe and shield the party.
@@ -580,7 +581,7 @@ func validateSkillEffect(definition SkillDefinition, effect SkillEffect) error {
 
 func isEnemyEffect(kind SkillEffectKind) bool {
 	switch kind {
-	case EffectDamage, EffectCounter, EffectInterrupt, EffectWeaken, EffectStun, EffectMark, EffectBleed, EffectTaunt:
+	case EffectDamage, EffectCounter, EffectInterrupt, EffectWeaken, EffectStun, EffectMark, EffectBleed, EffectTaunt, EffectEcho:
 		return true
 	}
 	return false
@@ -678,7 +679,11 @@ func describeSkill(definition SkillDefinition) string {
 			}
 			parts = append(parts, scoped(effect, text))
 		case EffectThorns:
-			parts = append(parts, scoped(effect, "Reflect "+itoa(effect.Amount)+" to anything that hits you this round"))
+			text := "Reflect " + itoa(effect.Amount) + " to anything that hits you this round"
+			if effect.Scope != ScopeSelf { // "you" already names who
+				text = scoped(effect, text)
+			}
+			parts = append(parts, text)
 		case EffectHeal:
 			parts = append(parts, scoped(effect, "Restore "+amount(effect)+" health"))
 		case EffectRegen:
@@ -689,6 +694,8 @@ func describeSkill(definition SkillDefinition) string {
 			parts = append(parts, "You recover "+itoa(effect.Amount)+"% of the damage dealt")
 		case EffectRevive:
 			parts = append(parts, "A fallen ally stands back up with "+itoa(effect.Amount)+"% health")
+		case EffectEcho:
+			parts = append(parts, "Echo: a "+itoa(effect.Bonus)+"% chance to strike again for "+itoa(effect.Amount))
 		case EffectHasten:
 			parts = append(parts, scoped(effect, "Every other skill recovers "+itoa(effect.Amount)+" round"+plural(effect.Amount)+" sooner"))
 		}

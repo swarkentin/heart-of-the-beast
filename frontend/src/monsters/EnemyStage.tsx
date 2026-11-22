@@ -127,6 +127,14 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
       case "hit": {
         const c = centerOf(cue.enemyId);
         push(cue.enemyId, cue);
+        // A rank III/V strike's echo: a ghostly second cut a beat after the hit, without another swing of the arm.
+        if (cue.via === "skill_echo") {
+          spawn("claw", "spectral", c.x, c.y, undefined, undefined, cue.rank ?? 3);
+          spawn("spark", "spectral", c.x + 20, c.y - 20);
+          sfx("magic", cue.enemyId);
+          if (cue.amount > 0) popup(c.x + c.side * 0.6, c.top + 50, "ECHO " + cue.amount, "#c9a7ff", true);
+          break;
+        }
         const own = selfRef.current && cue.actorId === selfRef.current.id && cue.via !== "thorns" ? selfMove.current : null;
         // The player's own spell is cast from the first-person palm; its element follows the skill's name.
         let el = elementFor(c.theme, cue.via.replace(/_/g, " "), undefined);
@@ -138,7 +146,9 @@ export function EnemyStage({ view, enemies, events, target, onTarget, onPartyImp
         else if (el === "physical") spawn("slash", "physical", c.x, c.y, undefined, undefined, p);
         else if (el === "shock") spawn("zap", el, from.x, from.y, c.x, c.y, p);
         else spawn("bolt", el, from.x, from.y, c.x, c.y, p);
-        if (own && p >= 5 && el === "physical") spawn("impact", "physical", c.x, c.y + 40, undefined, undefined, p);
+        // Ranks III and V look grander: a burst in the skill's colour, then a shockwave (weapons) or ripple (spells).
+        if (own && p >= 3) spawn("spark", el, c.x - 24, c.y + 18, undefined, undefined, p);
+        if (own && p >= 5) spawn(el === "physical" ? "impact" : "wave", el, c.x, c.y + (el === "physical" ? 40 : 0), undefined, undefined, p);
         if (own) selfRef.current!.onCue({ type: "land", move: own, x: c.x, y: c.y, el, critical: cue.critical });
         if (cue.amount > 0) popup(c.x + c.side * 0.6, c.top + 50, cue.critical ? "CRIT! " + cue.amount : String(cue.amount), cue.critical ? "#ffd166" : "#ffffff", Boolean(cue.critical));
         break;

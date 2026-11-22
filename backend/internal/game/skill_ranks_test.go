@@ -21,7 +21,15 @@ func TestRankedSkillScalesOnlyScalingEffects(t *testing.T) {
 	}
 	for _, definition := range SkillCatalog() {
 		top := rankedSkill(definition, MaxSkillRank+3)
-		for i, effect := range top.Effects {
+		// Ranks III and V append one flourish after the skill's own effects (Defend's lives in defend instead).
+		wantExtra := 1
+		if definition.ID == SkillDefend {
+			wantExtra = 0
+		}
+		if len(top.Effects) != len(definition.Effects)+wantExtra {
+			t.Fatalf("%s: want %d effects at rank V, got %+v", definition.ID, len(definition.Effects)+wantExtra, top.Effects)
+		}
+		for i, effect := range top.Effects[:len(definition.Effects)] {
 			base := definition.Effects[i]
 			if effect.Kind != base.Kind || effect.Rounds != base.Rounds || effect.Scope != base.Scope || effect.When != base.When {
 				t.Fatalf("%s: ranks may only change amounts, got %+v from %+v", definition.ID, effect, base)
@@ -33,6 +41,59 @@ func TestRankedSkillScalesOnlyScalingEffects(t *testing.T) {
 		if len(definition.RankRules) != MaxSkillRank {
 			t.Fatalf("%s: want %d rank rules, got %d", definition.ID, MaxSkillRank, len(definition.RankRules))
 		}
+	}
+}
+
+func TestRanksThreeAndFiveAddAFlourishThatSuitsTheSkill(t *testing.T) {
+	cases := []struct {
+		id   string
+		kind SkillEffectKind
+		iii  int
+		v    int
+	}{
+		{"assassin.twin-slash", EffectEcho, 2, 3},     // strike
+		{"spellguard.runic-ward", EffectThorns, 1, 2}, // guard
+		{"bulwark.challenge", EffectThorns, 1, 2},     // control that only targets you
+		{"assassin.throat-jab", EffectMark, 1, 2},     // control aimed at an enemy
+		{"cleric.renewal", EffectHeal, 2, 3},          // support
+	}
+	for _, c := range cases {
+		definition, _ := findSkill(c.id)
+		if two := rankedSkill(definition, 2); len(two.Effects) != len(definition.Effects) {
+			t.Fatalf("%s: rank II must not add a flourish: %+v", c.id, two.Effects)
+		}
+		for rank, want := range map[int]int{3: c.iii, 4: c.iii, 5: c.v} {
+			effects := rankedSkill(definition, rank).Effects
+			last := effects[len(effects)-1]
+			if len(effects) != len(definition.Effects)+1 || last.Kind != c.kind || last.Amount != want {
+				t.Fatalf("%s rank %d: want %s %d last, got %+v", c.id, rank, c.kind, want, effects)
+			}
+		}
+	}
+	if rules := rankedSkill(mustSkill(t, "assassin.twin-slash"), 5).Rules; !strings.Contains(rules, "Echo: a 35% chance to strike again for 3") {
+		t.Fatalf("rank V rules should describe the echo: %q", rules)
+	}
+	if !strings.Contains(defendRankRules(3), "Reflect 1") || strings.Contains(defendRankRules(2), "Reflect") {
+		t.Fatalf("Defend gains thorns at III: %q / %q", defendRankRules(2), defendRankRules(3))
+	}
+}
+
+func TestEchoRollIsStableAndNearItsChance(t *testing.T) {
+	run := &Run{Seed: 42}
+	player := &PlayerState{ID: "p1"}
+	hits := 0
+	for round := 1; round <= 2000; round++ {
+		enemy := &Enemy{ID: "e" + itoa(round%7)}
+		first := echoRoll(run, player, enemy, round, 25)
+		if first != echoRoll(run, player, enemy, round, 25) {
+			t.Fatal("the echo roll must be stable for the same action")
+		}
+		if first {
+			hits++
+		}
+	}
+	if hits < 400 || hits > 600 {
+		t.Fatalf("25%% echo landed %d of 2000 times", hits)
 	}
 }
 
@@ -88,12 +149,17 @@ func TestRankedSkillHitsHarderAndTagsItsEvents(t *testing.T) {
 			t.Fatal(err)
 		}
 		var tagged CombatEvent
+		echoed := 0
 		for _, event := range room.Run.LastCombatEvents {
 			if event.ActorID == "p1" && event.Skill == basic {
 				tagged = event
 			}
+			if event.Kind == "skill_echo" {
+				echoed += event.Amount
+			}
 		}
-		return before - enemy.Health, tagged
+		// The rank V echo is a chance on top; compare the hit itself.
+		return before - enemy.Health - echoed, tagged
 	}
 	base, _ := strike(1)
 	top, event := strike(MaxSkillRank)

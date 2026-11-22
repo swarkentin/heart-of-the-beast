@@ -16,6 +16,19 @@ test("Defend gains its number at rank II", () => {
   assert.deepEqual(rankGains("Guard against the next hit.", "Guard against the next hit, blocking 1 more."), ["+1 block"]);
 });
 
+test("the rank III flourish is new and counts from zero; rank V grows it", () => {
+  assert.deepEqual(rankGains("Deal 7 + Agility damage, plus Strike upgrades. A boss barrier absorbs it.",
+    "Deal 7 + Agility damage, plus Strike upgrades. Echo: a 25% chance to strike again for 2. A boss barrier absorbs it."), ["+25% echo chance", "+2 echo damage"]);
+  assert.deepEqual(rankGains("Deal 8 damage. Echo: a 25% chance to strike again for 2. Recovers in 2 rounds.",
+    "Deal 8 damage. Echo: a 35% chance to strike again for 3. Recovers in 2 rounds."), ["+10% echo chance", "+1 echo damage"]);
+  assert.deepEqual(rankGains("A ward absorbs the next 9 damage. Recovers in 1 round.",
+    "A ward absorbs the next 9 damage. Reflect 1 to anything that hits you this round. Recovers in 1 round."), ["+1 thorns"]);
+  assert.deepEqual(rankGains("Restore 8 + Focus health (you or an ally). Recovers in 3 rounds.",
+    "Restore 8 + Focus health (you or an ally). Restore 2 health for you. Recovers in 3 rounds."), ["+2 self-heal"]);
+  assert.deepEqual(rankGains("Guard against the next hit, blocking 1 more.",
+    "Guard against the next hit, blocking 1 more. Reflect 1 to anything that hits you this round."), ["+1 thorns"]);
+});
+
 test("a rank that changes no numbers has no gains", () => {
   assert.deepEqual(rankGains("Deal 4 damage.", "Deal 4 damage."), []);
 });
