@@ -8,6 +8,7 @@ import { RunScreen } from "./run/RunScreen";
 import type { RoadChoice } from "./campaign/CampaignPicker";
 import { nextCampaign } from "./campaign/campaigns";
 import { useCampaigns } from "./campaign/useCampaigns";
+import { isAbort, loadUntilReady, WAKING_MESSAGE } from "./startupLoad";
 
 // Session, polling and commands. The screens themselves live in lobby.tsx and run/.
 
@@ -15,6 +16,15 @@ const SESSION_KEY = "heart-of-the-beast.player-session";
 // Read once at load: Discord returns here after sign-in (ADR 0034).
 const DISCORD_CALLBACK = takeDiscordCallback();
 let discordCallbackStarted = false;
+
+/** Runs `load` until the server answers (it may still be waking), then hands the value over. Returns the effect cleanup. */
+function startupRead<T>(load: () => Promise<T>, apply: (value: T) => void, onRetry?: (attempt: number, error: unknown) => void): () => void {
+  const controller = new AbortController();
+  void loadUntilReady(load, { signal: controller.signal, onRetry })
+    .then(value => { if (!controller.signal.aborted) apply(value); })
+    .catch(err => { if (!isAbort(err)) throw err; });
+  return () => controller.abort();
+}
 
 function createProfileCredential(): string {
   const bytes = new Uint8Array(32);
@@ -49,7 +59,11 @@ export default function App() {
   const [themes, setThemes] = useState<ApiTheme[]>([]);
   const [chosenRoad, setChosenRoad] = useState<RoadChoice | null>(null);
   const campaigns = useCampaigns();
-  useEffect(() => { void apiRequest<{ themes: ApiTheme[] }>("/themes").then(result => setThemes(result.themes ?? [])).catch(() => undefined); }, []);
+  // While the server wakes (or between deploys) these reads fail; each keeps retrying so a slow start
+  // never leaves the page without its catalog, which would show an empty skill bar until a reload.
+  const showWaking = useCallback(() => setError(current => current || WAKING_MESSAGE), []);
+  const clearWaking = useCallback(() => setError(current => current === WAKING_MESSAGE ? "" : current), []);
+  useEffect(() => startupRead(() => apiRequest<{ themes: ApiTheme[] }>("/themes"), result => setThemes(result.themes ?? [])), []);
   const [profile, setProfile] = useState<ApiProfile | null>(null);
   // The lobby offers the next campaign the player has not won (ADR 0041) until the host picks something else.
   const suggested = nextCampaign(campaigns, profile?.campaigns);
@@ -59,7 +73,7 @@ export default function App() {
   const [signInConflict, setSignInConflict] = useState<SignInConflict | null>(null);
   const [conflictBusy, setConflictBusy] = useState(false);
   const [conflictError, setConflictError] = useState("");
-  useEffect(() => { void apiRequest<{ providers: string[] }>("/auth/providers").then(result => setDiscordEnabled((result.providers ?? []).includes("discord"))).catch(() => undefined); }, []);
+  useEffect(() => startupRead(() => apiRequest<{ providers: string[] }>("/auth/providers"), result => setDiscordEnabled((result.providers ?? []).includes("discord"))), []);
 
   function reloadProfile() {
     const credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
@@ -111,21 +125,19 @@ export default function App() {
   useEffect(() => {
     // Returning from Discord: the sign-in effect above loads the right profile.
     if (DISCORD_CALLBACK && "code" in DISCORD_CALLBACK) return;
-    let active = true;
+    let credential: string;
     try {
-      let credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY);
+      credential = window.localStorage.getItem(PROFILE_CREDENTIAL_KEY) || "";
       if (!credential) {
         credential = createProfileCredential();
         window.localStorage.setItem(PROFILE_CREDENTIAL_KEY, credential);
       }
-      void apiRequest<ApiProfile>("/profile", credential, { method: "POST" })
-        .then(value => { if (active) setProfile(value); })
-        .catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load adventurer profile"); });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to initialize adventurer profile");
+      return;
     }
-    return () => { active = false; };
-  }, []);
+    return startupRead(() => apiRequest<ApiProfile>("/profile", credential, { method: "POST" }), value => { setProfile(value); clearWaking(); }, showWaking);
+  }, [showWaking, clearWaking]);
 
   const spectator = Boolean(spectatorAccess);
   const roomId = spectatorAccess?.roomId || session?.roomId;
@@ -210,10 +222,9 @@ export default function App() {
 
   useEffect(() => {
     if (classCatalog) return;
-    let active = true;
-    void apiRequest<LobbyCatalog>("/progression").then(value => { if (active) setClassCatalog(value); }).catch(err => { if (active) setError(err instanceof Error ? err.message : "Unable to load class choices"); });
-    return () => { active = false; };
-  }, [classCatalog]);
+    // The skill bar, class names and loadouts all come from this catalog, so it must arrive however late the server wakes.
+    return startupRead(() => apiRequest<LobbyCatalog>("/progression"), value => { setClassCatalog(value); clearWaking(); }, showWaking);
+  }, [classCatalog, showWaking, clearWaking]);
 
   useEffect(() => {
     if (!session || spectator) return;

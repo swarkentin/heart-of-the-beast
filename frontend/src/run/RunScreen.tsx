@@ -415,6 +415,7 @@ export function RunScreen({ snapshot, run, room, session, spectator, catalog, pr
           <strong>{livingTarget?.name ?? "NONE"}</strong>
           <button type="button" className="rn-target-step" onClick={() => cycleTarget(1)} disabled={living.length < 2} aria-label="Next target">▶</button>
         </div>
+        {!catalog ? <p className="px-copy" role="status">Loading your skills… the server is still waking.</p> : null}
         <div className={"rn-actions rn-actions-" + Math.max(1, actions.length) + (!shownKey && actions.some(action => action.ready) ? " rn-actions-interrupt" : "")}>{actions.map((action, index) => <button key={action.key} type="button"
           className={"rn-act rn-act-" + action.tone + (shownKey === action.key ? " rn-act-chosen" : shownKey ? " rn-act-passed" : autoSoon && action.key === SKILL_DEFEND ? " rn-act-auto" : "") + (armed === action.key ? " rn-act-armed" : "") + (action.cooldown > 0 ? " rn-act-cooling" : "") + (action.ready && !shownKey ? " rn-act-opening" : "")}
           onClick={() => act(action)} onPointerEnter={() => setFocused(action.key)} onPointerLeave={() => setFocused("")} onFocus={() => setFocused(action.key)} onBlur={() => setFocused("")}
