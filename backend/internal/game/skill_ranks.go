@@ -6,7 +6,9 @@ import "errors"
 // spends it on a skill of their bar, raising that skill one rank (I to V). A rank adds a fixed step to each of
 // the skill's scaling effects (more damage, a bigger guard, a longer bleed) and the client draws a ranked skill
 // with a stronger animation. Ranks reset with the run like every other run-level gain, and survive a skill being
-// swapped off the bar at camp so a swap is never punished twice.
+// swapped off the bar at camp so a swap is never punished twice. Ranks II and IV raise the numbers; ranks III and V
+// add a small flourish that suits the skill instead (rankFlourish), so every rank does something without stacking
+// more raw power (ADR 0043).
 
 const (
 	// MaxSkillRank is the highest rank a skill can reach in one run.
@@ -42,6 +44,9 @@ func rankedSkill(definition SkillDefinition, rank int) SkillDefinition {
 	effects := make([]SkillEffect, len(definition.Effects))
 	for i, effect := range definition.Effects {
 		effects[i] = rankEffect(effect, steps)
+	}
+	if flourish, ok := rankFlourish(definition, steps); ok {
+		effects = append(effects, flourish)
 	}
 	definition.Effects = effects
 	definition.Rules = describeSkill(definition)
@@ -84,6 +89,50 @@ func rankEffect(effect SkillEffect, steps int) SkillEffect {
 	return effect
 }
 
+// flourishLevel is 1 from rank III and 2 at rank V: the size of the rank's flourish.
+func flourishLevel(steps int) int {
+	switch {
+	case steps >= 4:
+		return 2
+	case steps >= 2:
+		return 1
+	}
+	return 0
+}
+
+// rankFlourish is the small extra a skill gains at ranks III and V, chosen by what the skill is for:
+//   - strike: Echo, a 25% (V: 35%) chance per enemy hit to strike again for 2 (V: 3);
+//   - guard, and control that targets only you: Thorns 1 (V: 2) this round;
+//   - control aimed at enemies: Mark 1 (V: 2), so the party's next hit lands harder;
+//   - support: you restore 2 (V: 3) health.
+//
+// Defend's flourish (thorns) is applied in defend, so a Defend taken when the timer runs out gets it too.
+func rankFlourish(definition SkillDefinition, steps int) (SkillEffect, bool) {
+	level := flourishLevel(steps)
+	if level == 0 || definition.ID == SkillDefend {
+		return SkillEffect{}, false
+	}
+	switch definition.Tone {
+	case "strike":
+		return SkillEffect{Kind: EffectEcho, Amount: 1 + level, Bonus: 15 + 10*level}, true
+	case "control":
+		if definition.Target == SkillTargetEnemy || definition.Target == SkillTargetAllEnemies {
+			return SkillEffect{Kind: EffectMark, Amount: level}, true
+		}
+		return SkillEffect{Kind: EffectThorns, Amount: level, Scope: ScopeSelf}, true
+	case "guard":
+		return SkillEffect{Kind: EffectThorns, Amount: level, Scope: ScopeSelf}, true
+	case "support":
+		return SkillEffect{Kind: EffectHeal, Amount: 1 + level, Scope: ScopeSelf}, true
+	}
+	return SkillEffect{}, false
+}
+
+// defendFlourish is the thorns a ranked Defend adds (rank III and V), whether chosen or automatic.
+func defendFlourish(player *PlayerState) int {
+	return flourishLevel(SkillRank(player, SkillDefend) - 1)
+}
+
 // defendRankBonus is the extra guard a ranked Defend gives, whether chosen or taken when the timer runs out.
 func defendRankBonus(player *PlayerState) int {
 	return rankStep(SkillRank(player, SkillDefend) - 1)
@@ -106,7 +155,11 @@ func defendRankRules(rank int) string {
 	if rank <= 1 {
 		return "Guard against the next hit."
 	}
-	return "Guard against the next hit, blocking " + itoa(rankStep(rank-1)) + " more."
+	text := "Guard against the next hit, blocking " + itoa(rankStep(rank-1)) + " more."
+	if thorns := flourishLevel(rank - 1); thorns > 0 {
+		text += " Reflect " + itoa(thorns) + " to anything that hits you this round."
+	}
+	return text
 }
 
 // upgradeSkill spends one of the player's skill points on a skill of their bar.

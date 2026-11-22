@@ -66,6 +66,8 @@ These are the current priorities, not a promise that each item ships in strict i
    - [x] A prologue cutscene at the start of every run explaining the Beast, its masters, the rift-gates and the heart (ADR 0039).
    - [ ] A music cue for the prologue.
    - [x] The skill rank-up picker shows only what each rank adds (e.g. "+1 damage") instead of the old and new rule text side by side (ADR 0034).
+   - [x] Every skill rank does something: ranks III and V add a flourish that suits the skill (echo, thorns, mark, self-heal) with grander hit effects, instead of no change (ADR 0043).
+   - [ ] Watch how often echo and the other rank flourishes matter in real play; retune their chances and sizes from playtests.
    - [ ] Improve combat readability and impact: character/enemy animation, attack anticipation, hit feedback, status presentation, and spectator cinematography.
    - [ ] Improve room-specific environmental props/layouts and interactions across themes; make the world feel less like repeated backdrops.
    - [ ] Continue audio, accessibility, localization, and UI polish. Maintain continuous real-device QA as part of normal delivery.

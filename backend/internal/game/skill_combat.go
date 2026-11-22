@@ -308,6 +308,8 @@ func (cast *skillCast) applyEnemyEffect(effect SkillEffect, riders []SkillEffect
 		} else {
 			addCombatImpact(run, round, "skill_control", cast.name()+" stuns "+enemy.Name+": it loses its next turn.", "", enemy.ID, "enemy", 0)
 		}
+	case EffectEcho:
+		cast.echo(effect, enemy)
 	case EffectMark:
 		enemy.MarkedDamage += effect.Amount
 		addCombatImpact(run, round, "skill_mark", cast.name()+" marks "+enemy.Name+": the next hit on it deals "+itoa(enemy.MarkedDamage)+" more.", "", enemy.ID, "enemy", 0)
@@ -429,6 +431,33 @@ func (cast *skillCast) strike(effect SkillEffect, riders []SkillEffect, enemy *E
 	cast.checkDefeated(enemy)
 }
 
+// echo is a rank flourish: a seeded chance for a strike skill to hit the enemy again for a little flat damage.
+// It lands only if the skill already struck this cast and the enemy still stands, and never through a barrier,
+// shield or phase, which a normal hit has to respect.
+func (cast *skillCast) echo(effect SkillEffect, enemy *Enemy) {
+	if !cast.struck || enemy.Health <= 0 || enemy.Barrier > 0 || enemy.Shield > 0 || enemy.Phased {
+		return
+	}
+	if !echoRoll(cast.run, cast.player, enemy, cast.round, effect.Bonus) {
+		return
+	}
+	transition := resolveHealthDamage(enemy.Health, effect.Amount)
+	enemy.Health = transition.Health
+	addCombatImpact(cast.run, cast.round, "skill_echo", cast.name()+" echoes: "+enemy.Name+" takes "+itoa(transition.Applied)+" more.", "damage", enemy.ID, "enemy", transition.Applied)
+	last := &cast.run.LastCombatEvents[len(cast.run.LastCombatEvents)-1]
+	last.ActorID, last.Skill, last.Rank = cast.player.ID, cast.definition.ID, SkillRank(cast.player, cast.definition.ID)
+	cast.checkDefeated(enemy)
+}
+
+// echoRoll is a stable per-action roll, like criticalHit, so live play and seeded simulations agree.
+func echoRoll(run *Run, player *PlayerState, enemy *Enemy, round, chance int) bool {
+	seed := run.Seed ^ uint64(round*104729) ^ 0x9e3779b97f4a7c15
+	for _, value := range []byte(player.ID + ":" + enemy.ID + ":echo") {
+		seed = seed*1099511628211 ^ uint64(value)
+	}
+	return seed%100 < uint64(chance)
+}
+
 func (cast *skillCast) checkDefeated(enemy *Enemy) {
 	if enemy.Health == 0 {
 		enemy.Intent = nil
@@ -534,6 +563,10 @@ func defend(room *Room, player *PlayerState, chosen bool, round int) {
 	message := adventurerLabel(room, player.ID) + " braces, blocking up to " + itoa(guardFor(room, player)) + " damage from the next hit."
 	if !chosen {
 		message = adventurerLabel(room, player.ID) + " ran out of time and defends automatically, blocking up to " + itoa(guardFor(room, player)) + " damage from the next hit."
+	}
+	if thorns := defendFlourish(player); thorns > 0 {
+		player.ClassCombat.Thorns += thorns
+		message += " Anything that hits them this round takes " + itoa(player.ClassCombat.Thorns) + "."
 	}
 	addCombatEvent(run, round, "player_defend", message)
 	last := &run.LastCombatEvents[len(run.LastCombatEvents)-1]

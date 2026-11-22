@@ -446,6 +446,10 @@ button.rn-tile:disabled { cursor: not-allowed; opacity: .7; }
 /* ---------- skill ranks ---------- */
 .rn-act-icon { position: relative; }
 .rn-act-rank { position: absolute; left: -4px; top: -6px; padding: 0 2px; background: var(--edge); color: var(--gold); font: 400 7px/1.5 var(--display); font-style: normal; box-shadow: 0 0 0 1px var(--gold); }
+.rn-act-rank-3 { box-shadow: 0 0 0 1px var(--gold), 0 0 5px #c9a7ff; }
+.rn-act-rank-5 { animation: rn-rank-shimmer 2.4s steps(6) infinite; }
+@keyframes rn-rank-shimmer { 50% { box-shadow: 0 0 0 1px var(--edge), 0 0 10px var(--gold), 0 0 4px #c9a7ff; } }
+@media (prefers-reduced-motion: reduce) { .rn-act-rank-5 { animation: none; } }
 .rn-act-rank-4, .rn-act-rank-5 { color: var(--edge); background: var(--gold); box-shadow: 0 0 0 1px var(--edge), 0 0 6px var(--gold); }
 .rn-rank-up { flex: none; order: -1; padding: 5px 10px 4px; border: 0; background: var(--gold); color: var(--edge); font: 400 10px/1.4 var(--display); letter-spacing: .04em; box-shadow: 0 0 0 2px var(--edge), 0 0 0 4px var(--gold); cursor: pointer; animation: rn-rank-glow 1.6s steps(4) infinite; }
 .rn-rank-up:hover:not(:disabled) { background: var(--bone); }
