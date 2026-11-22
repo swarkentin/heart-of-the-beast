@@ -18,6 +18,7 @@ These are the current priorities, not a promise that each item ships in strict i
 
 1. **Close the multiplayer usability gaps.**
    - [x] Make every multi-option room/event decision party-voted and server-authoritative, using a 15-second vote window, visible party choices/tallies, vote changes, random tie/no-vote fallback, and immediate solo resolution. This includes trade-off choices such as +1 Strike / -2 Guard; do not silently let one player decide for everyone.
+   - [x] Reconnecting or starting a run while the hosted server is still waking no longer leaves an empty skill bar: startup reads (skill catalog, profile, themes, campaigns) retry until the server answers (ADR 0042).
    - [ ] Show each player's profile/display name consistently in the lobby and combat party UI, alongside their character/class identity, so everyone knows who is playing whom.
    - [ ] Support more than four people in a lobby: retain overflow members as waiting spectators who can watch the active dungeon without consuming a combat slot. Make active-player versus spectator/waiting status explicit and avoid affecting encounter scaling or votes.
    - [ ] Design and implement a safe, understandable transition for waiting lobby members to join at a future safe checkpoint when a slot becomes available.
